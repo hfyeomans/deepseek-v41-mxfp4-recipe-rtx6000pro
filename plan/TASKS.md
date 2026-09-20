@@ -10,8 +10,8 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 | T0.2 | Hardware inventory without identifiers | done | `evidence/hardware-inventory.json`, `scripts/hardware-inventory.sh` |
 | T0.3 | Feasibility calculator; validate against the 0xSero 4-GPU layout | done | `scripts/feasibility-calc.py`, FEASIBILITY.md §3 |
 | T0.4 | Audit the source document's claims against primary sources | done | FEASIBILITY.md §6, RESEARCH.md |
-| T0.5 | DIMM part number, rated and configured speed, CAS latency | **ready (needs root)** | `sudo dmidecode -t memory` → HARDWARE.md memory table |
-| T0.6 | Record PSU model and wall circuit capacity | decision | HARDWARE.md power table |
+| T0.5 | DIMM part number, rated and configured speed, CAS latency | **done** (KF564R32-32 × 8, SPD 4800, configured 6400 = EXPO; CL not exposed by SMBIOS, vendor CL32) | HARDWARE.md memory table |
+| T0.6 | Record PSU model and wall circuit capacity | **done** (1,500 W; circuit still unrecorded) — verdict: 4 × 300 W does not fit, see T4.0 | HARDWARE.md power table |
 
 ## P1 — Host microbenchmarks
 
@@ -48,7 +48,8 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 
 | ID | Task | Status | Output |
 |---|---|---|---|
-| T4.1 | Acquire and install two RTX PRO 6000 (Max-Q preferred for power); verify P2P 4×4 OK and x16 on all slots | blocked | HARDWARE.md |
+| T4.0 | Power decision for four cards: 2,000 W-class PSU (needs 240 V or 30 A circuit) **or** 225 W cap on the 1,500 W PSU; decided by E8b's tok/s-per-watt curve | decision, after E8b | HARDWARE.md power table |
+| T4.1 | Acquire and install two RTX PRO 6000 (Max-Q preferred for power); verify P2P 4×4 OK and x16 on all slots | blocked on T4.0 | HARDWARE.md |
 | T4.2 | `preflight.sh` passes the memory gate on 4 GPUs | after T4.1 | — |
 | T4.3 | E9 serve + verify + benchmark, Engram-in-DRAM and NVMe modes | after T4.2 | BENCHMARKS.md, PROVENANCE.md pins |
 | T4.4 | README verdict update; systemd unit qualified | after T4.3 | README.md |

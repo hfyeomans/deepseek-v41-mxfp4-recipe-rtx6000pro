@@ -34,8 +34,11 @@ Why it matters: Engram host-table gathers and any host-side expert staging run o
 | Item | Value | Source |
 |---|---|---|
 | Installed | 246.8 GiB usable (`MemTotal` 258,790,840 kB) ≈ 256 GB nominal | measured |
-| Kit | Kingston FURY DDR5-6400 RDIMM, 8 × 32 GB (owner statement) | **unverified**: run `sudo dmidecode -t memory` and paste part numbers, rated and configured speed into this table |
-| Channels | 8 (WRX90 octa-channel) | vendor spec |
+| Kit | 8 × Kingston FURY Renegade Pro **KF564R32-32**, 32 GB DDR5 RDIMM, dual-rank (2R), 80-bit (ECC, multi-bit), 1.1 V configured; one DIMM in each of channels A–H (`P0 CHANNEL A`…`H`, all `DIMM 0`) | measured (`sudo dmidecode -t memory`, 2026-09-20) |
+| SPD / JEDEC speed | 4,800 MT/s (`Speed: 4800 MT/s`) | measured |
+| **Configured speed** | **6,400 MT/s** (`Configured Memory Speed: 6400 MT/s`) — the EXPO/XMP 6400 profile is active, not the JEDEC default | measured |
+| Rated profile | Kingston: JEDEC DDR5-4800 CL40-39-39 @ 1.1 V; EXPO/XMP profile DDR5-6400 CL32-39-39 @ 1.4 V | vendor spec — CAS latency is not exposed by SMBIOS; SMBIOS reports the JEDEC 1.1 V, so the running voltage is unverified |
+| Channels | 8 (WRX90 octa-channel), all populated, one DIMM per channel (1DPC — the configuration that allows 6400) | measured |
 | Theoretical bandwidth | 8 ch × 64 bit × 6,400 MT/s ÷ 8 = **409.6 GB/s** | derived |
 | Achieved copy bandwidth (E1) | **146 GB/s** read+write aggregate with 32 processes; 140 GB/s with 16; 60 GB/s single process. 36 % of theoretical; a Python-memcpy lower bound, not STREAM | measured — [`evidence/e1-dram-bandwidth.json`](../evidence/e1-dram-bandwidth.json) |
 | Random 264 B row gather (E3) | **4.15 M rows/s** from 16 Python threads on a 4.9 GiB table; 48-row batch p99 0.015 ms | measured — [`evidence/e3-engram-gather-dram.json`](../evidence/e3-engram-gather-dram.json) |
@@ -92,11 +95,22 @@ Why it matters:
 
 | Item | Value | Source |
 |---|---|---|
-| Current GPU draw at limit | 2 × 300 W | measured limits |
-| Four Max-Q cards | 1,200 W GPU + ~350 W CPU/platform ≈ 1,550–1,650 W DC | derived |
-| PSU / circuit | **unrecorded** — fill in before ordering cards | — |
+| PSU | **1,500 W** (owner statement; model and 12V-2x6 connector count not recorded) | owner |
+| Current GPU power limit | 2 × 300 W (325 W max) | measured |
+| CPU | Threadripper PRO 9955WX, 350 W TDP | vendor spec |
+| Platform (board, 8 RDIMMs at 1.4 V EXPO, 2 NVMe, fans) | ~80–120 W | estimate |
+| Today (2 GPUs) | 600 + 350 + ~100 ≈ **1,050 W DC worst case** — fits with ~30 % margin | derived |
+| Four Max-Q at 300 W | 1,200 + 350 + ~100 ≈ **1,650 W DC** — **exceeds the 1,500 W PSU** | derived |
+| Four Max-Q at 250 W | 1,000 + 350 + ~100 ≈ 1,450 W — inside the label, ~3 % margin; not acceptable for sustained load | derived |
+| Four Max-Q at 225 W + CPU PPT capped at 200 W | 900 + 200 + ~100 ≈ 1,200 W — 80 % of the PSU, the usual continuous-load ceiling | derived |
 
-Two more Max-Q cards fit the board's slots and stay within a single 1,600 W PSU on a 20 A circuit with little margin; full 600 W Workstation cards would not. Record the PSU model and wall circuit before pursuing Option A.
+**Option A needs more power than this machine has.** Four RTX PRO 6000 Max-Q at their 300 W limit plus the 350 W CPU do not fit a 1,500 W supply, even before transient spikes. The choices, in order of preference:
+
+1. **Replace the PSU with a 2,000 W-class unit (or add a second PSU for two of the cards).** At 2,000 W the 300 W/card profile has ~18 % margin. A 2,000 W supply at 120 V draws ~17–18 A at the wall, above the 16 A continuous rating of a 20 A circuit, so it also needs a 240 V or dedicated 30 A circuit; at 240 V it is ~9 A. Record the circuit before ordering.
+2. **Keep the 1,500 W PSU and cap the cards at 225 W** (`nvidia-smi -pl 225`) with the CPU PPT limited in BIOS. 0xSero's 4-GPU numbers were at 275 W; decode is memory-bandwidth-bound so 225 W costs less than the proportional 25 %, but prefill (compute-bound) will slow. This is the interim experiment plan: E8b's power sweep (300 → 275 → 250 → 225 W) on the existing two cards measures the actual cost per watt before committing.
+3. Not an option: full 600 W Workstation-edition cards. Four of them are 2,400 W of GPU alone.
+
+Measure, don't assume: the E2/E4 GPU window should also record whole-system draw at the wall if a meter is available, and `nvidia-smi --query-gpu=power.draw` under the E8 baseline load, so the "~100 W platform" and the CPU's real serving draw (usually well under TDP, but Engram host-table lookups load all 16 cores during prefill) replace the estimates above.
 
 ## Software already on the host relevant to this plan
 

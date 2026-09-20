@@ -55,8 +55,8 @@ if git_tree:
 else:
     scan = [p for p in root.rglob('*') if p.is_file() and '.git' not in p.parts and '__pycache__' not in p.parts]
 for path in scan:
-    if not path.is_file() or path.suffix in {'.png', '.jpg'}:
-        continue
+    if not path.is_file() or path.suffix in {'.png', '.jpg'} or path == root / 'scripts' / 'ci.sh':
+        continue  # the scanner's own pattern list would match itself
     text = path.read_text(errors='ignore')
     for pattern in patterns:
         for m in pattern.finditer(text):

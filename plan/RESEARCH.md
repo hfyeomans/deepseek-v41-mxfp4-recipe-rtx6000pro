@@ -40,7 +40,7 @@ The Google Doc supplied with the request is an AI-generated plan. Its correct cl
 
 ## Open questions
 
-1. **DIMM specification.** Owner reports Kingston FURY DDR5-6400; `dmidecode` needs root. Configured speed may be below 6400 with 8 RDIMMs populated on WRX90 (JEDEC 5600 vs XMP/EXPO 6400). Affects E1 and nothing else in the verdict.
+1. ~~**DIMM specification.**~~ Resolved 2026-09-20: 8 × Kingston KF564R32-32 (FURY Renegade Pro), SPD 4800 MT/s, configured 6400 MT/s (EXPO active), one per channel. Remaining unknown: running voltage (SMBIOS reports 1.1 V; the 6400 profile is specified at 1.4 V) and CAS latency, neither exposed by SMBIOS. Affects E1 and nothing else in the verdict.
 2. **Measured PCIe H2D.** The single number that moves the Option B ceiling (E4).
 3. **SGLang `dev-dsv41` on SM120 with `--tp 4`.** 0xSero proves it runs; whether the FlashInfer MXFP4 grouped-GEMM path is used or a Marlin fallback (as in vLLM) decides prefill speed. Check the server log's kernel selection in E9.
 4. **Engram-in-DRAM vs NVMe A/B** has no published data; E9 provides it.

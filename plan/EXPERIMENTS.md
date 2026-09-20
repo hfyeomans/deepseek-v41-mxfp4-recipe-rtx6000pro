@@ -63,6 +63,7 @@ Legend: **GPU-free** experiments can run while the GLM container is serving. **G
 - Hypothesis: within ±5% of the numbers in the sibling repo (200 tok/s single-stream with DSpark K5, ~226 tok/s at C2, ~2K tok/s prefill).
 - Procedure: `scripts/bench-decode.py --concurrency 1,2,4,8 --runs 5 --warmup 2`, `scripts/bench-prefill.py --tokens 8192,32768,131072,524288,1000000`, `scripts/verify.py --needles 6 --context 1000000`.
 - Pass: tables in BENCHMARKS.md; JSON in `evidence/baseline-v4-flash/`.
+- **E8b — power sweep (same window).** The host's PSU is 1,500 W; four Max-Q cards at 300 W do not fit it (HARDWARE.md power table). Repeat the C1 decode and 32K prefill rows at `nvidia-smi -pl 300`, `275`, `250`, `225` on both cards, logging `power.draw` and, if a wall meter is available, whole-system draw. Hypothesis: decode (bandwidth-bound) loses < 10 % from 300 → 225 W; prefill (compute-bound) loses 15–25 %. Output: the tok/s-per-watt curve that decides between "cap four cards at 225 W on the 1,500 W PSU" and "buy a 2,000 W PSU" for Option A. Restore `-pl 300` afterwards.
 
 ## E9 — 4-GPU V4.1-Flash qualification (blocked on hardware)
 

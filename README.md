@@ -23,7 +23,7 @@ Measured so far on this host (GPU-free, [docs/BENCHMARKS.md](docs/BENCHMARKS.md)
 
 | Path | Status | Expected result |
 |---|---|---|
-| **A. Four RTX PRO 6000** + Engram tables in this host's 246.8 GiB DRAM (SGLang `dev-dsv41` host-table path) | proven pattern on 4× SM120 by 0xSero; profile written, **unqualified** until cards exist | ~200 tok/s C1, ~700 tok/s C8, ~7K tok/s prefill (0xSero, 275 W); this host could be the first with the whole Engram in DRAM instead of NVMe |
+| **A. Four RTX PRO 6000** + Engram tables in this host's 246.8 GiB DRAM (SGLang `dev-dsv41` host-table path) | proven pattern on 4× SM120 by 0xSero; profile written, **unqualified** until cards exist; **the 1,500 W PSU cannot carry four cards at 300 W** — needs a 2,000 W-class PSU or a 225 W cap ([HARDWARE.md power](docs/HARDWARE.md#power-and-cooling-planning-inputs-for-option-a)) | ~200 tok/s C1, ~700 tok/s C8, ~7K tok/s prefill (0xSero, 275 W); this host could be the first with the whole Engram in DRAM instead of NVMe |
 | **B. Stream 39% of experts from DRAM over PCIe** on 2 GPUs | no MoE-aware offloader exists for `deepseek_v41` on SM120; prototype planned | ≤ ~60 tok/s decode ceiling at batch 1 (PCIe-bound), 2–4K tok/s prefill |
 | **C/D. Sub-3-bit experts or 39% expert pruning** | no kernels / no evaluated artifact | research only |
 | **Baseline: DeepSeek-V4-Flash-0731 NVFP4, TP2** | already qualified on this host (sibling recipe) | 200.6 tok/s single-stream with DSpark K5, 1M context, 226 tok/s C2 |
@@ -31,7 +31,7 @@ Measured so far on this host (GPU-free, [docs/BENCHMARKS.md](docs/BENCHMARKS.md)
 ## What is in this repository
 
 - [docs/FEASIBILITY.md](docs/FEASIBILITY.md) — the memory math, placement table, five options with ceilings, and an audit of the source document's claims.
-- [docs/HARDWARE.md](docs/HARDWARE.md) — ASUS WRX90E-SAGE SE, Threadripper PRO 9955WX, 246.8 GiB DDR5 (Kingston FURY 6400, DIMM detail pending root), 2 × RTX PRO 6000 Max-Q, Samsung 9100 PRO / Crucial T705, with the derived bandwidths that feed the verdict and which ones are still vendor specs.
+- [docs/HARDWARE.md](docs/HARDWARE.md) — ASUS WRX90E-SAGE SE, Threadripper PRO 9955WX, 246.8 GiB DDR5 (8 × Kingston FURY Renegade Pro KF564R32-32, configured 6400 MT/s), 2 × RTX PRO 6000 Max-Q, Samsung 9100 PRO / Crucial T705, with the derived bandwidths that feed the verdict and which ones are still vendor specs.
 - [plan/README.md](plan/README.md) — five phases (research → host microbenchmarks → baseline → boundary experiments → 4-GPU qualification), innovation candidates ranked by measurability, non-goals.
 - [plan/EXPERIMENTS.md](plan/EXPERIMENTS.md) — E1–E9 with numeric hypotheses and pass criteria. [plan/TASKS.md](plan/TASKS.md) — status per task. [plan/RESEARCH.md](plan/RESEARCH.md) — sources and open questions.
 - [docs/BENCHMARKS.md](docs/BENCHMARKS.md) — method and tables (checkpoint budget filled; throughput tables await GPU windows). [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — SM120 pitfalls, hugepages, thinking mode.
