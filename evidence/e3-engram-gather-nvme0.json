@@ -1,0 +1,22 @@
+{
+  "backend": "nvme",
+  "path": "results/engram-nvme0.bin",
+  "rows": 20000000,
+  "row_bytes": 264,
+  "table_gib": 4.917,
+  "batch_rows": 48,
+  "batches": 20000,
+  "threads": 16,
+  "build_s": 1.12,
+  "wall_s": 2.38,
+  "rows_per_s": 403304,
+  "tokens_per_s_equiv": 8402,
+  "batch_latency_ms": {
+    "p50": 1.8976,
+    "p99": 2.1146,
+    "max": 3.0105,
+    "mean": 1.8986
+  },
+  "prefill_64k_estimate_s": 7.69,
+  "note": "Python-side gather; lower bound on a native implementation"
+}

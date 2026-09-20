@@ -1,0 +1,38 @@
+{
+  "size_gib": 8.0,
+  "reps": 3,
+  "trials": 3,
+  "results": [
+    {
+      "workers": 1,
+      "median_gbps": 60.0,
+      "max_gbps": 60.0
+    },
+    {
+      "workers": 2,
+      "median_gbps": 75.9,
+      "max_gbps": 77.5
+    },
+    {
+      "workers": 4,
+      "median_gbps": 81.6,
+      "max_gbps": 82.1
+    },
+    {
+      "workers": 8,
+      "median_gbps": 116.8,
+      "max_gbps": 118.6
+    },
+    {
+      "workers": 16,
+      "median_gbps": 139.9,
+      "max_gbps": 148.4
+    },
+    {
+      "workers": 32,
+      "median_gbps": 146.2,
+      "max_gbps": 153.1
+    }
+  ],
+  "note": "memcpy-style copy in N processes, read+write counted; lower bound vs STREAM"
+}

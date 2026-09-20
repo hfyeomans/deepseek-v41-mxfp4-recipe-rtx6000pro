@@ -1,0 +1,181 @@
+{
+  "source": "LibertAIDAI/DeepSeek-V4.1-Flash-NVFP4",
+  "revision": "dfce15b92ed1fa76e80e2a46ba847e5b5451f12c",
+  "shards": 48,
+  "tensors": 143317,
+  "index_total_size_bytes": 429390891608,
+  "header_total_bytes": 429390891608,
+  "header_total_gib": 399.901,
+  "components": {
+    "routed_experts": {
+      "weight_bytes": 271790899200,
+      "scale_bytes": 33974046720,
+      "total_gib": 284.766,
+      "tensors": 138240,
+      "dtypes_gib": {
+        "U8": 253.125,
+        "F8_E4M3": 31.641,
+        "F32": 0.0
+      }
+    },
+    "engram_table": {
+      "weight_bytes": 98306924800,
+      "scale_bytes": 6144182800,
+      "total_gib": 97.278,
+      "tensors": 4,
+      "dtypes_gib": {
+        "U8": 91.555,
+        "F8_E8M0": 5.722
+      }
+    },
+    "dspark": {
+      "weight_bytes": 7507649856,
+      "scale_bytes": 849902664,
+      "total_gib": 7.784,
+      "tensors": 3553,
+      "dtypes_gib": {
+        "U8": 6.328,
+        "F8_E4M3": 1.317,
+        "BF16": 0.127,
+        "F32": 0.011,
+        "F8_E8M0": 0.001
+      }
+    },
+    "attention": {
+      "weight_bytes": 5146569728,
+      "scale_bytes": 4986880,
+      "total_gib": 4.798,
+      "tensors": 563,
+      "dtypes_gib": {
+        "F8_E4M3": 4.756,
+        "BF16": 0.037,
+        "F8_E8M0": 0.005,
+        "F32": 0.0
+      }
+    },
+    "embedding_head": {
+      "weight_bytes": 2647664640,
+      "scale_bytes": 0,
+      "total_gib": 2.466,
+      "tensors": 3,
+      "dtypes_gib": {
+        "BF16": 2.466
+      }
+    },
+    "shared_expert": {
+      "weight_bytes": 1415577600,
+      "scale_bytes": 1382400,
+      "total_gib": 1.32,
+      "tensors": 240,
+      "dtypes_gib": {
+        "F8_E4M3": 1.318,
+        "F8_E8M0": 0.001
+      }
+    },
+    "vision": {
+      "weight_bytes": 970506240,
+      "scale_bytes": 0,
+      "total_gib": 0.904,
+      "tensors": 263,
+      "dtypes_gib": {
+        "BF16": 0.904
+      }
+    },
+    "engram_proj": {
+      "weight_bytes": 314736640,
+      "scale_bytes": 307200,
+      "total_gib": 0.293,
+      "tensors": 8,
+      "dtypes_gib": {
+        "F8_E4M3": 0.293,
+        "F8_E8M0": 0.0,
+        "BF16": 0.0
+      }
+    },
+    "router": {
+      "weight_bytes": 157409280,
+      "scale_bytes": 0,
+      "total_gib": 0.147,
+      "tensors": 120,
+      "dtypes_gib": {
+        "BF16": 0.146,
+        "F32": 0.0
+      }
+    },
+    "hyper_connections": {
+      "weight_bytes": 157294080,
+      "scale_bytes": 960,
+      "total_gib": 0.146,
+      "tensors": 240,
+      "dtypes_gib": {
+        "F32": 0.146
+      }
+    },
+    "norms": {
+      "weight_bytes": 819200,
+      "scale_bytes": 0,
+      "total_gib": 0.001,
+      "tensors": 80,
+      "dtypes_gib": {
+        "BF16": 0.001
+      }
+    },
+    "other": {
+      "weight_bytes": 30720,
+      "scale_bytes": 0,
+      "total_gib": 0.0,
+      "tensors": 3,
+      "dtypes_gib": {
+        "BF16": 0.0
+      }
+    }
+  },
+  "engram_tables": {
+    "layers.1.engram.embed.weight": {
+      "dtype": "U8",
+      "shape": [
+        384006168,
+        128
+      ],
+      "bytes": 49152789504
+    },
+    "layers.1.engram.embed.scale": {
+      "dtype": "F8_E8M0",
+      "shape": [
+        384006168,
+        8
+      ],
+      "bytes": 3072049344
+    },
+    "layers.14.engram.embed.weight": {
+      "dtype": "U8",
+      "shape": [
+        384016682,
+        128
+      ],
+      "bytes": 49154135296
+    },
+    "layers.14.engram.embed.scale": {
+      "dtype": "F8_E8M0",
+      "shape": [
+        384016682,
+        8
+      ],
+      "bytes": 3072133456
+    }
+  },
+  "routed_expert_layers": 40,
+  "routed_expert_bytes_per_layer_mean": 7644123648.0,
+  "summary_bytes": {
+    "total": 429390891608,
+    "engram_tables": 104451107600,
+    "resident_without_engram_tables": 324939784008,
+    "resident_without_engram_dspark_vision": 315611725248
+  },
+  "summary_gib": {
+    "total": 399.901,
+    "engram_tables": 97.278,
+    "resident_without_engram_tables": 302.624,
+    "resident_without_engram_dspark_vision": 293.936
+  }
+}

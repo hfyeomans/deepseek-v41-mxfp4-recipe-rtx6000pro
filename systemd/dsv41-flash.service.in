@@ -1,0 +1,25 @@
+# Template. Install with:
+#   sed "s|@REPO@|/absolute/path/to/this/repo|" systemd/dsv41-flash.service.in \
+#     | sudo tee /etc/systemd/system/dsv41-flash.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now dsv41-flash
+#
+# The unit runs preflight.sh through serve.sh; it will refuse to start until
+# the memory gate passes (4 GPUs on this host). That is intentional.
+[Unit]
+Description=DeepSeek-V4.1-Flash (SGLang dev-dsv41) - UNQUALIFIED profile, see README
+After=docker.service nvidia-persistenced.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=@REPO@
+Environment=ENV_FILE=@REPO@/.env
+ExecStartPre=-@REPO@/scripts/stop.sh
+ExecStart=@REPO@/scripts/serve.sh
+ExecStartPost=@REPO@/scripts/wait-ready.py --url http://127.0.0.1:8010 --timeout 3600
+ExecStop=@REPO@/scripts/stop.sh
+TimeoutStartSec=4000
+
+[Install]
+WantedBy=multi-user.target

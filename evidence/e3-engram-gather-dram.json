@@ -1,0 +1,22 @@
+{
+  "backend": "dram",
+  "path": null,
+  "rows": 20000000,
+  "row_bytes": 264,
+  "table_gib": 4.917,
+  "batch_rows": 48,
+  "batches": 20000,
+  "threads": 16,
+  "build_s": 0.87,
+  "wall_s": 0.231,
+  "rows_per_s": 4148704,
+  "tokens_per_s_equiv": 86431,
+  "batch_latency_ms": {
+    "p50": 0.011,
+    "p99": 0.0153,
+    "max": 15.2385,
+    "mean": 0.0222
+  },
+  "prefill_64k_estimate_s": 0.75,
+  "note": "Python-side gather; lower bound on a native implementation"
+}

@@ -1,0 +1,51 @@
+{
+  "board": "ASUSTeK COMPUTER INC. Pro WS WRX90E-SAGE SE",
+  "bios": "1317 (02/03/2026)",
+  "cpu": {
+    "model": "AMD Ryzen Threadripper PRO 9955WX 16-Cores",
+    "cores": 16,
+    "threads": 32,
+    "avx512f": "yes",
+    "avx512_bf16": "yes",
+    "amx": "no",
+    "numa_nodes": 1
+  },
+  "memory": {
+    "total_kib": 258790840,
+    "total_gib": 246.8,
+    "hugepages_total": 0,
+    "thp": "always [madvise] never",
+    "dimms": "not read (requires root: sudo dmidecode -t memory)"
+  },
+  "gpus": [
+    {
+      "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+      "memory_total_mib": 97887,
+      "power_limit_w": 300.0,
+      "power_max_limit_w": 325.0,
+      "pcie_gen_max": 5,
+      "pcie_width_max": 16,
+      "sm_clock_max_mhz": 3090,
+      "mem_clock_max_mhz": 14001,
+      "driver": "615.71.09"
+    },
+    {
+      "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+      "memory_total_mib": 97887,
+      "power_limit_w": 300.0,
+      "power_max_limit_w": 325.0,
+      "pcie_gen_max": 5,
+      "pcie_width_max": 16,
+      "sm_clock_max_mhz": 3090,
+      "mem_clock_max_mhz": 14001,
+      "driver": "615.71.09"
+    }
+  ],
+  "p2p_read_matrix": "GPU0 X OK; GPU1 OK X; ",
+  "nvme": [
+    "Samsung SSD 9100 PRO 4TB fw 0B2QNXH7 32.0 GT/s PCIe x4",
+    "CT4000T705SSD3 fw PACR5111 32.0 GT/s PCIe x4"
+  ],
+  "kernel": "7.0.0-31-generic",
+  "os": "Ubuntu 26.04.1 LTS"
+}
