@@ -35,7 +35,7 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 |---|---|---|---|
 | T2.1 | Port fixture/method from the GLM and V4-Flash recipes into `bench-decode.py` / `bench-prefill.py` so numbers are comparable | done (harness written) | `scripts/bench-*.py` |
 | T2.2 | E8 run against the V4-Flash NVFP4 TP2 deployment | **done** — decode C1–C8, prefill 8K–512K, 222K needles, power samples; DSpark-off and 1M prefill rows not re-run | `evidence/baseline-v4-flash/`, BENCHMARKS.md |
-| T2.2b | E8b power sweep (300/275/250 W; 225 W is below the driver floor) | **blocked on sudo** — run `sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model dsv4-nvfp4` with the sibling deployment up | `evidence/e8b-power-sweep/` |
+| T2.2b | E8b power sweep (325/300/275/250 W; 225 W is below the driver floor) | **done** — decode 216–229 tok/s at every cap, prefill 8,770/8,428/7,991/7,482 tok/s; see BENCHMARKS.md §E8b | `evidence/e8b-power-sweep/summary.json` |
 | T2.3 | Fill BENCHMARKS.md baseline tables from JSON | after T2.2 | `docs/BENCHMARKS.md` |
 | T2.4 | Baseline improvement sweep on V4-Flash: DSpark block 3/5/7, FP8 KV, C8/C16 | gpu-window | BENCHMARKS.md |
 
@@ -71,7 +71,7 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 
 | ID | Task | Status | Output |
 |---|---|---|---|
-| T4.0 | Power decision for four cards: 2,000 W-class PSU (needs 240 V or 30 A circuit) **or** 250 W cap (driver floor) on the 1,500 W PSU; decided by E8b's tok/s-per-watt curve. E8 already shows decode draws 242–249 W uncapped, so the cap mostly costs prefill | decision, after E8b | HARDWARE.md power table |
+| T4.0 | Power decision for four cards: 2,000 W-class PSU (needs 240 V or 30 A circuit) **or** 250 W cap (driver floor) on the 1,500 W PSU | **decided by E8b: 250 W cap** for experiments — costs 0 % decode, 11 % prefill, best tok/s/W (15.0). 2,000 W PSU only if sustained 4-card serving is wanted (four cards at 250 W + 200 W CPU PPT ≈ 1,300 W, 87 % of the supply) | HARDWARE.md power table |
 | T4.1 | Acquire and install one or two more RTX PRO 6000 (Max-Q preferred for power); verify P2P OK and x16 on all slots | blocked on T4.0 | HARDWARE.md |
 | T4.1b | 3-GPU profile: EP3 or PP layout (TP3 invalid), 91% experts resident + hybrid remainder; llama.cpp layer-split as the simple variant | after T4.1 with 3 cards | `scripts/serve.sh` |
 | T4.2 | `preflight.sh` passes the memory gate on 4 GPUs | after T4.1 | — |

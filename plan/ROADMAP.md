@@ -10,10 +10,10 @@ Status vocabulary (same as TASKS.md): `done`, `ready`, `quiet-host`, `gpu-window
 
 ```diagram
 P0 research ──▶ P1 host micro ──▶ P2 baseline ──▶ P3 2-GPU hybrid ──▶ P4 3/4-GPU
-   DONE          DONE               DONE*          design + kernel    blocked
-                 (E1, E1b, E2, E3,  (E8, E12 done; (E6 s0 done;       (cards, power;
-                  E4, E4b, E6 s0)    *E8b needs     E13 s1 runs:       250 W is the
-                                     sudo)          1.45 TB/s decode)  cap floor)
+   DONE          DONE               DONE           design + kernel    blocked
+                 (E1, E1b, E2, E3,  (E8, E8b, E12; (E6 s0 done;       (cards; power:
+                  E4, E4b, E6 s0)    250 W cap =    E13 s1 runs:       250 W cap costs
+                                     0 % decode)    1.45 TB/s decode)  11 % prefill)
 ```
 
 Blocking condition for everything below marked `quiet-host` or `gpu-window`: the GLM container `glm53-flash-2x-rtxpro6000` is serving and benchmarking on both GPUs. Owner announces windows.
@@ -34,7 +34,7 @@ Blocking condition for everything below marked `quiet-host` or `gpu-window`: the
 | E6 s2 | Port `deepseek_v41` into sglang-kt; first V4.1 serve on 2 GPUs | build, then GPU | design doc next (`plan/E6-DESIGN.md`) | — | The primary deliverable |
 | E7 | Routing-skew histogram | GPU | gpu-window | — | `--activation-skew`; frequency placement gain; whether Option D (pruning) is worth anything |
 | E8 | Baseline re-measure V4-Flash NVFP4 TP2 | GPU | **done** | C1 **171–188 tok/s** (256-tok fixture, acceptance 40–45 %), **207–239** (512 tok, acceptance 51–63 %); C2 354 summed / 300 wall; wall-clock ceiling ≈ 300 tok/s at `max_num_seqs=2`. Prefill **7.8K tok/s at 32K → 3.2K at 512K → 1.9K at 1M** (length curve). 6/6 needles at 222K. GPU draw 242–249 W decode (uncapped), 300 W prefill (throttled to 1.95 GHz) | The number every 2-GPU result is compared with; carry the 512-tok row and always report acceptance beside tok/s |
-| E8b | tok/s per watt curve (power caps) | GPU | **blocked on sudo** (script ready) | driver floor is **250 W**, 225 W does not exist; prediction from E8 draw: 250 W costs decode ≈ 0, prefill ≈ 15 % | T4.0 power decision (2,000 W PSU vs 250 W cap) — run `sudo bash scripts/bench-power-sweep.sh` |
+| E8b | tok/s per watt curve (power caps) | GPU | **done** (owner ran with sudo) | 325/300/275/250 W: decode 216–229 tok/s at every cap (cards draw 228–251 W uncapped); prefill 8,770/8,428/7,991/7,482 tok/s, pinned at each cap; 250 W = 0 % decode, −11 % prefill, 15.0 tok/s/W best | T4.0 decided: 250 W cap on the 1,500 W PSU is the experimental option; 325 W = +4 % prefill for 2 GPUs |
 | E9 | 4-GPU V4.1 qualification | 4 cards | blocked | calculator: 100% experts resident, ~200 tok/s, Engram-in-DRAM fits | Option A profile in `serve.sh` (unqualified) |
 | E10 | DSpark on/off under CPU-bound MoE | GPU, after E6 s1 | blocked on E6 s1 | — | Whether speculative decoding pays when the CPU is the bottleneck |
 | E11 | Engram tiering / quantization A/B | quiet host, then GPU | quiet-host (sim) | calculator: FP8 tables in DRAM do not fit 2-GPU (−78 GiB); FP4 +13 GiB, q3_K +32 GiB headroom | Engram mode per GPU count; first quality number for quantized tables |
@@ -89,6 +89,7 @@ Ordered by how directly each moves a number in the readout above.
 
 ## Change log
 
+- 2026-09-21 (GPU window 2, later) — **E8b done** (owner ran `bench-power-sweep.sh` with sudo, caps 325/300/275/250): decode cap-insensitive (216–229 tok/s; cards never reach 250 W), prefill pinned at each cap 8,770 → 7,482 tok/s (2.09 → 1.72 GHz), tok/s/W best at 250 W. T4.0 decided for the 250 W cap. Harness fixes: per-cap prefill seed (first run's 275/250 rows were prefix-cache hits), sampler killed from the EXIT trap after a leaked root `nvidia-smi` loop NUL-filled a CSV for 1.7 h, summarizer tolerant of non-sample lines. DSpark-off single stream measured: **89 tok/s** (±0.2 %), the floor under the 171–239 DSpark rows; relaunch via `RECIPE_ENV_FILE` with `DSPARK=0`.
 - 2026-09-21 (GPU window 2) — **E8 done** with this harness (171–239 tok/s C1 depending on output length/acceptance; prefill length curve 7.8K → 1.9K tok/s; 6/6 needles at 222K; 242–249 W decode draw). `bench-decode.py` gained `wall tok/s` after C4/C8 summed rates proved invalid under `max_num_seqs=2`. **E12 done for V4-Flash** from the sibling's torch traces via new `scripts/kernel-census.py`: experts already on a CUTLASS SM120 block-scaled grouped GEMM (not Marlin), 24.5 % of kernel time; dense FP8 is the largest category. **E13 census-shaped runs** (`run.py --tp/--decode-groups`): 1,421–1,451 GB/s at 451 MB working set — L2 was not inflating stage 1; E13 ties the deployed kernel's launch time. **K5 dropped** as moot. **E8b blocked**: needs sudo and the driver's cap floor is 250 W (225 W option removed from HARDWARE.md); `scripts/bench-power-sweep.sh` + `summarize-power.py` ready. GLM container relaunched via its `serve.sh` (its `stop.sh` removes the `--rm` container; `docker start` does not work).
 
 - 2026-09-21 (GPU window, later) — K2 W4A8 built and verified: 2× slower at decode than W4A4 (MMA-bound through 128-row M padding). `TILE_M=64` rejected by the SM120 TMA mainloop → K10 (decode-shaped kernel) added to the menu.

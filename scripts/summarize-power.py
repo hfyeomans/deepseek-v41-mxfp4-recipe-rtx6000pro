@@ -19,8 +19,16 @@ from pathlib import Path
 PK, CK, UK, TK = "power.draw [W]", "clocks.current.sm [MHz]", "utilization.gpu [%]", "temperature.gpu"
 
 
+def read_samples(path: Path) -> list[dict[str, str]]:
+    """nvidia-smi rows only: a leaked sampler from an earlier run writing into the same
+    file leaves NUL holes and stale rows; drop anything that is not `YYYY/MM/DD ...`."""
+    lines = path.read_text(errors="replace").splitlines()
+    header, body = lines[0], [l for l in lines[1:] if re.match(r"\d{4}/\d{2}/\d{2} ", l)]
+    return list(csv.DictReader([header, *body], skipinitialspace=True))
+
+
 def summarize_csv(path: Path) -> dict[str, dict]:
-    rows = list(csv.DictReader(path.open(), skipinitialspace=True))
+    rows = read_samples(path)
     out: dict[str, dict] = {}
     for gpu in sorted({r["index"].strip() for r in rows}):
         g = [r for r in rows if r["index"].strip() == gpu]

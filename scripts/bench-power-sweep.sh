@@ -37,7 +37,12 @@ mkdir -p "$OUT"
 
 DEFAULT_PL="$(nvidia-smi -i 0 --query-gpu=power.default_limit --format=csv,noheader,nounits | cut -d. -f1)"
 GPUS="$(nvidia-smi --query-gpu=index --format=csv,noheader | tr '\n' ' ')"
+SAMPLER_PID=""
 restore() {
+  # Kill the sampler first: a bench that dies mid-cap (first E8b run: server not up)
+  # otherwise leaves a root nvidia-smi loop that keeps appending to the CSV forever and
+  # NUL-fills any later run's file of the same name.
+  [ -n "$SAMPLER_PID" ] && kill "$SAMPLER_PID" 2>/dev/null || true
   for g in $GPUS; do nvidia-smi -i "$g" -pl "$DEFAULT_PL" >/dev/null || true; done
   echo "restored -pl $DEFAULT_PL"
   # Running under sudo leaves root-owned evidence; hand it back to the invoking user.
@@ -45,11 +50,12 @@ restore() {
 }
 trap restore EXIT
 
-sample() { # $1 = csv path; prints sampler pid
+sample() { # $1 = csv path; sets SAMPLER_PID
   nvidia-smi --query-gpu=timestamp,index,power.draw,clocks.current.sm,clocks.current.memory,temperature.gpu,utilization.gpu \
     --format=csv,nounits -lms 500 > "$1" &
-  echo $!
+  SAMPLER_PID=$!
 }
+stop_sample() { kill "$SAMPLER_PID" 2>/dev/null || true; SAMPLER_PID=""; }
 
 IFS=, read -r -a caps <<< "$CAPS"
 for cap in "${caps[@]}"; do
@@ -57,18 +63,18 @@ for cap in "${caps[@]}"; do
   for g in $GPUS; do nvidia-smi -i "$g" -pl "$cap" >/dev/null; done
   sleep 3
   case ",$PHASES," in *,decode,*)
-    pid="$(sample "$OUT/power-decode-${cap}w.csv")"
+    sample "$OUT/power-decode-${cap}w.csv"
     python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency 1 --runs "$RUNS" --warmup 1 --max-tokens 512 \
       --output "$OUT/decode-c1-${cap}w.json" | tail -1
-    kill "$pid" || true ;;
+    stop_sample ;;
   esac
   case ",$PHASES," in *,prefill,*)
     # Seed per cap: bench-prefill derives prompts from the seed, and the server's prefix
     # cache would otherwise serve caps 2..n from cap 1's KV (32K tokens in 0.14 s).
-    pid="$(sample "$OUT/power-prefill-${cap}w.csv")"
+    sample "$OUT/power-prefill-${cap}w.csv"
     python3 "$ROOT/scripts/bench-prefill.py" --url "$URL" --model "$MODEL" --tokens 32768 --runs "$RUNS" --seed "$((777 + cap))" \
       --output "$OUT/prefill-32k-${cap}w.json" | tail -1
-    kill "$pid" || true ;;
+    stop_sample ;;
   esac
 done
 python3 "$ROOT/scripts/summarize-power.py" "$OUT"

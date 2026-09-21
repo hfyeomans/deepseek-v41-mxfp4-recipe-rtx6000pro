@@ -62,7 +62,7 @@ Measured 2026-09-21 with this harness against the sibling deployment (`dsv4-nvfp
 
 | Metric | Sibling recipe | This harness |
 |---|---:|---:|
-| Single-stream decode, no DSpark | 93.66 tok/s | not re-run (needs a DSpark-off relaunch) |
+| Single-stream decode, no DSpark | 93.66 tok/s | **89.2 / 89.4 tok/s** (512 / 256 tok, 5 runs each, spread 89.1–89.5); C2 161 tok/s summed. Relaunched with `DSPARK=0`; 216 / 225 W per card |
 | Single-stream decode, DSpark K5, 256 tok | 200.64 tok/s | **171–188 tok/s median** across two 5-run sets (min 160, max 238); acceptance 40–45 % |
 | Single-stream decode, DSpark K5, 512 tok | — | **207–239 tok/s** (two 3-run sets; acceptance 51–63 %) |
 | Aggregate decode C2 (summed per-seq rates) | 226 tok/s | **354 tok/s** (wall-clock 300 tok/s) |
@@ -77,10 +77,29 @@ Measured 2026-09-21 with this harness against the sibling deployment (`dsv4-nvfp
 
 Readout:
 
+- **DSpark is worth 2.4–2.7× on this baseline, and its absence removes the noise.** Without speculation the single stream is 89 tok/s regardless of fixture or output length (11.2 ms per forward step, ±0.2 %), 4.8 % under the sibling's 93.66. Everything above 89 in the DSpark rows is acceptance, which is why those rows scatter 171–239. Energy follows: 0.20 tok/s/W without DSpark vs 0.46 with — speculation more than doubles decode efficiency because the verify step costs 15.3 ms (E12) for 2.5–3 accepted tokens instead of 11.2 ms for one.
 - **The 5 % hypothesis failed on decode.** C1 with the 256-token fixture is 6–15 % under the sibling's 200.6; with 512 tokens it brackets it (207–239). The spread tracks DSpark acceptance (40 → 63 %), which depends on the content the fixture makes the model write, not on the GPUs. Comparisons between engines must therefore hold the fixture *and* output length fixed, and report acceptance next to tok/s. The 512-token row is the one to carry forward.
 - **Prefill is length-dependent, not "~2K tok/s".** The sibling's 1,944 tok/s is a 1M-token number; short prompts run 3–4× faster. The curve 7.8K (32K) → 6.2K (128K) → 5.2K (222K) → 3.2K (512K) → 1.9K (1M) is the attention/indexer cost growing with context; it is the baseline any V4.1 engine's CSA2 path is compared against.
 - **`bench-decode.py` now reports `wall tok/s`** (total completion tokens ÷ batch wall time, TTFT included) beside the summed per-sequence rate. Use the wall figure whenever concurrency exceeds the server's `max_num_seqs`.
-- **Power:** decode already sits at 242–249 W per card with the cap at 300 W, so a 250 W cap (the driver's `power.min_limit` on these cards — 225 W is not settable) should cost decode almost nothing; prefill runs into the cap and drops SM clocks ~15 %, so a 250 W cap will cost prefill roughly that. Measured sweep pending: `sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model dsv4-nvfp4` (E8b; needs root for `nvidia-smi -pl`).
+- **Power:** decode already sits at 242–249 W per card with the cap at 300 W, so a 250 W cap (the driver's `power.min_limit` on these cards — 225 W is not settable) should cost decode almost nothing; prefill runs into the cap and drops SM clocks ~15 %. Measured in E8b below.
+
+### E8b power sweep: tok/s per watt at 325 / 300 / 275 / 250 W
+
+`sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model dsv4-nvfp4 --caps 325,300,275,250` (owner ran it; `nvidia-smi -pl` needs root). Same C1 512-token decode fixture and 32K prefill as E8, 3 runs per cap, nvidia-smi sampled at 500 ms; "busy" = median over samples with utilization > 50 %. Caps run in the order listed, so the 325 W rows are on cold cards (44 °C) and the 250 W rows on warm ones (74 °C). Evidence: [`evidence/e8b-power-sweep/`](../evidence/e8b-power-sweep/) (`summary.json`, per-cap `decode-c1-*w.json`, `prefill-32k-*w.json`, `power-*.csv`).
+
+| Cap | Decode tok/s (acceptance) | Decode busy W, both cards | SM MHz | tok/s/W | Prefill 32K tok/s | Prefill busy W | SM MHz | tok/s/W |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 325 W | 229.0 (55.7 %) | 458 (228 / 231) | 2,265 / 2,310 | 0.500 | **8,770** | 646 (323 / 323) | 2,085 / 2,100 | 13.58 |
+| 300 W | 216.1 (51.2 %) | 472 (233 / 239) | 2,265 / 2,302 | 0.457 | 8,428 | 600 (300 / 300) | 1,987 / 1,976 | 14.04 |
+| 275 W | 226.3 (54.5 %) | 489 (241 / 248) | 2,265 / 2,302 | 0.463 | 7,991 | 550 (275 / 275) | 1,867 / 1,845 | 14.52 |
+| 250 W | 226.3 (54.1 %) | 496 (246 / 251) | 2,257 / 2,265 | 0.456 | 7,482 | 500 (250 / 250) | 1,740 / 1,702 | **14.96** |
+
+Readout:
+
+- **Decode does not see the cap.** 216–229 tok/s at every setting, SM clocks 2.26–2.31 GHz throughout, and the cards never reach even 250 W (the 300 W row's 216 is its lower DSpark acceptance, 51 % vs 54–56 %). The ±20 W spread in decode draw follows card temperature over the sweep (228 W at 44 °C first, 251 W at 70 °C last), not the cap — leakage current rises with temperature. Capping four cards at 250 W costs decode nothing.
+- **Prefill is exactly cap-bound.** Each row sits at its cap to within 0.5 W, and throughput follows SM clock almost linearly: 7,482 → 7,991 → 8,428 → 8,770 tok/s for 1.72 → 1.86 → 1.98 → 2.09 GHz. 250 W costs **11 % of prefill for 17 % less power**; 325 W buys **+4 % for +8 %**. Efficiency improves monotonically as the cap drops (13.6 → 15.0 tok/s/W), so on a power budget the right move is more cards at a lower cap, not fewer cards at 325 W.
+- **Decision for T4.0 (four cards on the 1,500 W PSU):** the 250 W cap is confirmed as a cheap option — 0 % decode, −11 % prefill — matching the E8 prediction (0 / ~15 %). 325 W is a legitimate 2-GPU setting when prefill latency matters (2 × 325 W + CPU ≈ 1,100 W fits the PSU).
+- **Method lesson:** the first run's 275/250 W prefill rows were prefix-cache hits (32K tokens in 0.14 s, "223K tok/s") because every cap used the same seeded prompt; the script now seeds `777 + cap`, and `summarize-power.py` flags prefill runs with TTFT < 1 s as suspect. Also, a sampler leaked from a run that died before the server was up kept writing into the next run's CSV for 1.7 hours; the sampler is now killed from the EXIT trap and the summarizer drops non-sample lines.
 
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
