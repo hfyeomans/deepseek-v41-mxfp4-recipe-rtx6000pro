@@ -1,0 +1,32 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "glm-5.3-flash-local",
+  "runs": 3,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization",
+  "sizes": [
+    {
+      "target_tokens": 32768,
+      "median_prompt_tokens": 38096,
+      "median_prefill_tps": 4461.592595552453,
+      "median_ttft_s": 8.519886595982825,
+      "runs": [
+        {
+          "prompt_tokens": 38096,
+          "ttft_s": 8.519886595982825,
+          "prefill_tps": 4471.421018439668
+        },
+        {
+          "prompt_tokens": 37954,
+          "ttft_s": 8.506827817007434,
+          "prefill_tps": 4461.592595552453
+        },
+        {
+          "prompt_tokens": 38371,
+          "ttft_s": 8.617089639999904,
+          "prefill_tps": 4452.895537013403
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-21T12:29:26-0400"
+}

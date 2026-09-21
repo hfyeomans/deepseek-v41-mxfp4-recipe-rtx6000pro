@@ -1,0 +1,76 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "glm-5.3-flash-local",
+  "max_tokens": 512,
+  "runs": 3,
+  "warmup": 1,
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 126.88120663059034,
+      "min_tps": 125.81816130863756,
+      "max_tps": 129.00835595457517,
+      "median_wall_tps": 123.5321774581688,
+      "median_ttft_s": 0.11699081701226532,
+      "median_spec_acceptance": 0.39766081871345027,
+      "runs": [
+        {
+          "aggregate_decode_tps": 129.00835595457517,
+          "wall_tps": 125.6697068150988,
+          "wall_s": 4.074171993997879,
+          "per_seq_tps": [
+            129.00835595457517
+          ],
+          "ttft_s": [
+            0.11284412001259625
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": 0.40710059171597635
+        },
+        {
+          "aggregate_decode_tps": 126.88120663059034,
+          "wall_tps": 123.5321774581688,
+          "wall_s": 4.144669109984534,
+          "per_seq_tps": [
+            126.88120663059034
+          ],
+          "ttft_s": [
+            0.11699081701226532
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": 0.39766081871345027
+        },
+        {
+          "aggregate_decode_tps": 125.81816130863756,
+          "wall_tps": 122.50767974648893,
+          "wall_s": 4.179329826991307,
+          "per_seq_tps": [
+            125.81816130863756
+          ],
+          "ttft_s": [
+            0.11762672098120674
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": 0.3953488372093023
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-21T12:29:45-0400"
+}
