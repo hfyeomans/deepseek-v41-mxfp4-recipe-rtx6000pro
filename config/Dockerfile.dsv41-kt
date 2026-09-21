@@ -9,12 +9,22 @@
 # compiled extension links only gomp/hwloc/mvec/numa/udev (no libtorch, no
 # libcudart), so it runs against the image's torch 2.13.0+cu130 unchanged.
 # Verified 2026-09-21 in a throwaway container (T3.5b).
+#
+# The wheel is pruned before install. kt-kernel's wheel vendors a cu12 deep_gemm,
+# sgl_kernel 0.3.21, triton_kernels, flash_attn_origin and mscclpp at top level;
+# installing it whole overwrote the base image's cu13 deep_gemm and sgl-kernel
+# 0.4.6.post1 and the first serve died at decode graph capture with
+# "libnvrtc.so.12" (TROUBLESHOOTING.md). kt_kernel itself imports none of them.
 
 ARG BASE=lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860
 FROM ${BASE}
 
 ARG KT_KERNEL_VERSION=0.7.0.post4
-RUN pip install --no-cache-dir --no-deps "kt-kernel==${KT_KERNEL_VERSION}"
+COPY prune_wheel.py /opt/recipe/prune_wheel.py
+RUN pip download --no-cache-dir --no-deps -d /tmp/ktw "kt-kernel==${KT_KERNEL_VERSION}" \
+ && python3 /opt/recipe/prune_wheel.py /tmp/ktw/kt_kernel-*.whl /tmp/ktw/pruned kt_kernel \
+ && pip install --no-cache-dir --no-deps /tmp/ktw/pruned/kt_kernel-*.whl \
+ && rm -rf /tmp/ktw
 
 COPY kt_smoke.py /opt/recipe/kt_smoke.py
 RUN python3 /opt/recipe/kt_smoke.py

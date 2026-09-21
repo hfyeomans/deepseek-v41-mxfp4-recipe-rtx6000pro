@@ -31,6 +31,16 @@ From vLLM issues #47266 and #56700 and the 0xSero SGLang recipe. Not all reprodu
 | All-reduce errors or NCCL hang on PCIe boxes | Custom all-reduce on non-NVLink topology | `--disable-custom-all-reduce` (vLLM); confirm `nvidia-smi topo -p2p r` shows OK |
 | Sparse MLA dispatch error | FlashInfer SM120 dispatch gap for some head configurations | Use the SGLang preview image, which the 4-GPU recipe proved on SM120 |
 
+## `dsv41-kt` dies at decode graph capture with `ImportError: libnvrtc.so.12`
+
+Seen on the first T3.6d serve (2026-09-21). The traceback ends in `deep_gemm/__init__.py`, reached from `deepseek_v4_backend._fp4_paged_mqa_logits`. The base image (`dev-dsv41`, CUDA 13) is fine; the culprit is `pip install --no-deps kt-kernel==0.7.0.post4`. That wheel vendors ~1,000 files that are not kt-kernel at top level — a cu12 `deep_gemm` (832 files, 139-line `__init__` without `fp8_fp4_paged_mqa_logits`), `sgl_kernel` **0.3.21** (replacing 0.4.6.post1 and its `flashmla_ops`/`spatial_ops` `.so`), `triton_kernels`, `flash_attn_origin`, mscclpp — and `--no-deps` unpacks all of them over the base copies. `kt_kernel` itself imports none of them.
+
+Fix (in `config/Dockerfile.dsv41-kt` since this date): download the wheel, run `config/prune_wheel.py` to keep only `kt_kernel/`, `kt_kernel.libs/` and the dist-info, install the pruned wheel. `config/kt_smoke.py` now fails the build if `sgl_kernel/version.py` ≠ 0.4.6.post1, if `deep_gemm/__init__.py` lacks the function, or if any `deep_gemm/*.so` links `libcudart.so.12`/`libnvrtc.so.12`. Rule for any future `--no-deps` install: list `site-packages` top-level entries before and after and diff them.
+
+Do not "fix" this by installing `sgl-deep-gemm==0.2.0` or by moving the image to CUDA 12 — the base already has the right cu13 deep_gemm; the job is to stop overwriting it.
+
+Runs made on the clobbered image (E17 one-layer test, E18 Engram bench) did not touch `sgl_kernel` or `deep_gemm`, so their numbers stand.
+
 ## Thinking mode surprises
 
 DeepSeek-V4.1 reasoning is on by default at effort 50 in both engines. Every client in this repo sends `chat_template_kwargs: {"thinking": false}` unless asked otherwise. If your own client sees long, slow answers, that is why. The recipe's smoke test is `17*19` → `323`.
