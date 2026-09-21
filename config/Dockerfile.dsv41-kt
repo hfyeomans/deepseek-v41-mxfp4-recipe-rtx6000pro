@@ -1,0 +1,24 @@
+# 2-GPU hybrid runtime image (E6 stage 2, T3.6a): upstream SGLang dev-dsv41 plus
+# the KTransformers CPU expert kernel. See plan/E6-DESIGN.md §3 (Route 1) and
+# PROVENANCE.md for why this pairing and these pins.
+#
+# Build:  docker build -f config/Dockerfile.dsv41-kt -t dsv41-kt:recipe config/
+# Check:  docker run --rm --entrypoint python3 dsv41-kt:recipe /opt/recipe/kt_smoke.py
+#
+# --no-deps is deliberate. kt-kernel 0.7.0.post4 metadata pins torch==2.9.1, but the
+# compiled extension links only gomp/hwloc/mvec/numa/udev (no libtorch, no
+# libcudart), so it runs against the image's torch 2.13.0+cu130 unchanged.
+# Verified 2026-09-21 in a throwaway container (T3.5b).
+
+ARG BASE=lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860
+FROM ${BASE}
+
+ARG KT_KERNEL_VERSION=0.7.0.post4
+RUN pip install --no-cache-dir --no-deps "kt-kernel==${KT_KERNEL_VERSION}"
+
+COPY kt_smoke.py /opt/recipe/kt_smoke.py
+RUN python3 /opt/recipe/kt_smoke.py
+
+LABEL org.opencontainers.image.title="dsv41-kt" \
+      org.opencontainers.image.description="SGLang dev-dsv41 + kt-kernel ${KT_KERNEL_VERSION} for the 2x RTX PRO 6000 hybrid" \
+      recipe.kt_kernel.version="${KT_KERNEL_VERSION}"
