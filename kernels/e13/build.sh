@@ -13,7 +13,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-CUTLASS_DIR="${CUTLASS_DIR:-/home/hank/dev/src/cutlass}"
+CUTLASS_DIR="${CUTLASS_DIR:-$HOME/dev/src/cutlass}"
 IMAGE="${IMAGE:-dsv4-sm120:cuda-devel-https}"
 TILE_M="${TILE_M:-128}"
 TILE_N="${TILE_N:-128}"
@@ -26,7 +26,7 @@ if [[ "${E13_A8:-0}" == "1" ]]; then
 fi
 OUT="${OUT}_m${TILE_M}n${TILE_N}k${TILE_K}"
 
-[[ -d "$CUTLASS_DIR/include/cutlass" ]] || { echo "CUTLASS not found at $CUTLASS_DIR (git clone https://github.com/NVIDIA/cutlass -b v4.7.1)"; exit 1; }
+[[ -d "$CUTLASS_DIR/include/cutlass" ]] || { echo "CUTLASS not found at $CUTLASS_DIR (git clone -b v4.7.1 https://github.com/NVIDIA/cutlass \$CUTLASS_DIR)"; exit 1; }
 
 echo "nvcc -> $OUT  (defs: ${DEFS[*]})"
 docker run --rm \
