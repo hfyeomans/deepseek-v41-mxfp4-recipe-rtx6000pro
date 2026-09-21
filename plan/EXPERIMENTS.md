@@ -2,7 +2,7 @@
 
 Each experiment states the question, the hypothesis with a number attached, the exact procedure, what counts as pass, and where the result lands. Negative results are results. All output JSON goes to `results/` (git-ignored) and the summarised numbers move into `docs/BENCHMARKS.md` by hand with the JSON committed under `evidence/` once reviewed for identifiers.
 
-Legend: **GPU-free** experiments can run while the GLM container is serving. **GPU** experiments need `docker stop glm53-flash-2x-rtxpro6000` first and `docker start` afterwards.
+Legend: **GPU-free** experiments do not touch the cards but still need a quiet host (no GLM benchmark in flight) for CPU/DRAM/NVMe numbers to mean anything. **GPU** experiments need `docker stop glm53-flash-2x-rtxpro6000` first and `docker start` afterwards. Torch-based GPU-free benches run as `docker run --rm -v "$PWD:/w" -w /w --entrypoint python3 dsv4-nvfp4:recipe scripts/<bench>.py` (no `--gpus`).
 
 ## E1 — Host DRAM bandwidth (GPU-free)
 

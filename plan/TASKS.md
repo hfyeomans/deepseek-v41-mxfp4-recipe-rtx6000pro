@@ -1,6 +1,6 @@
 # Tasks
 
-Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container stopped), `blocked` (external dependency), `decision` (owner call).
+Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host idle: no GLM benchmark running, since CPU/DRAM/NVMe numbers are contended otherwise), `gpu-window` (needs the GLM container stopped), `blocked` (external dependency), `decision` (owner call).
 
 ## P0 — Research and data
 
@@ -24,8 +24,8 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 | T1.3 | E4 PCIe H2D/D2H per GPU and both concurrently | gpu-window | `results/e4.json` |
 | T1.4 | E2 GDDR7 device bandwidth | gpu-window | `results/e2.json` |
 | T1.5 | Recompute the hybrid ceilings from T1.3/T1.7/T1.8 (`--dram-gbps`, `--pcie-gbps-per-gpu`, CPU ms/token); update FEASIBILITY.md §3a | after T1.3 | FEASIBILITY.md |
-| T1.7 | E6 stage 0: `bench-cpu-expert.py` CPU expert GEMV in the torch container, GPU-free | ready | `evidence/e6-stage0-cpu-expert.json` |
-| T1.8 | E1b: C/torch DRAM read bandwidth (replace the Python lower bound) | ready | `evidence/e1b-dram-read.json` |
+| T1.7 | E6 stage 0: `bench-cpu-expert.py` CPU expert GEMV in the torch container, GPU-free | quiet-host (script written) | `evidence/e6-stage0-cpu-expert.json` |
+| T1.8 | E1b: torch DRAM read bandwidth (`bench-cpu-expert.py --variants read`), replacing the Python lower bound; also re-run E1 on a quiet host — the 146 GB/s was measured with the GLM container serving | quiet-host | `evidence/e1b-dram-read.json` |
 | T1.6 | Hugepage reservation test: `vm.nr_hugepages` for ~190 GiB of 2 MiB pages while GLM is running; confirm allocation succeeds and revert | ready (needs root) | TROUBLESHOOTING.md note |
 
 ## P2 — Baseline
@@ -50,7 +50,7 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 | T3.7 | llama.cpp `runtime/deepseek41` build; watch ggml-org/llama.cpp#28696 and CSA2; run Q4_K_M with `-ot` offload when it lands | ready to build, blocked on CSA2 | BENCHMARKS.md |
 | T3.8 | E7 routing-skew histogram on V4-Flash; feed `--activation-skew` | gpu-window | `evidence/e7-routing/` |
 | T3.9 | E10 DSpark on/off under the hybrid | after T3.4 | BENCHMARKS.md |
-| T3.10 | E11 Engram tiering: cache-hit simulation (GPU-free) then NVMe vs FP4/q3_K A/B | ready / after T3.6 | BENCHMARKS.md |
+| T3.10 | E11 Engram tiering: cache-hit simulation (GPU-free) then NVMe vs FP4/q3_K A/B | quiet-host / after T3.6 | BENCHMARKS.md |
 | T3.11 | `serve.sh` profile `2gpu-hybrid` (KT flags, Engram NVMe, hugepages) — labelled unqualified until T3.6 | after T3.5 | `config/example.env`, `scripts/serve.sh` |
 
 ## P4 — 3/4-GPU comparison
@@ -67,5 +67,6 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 ## Standing rules
 
 - Before any `gpu-window` task: `docker stop glm53-flash-2x-rtxpro6000`; after: `docker start` it and confirm `/health`.
+- Before any `quiet-host` task: confirm no benchmark is running against the GLM deployment (`uptime` load < 2, `nvidia-smi` utilisation idle); the owner announces the window. Torch benches run in `dsv4-nvfp4:recipe` without `--gpus`.
 - Every JSON promoted from `results/` to `evidence/` goes through `scripts/ci.sh`'s identifier scan.
 - No pushes from automation. Commits are local until the owner says otherwise.
