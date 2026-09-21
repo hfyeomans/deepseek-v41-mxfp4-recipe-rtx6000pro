@@ -251,6 +251,23 @@ Owner decision: no 4-GPU future-proofing. Run both recipes at the **300 W defaul
 
 Healthy runs say **+6 % prefill (8,582 vs 8,068) and +8 % decode (1,279 vs 1,188)** at 325 W, consistent with GLM and with E8b's single-stream +4 % prefill. Decode at C16 draws 621 W of the 650 available — V4-Flash is only partly cap-bound there (bandwidth-bound in the expert reads), so its decode gain is smaller than GLM's. **Method fix:** `summarize-power.py` now prints `run spread … stalled` when any run is below 70 % of the best and records `tps_per_run`; rerun ordered `--caps 300,325 --runs 5` pending.
 
+### T2.9 — V4-Flash rerun, 300 → 325 W, 5 runs (2026-09-21, owner ran): 325 W is neutral for V4-Flash
+
+[`evidence/t29-dsv4-325w-rerun/`](../evidence/t29-dsv4-325w-rerun/). Prefill rows exclude prefix-cache hits (TTFT < 1 s; the sweep reused the first run's seeds — fixed, seeds are now per invocation).
+
+| | 300 W | 325 W | Δ |
+|---|---|---|---|
+| C16 decode wall tok/s, 5 runs | 1,213 (1,088–1,338) | 1,206 (1,092–1,302) | **0 %** |
+| 32K prefill tok/s, clean runs | 8,256 (n=3: 8,244–8,281) | 8,360 (n=2: 8,343–8,376) | +1.3 % (noise) |
+| SM clock, decode | 2,182–2,190 MHz | 2,175–2,205 MHz | same |
+| Busy W / max °C / max fan | 600 / 71 / 38 % | 650 / 86 / 57 % | +50 W, +15 °C |
+| Thermal-throttle samples | 0 | 0 | |
+
+- **Same clocks, more watts, same speed.** At 325 W the cards drew all 650 W but ran at the same 2.19 GHz as at 300 W: the extra power is leakage on hotter silicon. V4-Flash C16 decode is bandwidth-bound in the NVFP4 expert reads (memory clock is fixed), so the cap is not the limiter even though the cap flag is set. Contrast GLM (+9 %): EXL3 trellis dequant is SM-bound and converts every watt into clock.
+- **Efficiency cost:** decode 2.02 → 1.85 tok/s/W (−8 %) for nothing.
+- **Decision:** one system-wide cap, **325 W**, because GLM is the daily driver and V4-Flash loses no throughput and shows no thermal event at 86 °C. If V4-Flash becomes primary, `nvidia-smi -pl 300` (or disable `gpu-power-limit.service`) recovers the efficiency. Corrects E8b's "+4 % prefill at 325 W" — that was a 3-run median; with 5 runs and cache hits removed the gain is ≈ 1 %.
+- **Lesson for V4.1:** whatever engine serves it will be NVFP4/MXFP4 tensor-core GEMMs like V4-Flash, so expect power caps to be irrelevant to its decode and marginal to its prefill; the levers there are bytes per token, not watts.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.

@@ -23,6 +23,7 @@ OUT="$ROOT/evidence/e8b-power-sweep"
 RUNS=3
 PHASES="decode,prefill"
 CONC=1
+SEED_BASE="$(date +%s)"
 while [ $# -gt 0 ]; do
   case "$1" in
     --url) URL="$2"; shift 2 ;;
@@ -32,6 +33,7 @@ while [ $# -gt 0 ]; do
     --runs) RUNS="$2"; shift 2 ;;
     --phases) PHASES="$2"; shift 2 ;;   # e.g. --phases prefill to redo one row
     --concurrency) CONC="$2"; shift 2 ;;  # decode streams per run (single integer)
+    --seed) SEED_BASE="$2"; shift 2 ;;    # prefill seed base; default = epoch seconds (see below)
     *) echo "unknown arg $1" >&2; exit 2 ;;
   esac
 done
@@ -80,10 +82,11 @@ for cap in "${caps[@]}"; do
     stop_sample ;;
   esac
   case ",$PHASES," in *,prefill,*)
-    # Seed per cap: bench-prefill derives prompts from the seed, and the server's prefix
-    # cache would otherwise serve caps 2..n from cap 1's KV (32K tokens in 0.14 s).
+    # Seed per cap AND per invocation: bench-prefill derives prompts from the seed, and the
+    # server's prefix cache serves any prompt it has seen (32K tokens in 0.14 s). A fixed
+    # 777+cap seed made the T2.9 rerun hit the first sweep's KV (2/5 runs at 221K "tok/s").
     sample "$OUT/power-prefill-${cap}w.csv"
-    python3 "$ROOT/scripts/bench-prefill.py" --url "$URL" --model "$MODEL" --tokens 32768 --runs "$RUNS" --seed "$((777 + cap))" \
+    python3 "$ROOT/scripts/bench-prefill.py" --url "$URL" --model "$MODEL" --tokens 32768 --runs "$RUNS" --seed "$((SEED_BASE + cap))" \
       --output "$OUT/prefill-32k-${cap}w.json" | tail -1
     stop_sample ;;
   esac

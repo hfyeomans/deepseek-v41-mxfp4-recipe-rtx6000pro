@@ -1,0 +1,174 @@
+{
+  "decode-c16-300w": {
+    "cap_w": 300,
+    "kind": "decode",
+    "concurrency": 16,
+    "tps": 1213.214791586188,
+    "tps_per_run": [
+      1175.8,
+      1252.3,
+      1213.2,
+      1088.2,
+      1337.5
+    ],
+    "gpus": {
+      "0": {
+        "samples": 83,
+        "busy_samples": 81,
+        "power_busy_median_w": 300.1,
+        "power_max_w": 303.1,
+        "sm_clock_busy_median_mhz": 2190,
+        "temp_max_c": 71.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 38.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 69
+      },
+      "1": {
+        "samples": 83,
+        "busy_samples": 81,
+        "power_busy_median_w": 300.0,
+        "power_max_w": 304.6,
+        "sm_clock_busy_median_mhz": 2182,
+        "temp_max_c": 69.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 36.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 70
+      }
+    },
+    "temp_max_c": 71.0,
+    "total_busy_w": 600.1,
+    "tps_per_w": 2.0217,
+    "suspect": null
+  },
+  "decode-c16-325w": {
+    "cap_w": 325,
+    "kind": "decode",
+    "concurrency": 16,
+    "tps": 1205.7081577533008,
+    "tps_per_run": [
+      1162.2,
+      1302.0,
+      1205.7,
+      1091.9,
+      1268.3
+    ],
+    "gpus": {
+      "0": {
+        "samples": 81,
+        "busy_samples": 79,
+        "power_busy_median_w": 325.1,
+        "power_max_w": 326.9,
+        "sm_clock_busy_median_mhz": 2205,
+        "temp_max_c": 84.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 54.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 69
+      },
+      "1": {
+        "samples": 81,
+        "busy_samples": 79,
+        "power_busy_median_w": 325.0,
+        "power_max_w": 328.9,
+        "sm_clock_busy_median_mhz": 2175,
+        "temp_max_c": 81.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 52.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 71
+      }
+    },
+    "temp_max_c": 84.0,
+    "total_busy_w": 650.1,
+    "tps_per_w": 1.8547,
+    "suspect": null
+  },
+  "prefill-300w": {
+    "cap_w": 300,
+    "kind": "prefill",
+    "concurrency": null,
+    "tps": 8269.261586536739,
+    "tps_per_run": [
+      6365.2,
+      130448.5,
+      8280.5,
+      8269.3,
+      8243.5
+    ],
+    "gpus": {
+      "0": {
+        "samples": 34,
+        "busy_samples": 23,
+        "power_busy_median_w": 300.2,
+        "power_max_w": 304.4,
+        "sm_clock_busy_median_mhz": 1950,
+        "temp_max_c": 76.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 44.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 22
+      },
+      "1": {
+        "samples": 34,
+        "busy_samples": 24,
+        "power_busy_median_w": 300.2,
+        "power_max_w": 303.5,
+        "sm_clock_busy_median_mhz": 1938,
+        "temp_max_c": 74.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 42.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 23
+      }
+    },
+    "temp_max_c": 76.0,
+    "total_busy_w": 600.4,
+    "tps_per_w": 13.7729,
+    "suspect": "1/5 runs look prefix-cached (TTFT < 1 s); rerun with a new --seed; run spread 6365-130449 tok/s: one or more runs stalled; rerun with --runs 5"
+  },
+  "prefill-325w": {
+    "cap_w": 325,
+    "kind": "prefill",
+    "concurrency": null,
+    "tps": 29674.86754237965,
+    "tps_per_run": [
+      110240.3,
+      29674.9,
+      221134.6,
+      8375.8,
+      8343.4
+    ],
+    "gpus": {
+      "0": {
+        "samples": 19,
+        "busy_samples": 15,
+        "power_busy_median_w": 325.2,
+        "power_max_w": 325.6,
+        "sm_clock_busy_median_mhz": 1987,
+        "temp_max_c": 86.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 57.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 14
+      },
+      "1": {
+        "samples": 19,
+        "busy_samples": 15,
+        "power_busy_median_w": 325.1,
+        "power_max_w": 326.7,
+        "sm_clock_busy_median_mhz": 1972,
+        "temp_max_c": 84.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 54.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 15
+      }
+    },
+    "temp_max_c": 86.0,
+    "total_busy_w": 650.3,
+    "tps_per_w": 45.6326,
+    "suspect": "2/5 runs look prefix-cached (TTFT < 1 s); rerun with a new --seed; run spread 8343-221135 tok/s: one or more runs stalled; rerun with --runs 5"
+  }
+}
