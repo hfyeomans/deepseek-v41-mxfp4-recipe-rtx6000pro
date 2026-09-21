@@ -1,0 +1,75 @@
+{
+  "experiment": "E15 + T2.4 slice: V4-Flash NVFP4 TP2, max_num_seqs 16, max_model_len 262144, cudagraph capture 96 vs enforce-eager, DSpark on/off",
+  "date": "2026-09-21",
+  "launch_notes": {
+    "seqs16_at_1M_failed": "KV needed 5.73 GiB for one 1M request, available 5.7 GiB per card (weights 83.22 GiB/card at 0.96 util); relaunched at 262,144",
+    "kv_pool_tokens_graphs": 690615,
+    "kv_pool_tokens_eager": 734080,
+    "weights_gib_per_card": 83.22,
+    "max_concurrency_262k": 2.63
+  },
+  "spec_decoding_per_position_acceptance": [
+    0.85,
+    0.71,
+    0.58,
+    0.48,
+    0.4
+  ],
+  "mean_acceptance_length": 4.0,
+  "power": {
+    "graphs": {
+      "0": {
+        "busy_samples": 286,
+        "samples": 442,
+        "power_busy_median_w": 292.47,
+        "power_max_w": 306.16,
+        "sm_clock_busy_median_mhz": 2242.0,
+        "temp_max_c": 83.0
+      },
+      "1": {
+        "busy_samples": 283,
+        "samples": 442,
+        "power_busy_median_w": 295.86,
+        "power_max_w": 305.88,
+        "sm_clock_busy_median_mhz": 2265.0,
+        "temp_max_c": 80.0
+      }
+    },
+    "eager": {
+      "0": {
+        "busy_samples": 682,
+        "samples": 980,
+        "power_busy_median_w": 154.565,
+        "power_max_w": 250.02,
+        "sm_clock_busy_median_mhz": 2295.0,
+        "temp_max_c": 81.0
+      },
+      "1": {
+        "busy_samples": 269,
+        "samples": 980,
+        "power_busy_median_w": 205.12,
+        "power_max_w": 249.01,
+        "sm_clock_busy_median_mhz": 2295.0,
+        "temp_max_c": 77.0
+      }
+    },
+    "eager-nospark": {
+      "0": {
+        "busy_samples": 139,
+        "samples": 871,
+        "power_busy_median_w": 141.84,
+        "power_max_w": 170.52,
+        "sm_clock_busy_median_mhz": 2302.0,
+        "temp_max_c": 76.0
+      },
+      "1": {
+        "busy_samples": 620,
+        "samples": 871,
+        "power_busy_median_w": 151.89,
+        "power_max_w": 222.57,
+        "sm_clock_busy_median_mhz": 2332.0,
+        "temp_max_c": 75.0
+      }
+    }
+  }
+}

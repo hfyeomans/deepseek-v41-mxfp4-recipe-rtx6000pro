@@ -114,7 +114,7 @@ Keep 4-bit experts but drop ~39% of them per layer (384 → ≈ 232) via calibra
 | `--offload-engram-to host-dram` flag; model `sgl-project/DeepSeek-V4.1-Flash-FP4` | **Do not exist.** Real mechanism: `SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE=1` (+ `SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT=shared\|per_rank`), image `lmsysorg/sglang:dev-dsv41`; model `deepseek-ai/DeepSeek-V4.1-Flash` | SGLang cookbook `DeepSeek-V4_1.mdx` |
 | `--disable-flashinfer-autotune`, `--chunked-prefill-size 4096` | Plausible but unverified flags for `dev-dsv41`; cookbook says let backends auto-select | plan task T2.3 |
 | vLLM `--offload-config '{"cpu_tier_size_gb":…}'` | **Does not exist** in vLLM CLI; the recipe uses `--engram-config` and Engram CPU offload in the B300 profile | recipes.vllm.ai DeepSeek-V4.1 page |
-| `--enforce-eager` required on V4-family | Partially supported: SM120 reports show CUDA-graph capture crashes (vLLM #56700); eager costs decode speed | TROUBLESHOOTING.md |
+| `--enforce-eager` required on V4-family | Partially supported as a symptom (SM120 capture crashes, vLLM #56700) but **not usable as a remedy**: E15 measured eager at 4.4× slower with DSpark and 5.6× without (15.9 tok/s) on V4-Flash. If the V4.1 engine cannot capture on SM120, fixing capture is on the critical path | BENCHMARKS.md §E15 |
 | SGLang "recommended" for this build | Correct in spirit: SGLang has the Engram host-table path, the only SM120 4-GPU result, and the KTransformers hybrid (sglang-kt) is an SGLang fork; but no stock build fits 2 GPUs | this document |
 
 ## 7. Bottom line for the plan

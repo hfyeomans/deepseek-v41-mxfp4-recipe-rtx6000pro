@@ -37,9 +37,9 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | T2.2 | E8 run against the V4-Flash NVFP4 TP2 deployment | **done** (incl. DSpark-off 89 tok/s and 1M prefill 1,898 tok/s) — decode C1–C8, prefill 8K–512K, 222K needles, power samples; DSpark-off and 1M prefill rows not re-run | `evidence/baseline-v4-flash/`, BENCHMARKS.md |
 | T2.2b | E8b power sweep (325/300/275/250 W; 225 W is below the driver floor) | **done** — decode 216–229 tok/s at every cap, prefill 8,770/8,428/7,991/7,482 tok/s; see BENCHMARKS.md §E8b | `evidence/e8b-power-sweep/summary.json` |
 | T2.3 | Fill BENCHMARKS.md baseline tables from JSON | after T2.2 | `docs/BENCHMARKS.md` |
-| T2.4 | Baseline improvement sweep on V4-Flash: DSpark block 3/5/7, FP8 KV, C8/C16 | gpu-window | BENCHMARKS.md |
+| T2.4 | Baseline improvement sweep on V4-Flash: slots (done: 16 slots at 262K → C16 1,258 tok/s, 2.2× GLM; 16 slots at 1M does not fit KV), DSpark block length (K fixed by checkpoint — closed, see E15 per-position acceptance), FP8 KV (already on), `gpu_memory_utilization` 0.9651 to recover the CUDA-graph reservation at 1M | slots done; remaining: util 0.9651 at 1M, 262K/16-slot profile documented as the multi-user config | BENCHMARKS.md §E15, `evidence/e15-t24-v4-flash/` |
 | T2.5 | E14 model-to-model table: GLM-5.3-Flash (owner's reference recipe) vs V4-Flash vs V4.1 on this box, same harness/fixtures/power policy | **GLM + V4-Flash columns done** (BENCHMARKS.md §E14); GLM 300/250 W sweep done (`evidence/e14-glm53/power-sweep/`); open: GLM speculation-off C1 (hand launch without `--speculative-config`), V4-Flash footprint capture, V4.1 column after T3.6 | `evidence/e14-glm53/`, BENCHMARKS.md §E14 |
-| T2.6 | E15: eager vs CUDA graphs on V4-Flash (relaunch with eager, `bench-decode.py -c 1,2,8`, DSpark on/off); result feeds the E6 design's CPU-expert call pattern | open — next V4-Flash GPU window (~25 min) | `evidence/e15-eager-vs-graphs.json`, BENCHMARKS.md |
+| T2.6 | E15: eager vs CUDA graphs on V4-Flash | **done** — 4.4× / 5.6× penalty; feeds E6 design (CPU-expert call must be graph-compatible) | `evidence/e15-t24-v4-flash/`, BENCHMARKS.md §E15 |
 
 ## P3 — 2-GPU hybrid build
 

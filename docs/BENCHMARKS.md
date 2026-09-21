@@ -136,6 +136,32 @@ Readout:
 - **Both recipes run decode under CUDA graphs** (GLM `--max-cudagraph-capture-size 96` = 16 seqs × 6 tokens per speculative step; V4-Flash `MAX_CUDAGRAPH_CAPTURE_SIZE=16`), so neither column pays kernel-launch overhead; the E12 census counted several hundred launches per V4-Flash decode step (236 for the FP8 block-scaled GEMM alone) in a 11–15 ms step. E15 measures what eager mode costs on this box, because the V4.1 engines (SGLang `dev-dsv41` capture crash on SM120 per vLLM #56700; sglang-kt's CPU expert call) may force it.
 - **For the recipe's goal:** the box's best daily driver today is GLM for multi-user/long-context work and V4-Flash for single-stream latency. V4.1-Flash on 2 GPUs has to reach ≥ 130 tok/s C1 and ≥ 3.8K tok/s at 1M to displace either — and the hybrid ceiling from FEASIBILITY (50–78 tok/s decode) says it will *not* win single-stream on 2 cards; its case is quality and context, which is why the 3-/4-GPU columns matter.
 
+## E15 + T2.4 slice — V4-Flash at 16 slots, and what eager mode costs (2026-09-21)
+
+Same sibling deployment relaunched three times via `RECIPE_ENV_FILE`, host otherwise idle, 300 W cap, 512-token outputs, `bench-decode.py` 5 runs / 2 warmups (eager+no-DSpark: 3 / 1). JSON in [`evidence/e15-t24-v4-flash/`](../evidence/e15-t24-v4-flash/).
+
+**Launch finding first.** `MAX_NUM_SEQS=16` at `MAX_MODEL_LEN=1000000` refused to start: weights take **83.22 GiB per card**, leaving **5.7 GiB of KV per card** at 0.96 utilisation, and one 1M request needs 5.73 GiB (the 16-slot profile reserves more activation memory, which tipped it under). The sibling's `max_num_seqs 2` is therefore a KV-budget consequence of the 1M profile, not a scheduler preference — the pool is ≈1M tokens total. Relaunched at `MAX_MODEL_LEN=262144`: KV pool 690,615 tokens, 2.63 concurrent 262K requests, capture size 96 (= 16 seqs × 6 tokens, the same ratio as the GLM recipe). GLM's 2.96M-token pool exists because its weights are 64 GiB per card.
+
+| V4-Flash NVFP4 TP2, 262K, 16 slots | C1 | C2 | C4 | C8 | C16 | Power (C1→C16 run) |
+|---|---:|---:|---:|---:|---:|---|
+| CUDA graphs (capture 96) + DSpark, wall tok/s | **217** | 348 | 558 | 659 | **1,258** | 292–296 W median, pinned at the cap from ~C8; 2.24–2.27 GHz; 83 °C |
+| — summed per-sequence tok/s | 217 | 385 | 629 | 891 | 1,506 | |
+| — DSpark acceptance | 55 % | 59 % | 61 % | 58 % | 60 % | |
+| Eager (`EAGER=1`: no torch.compile, no graphs) + DSpark, wall | **49.5** | 95.8 | 182 | 324 | 618 | **155 / 205 W** — GPU starved by the CPU |
+| Eager, no DSpark, wall | **15.9** | — | — | 125 | 249 | 142 / 152 W |
+| Reference: graphs, 2 slots, 1M (E8) | 207–239 | 300 | 301 | 277 | — | 233–250 W at C1 |
+| Reference: graphs, no DSpark, 2 slots (E8) | 89 | 161 | — | — | — | 216–225 W |
+
+DSpark per-position acceptance from vLLM's `SpecDecoding metrics` (C16 run): **0.85, 0.71, 0.58, 0.48, 0.40**; mean acceptance length ≈ 4.0 tokens per step; accepted 990 tok/s of 1,610 drafted.
+
+Readout:
+
+- **T2.4: the E14 "GLM wins throughput" was the 1M KV budget, not the engine.** At 262K with 16 slots V4-Flash reaches 1,258 tok/s wall at C16, **2.2× GLM's 569** on the same fixture. V4-Flash now leads every decode row; GLM keeps only long-context prefill (3.8K vs 1.9K tok/s at 1M) and the 1M-with-concurrency use case. The cost is the context ceiling: 262K per request instead of 1M. A `V4-Flash-262K-16slot` profile is the box's best multi-user configuration today.
+- **E15: eager mode costs 4.4× at C1 and 2× at C16; without speculation 5.6×.** 15.9 tok/s without DSpark is 63 ms per step against 11.2 ms graphed — ≈52 ms of per-step CPU overhead (Python dispatch over thousands of ops plus lost torch.compile fusion; kernel-launch gaps alone would be ~5 ms). The power trace shows it: 142–155 W median with the SMs at 2.3 GHz and nothing to do. **Any V4.1 engine that cannot capture or compile its GPU step is not viable on this box**; the Google-doc recommendation of `--enforce-eager` would cost 4×. For the E6 hybrid design this settles the CPU-expert call pattern: it must live inside a captured graph (host-function node or KTransformers' cpuinfer submit-and-sync), or the GPU portion must at least stay compiled.
+- **Speculation amortises a CPU-bound step 3×** (49.5 vs 15.9 tok/s eager). That is a direct preview of E10: the hybrid step will be CPU/DRAM-bound at 15–20 ms, and DSpark's ~4 accepted tokens per verify are how it gets back above 50 tok/s. Acceptance held at 51–60 % in eager mode — the draft's quality does not depend on the step time.
+- **K=5 does not hinder V4-Flash.** Position 5 still lands 40 % of the time and verification is nearly free on a bandwidth-bound step, so the fifth token adds ≈0.4 tokens per step for a few hundred microseconds of draft work. A longer draft would likely still pay; a shorter one would lose. K is fixed by the DSpark checkpoint anyway (sibling `.env` note).
+- **At concurrency every model is power-bound.** V4-Flash pinned both cards at 300 W from ~C8 (292–296 W median over the C1→C16 run), like GLM from C2. The 250 W cap decision (T4.0) trades a few percent at C8+ for the PSU margin; the C1 case stays free.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.
