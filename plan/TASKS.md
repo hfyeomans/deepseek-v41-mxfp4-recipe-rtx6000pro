@@ -59,7 +59,8 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 |---|---|---|---|
 | TK.1 | Research SM120 FP4 kernel status (CUTLASS SM120 block-scaled GEMM, FlashInfer/vLLM Marlin fallback, TRT-LLM Triton MoE, cuBLAS gap, smem/TMEM constraints) | **done** | RESEARCH.md |
 | TK.2 | E12 kernel census on the V4-Flash baseline: nsys profile + backend log grep; measured GPU ms/token breakdown into the calculator | gpu-window | `evidence/e12-kernel-census/`, BENCHMARKS.md |
-| TK.3 | E13 stage 1: CUTLASS SM120 block-scaled grouped GEMM microbench at V4.1 expert shapes vs Marlin; settle MXFP4-UE8M0 vs NVFP4-UE4M3 acceptance on SM120 | build GPU-free in `dsv4-sm120:cuda-devel-https`; run gpu-window | `results/e13-stage1.json` |
+| TK.2b | Settle MXFP4-UE8M0 vs NVFP4-UE4M3 acceptance on SM120 from PTX ISA + CUTLASS source (open question 9) | **done** — native; type swap `nv_float4_t` → `mx_float4_t`, build `sm_120a` | RESEARCH.md "MXFP4 is native" |
+| TK.3 | E13 stage 1: mxf4×mxf4 grouped GEMM from example 79d (W4A4) and mxf8×mxf4 (W4A8) microbench at V4.1 expert shapes vs Marlin, with dequant-reference correctness | build GPU-free in `dsv4-sm120:cuda-devel-https`; run gpu-window | `results/e13-stage1.json` |
 | TK.4 | E13 stage 2: integrate the winning kernel into the E6 engine's MoE backend; re-run E12 | decision, after TK.3 | fork + BENCHMARKS.md |
 | TK.5 | Hybrid glue kernels: activation gather/scatter to pinned host, stream-ordered H2D/D2H overlapped with CPU expert compute; Engram row gather from pinned host (zero-copy) or GPUDirect Storage from the 9100 PRO | after E6 stage 1 | fork |
 
