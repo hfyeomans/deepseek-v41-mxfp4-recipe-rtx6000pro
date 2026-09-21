@@ -17,6 +17,9 @@ import sys
 from pathlib import Path
 
 PK, CK, UK, TK = "power.draw [W]", "clocks.current.sm [MHz]", "utilization.gpu [%]", "temperature.gpu"
+FK, RK = "fan.speed [%]", "clocks_event_reasons.active"  # optional; older CSVs predate them
+THERMAL_MASK = 0x20 | 0x40  # sw_thermal_slowdown | hw_thermal_slowdown
+POWER_CAP_MASK = 0x4        # sw_power_cap
 
 
 def read_samples(path: Path) -> list[dict[str, str]]:
@@ -34,7 +37,8 @@ def summarize_csv(path: Path) -> dict[str, dict]:
         g = [r for r in rows if r["index"].strip() == gpu]
         p = [float(r[PK]) for r in g]
         u = [float(r[UK]) for r in g]
-        busy = [(float(r[PK]), float(r[CK]), float(r[TK])) for r in g if float(r[UK]) > 50]
+        busy_rows = [r for r in g if float(r[UK]) > 50]
+        busy = [(float(r[PK]), float(r[CK]), float(r[TK])) for r in busy_rows]
         out[gpu] = {
             "samples": len(p),
             "busy_samples": len(busy),
@@ -44,6 +48,11 @@ def summarize_csv(path: Path) -> dict[str, dict]:
             "temp_max_c": max(b[2] for b in busy) if busy else None,
             "util_median_pct": statistics.median(u),
         }
+        if busy_rows and FK in busy_rows[0] and RK in busy_rows[0]:
+            reasons = [int(r[RK], 16) for r in busy_rows]
+            out[gpu]["fan_max_pct"] = max(float(r[FK]) for r in busy_rows)
+            out[gpu]["thermal_slowdown_samples"] = sum(1 for x in reasons if x & THERMAL_MASK)
+            out[gpu]["power_cap_samples"] = sum(1 for x in reasons if x & POWER_CAP_MASK)
     return out
 
 
@@ -86,7 +95,10 @@ def main() -> None:
                                    "suspect": suspect}
         shown = f"{tps:.1f}" if tps is not None else "n/a"
         print(f"{label:18s}: {shown:>10} tok/s, busy {total_w:6.0f} W total, "
-              f"clk {[v['sm_clock_busy_median_mhz'] for v in power.values()]} MHz, max {temp_max:.0f} C, "
+              f"clk {[v['sm_clock_busy_median_mhz'] for v in power.values()]} MHz, max {temp_max:.0f} C"
+              + (f", fan {[v.get('fan_max_pct') for v in power.values()]} %, thermal-throttle samples "
+                 f"{[v.get('thermal_slowdown_samples') for v in power.values()]}" if any('fan_max_pct' in v for v in power.values()) else "")
+              + ", "
               f"tok/s/W {report[label]['tps_per_w']}" + (f"  ** {suspect}" if suspect else ""))
     (target / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
     print(f"wrote {target / 'summary.json'}")

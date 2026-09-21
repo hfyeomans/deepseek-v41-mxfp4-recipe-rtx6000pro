@@ -58,7 +58,9 @@ restore() {
 trap restore EXIT
 
 sample() { # $1 = csv path; sets SAMPLER_PID
-  nvidia-smi --query-gpu=timestamp,index,power.draw,clocks.current.sm,clocks.current.memory,temperature.gpu,utilization.gpu \
+  # fan.speed and the active clock-event bitmask (0x20 = sw thermal, 0x40 = hw thermal,
+  # 0x4 = sw power cap) let the summary say *why* a row clocked where it did.
+  nvidia-smi --query-gpu=timestamp,index,power.draw,clocks.current.sm,clocks.current.memory,temperature.gpu,utilization.gpu,fan.speed,clocks_event_reasons.active \
     --format=csv,nounits -lms 500 > "$1" &
   SAMPLER_PID=$!
 }
