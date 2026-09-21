@@ -30,6 +30,13 @@ Secondary:
 - vLLM issue #47266 (V4, not 4.1): SM120 needed nine workarounds incl. `--disable-custom-all-reduce`.
 - Earlier V4 SM120 recipes: hermia-ai (4×, stock vLLM 0.25.1, Marlin), lastloop-ai vllm-blackwell-guide (2×, 150–170 tok/s), jacklarmer/deepseek-v4-flash-0731-sm120.
 
+## CPU-expert hybrid engines (secondary, read 2026-09-21)
+
+- **KTransformers + sglang-kt** (kvcache-ai/ktransformers, `doc/en/DeepSeek-V4-Flash.md`): routed experts computed on CPU with `--kt-method MXFP4` (AVX2 sufficient; AMX not required — this corrects HARDWARE.md's earlier note), hot experts on GPU via `--kt-num-gpu-experts N`, `--kt-enable-dynamic-expert-update`, `--kt-expert-placement-strategy frequency`, layerwise GPU prefill `--kt-gpu-prefill-token-threshold`. Docker `approachingai/ktransformers:DSV4-specific`; needs flashinfer ≥ 0.6.9, transformers 4.57.1, tilelang. Validated for **DeepSeek-V4-Flash only**: 20–28 tok/s with all experts on CPU, 1 × RTX 5090 + Xeon. **No `deepseek_v41` support**; porting CSA2, Engram host table, hyper-connections and DSpark is the build (E6 stage 2).
+- **llama.cpp**: `vcruz305/DeepSeek-V4.1-Flash-GGUF` (arch `deepseek41`; Q2_K 246.3 GiB, Q3_K_M 323.4 GiB, Q4_K_M pending; Engram tables ≈ 40,284 MiB each at q3_K; Q1_0 withdrawn). Runtime branch vcruz305/llama.cpp `runtime/deepseek41`: loader, Engram and hyper-connections verified, **CSA2 sparse attention pending**; conversion PR ggml-org/llama.cpp#28696. Not runnable yet; when it is, `-ot` regex expert offload gives the three-tier layout without a port.
+- Community: r/BlackwellPerformance asks whether V4.1-Flash can run on 2 × RTX PRO 6000 — unanswered. HF discussion #28 on the model: 0xSero's 4 × 6000 recipe; a vLLM patch reaching ~170 tok/s on 4 × 6000 without vision. Reddit reports that speculative decoding hurts CPU-bandwidth-bound hybrids (E10).
+- Why CPU compute rather than PCIe weight streaming (own analysis, FEASIBILITY.md Option B): same 1.75 GiB/token of expert weights either way; DRAM read 146 GB/s measured / 409.6 theoretical versus ~100 GB/s over two PCIe 5.0 x16 links; CPU kernels exist, a `deepseek_v41` streaming engine does not.
+
 ## Baseline on this host (primary, sibling repo `deepseek-v4-flash-nvfp4-tp2`)
 
 `nvidia/DeepSeek-V4-Flash-0731-NVFP4@f1caa71142bd0be02f728c79f75042ac1e461579`, TP2, 1,048,576 context at 96% memory, DSpark K5: 93.66 → 200.64 tok/s single-stream, 226 tok/s at C2, 998,869-token prompt in 513.8 s. Checkpoint is cached locally (164 GB).
@@ -41,8 +48,10 @@ The Google Doc supplied with the request is an AI-generated plan. Its correct cl
 ## Open questions
 
 1. ~~**DIMM specification.**~~ Resolved 2026-09-20: 8 × Kingston KF564R32-32 (FURY Renegade Pro), SPD 4800 MT/s, configured 6400 MT/s (EXPO active), one per channel. Remaining unknown: running voltage (SMBIOS reports 1.1 V; the 6400 profile is specified at 1.4 V) and CAS latency, neither exposed by SMBIOS. Affects E1 and nothing else in the verdict.
-2. **Measured PCIe H2D.** The single number that moves the Option B ceiling (E4).
+2. **Measured DRAM read bandwidth and CPU expert GEMV time.** The two numbers that set the 2-GPU hybrid ceiling (E1b, E6 stage 0); PCIe H2D (E4) sets the streaming fallback and layerwise prefill cost.
 3. **SGLang `dev-dsv41` on SM120 with `--tp 4`.** 0xSero proves it runs; whether the FlashInfer MXFP4 grouped-GEMM path is used or a Marlin fallback (as in vLLM) decides prefill speed. Check the server log's kernel selection in E9.
 4. **Engram-in-DRAM vs NVMe A/B** has no published data; E9 provides it.
 5. **Does `--language-model-only` in vLLM / the SGLang equivalent skip loading the 0.90 GiB vision and 7.39 GiB DSpark tensors?** Changes the resident total by ≤ 8.3 GiB; does not change the 2-GPU verdict.
-6. **Engram FP4 (LibertAI) quality.** Unevaluated by its author. Only matters if host DRAM becomes the constraint (Option B), not for Option A on this host.
+6. **Engram FP4 (LibertAI) / q3_K quality.** Unevaluated by their authors. Matters for the 2-GPU hybrid, where full FP8 tables in DRAM do not fit (E11).
+7. **MXFP4 format mapping.** Upstream experts are INT4-pair packed with UE8M0 block-32 scales; KT's CPU `MXFP4` kernel and llama.cpp's Q4 formats each expect their own layout. Whether a lossless repack exists (it should: same 4-bit values, same block size) decides whether the hybrid is bit-identical to the resident model.
+8. **3-GPU parallelism.** 64 heads / 384 experts do not divide by 3; EP3 with replicated attention or uneven PP are the candidates. Which one sglang-kt or llama.cpp supports decides the 3-card profile.

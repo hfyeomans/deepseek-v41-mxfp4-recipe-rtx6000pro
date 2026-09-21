@@ -9,6 +9,8 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 | T0.1 | Read shard headers of the three V4.1-Flash checkpoints; classify bytes per component | done | `evidence/budget-*.json`, `scripts/checkpoint-budget.py` |
 | T0.2 | Hardware inventory without identifiers | done | `evidence/hardware-inventory.json`, `scripts/hardware-inventory.sh` |
 | T0.3 | Feasibility calculator; validate against the 0xSero 4-GPU layout | done | `scripts/feasibility-calc.py`, FEASIBILITY.md §3 |
+| T0.7 | Extend the calculator with the three-tier `hybrid-cpu` layout, Engram tiering modes, 2/3/4-GPU comparison and decode ceilings; tests | **done** | FEASIBILITY.md §3a, README verdict |
+| T0.8 | Research CPU-expert engines: KTransformers sglang-kt (V4-Flash only, MXFP4 on AVX2), llama.cpp `deepseek41` branch, community 2-GPU attempts | **done** | RESEARCH.md |
 | T0.4 | Audit the source document's claims against primary sources | done | FEASIBILITY.md §6, RESEARCH.md |
 | T0.5 | DIMM part number, rated and configured speed, CAS latency | **done** (KF564R32-32 × 8, SPD 4800, configured 6400 = EXPO; CL not exposed by SMBIOS, vendor CL32) | HARDWARE.md memory table |
 | T0.6 | Record PSU model and wall circuit capacity | **done** (1,500 W; circuit still unrecorded) — verdict: 4 × 300 W does not fit, see T4.0 | HARDWARE.md power table |
@@ -21,7 +23,9 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 | T1.2 | E1 DRAM bandwidth | **done** | `evidence/e1-dram-bandwidth.json` |
 | T1.3 | E4 PCIe H2D/D2H per GPU and both concurrently | gpu-window | `results/e4.json` |
 | T1.4 | E2 GDDR7 device bandwidth | gpu-window | `results/e2.json` |
-| T1.5 | Recompute Option B ceiling from T1.3; update FEASIBILITY.md §4 | after T1.3 | FEASIBILITY.md |
+| T1.5 | Recompute the hybrid ceilings from T1.3/T1.7/T1.8 (`--dram-gbps`, `--pcie-gbps-per-gpu`, CPU ms/token); update FEASIBILITY.md §3a | after T1.3 | FEASIBILITY.md |
+| T1.7 | E6 stage 0: `bench-cpu-expert.py` CPU expert GEMV in the torch container, GPU-free | ready | `evidence/e6-stage0-cpu-expert.json` |
+| T1.8 | E1b: C/torch DRAM read bandwidth (replace the Python lower bound) | ready | `evidence/e1b-dram-read.json` |
 | T1.6 | Hugepage reservation test: `vm.nr_hugepages` for ~190 GiB of 2 MiB pages while GLM is running; confirm allocation succeeds and revert | ready (needs root) | TROUBLESHOOTING.md note |
 
 ## P2 — Baseline
@@ -33,23 +37,29 @@ Status: `done`, `ready` (can run now), `gpu-window` (needs the GLM container sto
 | T2.3 | Fill BENCHMARKS.md baseline tables from JSON | after T2.2 | `docs/BENCHMARKS.md` |
 | T2.4 | Baseline improvement sweep on V4-Flash: DSpark block 3/5/7, FP8 KV, C8/C16 | gpu-window | BENCHMARKS.md |
 
-## P3 — Boundary
+## P3 — 2-GPU hybrid build
 
 | ID | Task | Status | Output |
 |---|---|---|---|
 | T3.1 | Download `deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a…` (475 GiB) to nvme0 | ready (disk: 1.7 TB free) | HF cache |
-| T3.2 | Pull `lmsysorg/sglang:dev-dsv41`; record image digest in PROVENANCE.md | ready | PROVENANCE.md |
-| T3.3 | E5 2-GPU attempt with SGLang and vLLM; scrub and record logs | gpu-window, after T3.1–T3.2 | TROUBLESHOOTING.md |
-| T3.4 | E6 stage 1 synthetic expert-streaming loop | gpu-window, after T1.3 | `results/e6-stage1.json` |
-| T3.5 | E6 stage 2 design doc (only if stage 1 ≥ 40 tok/s) | decision | `plan/E6-DESIGN.md` |
-| T3.6 | E7 routing-skew histogram on V4-Flash | gpu-window | `evidence/e7-routing/` |
+| T3.2 | Pull `lmsysorg/sglang:dev-dsv41` and `approachingai/ktransformers:DSV4-specific`; record digests in PROVENANCE.md | ready | PROVENANCE.md |
+| T3.3 | E5 2-GPU attempt with stock SGLang and vLLM generic offload; scrub and record logs | gpu-window, after T3.1–T3.2 | TROUBLESHOOTING.md |
+| T3.4 | E6 stage 1: sglang-kt hybrid with V4-Flash on 2 GPUs; sweep `--kt-num-gpu-experts`; calibrate the calculator | gpu-window, after T3.2 | `results/e6-stage1.json` |
+| T3.5 | E6 stage 2 design doc: `deepseek_v41` in sglang-kt (CSA2, Engram host table, hyper-connections, DSpark, MXFP4 format mapping) | ready (GPU-free) | `plan/E6-DESIGN.md` |
+| T3.6 | E6 stage 2 implementation and first V4.1-Flash serve on 2 GPUs | after T3.5, gpu-window | fork + BENCHMARKS.md |
+| T3.7 | llama.cpp `runtime/deepseek41` build; watch ggml-org/llama.cpp#28696 and CSA2; run Q4_K_M with `-ot` offload when it lands | ready to build, blocked on CSA2 | BENCHMARKS.md |
+| T3.8 | E7 routing-skew histogram on V4-Flash; feed `--activation-skew` | gpu-window | `evidence/e7-routing/` |
+| T3.9 | E10 DSpark on/off under the hybrid | after T3.4 | BENCHMARKS.md |
+| T3.10 | E11 Engram tiering: cache-hit simulation (GPU-free) then NVMe vs FP4/q3_K A/B | ready / after T3.6 | BENCHMARKS.md |
+| T3.11 | `serve.sh` profile `2gpu-hybrid` (KT flags, Engram NVMe, hugepages) — labelled unqualified until T3.6 | after T3.5 | `config/example.env`, `scripts/serve.sh` |
 
-## P4 — 4-GPU qualification
+## P4 — 3/4-GPU comparison
 
 | ID | Task | Status | Output |
 |---|---|---|---|
 | T4.0 | Power decision for four cards: 2,000 W-class PSU (needs 240 V or 30 A circuit) **or** 225 W cap on the 1,500 W PSU; decided by E8b's tok/s-per-watt curve | decision, after E8b | HARDWARE.md power table |
-| T4.1 | Acquire and install two RTX PRO 6000 (Max-Q preferred for power); verify P2P 4×4 OK and x16 on all slots | blocked on T4.0 | HARDWARE.md |
+| T4.1 | Acquire and install one or two more RTX PRO 6000 (Max-Q preferred for power); verify P2P OK and x16 on all slots | blocked on T4.0 | HARDWARE.md |
+| T4.1b | 3-GPU profile: EP3 or PP layout (TP3 invalid), 91% experts resident + hybrid remainder; llama.cpp layer-split as the simple variant | after T4.1 with 3 cards | `scripts/serve.sh` |
 | T4.2 | `preflight.sh` passes the memory gate on 4 GPUs | after T4.1 | — |
 | T4.3 | E9 serve + verify + benchmark, Engram-in-DRAM and NVMe modes | after T4.2 | BENCHMARKS.md, PROVENANCE.md pins |
 | T4.4 | README verdict update; systemd unit qualified | after T4.3 | README.md |

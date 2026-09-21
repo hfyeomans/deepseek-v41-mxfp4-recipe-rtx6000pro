@@ -14,7 +14,7 @@ Everything marked *measured* comes from [`scripts/hardware-inventory.sh`](../scr
 | OS / kernel | Ubuntu 26.04.1 LTS / 7.0.0-31-generic | measured |
 | Container runtime | Docker 29.8.1 with CDI GPU devices | measured |
 
-Why it matters: the board has enough PCIe 5.0 x16 slots and CPU lanes to take **four** RTX PRO 6000 cards at full x16 without a switch, which is what Option A in [FEASIBILITY.md](FEASIBILITY.md) needs. Each GPU's own x16 link is also the ceiling for Option B (expert streaming).
+Why it matters: the board has enough PCIe 5.0 x16 slots and CPU lanes to take **four** RTX PRO 6000 cards at full x16 without a switch, which is what Option A in [FEASIBILITY.md](FEASIBILITY.md) needs. Each GPU's own x16 link is the ceiling for the PCIe-streaming fallback and for layerwise GPU prefill in the hybrid (Option B).
 
 ## CPU
 
@@ -27,7 +27,7 @@ Why it matters: the board has enough PCIe 5.0 x16 slots and CPU lanes to take **
 | ISA | AVX-512 (F, BF16, VNNI); **no AMX** | measured |
 | NUMA | 1 node (Threadripper PRO presents a single node) | measured |
 
-Why it matters: Engram host-table gathers and any host-side expert staging run on these 16 cores. No AMX means KTransformers-style CPU expert compute (built around Intel AMX) is not a path here. AVX-512 BF16 is enough for gather/scatter and dequant-free FP8 copies, which is all the Engram host path requires.
+Why it matters: in the 2-GPU three-tier layout these 16 cores **compute 42% of the routed experts** (≈101 expert activations, 3.6 GMAC per decoded token) from DRAM, plus the Engram host-table gathers. KTransformers' `MXFP4` CPU method needs only AVX2, so the lack of AMX rules out KT's AMX-optimised INT8/BF16 paths but not the hybrid itself. Peak FP32 with two 512-bit FMA units per core is roughly 2 TFLOP/s across 16 cores; a dequant-and-FMA MXFP4 GEMV at a quarter of that is ~15 ms/token, the same order as the 12.9 ms DRAM time, so CPU compute must overlap DRAM streaming and is measured by E6 stage 0 rather than assumed.
 
 ## System memory
 
@@ -49,7 +49,7 @@ Why it matters:
 - The full FP8 Engram tables (188.83 GiB) fit in DRAM with 34 GiB to spare after a 24 GiB OS reserve. On the 128 GB box that produced the only 4-GPU result, they did not; that recipe had to read Engram from NVMe with a 64 GiB DRAM cache. This host can run SGLang's `SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE=1` path with the *whole* table in DRAM — the one place this machine is better positioned than the published reference.
 - SGLang's host-table path wants huge pages. Reserving ~190 GiB of 2 MiB or 1 GiB hugepages is a boot-time (`hugepagesz=1G hugepages=190`) or runtime (`vm.nr_hugepages`) change; it is reversible and is task T2.2.
 - Decode Engram traffic is trivial: 48 random 264 B rows per token ≈ 12.4 KB. Prefill of 64K tokens is ≈ 3.1 M random row reads; at DRAM random-access latency (~80–120 ns, parallel across cores) that is well under a second. E3 measures it.
-- Option B (expert streaming) would need 105 GiB of experts pinned in DRAM alongside 97 GiB of FP4 Engram: 226 GiB against 246.8 GiB. It fits, barely. DRAM bandwidth (409.6 GB/s theoretical) is not the bottleneck; PCIe is.
+- The 2-GPU three-tier layout (Option B) puts 112 GiB of routed experts in DRAM for CPU compute. With the full FP8 Engram also in DRAM that is 325 GiB — does not fit; with Engram on NVMe behind a 64 GiB row cache it is 200 GiB against 246.8 (+47 GiB), with FP4 tables 233 GiB (+13). **DRAM read bandwidth is the decode bottleneck of this layout**: 1.75 GiB of expert weights per token, 12.9 ms at the 146 GB/s measured in E1 and 4.6 ms at the 409.6 GB/s theoretical. Every measured GB/s moves the ceiling (`feasibility-calc.py --dram-gbps`).
 
 ## GPUs
 
@@ -68,7 +68,7 @@ Why it matters:
 Why it matters:
 
 - Weight capacity is the whole story: 95.6 GiB per card versus ~140 GiB per card needed for a 2-GPU split of the non-Engram weights. See the placement table in FEASIBILITY.md.
-- PCIe 5.0 x16 is 63 GB/s theoretical per direction; realistic pinned host-to-device copies land around 50 GiB/s. That number sets the ~60 tok/s ceiling on Option B and is the first thing E4 measures.
+- PCIe 5.0 x16 is 63 GB/s theoretical per direction; realistic pinned host-to-device copies land around 50 GiB/s. That number sets the ~42 tok/s ceiling of the PCIe-streaming fallback (versus ~56 tok/s for CPU compute at 146 GB/s DRAM) and the ~1.1 s per 4,096-token chunk of layerwise GPU prefill in the hybrid; E4 measures it.
 - P2P OK means TP2 all-reduce runs over PCIe peer copies rather than bouncing through host memory. vLLM SM120 reports still sometimes need `--disable-custom-all-reduce`.
 - Max-Q at 300 W: every published number from 600 W cards (or 0xSero's 275 W-capped cards) is a different power condition. Do not transfer throughput claims between machines.
 

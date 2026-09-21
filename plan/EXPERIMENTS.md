@@ -10,8 +10,8 @@ Legend: **GPU-free** experiments can run while the GLM container is serving. **G
 - Hypothesis: 250–320 GB/s copy bandwidth with 16–32 workers; a single worker ≈ 20–30 GB/s.
 - Procedure: `scripts/bench-dram.py --workers 1,2,4,8,16,32 --size-gib 8 --output results/e1.json` (stdlib `mmap` memcpy via `memoryview` slicing in N *processes*; threads hold the GIL and measure one core). STREAM inside a container is the optional follow-up.
 - Pass: a measured number replaces the "estimate" row in HARDWARE.md. There is no fail.
-- Feeds: Option B DRAM-side check; Engram-in-DRAM prefill estimate.
-- **Result (run):** 60.0 GB/s single process, 139.9 GB/s at 16, 146.2 GB/s at 32 (read+write). Below hypothesis; a Python lower bound. Nothing in the verdict depends on it. [`evidence/e1-dram-bandwidth.json`](../evidence/e1-dram-bandwidth.json).
+- Feeds: the hybrid decode ceiling (`feasibility-calc.py --dram-gbps`); Engram-in-DRAM prefill estimate.
+- **Result (run):** 60.0 GB/s single process, 139.9 GB/s at 16, 146.2 GB/s at 32 (read+write). Below hypothesis; a Python lower bound. **This is now the number the 2-GPU verdict's ceiling rests on** (56 tok/s at 146; 89 at 300). Follow-up E1b: a C/STREAM or `torch` CPU read benchmark in the `dsv4-nvfp4:recipe` container, GPU-free, to find the real read bandwidth. [`evidence/e1-dram-bandwidth.json`](../evidence/e1-dram-bandwidth.json).
 
 ## E2 — GPU memory bandwidth (GPU)
 
@@ -34,7 +34,7 @@ Legend: **GPU-free** experiments can run while the GLM container is serving. **G
 - Question: sustained pinned H2D and D2H bandwidth per card, and both cards concurrently.
 - Hypothesis: 48–55 GiB/s per card pinned; both concurrently ≥ 90 GiB/s aggregate (separate x16 links); pageable ≈ half.
 - Procedure: `scripts/bench-pcie-h2d.py --sizes 256M,1G,4G --pinned --both` inside a torch image.
-- Pass: numbers recorded. **This is the input that recomputes the Option B ceiling**: decode tok/s ≤ measured aggregate GiB/s ÷ 1.64 GiB/token.
+- Pass: numbers recorded. Sets the PCIe-streaming fallback ceiling (decode tok/s ≤ 1000 / (5 ms + 1.75 GiB ÷ aggregate GiB/s)) and the layerwise-prefill cost of the hybrid (112 GiB of CPU experts per 4,096-token chunk).
 
 ## E5 — V4.1-Flash on 2 GPUs with generic CPU offload (GPU, needs 475 GiB download)
 
@@ -43,19 +43,22 @@ Legend: **GPU-free** experiments can run while the GLM container is serving. **G
 - Procedure: `scripts/download-model.sh` (pinned), then `ALLOW_UNQUALIFIED=1 scripts/serve.sh --profile 2gpu-attempt` with each engine; capture the log tail (scrubbed) into `results/e5-*.log`.
 - Pass criterion is documentation: the failure mode is recorded verbatim in TROUBLESHOOTING.md. If it unexpectedly serves, run `verify.py` and `bench-decode.py` and treat the number as the new 2-GPU result.
 
-## E6 — Expert-streaming prototype (GPU, synthetic first)
+## E6 — Three-tier hybrid: CPU-computed experts (stage 0 GPU-free; stages 1–2 GPU)
 
-- Question: given E4's bandwidth, what decode rate can a 39%-offloaded expert set sustain?
-- Hypothesis: synthetic loop (240 expert activations/token, 17.9 MiB each, 39% from pinned DRAM, per-step prefetch overlapped with a dummy GEMM) reaches 45–60 tok/s at batch 1; 2–4K tok/s prefill-equivalent for 4096-token chunks.
-- Procedure: stage 1 `scripts/bench-expert-stream.py` (torch, synthetic); stage 2, only if stage 1 > 40 tok/s, an SGLang patch that keeps per-layer expert subsets host-resident and gathers by routing indices. Stage 2 is a separate design document before code.
-- Pass: stage 1 number recorded either way. Stage 2 proceeds only if stage 1 ≥ 40 tok/s and the owner judges 40–60 tok/s worth having over the 200 tok/s V4-Flash baseline.
+- Question: can 42% of V4.1-Flash's routed experts run on this host's CPU from DRAM at a rate that makes the 2-GPU layout useful, and can an engine be made to do it for `deepseek_v41`?
+- Hypothesis: decode 40–60 tok/s at batch 1 with 58% of experts on GPU (calculator ceiling 56 tok/s at 146 GB/s); CPU compute ≤ DRAM time when overlapped; prefill 2–3K tok/s with layerwise GPU prefill.
+- **Stage 0 — CPU expert GEMV (GPU-free, runnable now).** `scripts/bench-cpu-expert.py` inside `dsv4-nvfp4:recipe` without `--gpus`: a synthetic pool of experts (3 × 5120×2304 matrices each) larger than L3, 101 random experts per token, gate/up/down GEMVs at batch 1, 16 and 32 threads, weights in bf16 (memory roofline) and int8-dequant (compute proxy for MXFP4). Report ms/token and effective GB/s. Pass: a measured CPU ms/token to put next to the 12.9 ms DRAM figure; if bf16 GEMV already exceeds 25 ms for 101 experts, CPU compute — not DRAM — is the bound and the plan changes to PCIe streaming or a 3rd GPU.
+- **Stage 1 — sglang-kt with V4-Flash on 2 GPUs (GPU).** Docker `approachingai/ktransformers:DSV4-specific`, `--kt-method MXFP4 --kt-num-gpu-experts N --kt-expert-placement-strategy frequency --kt-enable-dynamic-expert-update --kt-gpu-prefill-token-threshold 4096`, model V4-Flash (validated by KT). Sweep N from all-on-GPU down to 58% and record decode vs the resident 200 tok/s baseline. Purpose: prove the toolchain on SM120 (flashinfer ≥ 0.6.9, tilelang) and calibrate the calculator's `--gpu-ms-per-token` and `--dram-gbps` against a real hybrid before touching V4.1.
+- **Stage 2 — port `deepseek_v41` into sglang-kt (build).** Design doc first (`plan/E6-DESIGN.md`): CSA2 attention and indexer, Engram host table (reuse SGLang `dev-dsv41`'s `SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE`), hyper-connections, DSpark, and the MXFP4 expert format mapping (upstream UE8M0 g32 → KT's MXFP4 CPU kernel). Then serve V4.1-Flash with `--kt-num-gpu-experts` ≈ 8,958 total, Engram on NVMe + cache, and run `verify.py` + E8's benchmark set.
+- **Parallel route — llama.cpp `deepseek41`.** Build vcruz305/llama.cpp `runtime/deepseek41`, load `vcruz305/DeepSeek-V4.1-Flash-GGUF` Q4_K_M (or Q3_K_M, 323 GiB) with `-ot` regex offload of ~42% of `ffn_*_exps` to CPU and `--split-mode layer`, once CSA2 is merged. Lower GPU efficiency than SGLang but zero porting.
+- Pass: any route producing a V4.1-Flash decode/prefill/needle table on 2 GPUs. Record the engine commit, expert split, Engram mode and power in BENCHMARKS.md. Negative results (route blocked, number, reason) are recorded too.
 
 ## E7 — Routing skew study for expert pruning (GPU, uses the V4-Flash baseline deployment)
 
-- Question: is routing uniform enough that pruning 39% of experts would destroy quality, or skewed enough that a pruned checkpoint is plausible?
+- Question: is routing uniform enough that pruning 42% of experts would destroy quality, or skewed enough that frequency-based GPU placement (E6) gains and a pruned checkpoint is plausible?
 - Hypothesis: `noaux_tc` load balancing makes per-expert activation frequency within ±30% of uniform on general text; pruning is not viable without retraining.
 - Procedure: enable expert-load logging on the V4-Flash baseline (same MoE family, 256 experts) over a 5 M-token mixed corpus; compute per-layer activation histograms and the cumulative share of the top-61% experts.
-- Pass: if the top 61% of experts capture ≥ 90% of activations on ≥ 80% of layers, Option D graduates to a build task; otherwise it is closed with the histogram as evidence.
+- Pass: report the share of activations captured by the top 58% of experts per layer; that number is `--activation-skew` for the calculator and the expected gain of frequency placement. If the top 58% capture ≥ 90% of activations on ≥ 80% of layers, Option D graduates to a build task; otherwise it is closed with the histogram as evidence.
 
 ## E8 — Baseline re-measurement (GPU, existing V4-Flash deployment)
 
@@ -71,3 +74,17 @@ Legend: **GPU-free** experiments can run while the GLM container is serving. **G
 - Hypothesis: 180–230 tok/s at C1 with DSpark 5, 600–750 tok/s at C8, 5–7K tok/s prefill, DSpark acceptance 75–88%; Engram-in-DRAM improves prefill TTFT on long prompts versus NVMe mode by a measurable margin.
 - Procedure: `preflight.sh` (must pass on 4 GPUs), `serve.sh --profile 4gpu-sglang`, `wait-ready.py`, `verify.py`, E8's benchmark set, then the same with `OFFLOAD_MODE=nvme` for the A/B.
 - Pass: verify 6/6 needles at 262,144 and at the configured maximum; `17*19=323` sanity; tables recorded with power condition (300 W Max-Q).
+
+## E10 — Speculative decoding under a CPU-bound MoE (GPU, after E6 stage 1)
+
+- Question: does DSpark (block 5) help or hurt when 42% of expert activations are DRAM-bound?
+- Hypothesis: a 5-token block activates ~3–4× the distinct CPU experts of a single token, so DRAM traffic per step rises faster than accepted tokens per step; net decode falls unless acceptance ≥ 80%. Community reports on CPU-bandwidth-bound hybrids say spec decode hurts.
+- Procedure: on the E6 stage 1 (V4-Flash) and stage 2 (V4.1-Flash) deployments, C1 decode with DSpark off, block 3, block 5; log accepted tokens/step and host DRAM bandwidth (`perf stat` uncore counters or `pcm-memory`).
+- Pass: tok/s and GiB/step per setting; the recipe's default follows the measurement.
+
+## E11 — Engram tiering and quantization (GPU-free data prep; GPU for quality)
+
+- Question: which Engram placement is best for the 2-GPU hybrid, where DRAM is the scarce tier?
+- Hypothesis: NVMe + 64 GiB DRAM row cache costs < 5% decode versus DRAM-resident tables (48 reads/token at ~40 µs each, parallel) and adds ~8 s per 64K-token prefill; FP4 or q3_K tables in DRAM remove that cost at an unmeasured quality price.
+- Procedure: (a) extend `bench-engram-gather.py` with an LRU/hot-set cache in front of NVMe and a Zipf request distribution to estimate hit rate vs cache size; (b) once E6 serves, A/B NVMe-cache vs LibertAI FP4 tables on `verify.py` needles and a small perplexity set.
+- Pass: decode and prefill delta per mode; a quality verdict on quantized tables.

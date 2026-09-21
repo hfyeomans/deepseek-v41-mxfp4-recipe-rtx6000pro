@@ -9,9 +9,12 @@ for f in "$ROOT"/evidence/*.json; do python3 -m json.tool "$f" >/dev/null; done
 python3 "$ROOT/scripts/test-checkpoint-budget.py"
 python3 "$ROOT/scripts/test-feasibility-calc.py"
 python3 "$ROOT/scripts/test-openai-client.py"
-# The verdict in README must match the calculator: 2 GPUs must not fit.
+# The verdict in README must match the calculator: 2 GPUs must not fit GPU-resident, but must fit the hybrid with NVMe Engram.
 if python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout engram-host >/dev/null; then
   echo 'FAIL calculator says 2 GPUs fit; README verdict is stale'; exit 1
+fi
+if ! python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout hybrid-cpu --engram nvme >/dev/null; then
+  echo 'FAIL calculator says the 2-GPU hybrid does not fit; README verdict is stale'; exit 1
 fi
 if command -v shellcheck >/dev/null; then shellcheck -x -P "$ROOT" "$ROOT"/scripts/*.sh; else echo 'shellcheck not installed; skipped'; fi
 python3 - "$ROOT" <<'PY'
