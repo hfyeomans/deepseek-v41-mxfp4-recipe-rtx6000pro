@@ -238,6 +238,19 @@ Owner decision: no 4-GPU future-proofing. Run both recipes at the **300 W defaul
 - **No thermal event.** Zero samples with `sw_thermal_slowdown` / `hw_thermal_slowdown` at either cap; the firmware fan curve stayed at 44–67 %. The T.Limit margin readout puts the throttle point near 92 °C; the earlier 8-minute 300 W run reached 88–89 °C, so a sustained 325 W run is the number that decides — see below.
 - **Decision:** adopt 325 W for GLM (owner policy: max watts where it pays and stays cool). Persist it with [`systemd/gpu-power-limit.service`](../systemd/gpu-power-limit.service); `nvidia-smi -pl` resets on reboot. Pending: sustained-load temperature at 325 W, and the same sweep on V4-Flash once servers are swapped.
 
+### T2.9 — sustained 325 W (GLM) and first V4-Flash sweep (2026-09-21, owner ran)
+
+**GLM sustained:** `--caps 325 --concurrency 16 --runs 15 --phases decode` (~3.5 min pinned). **607 wall tok/s, max 89 °C, fans 73 / 64 %, 0 thermal-throttle samples**, SM 1,957–1,972 MHz (−5 % from the cold 2.06 GHz burst — leakage at 89 °C, the same heat-soak E8 measured at 300 W). Sustained 325 W still beats the cold 300 W burst (589). Margin to the ~92 °C T.Limit point: 3 °C, with 27 % fan headroom. **Adopted;** persist with `systemd/gpu-power-limit.service`. Evidence [`evidence/t29-glm-325w-sustained/`](../evidence/t29-glm-325w-sustained/).
+
+**V4-Flash, 16-slot profile, 325 → 300 W, 3 runs each** ([`evidence/t29-dsv4-325w/`](../evidence/t29-dsv4-325w/)) — medians unreliable, one stalled run per phase in the first (325 W) window of an 8-minute-old server:
+
+| Cap | Prefill 32K per run (tok/s) | median | C16 decode wall per run | median | Busy W | SM MHz | Thermal flags |
+|---|---|---|---|---|---|---|---|
+| 325 W | 7,544 / **3,623** / 8,582 | 7,544 | 1,242 / 1,279 / **647** | 1,242 | 621–650 | 2,242–2,280 (decode), 2,051–2,055 (prefill) | 0 |
+| 300 W | 7,817 / 7,905 / 8,068 | 7,905 | 1,188 / 1,188 / 1,165 | 1,188 | 600 | 2,062–2,096 / 1,905–1,920 | 0 |
+
+Healthy runs say **+6 % prefill (8,582 vs 8,068) and +8 % decode (1,279 vs 1,188)** at 325 W, consistent with GLM and with E8b's single-stream +4 % prefill. Decode at C16 draws 621 W of the 650 available — V4-Flash is only partly cap-bound there (bandwidth-bound in the expert reads), so its decode gain is smaller than GLM's. **Method fix:** `summarize-power.py` now prints `run spread … stalled` when any run is below 70 % of the best and records `tps_per_run`; rerun ordered `--caps 300,325 --runs 5` pending.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.

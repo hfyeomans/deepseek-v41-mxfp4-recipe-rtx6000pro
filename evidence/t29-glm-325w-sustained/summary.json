@@ -1,0 +1,55 @@
+{
+  "decode-c16-325w": {
+    "cap_w": 325,
+    "kind": "decode",
+    "concurrency": 16,
+    "tps": 607.0786451226566,
+    "tps_per_run": [
+      634.6,
+      622.4,
+      628.3,
+      621.4,
+      619.7,
+      633.4,
+      598.0,
+      594.9,
+      591.3,
+      615.2,
+      598.9,
+      589.8,
+      584.7,
+      600.9,
+      607.1
+    ],
+    "gpus": {
+      "0": {
+        "samples": 428,
+        "busy_samples": 426,
+        "power_busy_median_w": 324.9,
+        "power_max_w": 328.0,
+        "sm_clock_busy_median_mhz": 1972,
+        "temp_max_c": 89.0,
+        "util_median_pct": 98.0,
+        "fan_max_pct": 73.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 421
+      },
+      "1": {
+        "samples": 428,
+        "busy_samples": 426,
+        "power_busy_median_w": 324.9,
+        "power_max_w": 327.0,
+        "sm_clock_busy_median_mhz": 1957,
+        "temp_max_c": 88.0,
+        "util_median_pct": 98.0,
+        "fan_max_pct": 64.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 422
+      }
+    },
+    "temp_max_c": 89.0,
+    "total_busy_w": 649.8,
+    "tps_per_w": 0.9343,
+    "suspect": null
+  }
+}

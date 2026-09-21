@@ -71,25 +71,35 @@ def main() -> None:
         bench = target / (f"decode-c{conc}-{cap}w.json" if kind == "decode" else f"prefill-32k-{cap}w.json")
         tps = None
         suspect = None
+        per_run: list[float] = []
         if bench.exists():
             b = json.loads(bench.read_text())
             if kind == "decode":
                 # Per-stream tok/s at C1; aggregate wall tok/s once streams are batched.
                 lvl = b["levels"][0]
                 tps = lvl["median_tps"] if conc == 1 else lvl["median_wall_tps"]
+                per_run = [r["wall_tps" if conc != 1 else "per_seq_tps"] for r in lvl["runs"]]
+                per_run = [x if isinstance(x, (int, float)) else statistics.median(x) for x in per_run]
             else:
                 size = b["sizes"][0]
                 tps = size["median_prefill_tps"]
+                per_run = [r["prefill_tps"] for r in size["runs"]]
                 # A 32K prompt cannot prefill in well under a second on these cards; that is a
                 # prefix-cache hit (same seeded prompt already in the server's KV).
                 cached = [r for r in size["runs"] if r["ttft_s"] < 1.0]
                 if cached:
                     suspect = f"{len(cached)}/{len(size['runs'])} runs look prefix-cached (TTFT < 1 s); rerun with a new --seed"
+            # One stalled run (first shapes after launch, a hiccup) can drag a 3-run median by
+            # 5-10 %: T2.9 dsv4 had 7,544 / 3,623 / 8,582. Flag any run below 70 % of the best.
+            if per_run and min(per_run) < 0.7 * max(per_run):
+                stall = f"run spread {min(per_run):.0f}-{max(per_run):.0f} tok/s: one or more runs stalled; rerun with --runs 5"
+                suspect = f"{suspect}; {stall}" if suspect else stall
         total_w = sum(v["power_busy_median_w"] or 0 for v in power.values())
         temp_max = max((v["temp_max_c"] or 0) for v in power.values())
         label = f"{kind}-c{conc}-{cap}w" if kind == "decode" and conc != 1 else f"{kind}-{cap}w"
         report[label] = {"cap_w": cap, "kind": kind, "concurrency": conc if kind == "decode" else None,
-                                   "tps": tps, "gpus": power, "temp_max_c": temp_max,
+                                   "tps": tps, "tps_per_run": [round(x, 1) for x in per_run] if bench.exists() else None,
+                                   "gpus": power, "temp_max_c": temp_max,
                                    "total_busy_w": round(total_w, 1),
                                    "tps_per_w": round(tps / total_w, 4) if tps and total_w else None,
                                    "suspect": suspect}

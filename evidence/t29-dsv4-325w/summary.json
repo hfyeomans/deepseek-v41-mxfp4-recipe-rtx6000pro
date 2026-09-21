@@ -1,0 +1,166 @@
+{
+  "decode-c16-300w": {
+    "cap_w": 300,
+    "kind": "decode",
+    "concurrency": 16,
+    "tps": 1187.7511805291488,
+    "tps_per_run": [
+      1187.8,
+      1188.0,
+      1164.6
+    ],
+    "gpus": {
+      "0": {
+        "samples": 57,
+        "busy_samples": 54,
+        "power_busy_median_w": 299.9,
+        "power_max_w": 305.1,
+        "sm_clock_busy_median_mhz": 2096,
+        "temp_max_c": 79.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 49.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 48
+      },
+      "1": {
+        "samples": 57,
+        "busy_samples": 55,
+        "power_busy_median_w": 299.9,
+        "power_max_w": 304.6,
+        "sm_clock_busy_median_mhz": 2062,
+        "temp_max_c": 77.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 47.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 52
+      }
+    },
+    "temp_max_c": 79.0,
+    "total_busy_w": 599.8,
+    "tps_per_w": 1.9802,
+    "suspect": null
+  },
+  "decode-c16-325w": {
+    "cap_w": 325,
+    "kind": "decode",
+    "concurrency": 16,
+    "tps": 1241.852443471621,
+    "tps_per_run": [
+      1241.9,
+      1279.2,
+      647.2
+    ],
+    "gpus": {
+      "0": {
+        "samples": 72,
+        "busy_samples": 52,
+        "power_busy_median_w": 307.3,
+        "power_max_w": 318.6,
+        "sm_clock_busy_median_mhz": 2242,
+        "temp_max_c": 68.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 34.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 8
+      },
+      "1": {
+        "samples": 72,
+        "busy_samples": 50,
+        "power_busy_median_w": 313.6,
+        "power_max_w": 324.5,
+        "sm_clock_busy_median_mhz": 2280,
+        "temp_max_c": 67.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 33.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 27
+      }
+    },
+    "temp_max_c": 68.0,
+    "total_busy_w": 620.9,
+    "tps_per_w": 2.0001,
+    "suspect": "run spread 647-1279 tok/s: one or more runs stalled; rerun with --runs 5"
+  },
+  "prefill-300w": {
+    "cap_w": 300,
+    "kind": "prefill",
+    "concurrency": null,
+    "tps": 7905.193326190629,
+    "tps_per_run": [
+      7816.6,
+      7905.2,
+      8068.3
+    ],
+    "gpus": {
+      "0": {
+        "samples": 25,
+        "busy_samples": 24,
+        "power_busy_median_w": 300.1,
+        "power_max_w": 305.6,
+        "sm_clock_busy_median_mhz": 1920,
+        "temp_max_c": 83.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 54.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 22
+      },
+      "1": {
+        "samples": 25,
+        "busy_samples": 25,
+        "power_busy_median_w": 300.1,
+        "power_max_w": 304.8,
+        "sm_clock_busy_median_mhz": 1905,
+        "temp_max_c": 81.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 51.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 24
+      }
+    },
+    "temp_max_c": 83.0,
+    "total_busy_w": 600.2,
+    "tps_per_w": 13.1709,
+    "suspect": null
+  },
+  "prefill-325w": {
+    "cap_w": 325,
+    "kind": "prefill",
+    "concurrency": null,
+    "tps": 7543.52712056229,
+    "tps_per_run": [
+      7543.5,
+      3623.3,
+      8581.8
+    ],
+    "gpus": {
+      "0": {
+        "samples": 34,
+        "busy_samples": 22,
+        "power_busy_median_w": 325.2,
+        "power_max_w": 326.0,
+        "sm_clock_busy_median_mhz": 2055,
+        "temp_max_c": 75.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 43.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 21
+      },
+      "1": {
+        "samples": 34,
+        "busy_samples": 22,
+        "power_busy_median_w": 325.3,
+        "power_max_w": 325.8,
+        "sm_clock_busy_median_mhz": 2051,
+        "temp_max_c": 73.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 41.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 20
+      }
+    },
+    "temp_max_c": 75.0,
+    "total_busy_w": 650.5,
+    "tps_per_w": 11.5965,
+    "suspect": "run spread 3623-8582 tok/s: one or more runs stalled; rerun with --runs 5"
+  }
+}
