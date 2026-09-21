@@ -1,0 +1,25 @@
+# Persist the GPU power cap across reboots (nvidia-smi -pl is not persistent).
+# Decision T2.9 (2026-09-21): 325 W = power.max_limit on RTX PRO 6000 Blackwell Max-Q.
+# GLM C16 decode +9 %, 32K prefill +5 %, zero thermal-throttle samples; both
+# recipes are cap-bound under concurrency and prefill, so the extra 25 W is used.
+# Revisit if a third GPU is added (2 x 325 W + CPU fits the 1,500 W PSU; 3 do not
+# at this cap) or if the sustained check shows temp_max_c above ~88 C.
+#
+# Install:
+#   sudo cp systemd/gpu-power-limit.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now gpu-power-limit
+# Check:  nvidia-smi --query-gpu=power.limit --format=csv
+# Revert: sudo systemctl disable --now gpu-power-limit && sudo nvidia-smi -pl 300
+[Unit]
+Description=Set RTX PRO 6000 power limit to 325 W (T2.9 decision)
+After=nvidia-persistenced.service
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/nvidia-smi -pl 325
+ExecStop=/usr/bin/nvidia-smi -pl 300
+
+[Install]
+WantedBy=multi-user.target

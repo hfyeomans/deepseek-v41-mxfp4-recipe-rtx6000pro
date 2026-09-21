@@ -221,6 +221,23 @@ From the E14 measurements, in order of expected value:
 
 Owner decision: no 4-GPU future-proofing. Run both recipes at the **300 W default**; use **325 W** (`power.max_limit`) only where a phase is cap-pinned *and* the card stays under ~85 °C: prefill on both models (+4 % measured on V4-Flash, 8,770 vs 8,428 tok/s at 32K), GLM decode from C2, V4-Flash decode from ~C8. Single-stream V4-Flash decode never sees the cap (216–229 tok/s at every setting) so 325 W is free but useless there. **Thermal is the gate:** under C16 both models already sit at 86–88 °C pinned at 300 W (E16, E14/E15); 325 W adds heat with maybe +4 % clocks. `bench-power-sweep.sh --concurrency 16 --caps 325,300` now measures exactly this and prints `temp_max_c` per row; if it crosses ~88 °C or clocks drop below the 300 W row, stay at 300. The 250 W option is retired — it only ever made sense as a 4 × GPU budget on the 1,500 W PSU.
 
+### T2.9 — 325 W vs 300 W under load, GLM (2026-09-21, owner ran with sudo)
+
+`sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model glm-5.3-flash-local --caps 325,300 --concurrency 16 --output evidence/t29-glm-325w`. Evidence [`evidence/t29-glm-325w/`](../evidence/t29-glm-325w/).
+
+| Row | 325 W | 300 W | Δ | Busy W (both cards) | SM clock | Max temp | Fan max | Cap-flag samples | Thermal-flag samples |
+|---|---|---|---|---|---|---|---|---|---|
+| C16 decode, wall tok/s | **642.4** | 588.7 | **+9.1 %** | 647 / 600 | 2,062–2,070 / 1,860–1,875 MHz | 76 / 86 °C † | 44 / 58 % | ~100 % / ~100 % | 0 / 0 |
+| 32K prefill, tok/s | **4,428.5** | 4,214.9 | **+5.1 %** | 644 / 600 | 2,002–2,010 / 1,867–1,905 MHz | 83 / 88 °C † | 53 / 67 % | ~100 % / ~100 % | 0 / 0 |
+| tok/s per W, decode | 0.993 | 0.981 | +1 % | | | | | | |
+| tok/s per W, prefill | 6.88 | 7.02 | −2 % | | | | | | |
+
+† The 325 W rows ran first on cool cards and the 300 W rows second, so the temperatures reflect ordering, not the cap. The sustained check below is the thermal test.
+
+- **325 W is used, not wasted.** The software power-cap flag was set in essentially every busy sample at both caps: GLM is still power-bound at 325 W, and clocks rose 10 % (1.87 → 2.06 GHz) for 8 % more power — the 300 W point sits on a steep part of the V/f curve. Efficiency is unchanged (decode +1 %, prefill −2 % tok/s/W).
+- **No thermal event.** Zero samples with `sw_thermal_slowdown` / `hw_thermal_slowdown` at either cap; the firmware fan curve stayed at 44–67 %. The T.Limit margin readout puts the throttle point near 92 °C; the earlier 8-minute 300 W run reached 88–89 °C, so a sustained 325 W run is the number that decides — see below.
+- **Decision:** adopt 325 W for GLM (owner policy: max watts where it pays and stays cool). Persist it with [`systemd/gpu-power-limit.service`](../systemd/gpu-power-limit.service); `nvidia-smi -pl` resets on reboot. Pending: sustained-load temperature at 325 W, and the same sweep on V4-Flash once servers are swapped.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.
