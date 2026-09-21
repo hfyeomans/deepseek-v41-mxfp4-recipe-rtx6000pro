@@ -50,6 +50,10 @@ decode metric, since decode is weight-bandwidth bound) and `verified` for both s
 
 Measured GDDR7 copy rate on the same card is ≈1,470 GB/s (E2), so decode gate/up runs at 93 % of
 the memory roofline. Smaller N tiles (128×64×128, 128×64×256) were 30–35 % slower at every decode M.
+W4A8 (`E13_A8=1`) verifies but is ~2× slower at decode (gate/up M=1 103.8 µs, 724 GB/s): the 128-row
+M tile issues M=128 of MMA for an M=1 group, and the FP8-rate `mxf8f6f4` instruction is compute-bound
+there. `TILE_M=64` does not compile (SM120 TMA warp-specialized mainloop asserts a 128-row CTA tile);
+a decode-shaped kernel is a separate mainloop (roadmap K10).
 
 ## Files
 

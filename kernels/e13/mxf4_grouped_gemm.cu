@@ -141,13 +141,16 @@ using OperatorClass       = cutlass::arch::OpClassBlockScaledTensorOp;      // E
 
 // Kernel Perf config
 // Cluster Shape fixed to 1x1x1
+#if !defined(E13_TILE_M)
+#define E13_TILE_M 128
+#endif
 #if !defined(E13_TILE_N)
 #define E13_TILE_N 128
 #endif
 #if !defined(E13_TILE_K)
 #define E13_TILE_K 128
 #endif
-using ThreadBlockShape    = Shape<_128,Int<E13_TILE_N>,Int<E13_TILE_K>>;
+using ThreadBlockShape    = Shape<Int<E13_TILE_M>,Int<E13_TILE_N>,Int<E13_TILE_K>>;
 using ClusterShape        = Shape<_1,_1,_1>;
 
 // D = alpha * acc + beta * C  (plain linear combination, BF16 out)
