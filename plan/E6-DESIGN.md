@@ -284,6 +284,23 @@ With 112.8 GiB of CPU experts that is 325.6 GiB against 246.8 (calculator:
 | **A-full** — A-min plus: hash ids for *both* Engram layers are known at step start (`EngramHasher` emits `[T, 2, 24]` in one call), so issue the layer-14 rows at layer 0 and hide the NVMe latency behind 13 layers; gather with `io_uring`/`preadv2` in a pinned staging buffer; graph-capturable via the same host-function pattern as 4.1. | as A-min | bit-exact | ~300 lines + a small C++/ctypes gather | miss latency off the critical path; prefill 196K rows/chunk ≈ 0.2–0.5 s overlapped with the 1.06 s expert transfer |
 | **B** — FP4 Engram in DRAM (`LibertAIDAI/…-NVFP4`, 97.3 GiB) through the unchanged host-table code. | 97.3 pinned + 112.8 experts → margin 12.8 GiB | lossy, cosine 0.9934, unevaluated | gather kernel must learn an FP4 row format; different checkpoint for two tensors | 11 µs |
 
+**Measured (E18, 2026-09-21, T3.6c done — overlay `a1ca246a`):** the table
+rows above were estimates; the real layer-1 table gives, cold page cache,
+16 threads: naive `index_select` on the mmap **6.1 ms** per token (48 rows,
+serial page faults = one NVMe round trip each), `MADV_WILLNEED` prefetch
+then gather **1.02 ms** per token, **5.0 ms** at T=16, **0.50 s** per
+4096-token chunk (196,608 rows, 2.5 µs/row — half the 1.06 s expert
+transfer); warm 0.003 / 0.056 / 2.9 ms. Bit-exact. Layout is one contiguous
+tensor per table in one shard (264 B/row = 256 weight + 8 scale, two byte
+ranges), so `_FileTable` is an mmap plus two header offsets; the diff came
+to ~150 lines, not 40, because `EngramEmbedding`'s fast path assumed a
+`cudaHostRegister`ed table. The gather is wrapped as
+`bcg_engram_file_rows = eager_on_graph(True)(…)` — the second graph break
+per Engram layer discussed below — and raises if reached inside a live
+full-graph capture, so decode runs `--cuda-graph-backend-decode breakable`.
+Its cost is a T3.6d measurement. Host budget: **0 GiB pinned** for Engram.
+Open: `mincore`-gated prefetch (0.7 ms fixed thread cost on warm rows).
+
 Decision: **A-min for first serve** (bit-exact, smallest diff, and it is what
 0xSero's `OFFLOAD_MODE=nvme` does in spirit), **A-full as the first
 optimisation after the number exists**, **B only as an E11 A/B** if A-full
