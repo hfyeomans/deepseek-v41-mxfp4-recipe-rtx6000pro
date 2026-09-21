@@ -37,7 +37,12 @@ mkdir -p "$OUT"
 
 DEFAULT_PL="$(nvidia-smi -i 0 --query-gpu=power.default_limit --format=csv,noheader,nounits | cut -d. -f1)"
 GPUS="$(nvidia-smi --query-gpu=index --format=csv,noheader | tr '\n' ' ')"
-restore() { for g in $GPUS; do nvidia-smi -i "$g" -pl "$DEFAULT_PL" >/dev/null || true; done; echo "restored -pl $DEFAULT_PL"; }
+restore() {
+  for g in $GPUS; do nvidia-smi -i "$g" -pl "$DEFAULT_PL" >/dev/null || true; done
+  echo "restored -pl $DEFAULT_PL"
+  # Running under sudo leaves root-owned evidence; hand it back to the invoking user.
+  [ -n "${SUDO_USER:-}" ] && chown -R "$SUDO_USER" "$OUT" || true
+}
 trap restore EXIT
 
 sample() { # $1 = csv path; prints sampler pid
