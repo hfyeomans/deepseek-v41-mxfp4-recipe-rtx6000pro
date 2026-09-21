@@ -80,4 +80,4 @@ Exit criterion: one table with 2-, 3- and 4-GPU rows for the same fixture and po
 - Quantizing weights ourselves. Experts are already 4-bit; sub-4-bit has no SM120 kernels.
 - Publishing any host identifiers. `scripts/ci.sh` scans for UUIDs, PCI IDs, home paths and LAN addresses.
 
-Detailed experiments: [EXPERIMENTS.md](EXPERIMENTS.md). Task list with owners and status: [TASKS.md](TASKS.md). Sources and open questions: [RESEARCH.md](RESEARCH.md).
+**Running readout (update this first when a result lands): [ROADMAP.md](ROADMAP.md).** Detailed experiments: [EXPERIMENTS.md](EXPERIMENTS.md). Task list with owners and status: [TASKS.md](TASKS.md). Sources and open questions: [RESEARCH.md](RESEARCH.md).
