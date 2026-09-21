@@ -167,6 +167,11 @@ Rules:
    Strategies in the fork (and to confirm in upstream's copy): `uniform`,
    `front-loading`, `random`, `frequency` (needs a `logical_count` histogram
    from `init_expert_location`). Rank 0 builds the mask and broadcasts it.
+   Verified in the `kt-kernel` wheel (T3.6a): `generate_gpu_experts_masks`
+   takes the `[layers, experts]` frequency tensor and picks the global
+   top-(layers × N), so the per-layer count is exact only for `uniform`;
+   under `frequency` hot layers get more GPU experts than cold ones and the
+   per-GPU byte budget must be checked against the *actual* mask sum.
    **`--kt-enable-dynamic-expert-update` is skipped for MXFP4** (the copier
    assumes INT4/FP8/BF16 layouts) — so V4.1 placement is static; E7-style
    histograms have to come from a separate routing capture, not from the
