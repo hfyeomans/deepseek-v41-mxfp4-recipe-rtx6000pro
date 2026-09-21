@@ -10,6 +10,28 @@ Local observations for immutable profiles on this host. Nothing here is a univer
 - Functional: [`scripts/verify.py`](../scripts/verify.py). Alias and context ceiling, `17*19=323` with thinking off, thinking toggle, tool call, N-needle exact retrieval at the configured context with `finish_reason=stop` required.
 - Raw JSON for every table lives in `evidence/` after the identifier scan in `scripts/ci.sh`.
 
+## Scoreboard — GLM-5.3-Flash vs DSV4-Flash on this box (as of 2026-09-21)
+
+Best measured runs with one harness (`scripts/bench-decode.py`, `bench-prefill.py`, `verify.py`), 2 × RTX PRO 6000 Max-Q, 300 W unless stated. Medians are what to plan on; "best run" is the ceiling seen. Neither column measures answer quality beyond synthetic retrieval.
+
+| Metric | GLM-5.3-Flash (EXL3 4-bit, DFlash K5) | DSV4-Flash (NVFP4, DSpark K5) | Winner |
+|---|---|---|---|
+| Single-stream decode, C1 | 132–135 tok/s (40 % accept) | **207–239 tok/s** (51–63 % accept) | DSV4 1.6–1.8× |
+| Decode without speculation, C1 | not measurable (recipe always loads the draft) | 89 tok/s | — |
+| C16 batched decode, wall, median | 589 (300 W) / **642 (325 W)** | **1,213** (1M profile) / 1,258 (262K profile) | DSV4 ~2× |
+| C16 batched decode, best single run | 642 wall | **1,338 wall** | DSV4 |
+| C16 sustained, 15 runs at 325 W | 607 | not run | — |
+| Prefill 32K | 4,462 (E14) / 4,429 (325 W) | **8,582 best run**; 8,256–8,376 medians | DSV4 1.9× |
+| Prefill 1M | **3.8K tok/s, 261 s** (flat curve) | 1.9K tok/s, 504 s | GLM 2× |
+| Needles at 262K / 1M | 6/6 | pass | tie |
+| Usable concurrent sequences | ≈ 20 (Mamba state ≈ 4.9 % of KV pool each) | 16 slots sharing 1.18M KV tokens | shape-dependent |
+| Weights per card / free for KV | **64.7 GiB / 16.2 GiB** | 83.2 GiB / 5.7 GiB | GLM |
+| Effect of 325 W cap | **+9 % C16, +5 % prefill** | 0 % / +1 % | — |
+| tok/s per W, C16 decode | 0.98 | **2.02** | DSV4 2× |
+| Modalities | text + images (16 per prompt) | text | GLM |
+
+**Verdict:** DSV4-Flash wins throughput about 2× across decode and short prefill and 2× on efficiency; GLM wins long-context prefill (cold 1M prompt in 261 s vs 504 s), VRAM headroom and vision. DSV4-Flash's decode lead is partly DSpark's higher acceptance, which is content-dependent. Both recipes now carry their measured best profiles (GLM: 16 slots, capture derived; DSV4: 16 slots, util 0.9651, capture 96) and the 325 W cap decision is in HARDWARE.md.
+
 ## Checkpoint budget (measured from shard headers, P0)
 
 Source: [`evidence/budget-*.json`](../evidence/) via [`scripts/checkpoint-budget.py`](../scripts/checkpoint-budget.py).

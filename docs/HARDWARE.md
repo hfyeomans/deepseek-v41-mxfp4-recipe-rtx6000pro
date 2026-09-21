@@ -105,11 +105,41 @@ Why it matters:
 | CPU | Threadripper PRO 9955WX, 350 W TDP | vendor spec |
 | Platform (board, 8 RDIMMs at 1.4 V EXPO, 2 NVMe, fans) | ~80–120 W | estimate |
 | Today (2 GPUs) | 600 + 350 + ~100 ≈ **1,050 W DC worst case** — fits with ~30 % margin | derived |
-| Today at the 325 W maximum cap | 650 + 350 + ~100 ≈ 1,100 W — fits; buys +4 % prefill (E8b), nothing on decode | derived |
+| Today at the 325 W maximum cap | 650 + 350 + ~100 ≈ 1,100 W — fits; **adopted (T2.9)**: GLM +9 % C16 decode / +5 % prefill, V4-Flash 0 % / +1 %; sustained 89 °C, 0 throttle events | derived + measured |
 | Four Max-Q at 300 W | 1,200 + 350 + ~100 ≈ **1,650 W DC** — **exceeds the 1,500 W PSU** | derived |
 | Four Max-Q at 250 W | 1,000 + 350 + ~100 ≈ 1,450 W — inside the label, ~3 % margin; not acceptable for sustained load | derived |
 | Four Max-Q at 250 W + CPU PPT capped at 200 W | 1,000 + 200 + ~100 ≈ 1,300 W — 87 % of the PSU; above the usual 80 % continuous-load ceiling | derived |
 | Four Max-Q at 225 W | **not settable**: 250 W is the driver's floor on these cards | measured |
+
+### Power cap: what it is, how to set it, what it buys (T2.9, 2026-09-21)
+
+The cap is a per-GPU driver setting (`nvidia-smi -pl`), not a per-recipe or per-container option: the serving containers run unprivileged and cannot change it, and it applies to whichever model is up. It resets to the 300 W default on reboot.
+
+| Action | Command |
+|---|---|
+| Read current caps | `nvidia-smi --query-gpu=index,power.limit,power.default_limit,power.max_limit,power.min_limit --format=csv` |
+| Set 325 W now (both cards, until reboot) | `sudo nvidia-smi -pl 325` |
+| Back to the 300 W default now | `sudo nvidia-smi -pl 300` |
+| Persist 325 W across reboots | `sudo cp systemd/gpu-power-limit.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now gpu-power-limit` |
+| Remove the persistent setting | `sudo systemctl disable --now gpu-power-limit` (its `ExecStop` restores 300 W) |
+| Measure the effect on the running server | `sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model <served-name> --caps 325,300 --concurrency 16 --runs 5 --output evidence/<dir>` |
+
+Per-recipe caps would need a sudoers rule for exactly `/usr/bin/nvidia-smi -pl *` and a call from each `serve.sh`; not built — GLM is the daily driver and V4-Flash is indifferent to the cap.
+
+**What 325 W buys over 300 W** (same runs, same fixtures; [`evidence/t29-*`](../evidence/)):
+
+| Phase | GLM-5.3-Flash (EXL3) | DSV4-Flash (NVFP4) |
+|---|---|---|
+| C16 batched decode | **+9.1 %** (589 → 642 wall tok/s); sustained 15 runs 607 | **0 %** (1,213 → 1,206; run noise 1,088–1,338) |
+| 32K prefill | **+5.1 %** (4,215 → 4,429) | +1.3 % (8,256 → 8,360; noise) |
+| C1 decode | cap not reached at C1 (256–259 W) | 0 % (216–229 tok/s at every cap, E8b) |
+| SM clock under load | +10 % (1.87 → 2.06 GHz) | unchanged (2.19 GHz at both caps) |
+| Decode tok/s per W | flat (0.98 → 0.99) | **−8 %** (2.02 → 1.85) |
+| Sustained heat | 89 °C, fans 73 %, 0 throttle events | 86 °C, fans 57 %, 0 throttle events |
+
+Why they differ: GLM's EXL3 trellis weights are dequantised on the SMs before every matmul, so it turns watts into clock. V4-Flash's NVFP4 GEMMs run on tensor cores and wait on memory bandwidth, which the cap does not touch — it drew the full 650 W at the same clock, i.e. leakage on hotter silicon. Expect any V4.1 engine (NVFP4/MXFP4) to behave like V4-Flash. Throttle point per the T.Limit readout is ≈ 92 °C; the sweep summary prints `thermal-throttle samples` per row, and it has been 0 in every run so far.
+
+**Decision:** 325 W system-wide, because the daily driver gains 9 % and the other recipe loses nothing but efficiency. If V4-Flash becomes primary, drop to 300 W. 250 W is retired — it was a four-card PSU budget, and the owner has ruled out planning for four cards.
 
 **Option A needs more power than this machine has.** Four RTX PRO 6000 Max-Q at their 300 W limit plus the 350 W CPU do not fit a 1,500 W supply, even before transient spikes. The choices, in order of preference:
 
