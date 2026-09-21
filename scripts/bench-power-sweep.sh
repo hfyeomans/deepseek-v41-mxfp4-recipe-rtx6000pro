@@ -2,6 +2,9 @@
 # E8b: tok/s-per-watt curve. Repeats the C1 decode and 32K prefill rows at each
 # power cap, sampling nvidia-smi at 500 ms, and restores the default limit.
 #
+# Prerequisite: the server under test must be up and healthy at --url. For the E8
+# baseline that is the sibling V4-Flash deployment:
+#   (cd ~/dev/src/deepseek-v4-flash-nvfp4-tp2 && bash recipe.sh)   # ~5 min to healthy
 # Needs root for `nvidia-smi -pl` (no passwordless sudo on this host), so run:
 #   sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model dsv4-nvfp4
 # Caps below power.min_limit (250 W on RTX PRO 6000 Max-Q) are rejected by the driver.
@@ -24,6 +27,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$MODEL" ] || { echo "--model required" >&2; exit 2; }
+if ! curl -sf -m 5 "$URL/health" >/dev/null; then
+  echo "no healthy server at $URL — start the deployment first (see header), wait for /health, then rerun" >&2
+  exit 3
+fi
 mkdir -p "$OUT"
 
 DEFAULT_PL="$(nvidia-smi -i 0 --query-gpu=power.default_limit --format=csv,noheader,nounits | cut -d. -f1)"
