@@ -29,6 +29,8 @@ hence `-gencode arch=compute_120a,code=sm_120a`. W4A8 (`kind::mxf8f6f4`) would a
 # V4.1 expert shapes, both schedules, decode verified against CUTLASS's host block-scaled reference
 kernels/e13/run.py --verify-decode                         # -> results/e13-stage1.json
 kernels/e13/run.py --skip-prefill --no-reinit --iterations 200 --output results/e13-decode.json
+# deployed-engine shapes: TP2 per-rank N/K, 36 expert groups = a 6-token DSpark verify step (452 MB > L2)
+kernels/e13/run.py --skip-prefill --no-reinit --iterations 200 --tp 2 --decode-groups 36 --output results/e13-tp2-g36.json
 
 # the binary directly
 docker run --rm --gpus all -v "$PWD:/w" -w /w --entrypoint ./kernels/e13/mxf4_grouped_gemm_n128k128 \
@@ -47,9 +49,17 @@ decode metric, since decode is weight-bandwidth bound) and `verified` for both s
 | down 5120×2304 | 1 | 6 | 39.6 | 949 | 3.6 |
 | gate/up prefill | 64 | 384 | 3,462 (coop) | 1,390 | 335 |
 | gate/up dense proxy | 4,096 | 6 | 1,094 | — | 1,060 |
+| gate/up TP2 (2304×5120) | 1 / 8 | 36 | 168 / 172 | 1,334 / 1,314 | — |
+| down TP2 (5120×1152) | 1 / 8 | 36 | 87 / 79 | 1,301 / 1,435 | — |
+| gate/up TP1 | 1 / 8 | 36 (451 MB) | 318 / 311 | 1,421 / 1,451 | — |
+| down TP1 | 1 / 8 | 36 (226 MB) | 170 / 165 | 1,327 / 1,369 | — |
 
 Measured GDDR7 copy rate on the same card is ≈1,470 GB/s (E2), so decode gate/up runs at 93 % of
-the memory roofline. Smaller N tiles (128×64×128, 128×64×256) were 30–35 % slower at every decode M.
+the memory roofline in the 6-group case and **97–99 %** once the working set (36 groups, 451 MB)
+exceeds the 128 MB L2 — the small cases are latency-bound, not L2-flattered. Mind L2 when reading
+small-group numbers: 15 groups at TP2 (94 MB) fits, and its M=4 row posts 1,611 GB/s, above HBM.
+At TP2 × 15 groups the gate/up launch is 72.5 µs, the same as the deployed vLLM CUTLASS NVFP4
+grouped kernel's 73 µs in the E12 census (which implies ~15 distinct experts per 6-token step). Smaller N tiles (128×64×128, 128×64×256) were 30–35 % slower at every decode M.
 W4A8 (`E13_A8=1`) verifies but is ~2× slower at decode (gate/up M=1 103.8 µs, 724 GB/s): the 128-row
 M tile issues M=128 of MMA for an M=1 group, and the FP8-rate `mxf8f6f4` instruction is compute-bound
 there. `TILE_M=64` does not compile (SM120 TMA warp-specialized mainloop asserts a 128-row CTA tile);

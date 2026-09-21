@@ -97,21 +97,24 @@ Why it matters:
 | Item | Value | Source |
 |---|---|---|
 | PSU | **1,500 W** (owner statement; model and 12V-2x6 connector count not recorded) | owner |
-| Current GPU power limit | 2 × 300 W (325 W max) | measured |
+| Current GPU power limit | 2 × 300 W (325 W max, **250 W minimum** — `power.min_limit`; the driver rejects `-pl 225`) | measured (`nvidia-smi --query-gpu=power.min_limit`) |
+| Measured GPU draw, V4-Flash TP2 C1 decode | 242 / 249 W per card at 2,272 / 2,310 MHz SM — not touching the cap | measured (E8, `evidence/baseline-v4-flash/power-decode-c1-300w.csv`) |
+| Measured GPU draw, 32K prefill | 300 / 300 W (at the cap), SM throttled to 1,950 MHz | measured (E8, `power-prefill-32k-300w.csv`) |
 | CPU | Threadripper PRO 9955WX, 350 W TDP | vendor spec |
 | Platform (board, 8 RDIMMs at 1.4 V EXPO, 2 NVMe, fans) | ~80–120 W | estimate |
 | Today (2 GPUs) | 600 + 350 + ~100 ≈ **1,050 W DC worst case** — fits with ~30 % margin | derived |
 | Four Max-Q at 300 W | 1,200 + 350 + ~100 ≈ **1,650 W DC** — **exceeds the 1,500 W PSU** | derived |
 | Four Max-Q at 250 W | 1,000 + 350 + ~100 ≈ 1,450 W — inside the label, ~3 % margin; not acceptable for sustained load | derived |
-| Four Max-Q at 225 W + CPU PPT capped at 200 W | 900 + 200 + ~100 ≈ 1,200 W — 80 % of the PSU, the usual continuous-load ceiling | derived |
+| Four Max-Q at 250 W + CPU PPT capped at 200 W | 1,000 + 200 + ~100 ≈ 1,300 W — 87 % of the PSU; above the usual 80 % continuous-load ceiling | derived |
+| Four Max-Q at 225 W | **not settable**: 250 W is the driver's floor on these cards | measured |
 
 **Option A needs more power than this machine has.** Four RTX PRO 6000 Max-Q at their 300 W limit plus the 350 W CPU do not fit a 1,500 W supply, even before transient spikes. The choices, in order of preference:
 
 1. **Replace the PSU with a 2,000 W-class unit (or add a second PSU for two of the cards).** At 2,000 W the 300 W/card profile has ~18 % margin. A 2,000 W supply at 120 V draws ~17–18 A at the wall, above the 16 A continuous rating of a 20 A circuit, so it also needs a 240 V or dedicated 30 A circuit; at 240 V it is ~9 A. Record the circuit before ordering.
-2. **Keep the 1,500 W PSU and cap the cards at 225 W** (`nvidia-smi -pl 225`) with the CPU PPT limited in BIOS. 0xSero's 4-GPU numbers were at 275 W; decode is memory-bandwidth-bound so 225 W costs less than the proportional 25 %, but prefill (compute-bound) will slow. This is the interim experiment plan: E8b's power sweep (300 → 275 → 250 → 225 W) on the existing two cards measures the actual cost per watt before committing.
+2. **Keep the 1,500 W PSU and cap the cards at 250 W** (`nvidia-smi -pl 250`, the lowest the driver accepts) with the CPU PPT limited in BIOS. E8 measured decode at 242–249 W per card *without* a cap, so a 250 W cap should cost decode almost nothing; prefill runs at the 300 W cap today and would lose roughly its ~15 % clock drop again. Even so, four cards at 250 W plus a 200 W CPU sit at ~1,300 W, 87 % of the supply — workable for experiments, not for continuous serving. E8b (`sudo bash scripts/bench-power-sweep.sh`, caps 300/275/250) measures the actual cost per watt before committing.
 3. Not an option: full 600 W Workstation-edition cards. Four of them are 2,400 W of GPU alone.
 
-Measure, don't assume: the E2/E4 GPU window should also record whole-system draw at the wall if a meter is available, and `nvidia-smi --query-gpu=power.draw` under the E8 baseline load, so the "~100 W platform" and the CPU's real serving draw (usually well under TDP, but Engram host-table lookups load all 16 cores during prefill) replace the estimates above.
+Measure, don't assume: GPU draw under the E8 baseline is now recorded above. Still missing: whole-system draw at the wall (no meter), and the CPU's real serving draw (usually well under TDP, but Engram host-table lookups load all 16 cores during prefill) — needed to replace the "~100 W platform" and 350 W CPU estimates.
 
 ## Software already on the host relevant to this plan
 

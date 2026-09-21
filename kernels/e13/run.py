@@ -31,12 +31,21 @@ SHAPES = {
 }
 
 
-def cases(skip_prefill: bool):
+def tp_shapes(tp: int):
+    # Tensor parallel splits the expert intermediate dimension: gate/up loses rows (N),
+    # down loses its reduction dimension (K). TP1 returns SHAPES unchanged.
+    return {
+        "gate_up": {"n": SHAPES["gate_up"]["n"] // tp, "k": SHAPES["gate_up"]["k"]},
+        "down": {"n": SHAPES["down"]["n"], "k": SHAPES["down"]["k"] // tp},
+    }
+
+
+def cases(skip_prefill: bool, tp: int = 1, decode_groups: int = 6):
     out = []
-    for proj, s in SHAPES.items():
+    for proj, s in tp_shapes(tp).items():
         for m in (1, 4, 8):
-            out.append({"name": f"decode_{proj}_m{m}_g6", "proj": proj, "phase": "decode",
-                        "groups": [(m, s["n"], s["k"])] * 6})
+            out.append({"name": f"decode_{proj}_m{m}_g{decode_groups}", "proj": proj, "phase": "decode",
+                        "groups": [(m, s["n"], s["k"])] * decode_groups})
         if not skip_prefill:
             out.append({"name": f"prefill_{proj}_m64_g384", "proj": proj, "phase": "prefill",
                         "groups": [(64, s["n"], s["k"])] * 384})
@@ -120,20 +129,23 @@ def main():
                     help="pass --no_reinit to the binary: time gemm.run() only (drop per-iteration initialize)")
     ap.add_argument("--verify-decode", action="store_true",
                     help="run the host reference check on decode cases (slow: ~1 GFLOP on CPU per case)")
+    ap.add_argument("--tp", type=int, default=1, help="per-rank shapes under tensor parallel (gate/up N and down K divided by TP)")
+    ap.add_argument("--decode-groups", type=int, default=6,
+                    help="expert groups per decode launch (6 = one token x top-6; 36 = a 6-token DSpark verify step)")
     args = ap.parse_args()
     (REPO / "results").mkdir(exist_ok=True)
 
     gpu = subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total,clocks.max.sm,power.limit",
                           "--format=csv,noheader"], capture_output=True, text=True).stdout.strip().splitlines()
     results = {"experiment": "E13 stage 1", "binary": args.binary, "image": IMAGE, "iterations": args.iterations, "reinit_in_loop": not args.no_reinit,
-               "gpu0": gpu[0] if gpu else None, "shapes": SHAPES,
+               "gpu0": gpu[0] if gpu else None, "shapes": tp_shapes(args.tp), "tp": args.tp, "decode_groups": args.decode_groups,
                "notes": ["MXFP4 (E2M1 + UE8M0 block-32) x MXFP4 -> BF16, CUTLASS 4.7.1 SM120 block-scaled "
                          "grouped GEMM (kind::mxf4nvf4), built for sm_120a",
                          "avg_ms includes gemm.initialize() per iteration as in the CUTLASS example unless reinit_in_loop=false",
                          "weight_GBps = MXFP4 weight+scale bytes / avg time; decode is weight-bandwidth bound",
                          "prefill_dense_proxy = 6 groups x M=4096 (all tokens to one expert), an upper bound"],
                "cases": {}}
-    for case in cases(args.skip_prefill):
+    for case in cases(args.skip_prefill, args.tp, args.decode_groups):
         verify = args.verify_decode and case["phase"] == "decode"
         print(f"== {case['name']}  groups={len(case['groups'])} M,N,K={case['groups'][0]} verify={verify}",
               flush=True)

@@ -42,7 +42,7 @@ Measured so far on this host ([docs/BENCHMARKS.md](docs/BENCHMARKS.md)): CPU DRA
 | **E. Three GPUs**, 91% of experts resident, EP3/PP | future comparison; no card | ~119–155 tok/s |
 | **A. Four RTX PRO 6000** + Engram tables in DRAM (SGLang `dev-dsv41` host-table path) | proven pattern on 4× SM120 by 0xSero; profile written, unqualified; **1,500 W PSU cannot carry four cards at 300 W** ([power](docs/HARDWARE.md#power-and-cooling-planning-inputs-for-option-a)) | ~200 tok/s C1, ~700 tok/s C8, ~7K tok/s prefill (0xSero, 275 W) |
 | **C/D. Sub-3-bit experts or 42% expert pruning** | no kernels / no evaluated artifact | research only; D gated on E7 routing skew |
-| **Baseline: DeepSeek-V4-Flash-0731 NVFP4, TP2** | already qualified on this host (sibling recipe) | 200.6 tok/s single-stream with DSpark K5, 1M context, 226 tok/s C2 — the number to beat per parameter |
+| **Baseline: DeepSeek-V4-Flash-0731 NVFP4, TP2** | qualified on this host; **re-measured with this harness (E8)** | 171–239 tok/s C1 with DSpark K5 (acceptance 40–63 % drives the spread), ~300 tok/s wall-clock aggregate at `max_num_seqs=2`, prefill 7.8K tok/s at 32K → 1.9K at 1M, 6/6 needles at 222K — the number to beat per parameter ([BENCHMARKS](docs/BENCHMARKS.md#e8-baseline-deepseek-v4-flash-0731-nvfp4-tp2-2--rtx-pro-6000-max-q)) |
 
 ## What is in this repository
 

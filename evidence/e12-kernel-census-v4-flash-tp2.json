@@ -1,0 +1,717 @@
+{
+  "experiment": "E12",
+  "method": "torch profiler component report; sums include stream overlap",
+  "reports": [
+    {
+      "source": "code-c1-rank0.json",
+      "case": "code-c1",
+      "rank": 0,
+      "steps": 20,
+      "kernel_sum_ms": 395.106,
+      "kernel_union_ms": 306.770619,
+      "kernel_span_ms": 317.229961,
+      "sum_ms_per_step": 19.755,
+      "union_ms_per_step": 15.339,
+      "moe_backend_observed": "cutlass_sm120_block_scaled_grouped",
+      "marlin_ms_per_step": 0.2441,
+      "by_category": {
+        "dense_fp8": {
+          "sum_ms": 106.836,
+          "count": 11580,
+          "kernels": 5,
+          "ms_per_step": 5.3418,
+          "share_pct": 27.04
+        },
+        "moe_expert_fp4_cutlass_sm120": {
+          "sum_ms": 96.944,
+          "count": 1720,
+          "kernels": 2,
+          "ms_per_step": 4.8472,
+          "share_pct": 24.54
+        },
+        "bf16_gemm": {
+          "sum_ms": 46.436,
+          "count": 4640,
+          "kernels": 7,
+          "ms_per_step": 2.3218,
+          "share_pct": 11.75
+        },
+        "attention_indexer": {
+          "sum_ms": 43.41,
+          "count": 6360,
+          "kernels": 13,
+          "ms_per_step": 2.1705,
+          "share_pct": 10.99
+        },
+        "draft_pipeline": {
+          "sum_ms": 38.87,
+          "count": 4840,
+          "kernels": 61,
+          "ms_per_step": 1.9435,
+          "share_pct": 9.84
+        },
+        "other": {
+          "sum_ms": 21.035,
+          "count": 7940,
+          "kernels": 14,
+          "ms_per_step": 1.0517,
+          "share_pct": 5.32
+        },
+        "hyper_connections": {
+          "sum_ms": 16.043,
+          "count": 3500,
+          "kernels": 5,
+          "ms_per_step": 0.8022,
+          "share_pct": 4.06
+        },
+        "collective": {
+          "sum_ms": 12.394,
+          "count": 1760,
+          "kernels": 2,
+          "ms_per_step": 0.6197,
+          "share_pct": 3.14
+        },
+        "norm_act_elementwise": {
+          "sum_ms": 10.854,
+          "count": 7000,
+          "kernels": 49,
+          "ms_per_step": 0.5427,
+          "share_pct": 2.75
+        },
+        "sampling": {
+          "sum_ms": 2.285,
+          "count": 80,
+          "kernels": 3,
+          "ms_per_step": 0.1142,
+          "share_pct": 0.58
+        }
+      },
+      "top_kernels": [
+        {
+          "name": "_w8a8_triton_block_scaled_mm",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 4720,
+          "launches_per_step": 236.0,
+          "sum_ms": 63.112,
+          "us_per_launch": 13.4,
+          "share_pct": 15.97
+        },
+        {
+          "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5tupleIJlllEEEEENS1_10",
+          "category": "moe_expert_fp4_cutlass_sm120",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 62.925,
+          "us_per_launch": 73.2,
+          "share_pct": 15.93
+        },
+        {
+          "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5tupleIJlllEEEEENS1_10",
+          "category": "moe_expert_fp4_cutlass_sm120",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 34.019,
+          "us_per_launch": 39.6,
+          "share_pct": 8.61
+        },
+        {
+          "name": "_deepseek_v4_sm12x_fp8_einsum_kernel",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 24.132,
+          "us_per_launch": 28.1,
+          "share_pct": 6.11
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8>(cutlass_80_wmma_te",
+          "category": "bf16_gemm",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 15.439,
+          "us_per_launch": 36.8,
+          "share_pct": 3.91
+        },
+        {
+          "name": "void flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<(ModelType)1, 32, 128, 64>(__nv_bfloat16 cons",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 13.776,
+          "us_per_launch": 16.0,
+          "share_pct": 3.49
+        },
+        {
+          "name": "void per_token_group_quant_8bit_kernel<c10::BFloat16, c10::Float8_e4m3fn, false, false, float>(c10::BFloat16 c",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 4720,
+          "launches_per_step": 236.0,
+          "sum_ms": 13.181,
+          "us_per_launch": 2.8,
+          "share_pct": 3.34
+        },
+        {
+          "name": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 2>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, __n",
+          "category": "collective",
+          "component": "target_forward",
+          "count": 1740,
+          "launches_per_step": 87.0,
+          "sum_ms": 11.581,
+          "us_per_launch": 6.7,
+          "share_pct": 2.93
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_32x32_64x1_tn_align8>(cutlass_80_wmma_tensorop",
+          "category": "bf16_gemm",
+          "component": "target_forward",
+          "count": 820,
+          "launches_per_step": 41.0,
+          "sum_ms": 9.304,
+          "us_per_launch": 11.3,
+          "share_pct": 2.35
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8>(cutlass_80_wmma_te",
+          "category": "bf16_gemm",
+          "component": "draft_pipeline",
+          "count": 120,
+          "launches_per_step": 6.0,
+          "sum_ms": 9.106,
+          "us_per_launch": 75.9,
+          "share_pct": 2.3
+        },
+        {
+          "name": "kernel_cutlass_kernel_vllmmodelsdeepseek_v4nvidiaopssparse_attn_compress_cutedslSparseAttnCompressNormRopeStor",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 8.304,
+          "us_per_launch": 19.8,
+          "share_pct": 2.1
+        },
+        {
+          "name": "mhc_fused_tilelang_kernel",
+          "category": "hyper_connections",
+          "component": "target_forward",
+          "count": 1700,
+          "launches_per_step": 85.0,
+          "sum_ms": 7.881,
+          "us_per_launch": 4.6,
+          "share_pct": 1.99
+        },
+        {
+          "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+          "category": "hyper_connections",
+          "component": "target_forward",
+          "count": 1700,
+          "launches_per_step": 85.0,
+          "sum_ms": 7.662,
+          "us_per_launch": 4.5,
+          "share_pct": 1.94
+        },
+        {
+          "name": "_fused_kv_compress_norm_rope_insert_indexer_attn",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 6.636,
+          "us_per_launch": 15.8,
+          "share_pct": 1.68
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8>(cutlass_80_wmma_te",
+          "category": "bf16_gemm",
+          "component": "postprocess_logits",
+          "count": 20,
+          "launches_per_step": 1.0,
+          "sum_ms": 6.616,
+          "us_per_launch": 330.8,
+          "share_pct": 1.67
+        }
+      ]
+    },
+    {
+      "source": "code48k-c1-rank0.json",
+      "case": "code48k-c1",
+      "rank": 0,
+      "steps": 20,
+      "kernel_sum_ms": 425.465,
+      "kernel_union_ms": 336.709824,
+      "kernel_span_ms": 350.508857,
+      "sum_ms_per_step": 21.273,
+      "union_ms_per_step": 16.835,
+      "moe_backend_observed": "cutlass_sm120_block_scaled_grouped",
+      "marlin_ms_per_step": 0.2526,
+      "by_category": {
+        "dense_fp8": {
+          "sum_ms": 112.319,
+          "count": 11580,
+          "kernels": 5,
+          "ms_per_step": 5.6159,
+          "share_pct": 26.4
+        },
+        "moe_expert_fp4_cutlass_sm120": {
+          "sum_ms": 100.221,
+          "count": 1720,
+          "kernels": 2,
+          "ms_per_step": 5.0111,
+          "share_pct": 23.56
+        },
+        "attention_indexer": {
+          "sum_ms": 64.466,
+          "count": 6360,
+          "kernels": 13,
+          "ms_per_step": 3.2233,
+          "share_pct": 15.15
+        },
+        "bf16_gemm": {
+          "sum_ms": 46.434,
+          "count": 4640,
+          "kernels": 7,
+          "ms_per_step": 2.3217,
+          "share_pct": 10.91
+        },
+        "draft_pipeline": {
+          "sum_ms": 39.214,
+          "count": 4840,
+          "kernels": 61,
+          "ms_per_step": 1.9607,
+          "share_pct": 9.22
+        },
+        "other": {
+          "sum_ms": 21.127,
+          "count": 7941,
+          "kernels": 15,
+          "ms_per_step": 1.0563,
+          "share_pct": 4.97
+        },
+        "hyper_connections": {
+          "sum_ms": 16.108,
+          "count": 3500,
+          "kernels": 5,
+          "ms_per_step": 0.8054,
+          "share_pct": 3.79
+        },
+        "collective": {
+          "sum_ms": 12.45,
+          "count": 1760,
+          "kernels": 2,
+          "ms_per_step": 0.6225,
+          "share_pct": 2.93
+        },
+        "norm_act_elementwise": {
+          "sum_ms": 10.858,
+          "count": 7000,
+          "kernels": 49,
+          "ms_per_step": 0.5429,
+          "share_pct": 2.55
+        },
+        "sampling": {
+          "sum_ms": 2.268,
+          "count": 80,
+          "kernels": 3,
+          "ms_per_step": 0.1134,
+          "share_pct": 0.53
+        }
+      },
+      "top_kernels": [
+        {
+          "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5tupleIJlllEEEEENS1_10",
+          "category": "moe_expert_fp4_cutlass_sm120",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 65.09,
+          "us_per_launch": 75.7,
+          "share_pct": 15.3
+        },
+        {
+          "name": "_w8a8_triton_block_scaled_mm",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 4720,
+          "launches_per_step": 236.0,
+          "sum_ms": 63.098,
+          "us_per_launch": 13.4,
+          "share_pct": 14.83
+        },
+        {
+          "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5tupleIJlllEEEEENS1_10",
+          "category": "moe_expert_fp4_cutlass_sm120",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 35.131,
+          "us_per_launch": 40.9,
+          "share_pct": 8.26
+        },
+        {
+          "name": "void flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<(ModelType)1, 32, 128, 64>(__nv_bfloat16 cons",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 30.407,
+          "us_per_launch": 35.4,
+          "share_pct": 7.15
+        },
+        {
+          "name": "_deepseek_v4_sm12x_fp8_einsum_kernel",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 24.11,
+          "us_per_launch": 28.0,
+          "share_pct": 5.67
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8>(cutlass_80_wmma_te",
+          "category": "bf16_gemm",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 15.443,
+          "us_per_launch": 36.8,
+          "share_pct": 3.63
+        },
+        {
+          "name": "void per_token_group_quant_8bit_kernel<c10::BFloat16, c10::Float8_e4m3fn, false, false, float>(c10::BFloat16 c",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 4720,
+          "launches_per_step": 236.0,
+          "sum_ms": 13.223,
+          "us_per_launch": 2.8,
+          "share_pct": 3.11
+        },
+        {
+          "name": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 2>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, __n",
+          "category": "collective",
+          "component": "target_forward",
+          "count": 1740,
+          "launches_per_step": 87.0,
+          "sum_ms": 11.63,
+          "us_per_launch": 6.7,
+          "share_pct": 2.73
+        },
+        {
+          "name": "_fp8_paged_mqa_logits_rowwise_kernel",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 10.53,
+          "us_per_launch": 25.1,
+          "share_pct": 2.47
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_32x32_64x1_tn_align8>(cutlass_80_wmma_tensorop",
+          "category": "bf16_gemm",
+          "component": "target_forward",
+          "count": 820,
+          "launches_per_step": 41.0,
+          "sum_ms": 9.3,
+          "us_per_launch": 11.3,
+          "share_pct": 2.19
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8>(cutlass_80_wmma_te",
+          "category": "bf16_gemm",
+          "component": "draft_pipeline",
+          "count": 120,
+          "launches_per_step": 6.0,
+          "sum_ms": 9.107,
+          "us_per_launch": 75.9,
+          "share_pct": 2.14
+        },
+        {
+          "name": "kernel_cutlass_kernel_vllmmodelsdeepseek_v4nvidiaopssparse_attn_compress_cutedslSparseAttnCompressNormRopeStor",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 8.453,
+          "us_per_launch": 20.1,
+          "share_pct": 1.99
+        },
+        {
+          "name": "mhc_fused_tilelang_kernel",
+          "category": "hyper_connections",
+          "component": "target_forward",
+          "count": 1700,
+          "launches_per_step": 85.0,
+          "sum_ms": 7.923,
+          "us_per_launch": 4.7,
+          "share_pct": 1.86
+        },
+        {
+          "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+          "category": "hyper_connections",
+          "component": "target_forward",
+          "count": 1700,
+          "launches_per_step": 85.0,
+          "sum_ms": 7.673,
+          "us_per_launch": 4.5,
+          "share_pct": 1.8
+        },
+        {
+          "name": "_fused_kv_compress_norm_rope_insert_indexer_attn",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 6.65,
+          "us_per_launch": 15.8,
+          "share_pct": 1.56
+        }
+      ]
+    },
+    {
+      "source": "prose-code-c2-rank0.json",
+      "case": "prose-code-c2",
+      "rank": 0,
+      "steps": 20,
+      "kernel_sum_ms": 566.691,
+      "kernel_union_ms": 480.433067,
+      "kernel_span_ms": 491.146601,
+      "sum_ms_per_step": 28.335,
+      "union_ms_per_step": 24.022,
+      "moe_backend_observed": "cutlass_sm120_block_scaled_grouped",
+      "marlin_ms_per_step": 0.4081,
+      "by_category": {
+        "moe_expert_fp4_cutlass_sm120": {
+          "sum_ms": 177.645,
+          "count": 1720,
+          "kernels": 4,
+          "ms_per_step": 8.8822,
+          "share_pct": 31.35
+        },
+        "dense_fp8": {
+          "sum_ms": 109.898,
+          "count": 11517,
+          "kernels": 5,
+          "ms_per_step": 5.4949,
+          "share_pct": 19.39
+        },
+        "collective": {
+          "sum_ms": 89.926,
+          "count": 1760,
+          "kernels": 2,
+          "ms_per_step": 4.4963,
+          "share_pct": 15.87
+        },
+        "draft_pipeline": {
+          "sum_ms": 51.922,
+          "count": 5060,
+          "kernels": 62,
+          "ms_per_step": 2.5961,
+          "share_pct": 9.16
+        },
+        "attention_indexer": {
+          "sum_ms": 44.58,
+          "count": 6447,
+          "kernels": 14,
+          "ms_per_step": 2.229,
+          "share_pct": 7.87
+        },
+        "bf16_gemm": {
+          "sum_ms": 37.4,
+          "count": 5060,
+          "kernels": 10,
+          "ms_per_step": 1.87,
+          "share_pct": 6.6
+        },
+        "other": {
+          "sum_ms": 21.658,
+          "count": 7926,
+          "kernels": 21,
+          "ms_per_step": 1.0829,
+          "share_pct": 3.82
+        },
+        "hyper_connections": {
+          "sum_ms": 19.186,
+          "count": 3500,
+          "kernels": 6,
+          "ms_per_step": 0.9593,
+          "share_pct": 3.39
+        },
+        "norm_act_elementwise": {
+          "sum_ms": 12.391,
+          "count": 7333,
+          "kernels": 58,
+          "ms_per_step": 0.6195,
+          "share_pct": 2.19
+        },
+        "sampling": {
+          "sum_ms": 2.086,
+          "count": 80,
+          "kernels": 3,
+          "ms_per_step": 0.1043,
+          "share_pct": 0.37
+        }
+      },
+      "top_kernels": [
+        {
+          "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5tupleIJlllEEEEENS1_10",
+          "category": "moe_expert_fp4_cutlass_sm120",
+          "component": "target_forward",
+          "count": 817,
+          "launches_per_step": 40.85,
+          "sum_ms": 105.544,
+          "us_per_launch": 129.2,
+          "share_pct": 18.62
+        },
+        {
+          "name": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 2>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, __n",
+          "category": "collective",
+          "component": "target_forward",
+          "count": 1740,
+          "launches_per_step": 87.0,
+          "sum_ms": 88.36,
+          "us_per_launch": 50.8,
+          "share_pct": 15.59
+        },
+        {
+          "name": "_w8a8_triton_block_scaled_mm",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 4699,
+          "launches_per_step": 234.95,
+          "sum_ms": 65.54,
+          "us_per_launch": 13.9,
+          "share_pct": 11.57
+        },
+        {
+          "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5tupleIJlllEEEEENS1_10",
+          "category": "moe_expert_fp4_cutlass_sm120",
+          "component": "target_forward",
+          "count": 817,
+          "launches_per_step": 40.85,
+          "sum_ms": 56.243,
+          "us_per_launch": 68.8,
+          "share_pct": 9.92
+        },
+        {
+          "name": "_deepseek_v4_sm12x_fp8_einsum_kernel",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 860,
+          "launches_per_step": 43.0,
+          "sum_ms": 24.642,
+          "us_per_launch": 28.7,
+          "share_pct": 4.35
+        },
+        {
+          "name": "void flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<(ModelType)1, 32, 128, 64>(__nv_bfloat16 cons",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 903,
+          "launches_per_step": 45.15,
+          "sum_ms": 16.489,
+          "us_per_launch": 18.3,
+          "share_pct": 2.91
+        },
+        {
+          "name": "void per_token_group_quant_8bit_kernel<c10::BFloat16, c10::Float8_e4m3fn, false, false, float>(c10::BFloat16 c",
+          "category": "dense_fp8",
+          "component": "target_forward",
+          "count": 4699,
+          "launches_per_step": 234.95,
+          "sum_ms": 12.842,
+          "us_per_launch": 2.7,
+          "share_pct": 2.27
+        },
+        {
+          "name": "mhc_fused_tilelang_kernel",
+          "category": "hyper_connections",
+          "component": "target_forward",
+          "count": 1615,
+          "launches_per_step": 80.75,
+          "sum_ms": 10.741,
+          "us_per_launch": 6.7,
+          "share_pct": 1.9
+        },
+        {
+          "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5tupleIJlllEEEEENS1_10",
+          "category": "moe_expert_fp4_cutlass_sm120",
+          "component": "target_forward",
+          "count": 43,
+          "launches_per_step": 2.15,
+          "sum_ms": 10.514,
+          "us_per_launch": 244.5,
+          "share_pct": 1.86
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_32x32_64x1_tn_align8>(cutlass_80_wmma_tensorop",
+          "category": "bf16_gemm",
+          "component": "target_forward",
+          "count": 800,
+          "launches_per_step": 40.0,
+          "sum_ms": 9.408,
+          "us_per_launch": 11.8,
+          "share_pct": 1.66
+        },
+        {
+          "name": "_w8a8_triton_block_scaled_mm",
+          "category": "dense_fp8",
+          "component": "draft_pipeline",
+          "count": 400,
+          "launches_per_step": 20.0,
+          "sum_ms": 8.609,
+          "us_per_launch": 21.5,
+          "share_pct": 1.52
+        },
+        {
+          "name": "void marlin_moe_wna16::Marlin<1125899906909960l, 562949953487106l, 1125899906909960l, 2814749767106568l, 128, ",
+          "category": "moe_expert_marlin",
+          "component": "draft_pipeline",
+          "count": 120,
+          "launches_per_step": 6.0,
+          "sum_ms": 8.163,
+          "us_per_launch": 68.0,
+          "share_pct": 1.44
+        },
+        {
+          "name": "kernel_cutlass_kernel_vllmmodelsdeepseek_v4nvidiaopssparse_attn_compress_cutedslSparseAttnCompressNormRopeStor",
+          "category": "attention_indexer",
+          "component": "target_forward",
+          "count": 420,
+          "launches_per_step": 21.0,
+          "sum_ms": 8.068,
+          "us_per_launch": 19.2,
+          "share_pct": 1.42
+        },
+        {
+          "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_32x32_128x2_tn_align8>(cutlass_80_wmma_te",
+          "category": "bf16_gemm",
+          "component": "target_forward",
+          "count": 1216,
+          "launches_per_step": 60.8,
+          "sum_ms": 7.963,
+          "us_per_launch": 6.5,
+          "share_pct": 1.41
+        },
+        {
+          "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+          "category": "hyper_connections",
+          "component": "target_forward",
+          "count": 1700,
+          "launches_per_step": 85.0,
+          "sum_ms": 7.632,
+          "us_per_launch": 4.5,
+          "share_pct": 1.35
+        }
+      ]
+    }
+  ]
+}

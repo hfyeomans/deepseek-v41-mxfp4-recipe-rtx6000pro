@@ -57,13 +57,20 @@ def spec_counters(url: str) -> dict[str, float] | None:
 
 def one_run(url: str, model: str, concurrency: int, max_tokens: int, seed: int) -> dict:
     before = spec_counters(url)
+    t0 = time.perf_counter()
     with cf.ThreadPoolExecutor(max_workers=concurrency) as ex:
         futs = [ex.submit(chat_stream, url, model, [{"role": "user", "content": FIXTURE}], max_tokens=max_tokens,
                           temperature=0.2, seed=seed + i, thinking=False,
                           extra={"min_tokens": max_tokens, "ignore_eos": True}) for i in range(concurrency)]
         results = [f.result() for f in futs]
+    wall_s = time.perf_counter() - t0
     after = spec_counters(url)
     rates = [r.decode_tps() or 0.0 for r in results]
+    # Wall-clock aggregate: honest when the server queues requests (e.g. max-num-seqs
+    # below the concurrency level); the summed per-sequence rate is not, because
+    # queued sequences run one after another yet each still reports its own full rate.
+    total_tokens = sum(r.completion_tokens or 0 for r in results)
+    wall_tps = total_tokens / wall_s if wall_s > 0 else 0.0
     acc = None
     if before and after and "draft" in before and "draft" in after:
         d = after["draft"] - before["draft"]
@@ -71,6 +78,8 @@ def one_run(url: str, model: str, concurrency: int, max_tokens: int, seed: int) 
         acc = (a / d) if d > 0 else None
     return {
         "aggregate_decode_tps": sum(rates),
+        "wall_tps": wall_tps,
+        "wall_s": wall_s,
         "per_seq_tps": rates,
         "ttft_s": [r.ttft_s for r in results],
         "completion_tokens": [r.completion_tokens for r in results],
@@ -94,22 +103,26 @@ def main() -> int:
     model = args.model or get_json(f"{args.url}/v1/models")["data"][0]["id"]
     levels = [int(x) for x in args.concurrency.split(",")]
     report = {"url": args.url, "model": model, "max_tokens": args.max_tokens, "runs": args.runs, "warmup": args.warmup,
-              "method": "per-sequence first-to-last-token rate summed; TTFT excluded", "levels": []}
+              "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+              "levels": []}
     print(f"model={model}  runs={args.runs} warmup={args.warmup} max_tokens={args.max_tokens}")
-    print(f"{'C':>3} {'median tok/s':>13} {'min':>9} {'max':>9} {'med TTFT s':>11} {'accept':>7}")
+    print(f"{'C':>3} {'median tok/s':>13} {'min':>9} {'max':>9} {'wall tok/s':>11} {'med TTFT s':>11} {'accept':>7}")
     for c in levels:
         for _ in range(args.warmup):
             one_run(args.url, model, c, args.max_tokens, args.seed)
         runs = [one_run(args.url, model, c, args.max_tokens, args.seed + 100 * i) for i in range(args.runs)]
         aggs = [r["aggregate_decode_tps"] for r in runs]
+        walls = [r["wall_tps"] for r in runs]
         ttfts = [t for r in runs for t in r["ttft_s"]]
         accs = [r["spec_acceptance"] for r in runs if r["spec_acceptance"] is not None]
         level = {"concurrency": c, "median_tps": statistics.median(aggs), "min_tps": min(aggs), "max_tps": max(aggs),
+                 "median_wall_tps": statistics.median(walls),
                  "median_ttft_s": statistics.median(ttfts), "median_spec_acceptance": statistics.median(accs) if accs else None,
                  "runs": runs}
         report["levels"].append(level)
         acc_s = f"{level['median_spec_acceptance'] * 100:6.2f}%" if accs else "    n/a"
-        print(f"{c:>3} {level['median_tps']:13.2f} {level['min_tps']:9.2f} {level['max_tps']:9.2f} {level['median_ttft_s']:11.3f} {acc_s}")
+        print(f"{c:>3} {level['median_tps']:13.2f} {level['min_tps']:9.2f} {level['max_tps']:9.2f} {level['median_wall_tps']:11.2f} "
+              f"{level['median_ttft_s']:11.3f} {acc_s}")
     report["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

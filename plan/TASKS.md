@@ -34,7 +34,8 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | ID | Task | Status | Output |
 |---|---|---|---|
 | T2.1 | Port fixture/method from the GLM and V4-Flash recipes into `bench-decode.py` / `bench-prefill.py` so numbers are comparable | done (harness written) | `scripts/bench-*.py` |
-| T2.2 | E8 run against the V4-Flash NVFP4 TP2 deployment | gpu-window | `evidence/baseline-v4-flash/` |
+| T2.2 | E8 run against the V4-Flash NVFP4 TP2 deployment | **done** — decode C1–C8, prefill 8K–512K, 222K needles, power samples; DSpark-off and 1M prefill rows not re-run | `evidence/baseline-v4-flash/`, BENCHMARKS.md |
+| T2.2b | E8b power sweep (300/275/250 W; 225 W is below the driver floor) | **blocked on sudo** — run `sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model dsv4-nvfp4` with the sibling deployment up | `evidence/e8b-power-sweep/` |
 | T2.3 | Fill BENCHMARKS.md baseline tables from JSON | after T2.2 | `docs/BENCHMARKS.md` |
 | T2.4 | Baseline improvement sweep on V4-Flash: DSpark block 3/5/7, FP8 KV, C8/C16 | gpu-window | BENCHMARKS.md |
 
@@ -59,9 +60,10 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | ID | Task | Status | Output |
 |---|---|---|---|
 | TK.1 | Research SM120 FP4 kernel status (CUTLASS SM120 block-scaled GEMM, FlashInfer/vLLM Marlin fallback, TRT-LLM Triton MoE, cuBLAS gap, smem/TMEM constraints) | **done** | RESEARCH.md |
-| TK.2 | E12 kernel census on the V4-Flash baseline: nsys profile + backend log grep; measured GPU ms/token breakdown into the calculator | gpu-window | `evidence/e12-kernel-census/`, BENCHMARKS.md |
+| TK.2 | E12 kernel census on the V4-Flash baseline: nsys profile + backend log grep; measured GPU ms/token breakdown into the calculator | **done** (from the sibling's torch-profiler traces; nsys cannot attach) — experts on CUTLASS SM120 grouped GEMM, not Marlin; 15.3 ms/verify step; 5 ms/token confirmed conservative. Open: prefill census, V4.1 engines | `scripts/kernel-census.py`, `evidence/e12-kernel-census-v4-flash-tp2.json`, BENCHMARKS.md |
 | TK.2b | Settle MXFP4-UE8M0 vs NVFP4-UE4M3 acceptance on SM120 from PTX ISA + CUTLASS source (open question 9) | **done** — native; type swap `nv_float4_t` → `mx_float4_t`, build `sm_120a` | RESEARCH.md "MXFP4 is native" |
-| TK.3 | E13 stage 1: mxf4×mxf4 grouped GEMM from example 79d (W4A4) and mxf8×mxf4 (W4A8) microbench at V4.1 expert shapes vs Marlin, with dequant-reference correctness | **partial** — W4A4 built, verified, measured (1,397 GB/s decode, 1,060 TFLOPS dense); K3 tiles measured; W4A8 build, Marlin denominator (K5) and activation-error check still open | `kernels/e13/`, `evidence/e13-stage1-*.json` |
+| TK.3 | E13 stage 1: mxf4×mxf4 grouped GEMM from example 79d (W4A4) and mxf8×mxf4 (W4A8) microbench at V4.1 expert shapes vs Marlin, with dequant-reference correctness | **done** — W4A4 1,421–1,451 GB/s at a 451 MB working set (97–99 % of E2), W4A8 2× slower at decode, census-shaped TP2 runs tie the deployed vLLM kernel; Marlin denominator dropped (moot per E12). Still open, moved to TK.3b: activation-error check |
+| TK.3b | E13 step 4: bf16-activation vs MXFP4/FP8-activation error on real V4.1 expert weights | open | `kernels/e13/`, EXPERIMENTS.md | `kernels/e13/`, `evidence/e13-stage1-*.json` |
 | TK.4 | E13 stage 2: integrate the winning kernel into the E6 engine's MoE backend; re-run E12 | decision, after TK.3 | fork + BENCHMARKS.md |
 | TK.5 | Hybrid glue kernels: activation gather/scatter to pinned host, stream-ordered H2D/D2H overlapped with CPU expert compute; Engram row gather from pinned host (zero-copy) or GPUDirect Storage from the 9100 PRO | after E6 stage 1 | fork |
 
@@ -69,7 +71,7 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 
 | ID | Task | Status | Output |
 |---|---|---|---|
-| T4.0 | Power decision for four cards: 2,000 W-class PSU (needs 240 V or 30 A circuit) **or** 225 W cap on the 1,500 W PSU; decided by E8b's tok/s-per-watt curve | decision, after E8b | HARDWARE.md power table |
+| T4.0 | Power decision for four cards: 2,000 W-class PSU (needs 240 V or 30 A circuit) **or** 250 W cap (driver floor) on the 1,500 W PSU; decided by E8b's tok/s-per-watt curve. E8 already shows decode draws 242–249 W uncapped, so the cap mostly costs prefill | decision, after E8b | HARDWARE.md power table |
 | T4.1 | Acquire and install one or two more RTX PRO 6000 (Max-Q preferred for power); verify P2P OK and x16 on all slots | blocked on T4.0 | HARDWARE.md |
 | T4.1b | 3-GPU profile: EP3 or PP layout (TP3 invalid), 91% experts resident + hybrid remainder; llama.cpp layer-split as the simple variant | after T4.1 with 3 cards | `scripts/serve.sh` |
 | T4.2 | `preflight.sh` passes the memory gate on 4 GPUs | after T4.1 | — |
