@@ -24,7 +24,7 @@ root = Path(sys.argv[1])
 required = [
     'README.md', 'ATTRIBUTIONS.md', 'THIRD_PARTY_NOTICES.md', 'PROVENANCE.md', 'CONTRIBUTING.md',
     'NOTICE', 'LICENSE', 'THIRD_PARTY_LICENSES/DeepSeek-V4.1-Flash-MIT.txt',
-    'docs/FEASIBILITY.md', 'docs/HARDWARE.md', 'docs/BENCHMARKS.md', 'docs/TROUBLESHOOTING.md',
+    'docs/FEASIBILITY.md', 'docs/HARDWARE.md', 'docs/BENCHMARKS.md', 'docs/TROUBLESHOOTING.md', 'docs/LEARNING.md',
     'plan/README.md', 'plan/EXPERIMENTS.md', 'plan/TASKS.md', 'plan/RESEARCH.md', 'plan/ROADMAP.md',
     'evidence/budget-upstream-bf16fp8.json', 'evidence/hardware-inventory.json',
 ]

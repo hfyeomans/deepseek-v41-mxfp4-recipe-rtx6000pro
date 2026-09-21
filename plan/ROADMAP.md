@@ -82,4 +82,5 @@ Ordered by how directly each moves a number in the readout above.
 
 ## Change log
 
+- 2026-09-21 — `docs/LEARNING.md` added: reading map per puzzle piece and per experiment.
 - 2026-09-21 — Page created. E13 format question resolved from PTX ISA + CUTLASS source (no re-quant needed). CUTLASS v4.7.1 cloned to `~/dev/src/cutlass` for the GPU-free E13 build. Kernel menu K1–K9 added.
