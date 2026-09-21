@@ -53,16 +53,27 @@ def main() -> None:
         power = summarize_csv(csv_path)
         bench = target / (f"decode-c1-{cap}w.json" if kind == "decode" else f"prefill-32k-{cap}w.json")
         tps = None
+        suspect = None
         if bench.exists():
             b = json.loads(bench.read_text())
-            tps = b["levels"][0]["median_tps"] if kind == "decode" else b["sizes"][0]["median_prefill_tps"] if "sizes" in b else None
+            if kind == "decode":
+                tps = b["levels"][0]["median_tps"]
+            else:
+                size = b["sizes"][0]
+                tps = size["median_prefill_tps"]
+                # A 32K prompt cannot prefill in well under a second on these cards; that is a
+                # prefix-cache hit (same seeded prompt already in the server's KV).
+                cached = [r for r in size["runs"] if r["ttft_s"] < 1.0]
+                if cached:
+                    suspect = f"{len(cached)}/{len(size['runs'])} runs look prefix-cached (TTFT < 1 s); rerun with a new --seed"
         total_w = sum(v["power_busy_median_w"] or 0 for v in power.values())
         report[f"{kind}-{cap}w"] = {"cap_w": cap, "kind": kind, "tps": tps, "gpus": power,
                                    "total_busy_w": round(total_w, 1),
-                                   "tps_per_w": round(tps / total_w, 4) if tps and total_w else None}
+                                   "tps_per_w": round(tps / total_w, 4) if tps and total_w else None,
+                                   "suspect": suspect}
         print(f"{kind:8s} cap {cap:3d} W: {tps if tps is not None else 'n/a':>10} tok/s, busy {total_w:6.0f} W total, "
               f"clk {[v['sm_clock_busy_median_mhz'] for v in power.values()]} MHz, "
-              f"tok/s/W {report[f'{kind}-{cap}w']['tps_per_w']}")
+              f"tok/s/W {report[f'{kind}-{cap}w']['tps_per_w']}" + (f"  ** {suspect}" if suspect else ""))
     (target / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
     print(f"wrote {target / 'summary.json'}")
 
