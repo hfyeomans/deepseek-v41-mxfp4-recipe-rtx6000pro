@@ -14,7 +14,7 @@ import kt_kernel
 from kt_kernel.utils import loader
 
 EXPECTED_VARIANT = "avx512_bf16"  # Zen 5 (Threadripper PRO 9955WX); see HARDWARE.md
-V41_MOE_LAYERS, V41_EXPERTS = 45, 384  # V4.1-Flash shapes used by the mask check
+V41_MOE_LAYERS, V41_EXPERTS = 40, 384  # V4.1-Flash shapes used by the mask check
 
 
 def main() -> int:

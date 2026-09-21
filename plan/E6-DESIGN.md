@@ -192,7 +192,49 @@ Rules:
    **losslessly** shifted into BF16 storage (`(s.int32 << 7).int16.view(bf16)`)
    — no requantisation. The CPU kernel is `operators/amx/fp4-moe.hpp`
    (needs AVX-512F/BW/BF16 — Zen 5 qualifies; AMX not required) with an
-   `operators/avx2/mxfp4-moe.hpp` fallback. CPU copy is 112.8 GiB at 58/42.
+   `operators/avx2/mxfp4-moe.hpp` fallback. CPU copy is 112.8 GiB at 58/42
+   *in checkpoint bytes* — see the T3.6b correction below.
+
+   **T3.6b correction (measured, E17).** Two things the reading above got
+   wrong. (a) kt-kernel's C++ `load_weights` repacks **every** expert of the
+   layer into anonymous host memory regardless of `gpu_experts_mask` —
+   8.0 GiB per layer flat, independent of how many experts are on the GPU
+   (KTransformers' memory model is "the CPU holds all experts; the GPU holds
+   copies of the hot ones"). 40 layers × 8.3 GiB ≈ 330 GiB does not fit. The
+   overlay therefore installs a **compact CPU view**: the loader returns only
+   the CPU-resident experts renumbered `0..n_cpu−1`, the wrapper is built
+   with `num_experts = n_cpu`, and `remap_topk_ids_for_cpu()` shifts router
+   ids by `num_gpu_experts` (GPU slots become `−1`, kt-kernel's skip
+   marker). This requires the identity physical→logical map, which is what
+   `init_trivial` gives without EPLB; `frequency` placement would need the
+   loader to take an explicit id list instead of a prefix split.
+   (b) The packed layout costs **21.8 MiB per CPU expert**, not 17.9 (the
+   UE8M0→BF16 scale widening plus the AVX-512 tile layout is +22 %). Budget:
+   160 CPU experts/layer × 40 = 6,400 × 21.8 MiB = **136 GiB**, load
+   0.9 s/layer (≈ 36 s for the model, from page cache).
+   Correctness vs an independent FP32 dequant reference on layer 5: rel-L2
+   3.8e-3, max abs 0.021 at |y|max 4.4 — bf16-level. `swiglu_limit` **must
+   be passed** to `KTMoEWrapper` (verified by driving inputs ×8: kt matches
+   the clamped reference at 2.8e-3 and is 77 % off the unclamped one; with
+   `swiglu_limit=0` it flips). GPU-slot ids set to `−1` are skipped exactly
+   (the same tokens' outputs match the GPU-only reference).
+   Threads: **16 (one per physical core) is the optimum** — 8 threads is 2×
+   slower at T=1, 32 (SMT) is 7× slower (AVX-512 unit contention plus
+   spin-waiting), `threadpool_count=2` is a wash. Timing must use **cold
+   ids** (`--bench-cold`): with the same six experts every iteration the
+   64 MiB L3 holds half of the 131 MiB T=1 working set and reports a fake
+   160 GB/s. Cold, 16 threads: T=1 **1.08 ms** (= 127 GB/s, i.e. E1b's
+   125 GB/s CCD-fabric ceiling — the tier is DRAM-bound at T=1 and 16 cores
+   are exactly enough to saturate it, ~8 GB/s per core), T=4 4.0, T=8 7.6,
+   T=16 13.8, T=64 39.8 ms; warm T=256 65 ms. Per-token cost stays flat to
+   T≈16 (bandwidth-bound on distinct experts) and only amortises past T≈64.
+   Floor: 2.5 CPU experts/token/layer × 21.8 MiB = 54 MiB/layer → 0.45 ms →
+   × 40 layers ≈ 18 ms/token → **≈ 55 tok/s single-stream CPU floor** if
+   fully overlapped (calculator said 50; the B2 split ceiling of 77 needs the
+   PCIe path too). More GPU experts, deferral, or the B2 split move it;
+   faster DIMMs do not.
+   Note the class is named `AMX_FP4_MOE_TP` on this Zen 5 host too; the name
+   is the code path family, not an AMX requirement.
 6. **GPU expert kernel on SM120.** Verified: upstream's V4.1 routed experts
    are `Fp8Config`/`Fp8MoEMethod` with `is_fp4_expert=True` (detected from
    `routed_experts_quant_method == "mxfp4"` in `model_config.py`), weights

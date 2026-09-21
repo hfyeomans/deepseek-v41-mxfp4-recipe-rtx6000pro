@@ -1,0 +1,83 @@
+{
+  "args": {
+    "weight_path": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+    "layer": 5,
+    "num_experts": 384,
+    "num_gpu_experts": 224,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "swiglu_limit": 10.0,
+    "threads": 8,
+    "threadpool_count": 1,
+    "chunked_prefill_size": 256,
+    "check_tokens": 8,
+    "bench_tokens": "1,2,4,8,16,64",
+    "bench_iters": 20,
+    "bench_cold": true,
+    "no_loader_patch": false,
+    "skip_reference": true,
+    "seed": 0,
+    "x_scale": 1.0,
+    "json": "/out/layer5-threads8-cold.json"
+  },
+  "kt_kernel": "0.7.0.post4",
+  "torch": "2.13.0+cu130",
+  "compact_cpu_view": true,
+  "load": {
+    "seconds": 0.91,
+    "rss_gib_before": 1.24,
+    "rss_gib_after": 4.759,
+    "anon_gib_before": 0.679,
+    "anon_gib_after": 4.068,
+    "anon_gib_delta": 3.389,
+    "cpu_experts": 160,
+    "anon_mib_per_cpu_expert": 21.69
+  },
+  "bench_ms_per_layer": {
+    "1": {
+      "ms_median": 1.983,
+      "ms_min": 1.943,
+      "ms_per_token": 1.9828,
+      "expert_calls_per_step": 6,
+      "cold_ids": true
+    },
+    "2": {
+      "ms_median": 4.158,
+      "ms_min": 3.914,
+      "ms_per_token": 2.0788,
+      "expert_calls_per_step": 12,
+      "cold_ids": true
+    },
+    "4": {
+      "ms_median": 7.781,
+      "ms_min": 7.013,
+      "ms_per_token": 1.9454,
+      "expert_calls_per_step": 24,
+      "cold_ids": true
+    },
+    "8": {
+      "ms_median": 14.955,
+      "ms_min": 13.631,
+      "ms_per_token": 1.8694,
+      "expert_calls_per_step": 48,
+      "cold_ids": true
+    },
+    "16": {
+      "ms_median": 25.959,
+      "ms_min": 25.093,
+      "ms_per_token": 1.6224,
+      "expert_calls_per_step": 96,
+      "cold_ids": true
+    },
+    "64": {
+      "ms_median": 76.053,
+      "ms_min": 74.602,
+      "ms_per_token": 1.1883,
+      "expert_calls_per_step": 384,
+      "cold_ids": true
+    }
+  },
+  "note": "Every token routes all top-k slots to CPU experts here (worst case); in the hybrid recipe only ~(1 - gpu_share) of slots hit CPU.",
+  "maxrss_gib": 10.81197738647461
+}

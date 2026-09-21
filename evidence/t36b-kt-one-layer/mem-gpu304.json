@@ -1,0 +1,35 @@
+{
+  "args": {
+    "weight_path": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+    "layer": 5,
+    "num_experts": 384,
+    "num_gpu_experts": 304,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "swiglu_limit": 10.0,
+    "threads": 16,
+    "threadpool_count": 1,
+    "chunked_prefill_size": 256,
+    "check_tokens": 8,
+    "bench_tokens": "",
+    "bench_iters": 20,
+    "no_loader_patch": false,
+    "skip_reference": true,
+    "seed": 0,
+    "json": "/out/mem-gpu304.json"
+  },
+  "kt_kernel": "0.7.0.post4",
+  "torch": "2.13.0+cu130",
+  "loader_patch": true,
+  "load": {
+    "seconds": 1.04,
+    "rss_gib_before": 1.236,
+    "rss_gib_after": 9.511,
+    "anon_gib_before": 0.678,
+    "anon_gib_after": 8.821,
+    "anon_gib_delta": 8.143,
+    "cpu_experts": 80,
+    "anon_mib_per_cpu_expert": 104.22
+  }
+}

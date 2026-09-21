@@ -1,0 +1,64 @@
+{
+  "args": {
+    "weight_path": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+    "layer": 5,
+    "num_experts": 384,
+    "num_gpu_experts": 224,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "swiglu_limit": 10.0,
+    "threads": 16,
+    "threadpool_count": 1,
+    "chunked_prefill_size": 256,
+    "check_tokens": 8,
+    "bench_tokens": "1,4,16,64",
+    "bench_iters": 20,
+    "no_loader_patch": false,
+    "skip_reference": true,
+    "seed": 0,
+    "x_scale": 1.0,
+    "json": "/out/layer5-threads16.json"
+  },
+  "kt_kernel": "0.7.0.post4",
+  "torch": "2.13.0+cu130",
+  "compact_cpu_view": true,
+  "load": {
+    "seconds": 0.84,
+    "rss_gib_before": 1.238,
+    "rss_gib_after": 4.776,
+    "anon_gib_before": 0.678,
+    "anon_gib_after": 4.086,
+    "anon_gib_delta": 3.407,
+    "cpu_experts": 160,
+    "anon_mib_per_cpu_expert": 21.81
+  },
+  "bench_ms_per_layer": {
+    "1": {
+      "ms_median": 0.794,
+      "ms_min": 0.724,
+      "ms_per_token": 0.7938,
+      "expert_calls_per_step": 6
+    },
+    "4": {
+      "ms_median": 3.787,
+      "ms_min": 3.705,
+      "ms_per_token": 0.9468,
+      "expert_calls_per_step": 24
+    },
+    "16": {
+      "ms_median": 14.346,
+      "ms_min": 14.005,
+      "ms_per_token": 0.8966,
+      "expert_calls_per_step": 96
+    },
+    "64": {
+      "ms_median": 39.379,
+      "ms_min": 39.072,
+      "ms_per_token": 0.6153,
+      "expert_calls_per_step": 384
+    }
+  },
+  "note": "Every token routes all top-k slots to CPU experts here (worst case); in the hybrid recipe only ~(1 - gpu_share) of slots hit CPU.",
+  "maxrss_gib": 10.812885284423828
+}
