@@ -101,6 +101,36 @@ Readout:
 - **Decision for T4.0 (four cards on the 1,500 W PSU):** the 250 W cap is confirmed as a cheap option — 0 % decode, −11 % prefill — matching the E8 prediction (0 / ~15 %). 325 W is a legitimate 2-GPU setting when prefill latency matters (2 × 325 W + CPU ≈ 1,100 W fits the PSU).
 - **Method lesson:** the first run's 275/250 W prefill rows were prefix-cache hits (32K tokens in 0.14 s, "223K tok/s") because every cap used the same seeded prompt; the script now seeds `777 + cap`, and `summarize-power.py` flags prefill runs with TTFT < 1 s as suspect. Also, a sampler leaked from a run that died before the server was up kept writing into the next run's CSV for 1.7 hours; the sampler is now killed from the EXIT trap and the summarizer drops non-sample lines.
 
+## E14 — same box, three models: GLM-5.3-Flash (reference) vs V4-Flash vs V4.1-Flash
+
+Measured 2026-09-21 with this harness, same fixtures, same 512-token output, same seeds policy (fresh per model), both GPUs at the 300 W default cap, host otherwise idle. GLM column: the owner's recipe as configured (`~/dev/src/glm-5.3-flash-2x-rtx-pro-6000-blackwell`, EXL3 K3 ≈3.5 bpw target + DFlash2 K5 bf16 draft, tpurtell v0.6 runtime, TP2 + EP2 + DCP2, B12X sparse MLA, fp8 KV, `max_num_seqs` 16, 1,048,576 ctx). V4-Flash column: the sibling vLLM NVFP4 TP2 deployment (E8). V4.1 column: empty until E6 s2 serves. JSON: [`evidence/e14-glm53/`](../evidence/e14-glm53/), [`evidence/baseline-v4-flash/`](../evidence/baseline-v4-flash/).
+
+| Metric | GLM-5.3-Flash EXL3 + DFlash2 | DeepSeek-V4-Flash NVFP4 + DSpark | V4.1-Flash |
+|---|---:|---:|---:|
+| Weights on disk | 128 GiB target + 2.2 GiB draft | ≈164 GB | 475 GiB (bf16/FP8) |
+| VRAM after load, per card | 92.4 GiB (`gpu_memory_utilization` 0.95) | ≈94 GiB by config (0.96; not captured) | — |
+| KV pool / context ceiling | 2,963,974 tokens (2.8 × 1M requests) / 1,048,576 | `max_num_seqs` 2 / 1,000,000 | — |
+| Tokenizer, same fixture text | +16 % tokens vs V4 (38,169 for the 32K target) | 32,004 for the 32K target | — |
+| C1 decode, speculation on, 512 tok | **132.5 tok/s** (DFlash acceptance 40 %; 135 at 256 tok, 42 %) | **207–239 tok/s** (DSpark 51–63 %); 228 on relaunch | — |
+| C1 decode, speculation off | not run (recipe requires the draft; see below) | **89 tok/s** | — |
+| Decode C2 / C4 / C8 / C16, wall-clock | 193 / 288 / 424 / **569 tok/s** (summed 203 / 306 / 462 / 629) | 300 / 301 / 277 / — (`max_num_seqs` 2 queues the rest) | — |
+| GPU draw during C1 decode | **297 / 297 W — at the cap**, SM 2,036 / 2,044 MHz | 233–250 W per card, SM 2,265–2,310 MHz | — |
+| tok/s per W, C1 decode | 0.22 | 0.46 (0.20 without DSpark) | — |
+| Prefill 32K / 128K / 512K target (actual GLM tokens 38K / 153K / 610K) | 4,213 / 4,184 / 4,005 tok/s — **flat** | 7,810 / 6,157 / 3,237 tok/s — length curve | — |
+| ~1M prefill | **1,001,032 tok in 261.4 s = 3,829 tok/s** | 972,187 tok in 512.2 s = 1,898 tok/s | — |
+| Prefill draw / clocks / peak temp | 300 W, 1.85–1.90 GHz, 89 °C | 300 W, 1.82–1.98 GHz, 88 °C | — |
+| 6-needle retrieval, ~256K | **6/6** at 251,490 tok, TTFT 59.7 s | 6/6 at 222K, TTFT 42.4 s | — |
+| Tool call / arithmetic / ceiling probes | pass / pass / pass | pass / pass / pass | — |
+| Licence | DFlash2 draft **CC BY-NC-ND 4.0** (research only) | MIT model, Apache-2 engine | MIT |
+
+Readout:
+
+- **Single-stream: V4-Flash by 1.6–1.8×.** 207–239 vs 132 tok/s. Two causes, both measurable: DSpark accepts 51–63 % of its 5 drafted tokens against DFlash's 40 % *on our fixture* (the GLM README's 179.5 tok/s at 65 % used its own code-agent fixture — same lesson as E8: speculative tok/s is a property of the prompt as much as the engine), and GLM's decode step is **compute-bound**: EXL3 trellis dequantisation runs on the SMs, so both cards sit at the 300 W cap at 2.0 GHz during C1 decode, whereas V4-Flash's hardware-native NVFP4 decode is bandwidth-bound at ~240 W. Consequence: the E8b result "decode never sees the power cap" is a property of native FP4 on SM120, **not** of these GPUs — a 250 W cap will cost GLM decode throughput. A GLM 300/250 W sweep (needs sudo) is the next thing to run.
+- **Throughput and long context: GLM by 2×.** 569 tok/s wall-clock at C16 against V4-Flash's 300 ceiling, because GLM runs 16 scheduler slots to V4-Flash's 2 (a config choice on the V4 side, T2.4). Prefill is flat at ~4.1K tok/s from 38K to 610K tokens and 3.8K at 1M, where V4-Flash's dense-attention curve falls from 7.8K to 1.9K; the crossover is ≈400K tokens. GLM's B12X sparse MLA is what a V4.1 CSA2 engine has to beat: **the V4.1 prefill target on 2 GPUs is ≥ 3.8K tok/s at 1M.**
+- **Same thermal ceiling.** Both models push the cards to 87–89 °C during sustained prefill at 300 W with clocks 1.85–1.90 GHz; the chassis, not the model, sets that.
+- **What is missing from the GLM column:** speculation-off C1 (the recipe validates `DFLASH_TOKENS` 1..5 and always passes `--speculative-config`; a hand-launched container without it would give the bandwidth floor — expected near 60–70 tok/s given the compute-bound dequant), the 250 W sweep (sudo), and a like-for-like `max_num_seqs` on the V4 side. The harness's thinking-toggle probe fails on GLM only because it sends V4's template kwarg; GLM's template uses `enable_thinking`.
+- **For the recipe's goal:** the box's best daily driver today is GLM for multi-user/long-context work and V4-Flash for single-stream latency. V4.1-Flash on 2 GPUs has to reach ≥ 130 tok/s C1 and ≥ 3.8K tok/s at 1M to displace either — and the hybrid ceiling from FEASIBILITY (50–78 tok/s decode) says it will *not* win single-stream on 2 cards; its case is quality and context, which is why the 3-/4-GPU columns matter.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.

@@ -1,0 +1,22 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "glm-5.3-flash-local",
+  "runs": 1,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization",
+  "sizes": [
+    {
+      "target_tokens": 860000,
+      "median_prompt_tokens": 1001032,
+      "median_prefill_tps": 3829.2539627746373,
+      "median_ttft_s": 261.41697827601456,
+      "runs": [
+        {
+          "prompt_tokens": 1001032,
+          "ttft_s": 261.41697827601456,
+          "prefill_tps": 3829.2539627746373
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-21T11:54:11-0400"
+}

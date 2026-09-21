@@ -1,0 +1,78 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "glm-5.3-flash-local",
+  "runs": 3,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization",
+  "sizes": [
+    {
+      "target_tokens": 32768,
+      "median_prompt_tokens": 38169,
+      "median_prefill_tps": 4213.297893248852,
+      "median_ttft_s": 9.01170554800774,
+      "runs": [
+        {
+          "prompt_tokens": 38239,
+          "ttft_s": 9.434105407010065,
+          "prefill_tps": 4053.272499116482
+        },
+        {
+          "prompt_tokens": 38169,
+          "ttft_s": 9.00711050699465,
+          "prefill_tps": 4237.6520161886665
+        },
+        {
+          "prompt_tokens": 37969,
+          "ttft_s": 9.01170554800774,
+          "prefill_tps": 4213.297893248852
+        }
+      ]
+    },
+    {
+      "target_tokens": 131072,
+      "median_prompt_tokens": 152916,
+      "median_prefill_tps": 4184.3398571184,
+      "median_ttft_s": 36.52705272100866,
+      "runs": [
+        {
+          "prompt_tokens": 153007,
+          "ttft_s": 37.921140471007675,
+          "prefill_tps": 4034.8733740479233
+        },
+        {
+          "prompt_tokens": 152688,
+          "ttft_s": 36.49034380901139,
+          "prefill_tps": 4184.3398571184
+        },
+        {
+          "prompt_tokens": 152916,
+          "ttft_s": 36.52705272100866,
+          "prefill_tps": 4186.376633449264
+        }
+      ]
+    },
+    {
+      "target_tokens": 524288,
+      "median_prompt_tokens": 609746,
+      "median_prefill_tps": 4005.1499295969807,
+      "median_ttft_s": 152.25560103499447,
+      "runs": [
+        {
+          "prompt_tokens": 609746,
+          "ttft_s": 157.34433277801145,
+          "prefill_tps": 3875.2333130438033
+        },
+        {
+          "prompt_tokens": 610643,
+          "ttft_s": 152.25560103499447,
+          "prefill_tps": 4010.643916210673
+        },
+        {
+          "prompt_tokens": 609474,
+          "ttft_s": 152.17258048098302,
+          "prefill_tps": 4005.1499295969807
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-21T11:49:24-0400"
+}
