@@ -1,0 +1,67 @@
+{
+  "experiment": "E16",
+  "model": "glm-5.3-flash-local",
+  "profile": "MAX_NUM_SEQS=32, max-cudagraph-capture-size 192 (derived), util 0.950, 1M",
+  "engine_report": {
+    "available_kv_gib": 16.19,
+    "kv_tokens": 2833485,
+    "claimed_1m_concurrency": 2.7,
+    "graph_capture_s": 73,
+    "graph_pool_gib": 0.3,
+    "capture_sizes": 27
+  },
+  "scheduler_observed": {
+    "kv_pct_per_request_1p5k_tokens": 4.9,
+    "max_running_reqs": 21,
+    "at_c32": "19-21 running, 9-13 waiting, KV 95-100 %"
+  },
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 133.32468759702238,
+      "min_tps": 58.536868008147195,
+      "max_tps": 137.6466713034057,
+      "median_wall_tps": 130.06005796741977,
+      "median_ttft_s": 0.10009931298554875,
+      "median_spec_acceptance": 0.41594771241830064
+    },
+    {
+      "concurrency": 16,
+      "median_tps": 622.2323528167095,
+      "min_tps": 618.6902672745299,
+      "max_tps": 626.2263748570413,
+      "median_wall_tps": 571.8758786114626,
+      "median_ttft_s": 0.6098489065043395,
+      "median_spec_acceptance": 0.3698611111111111
+    },
+    {
+      "concurrency": 32,
+      "median_tps": 1161.4842776372718,
+      "min_tps": 1152.885669012773,
+      "max_tps": 1173.1500539112155,
+      "median_wall_tps": 578.9241182360867,
+      "median_ttft_s": 0.8750725499994587,
+      "median_spec_acceptance": 0.3732704402515723
+    }
+  ],
+  "reference_16_slots_e14": {
+    "c1_tps": 132.5,
+    "c16_wall_tps": 569,
+    "c16_ttft_s": null
+  },
+  "gpu_under_c32": {
+    "power_w": [
+      300,
+      304
+    ],
+    "temp_c": [
+      86,
+      87
+    ],
+    "sm_mhz": [
+      1852,
+      1822
+    ]
+  },
+  "decision": "keep 16 slots; 32 gives +1 % wall tok/s (572 -> 579) and +44 % TTFT (0.61 -> 0.88 s)"
+}

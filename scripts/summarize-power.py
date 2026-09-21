@@ -54,18 +54,20 @@ def main() -> None:
         return
     report = {}
     for csv_path in sorted(target.glob("power-*.csv")):
-        m = re.match(r"power-(decode|prefill)-(\d+)w\.csv", csv_path.name)
+        m = re.match(r"power-(decode|prefill)(?:-c(\d+))?-(\d+)w\.csv", csv_path.name)
         if not m:
             continue
-        kind, cap = m.group(1), int(m.group(2))
+        kind, conc, cap = m.group(1), int(m.group(2) or 1), int(m.group(3))
         power = summarize_csv(csv_path)
-        bench = target / (f"decode-c1-{cap}w.json" if kind == "decode" else f"prefill-32k-{cap}w.json")
+        bench = target / (f"decode-c{conc}-{cap}w.json" if kind == "decode" else f"prefill-32k-{cap}w.json")
         tps = None
         suspect = None
         if bench.exists():
             b = json.loads(bench.read_text())
             if kind == "decode":
-                tps = b["levels"][0]["median_tps"]
+                # Per-stream tok/s at C1; aggregate wall tok/s once streams are batched.
+                lvl = b["levels"][0]
+                tps = lvl["median_tps"] if conc == 1 else lvl["median_wall_tps"]
             else:
                 size = b["sizes"][0]
                 tps = size["median_prefill_tps"]
@@ -75,13 +77,17 @@ def main() -> None:
                 if cached:
                     suspect = f"{len(cached)}/{len(size['runs'])} runs look prefix-cached (TTFT < 1 s); rerun with a new --seed"
         total_w = sum(v["power_busy_median_w"] or 0 for v in power.values())
-        report[f"{kind}-{cap}w"] = {"cap_w": cap, "kind": kind, "tps": tps, "gpus": power,
+        temp_max = max((v["temp_max_c"] or 0) for v in power.values())
+        label = f"{kind}-c{conc}-{cap}w" if kind == "decode" and conc != 1 else f"{kind}-{cap}w"
+        report[label] = {"cap_w": cap, "kind": kind, "concurrency": conc if kind == "decode" else None,
+                                   "tps": tps, "gpus": power, "temp_max_c": temp_max,
                                    "total_busy_w": round(total_w, 1),
                                    "tps_per_w": round(tps / total_w, 4) if tps and total_w else None,
                                    "suspect": suspect}
-        print(f"{kind:8s} cap {cap:3d} W: {tps if tps is not None else 'n/a':>10} tok/s, busy {total_w:6.0f} W total, "
-              f"clk {[v['sm_clock_busy_median_mhz'] for v in power.values()]} MHz, "
-              f"tok/s/W {report[f'{kind}-{cap}w']['tps_per_w']}" + (f"  ** {suspect}" if suspect else ""))
+        shown = f"{tps:.1f}" if tps is not None else "n/a"
+        print(f"{label:18s}: {shown:>10} tok/s, busy {total_w:6.0f} W total, "
+              f"clk {[v['sm_clock_busy_median_mhz'] for v in power.values()]} MHz, max {temp_max:.0f} C, "
+              f"tok/s/W {report[label]['tps_per_w']}" + (f"  ** {suspect}" if suspect else ""))
     (target / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
     print(f"wrote {target / 'summary.json'}")
 

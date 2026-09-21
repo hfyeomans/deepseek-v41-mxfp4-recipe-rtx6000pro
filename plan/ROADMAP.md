@@ -43,6 +43,7 @@ Blocking condition for everything below marked `quiet-host` or `gpu-window`: the
 | E13 s2 | Integrate winning kernel into the E6 engine | build, GPU | decision after s1 | — | Re-run E12 |
 | E14 | Model-to-model on this box: GLM-5.3-Flash (reference) vs V4-Flash vs V4.1-Flash, one harness | GPU, one window per model | **GLM + V4-Flash columns done**; V4.1 column awaits E6 s2 | GLM: C1 132 tok/s (40 % DFlash), C16 569 wall, prefill flat ~4.1K → 3.8K at 1M (2× V4-Flash at 1M), 6/6 needles; GLM decode is 10 % hotter at C1 and **pinned at 300 W under any concurrency** (EXL3 dequant is compute); 250 W sweep: 0 % C1 decode, −11.6 % prefill — T4.0 holds for GLM | V4.1 2-GPU target: ≥ 130 tok/s C1, ≥ 3.8K tok/s at 1M; GLM spec-off row open |
 | E15 | Cost of eager mode vs CUDA graphs on this box (V4-Flash relaunch, DSpark on/off, C1→C16) | GPU, three relaunches | **done** | eager 4.4× slower at C1 (217 → 49.5), 5.6× without DSpark (15.9 tok/s, 63 ms/step); GPUs at 150 W starved; speculation amortises a CPU-bound step 3× | E6 design: GPU step must be captured/compiled, CPU-expert call graph-compatible; `--enforce-eager` is not an option |
+| E16 | GLM 32 slots + derived capture size 192 | GPU, one GLM relaunch | **done** | C16 572 → C32 579 wall (+1 %), TTFT +44 %; Mamba state ≈ 4.9 %/request caps GLM at ≈ 20 running; cards 300 W / 86–87 °C | GLM stays at 16 slots; E14 KV-headroom claim corrected |
 
 ## Kernel experiment menu (E13 sub-items and successors; pick by measured need)
 
@@ -82,6 +83,7 @@ Ordered by how directly each moves a number in the readout above.
 | GPU ms/token for resident part of the hybrid | **5.0 confirmed as the conservative end by E12**: 15.3 ms union per 6-token verify step, 3.8–5.1 ms per accepted token at 40–63 % acceptance; experts are only ~25 % of it | E12 on the V4.1 engine once E6 builds |
 | Prefill baseline | **length curve, not a scalar**: 7.8K tok/s at 32K, 6.2K at 128K, 5.2K at 222K, 3.2K at 512K, 1.9K at 1M (E8) | E8 on V4.1 |
 | Power cap floor | **250 W** (`power.min_limit`); the HARDWARE.md 225 W option is gone | — |
+| Power policy | **300 W default, 325 W where cap-pinned and < ~85 °C** (owner, 2026-09-21); 250 W retired — it was a 4-card budget and 4 cards are not planned | T2.9 sweep at C16 |
 | Host DRAM read bandwidth | **125 GB/s measured (E1b)**; 94 GB/s sustained while computing (E6 s0) | done; a C STREAM build would only confirm |
 | PCIe per GPU | **57 GB/s measured (E4)**, additive with CPU reads (E4b) | done |
 | Host reserve | 24 GiB | — (policy) |
@@ -91,6 +93,7 @@ Ordered by how directly each moves a number in the readout above.
 
 ## Change log
 
+- 2026-09-21 (GPU window 6, E16 + settings roll-out) — **GLM 32 slots: no gain.** Each request pins ≈ 4.9 % of the KV pool as Mamba state, so ≈ 20 run at once; C32 579 vs C16 572 wall, TTFT 0.61 → 0.88 s. GLM stays at 16; GLM `serve.sh` now derives the capture size from slots (GLM repo `324f478`). **V4-Flash sibling adopted the 1M/16-slot profile** (util 0.9651, capture 96; sibling `42e1f61`). **Power policy revised by owner:** 300 W default, 325 W where cap-pinned and cool enough; 250 W retired (4-GPU budget only). `bench-power-sweep.sh` gained `--concurrency` and the summary prints `temp_max_c`; both models already sit at 86–88 °C pinned at 300 W under C16.
 - 2026-09-21 (GPU window 5, T2.4 close-out) — **1M/16-slot V4-Flash profile qualified** at util 0.9651 (vLLM's own suggestion): KV 1,184,027 tokens, C1/C4/C16 = 209/535/1,086 wall, 1M prefill 504 s (= shipped profile). DSpark draft forward CUDA graph: engages at C1 only, step time unchanged — rejected. BENCHMARKS gained a host-CPU thread-scaling readout (16 threads is the sweet spot; fabric, not DIMMs, caps CPU reads; B2 split uses both paths) and a GLM optimisation list (slots 32, 250 W, K=4, format is the structural limit). T3.1 download started (~2.3 h). GLM restored.
 - 2026-09-21 (GPU window 4, T2.4 slice + E15) — V4-Flash 16 slots would not start at 1M (83.2 GiB weights/card → 5.7 GiB KV; one 1M request needs 5.73); at 262K/16 slots **C16 = 1,258 tok/s wall, 2.2× GLM** — E14's throughput verdict was the KV budget. E15: eager costs 4.4× (DSpark on) / 5.6× (off); per-position DSpark acceptance 0.85/0.71/0.58/0.48/0.40 — K=5 does not hinder. Sibling restored (DSpark on, 2 slots, 1M, stopped); GLM restarted.
 - 2026-09-21 (E14 sweep, owner ran) — GLM 300/250 W: C1 decode 119 → 127 tok/s (acceptance noise 34/40 %), prefill 4,462 → 3,943 (−11.6 %). **Corrected** E14 claim: GLM C1 draws 256–259 W, not 297; the 300 W pin is under concurrency. T4.0 (250 W) holds for both incumbents. **E15 added** (eager vs CUDA graphs) after the owner asked why the GLM recipe captures graphs.

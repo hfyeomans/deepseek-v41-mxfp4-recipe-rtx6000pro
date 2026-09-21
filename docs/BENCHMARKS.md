@@ -196,11 +196,30 @@ Two different questions, both already measured in P1 (`evidence/e1-dram-bandwidt
 
 From the E14 measurements, in order of expected value:
 
-1. **`MAX_NUM_SEQS` 32 with `--max-cudagraph-capture-size 192`** (32 × 6). GLM's KV pool is 2.96M tokens and its C-scaling was still rising at 16 (424 → 569); V4-Flash gained 3.6× from slots. Expect C32 > 800 tok/s wall if the EXL3 dequant leaves SM headroom — it is compute-bound, so the gain will be smaller than V4-Flash's.
-2. **250 W cap.** Free at C1 (119 → 127 tok/s within acceptance noise), −11.6 % prefill, −100 W under concurrency where GLM pins the cap. Same T4.0 decision as V4-Flash.
+1. ~~**`MAX_NUM_SEQS` 32 with `--max-cudagraph-capture-size 192`**~~ **Tested (E16, below): no gain.** The 2.96M-token pool is attention-only; each request also pins ≈ 4.9 % of it as Mamba state, so ≈ 20 sequences run at once. C32 = 579 wall vs C16 572, TTFT +44 %. Keep 16.
+2. ~~**250 W cap.**~~ **Retired (owner, 2026-09-21):** no 4-GPU future-proofing, so run at 300 W and try **325 W** where GLM is cap-pinned (C2+ decode, prefill) — see "Power policy" below. Thermal check first: GLM sat at 86–87 °C pinned at 300 W during E16 C32.
 3. **`DFLASH_TOKENS` 4 instead of 5.** Only if the tpurtell runtime logs a per-position acceptance curve: at 34–40 % average acceptance the 5th position is probably < 20 %, and GLM's draft is a bf16 model whose extra token is not free the way DSpark's parallel draft is. Test at C1 on the code fixture; a 5-minute relaunch.
 4. **Prefill chunk / `max_num_batched_tokens`.** GLM's prefill is flat at 4.1K tok/s from 38K to 1M and sits at 300 W / 1.9 GHz — compute-bound in the dequant, so chunk tuning will move little. V4-Flash reaches 7.8K at 32K because NVFP4 GEMMs are cheaper; this is a format property, not a tune.
 5. **Structural, out of scope for a tune:** the decode ceiling is the EXL3 trellis dequant on the SMs (297 W under any load, 0.23 tok/s/W vs V4-Flash 0.46). A GLM-5.3-Flash checkpoint in a tensor-core-native 4-bit format (NVFP4/MXFP4) with an engine that has a Blackwell grouped GEMM would be the change that beats V4-Flash single-stream; that is a different recipe.
+
+## E16 — GLM-5.3-Flash at 32 slots (2026-09-21)
+
+`ENV_FILE=/tmp/glm-seqs32.env bash scripts/serve.sh` in the GLM repo (only `MAX_NUM_SEQS=32`; capture size now derived = 192), then `bench-decode.py --concurrency 1,16,32 --runs 5 --warmup 2 --max-tokens 512`. Evidence [`evidence/e16-glm-32slots/`](../evidence/e16-glm-32slots/).
+
+| Concurrency | median per-stream tok/s | **wall tok/s** | TTFT (s) | DFlash accept | Engine log |
+|---|---|---|---|---|---|
+| 1 | 133.3 | 130.1 | 0.100 | 41.6 % | 1 running, KV 4.6–5.3 % |
+| 16 | 622.2 | **571.9** | 0.610 | 37.0 % | 16 running, KV 74–83 % |
+| 32 | 1,161.5 (summed rates, not throughput) | **578.9** | 0.875 | 37.3 % | **19–21 running, 9–13 waiting, KV 95–100 %** |
+
+- **Slots above ≈ 20 do not run.** vLLM reports 16.19 GiB = 2,833,485 KV tokens ("2.70 × a 1M request"), but that counts attention blocks only. GLM-5.3-Flash is a hybrid; under `--mamba-cache-mode align` each sequence pins a fixed Mamba state ≈ 4.9 % of the pool (~0.8 GiB) whatever its length. 20 × 4.9 % = 98 %. The "median tok/s" column at C32 is the sum of per-stream rates while streams are running and hides the queue; wall tok/s is the honest number and it is flat.
+- **Even if they did, the SMs are full.** Both cards pinned at 300–304 W, 1.82–1.85 GHz, **86–87 °C** for the whole C16/C32 phase — the same EXL3-dequant compute ceiling E14 found.
+- **Decision:** GLM stays at 16 slots. The GLM `serve.sh` change (capture size derived from `MAX_NUM_SEQS × (DFLASH_TOKENS + 1)`, validator cap 32) is kept because it is identical at 16 and lets the next person test without editing scripts; `config/example.env` documents the ceiling. A larger `GPU_MEMORY_UTILIZATION` (validator caps it at 0.950) would buy ~1 slot per 0.8 GiB — not worth the graph-pool risk E15 showed.
+- **Contrast with V4-Flash:** its KV is pure attention (FP8 MLA), so 16 slots at 262K are 16 *running* slots and C16 reached 1,258 wall (2.2 × GLM). Slot count helps the model whose per-slot state is small.
+
+### Power policy (revised 2026-09-21)
+
+Owner decision: no 4-GPU future-proofing. Run both recipes at the **300 W default**; use **325 W** (`power.max_limit`) only where a phase is cap-pinned *and* the card stays under ~85 °C: prefill on both models (+4 % measured on V4-Flash, 8,770 vs 8,428 tok/s at 32K), GLM decode from C2, V4-Flash decode from ~C8. Single-stream V4-Flash decode never sees the cap (216–229 tok/s at every setting) so 325 W is free but useless there. **Thermal is the gate:** under C16 both models already sit at 86–88 °C pinned at 300 W (E16, E14/E15); 325 W adds heat with maybe +4 % clocks. `bench-power-sweep.sh --concurrency 16 --caps 325,300` now measures exactly this and prints `temp_max_c` per row; if it crosses ~88 °C or clocks drop below the 300 W row, stay at 300. The 250 W option is retired — it only ever made sense as a 4 × GPU budget on the 1,500 W PSU.
 
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 

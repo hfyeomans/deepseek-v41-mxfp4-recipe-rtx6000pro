@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-# E8b: tok/s-per-watt curve. Repeats the C1 decode and 32K prefill rows at each
-# power cap, sampling nvidia-smi at 500 ms, and restores the default limit.
+# E8b: tok/s-per-watt curve. Repeats the decode (C1 by default) and 32K prefill
+# rows at each power cap, sampling nvidia-smi at 500 ms, and restores the default limit.
+# --concurrency N runs the decode row at N streams (files become decode-cN-*w.json /
+# power-decode-cN-*w.csv); the summary reports wall tok/s for N > 1. Use it for the
+# 325 W question: single-stream decode never reaches the cap, batched decode and
+# prefill do. Caps above power.default_limit (300 W) are allowed up to power.max_limit
+# (325 W on this card); watch temp_max_c in the summary.
 #
 # Prerequisite: the server under test must be up and healthy at --url. For the E8
 # baseline that is the sibling V4-Flash deployment:
@@ -17,6 +22,7 @@ CAPS="300,275,250"
 OUT="$ROOT/evidence/e8b-power-sweep"
 RUNS=3
 PHASES="decode,prefill"
+CONC=1
 while [ $# -gt 0 ]; do
   case "$1" in
     --url) URL="$2"; shift 2 ;;
@@ -25,6 +31,7 @@ while [ $# -gt 0 ]; do
     --output) OUT="$2"; shift 2 ;;
     --runs) RUNS="$2"; shift 2 ;;
     --phases) PHASES="$2"; shift 2 ;;   # e.g. --phases prefill to redo one row
+    --concurrency) CONC="$2"; shift 2 ;;  # decode streams per run (single integer)
     *) echo "unknown arg $1" >&2; exit 2 ;;
   esac
 done
@@ -63,9 +70,11 @@ for cap in "${caps[@]}"; do
   for g in $GPUS; do nvidia-smi -i "$g" -pl "$cap" >/dev/null; done
   sleep 3
   case ",$PHASES," in *,decode,*)
-    sample "$OUT/power-decode-${cap}w.csv"
-    python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency 1 --runs "$RUNS" --warmup 1 --max-tokens 512 \
-      --output "$OUT/decode-c1-${cap}w.json" | tail -1
+    # C1 keeps the historical names (power-decode-300w.csv, decode-c1-300w.json).
+    suffix=""; [ "$CONC" != 1 ] && suffix="-c${CONC}"
+    sample "$OUT/power-decode${suffix}-${cap}w.csv"
+    python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency "$CONC" --runs "$RUNS" --warmup 1 --max-tokens 512 \
+      --output "$OUT/decode-c${CONC}-${cap}w.json" | tail -1
     stop_sample ;;
   esac
   case ",$PHASES," in *,prefill,*)

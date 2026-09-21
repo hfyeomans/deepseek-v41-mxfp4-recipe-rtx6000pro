@@ -2,6 +2,7 @@
   "decode-250w": {
     "cap_w": 250,
     "kind": "decode",
+    "concurrency": 1,
     "tps": 226.33599512992186,
     "gpus": {
       "0": {
@@ -23,6 +24,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 70.0,
     "total_busy_w": 496.2,
     "tps_per_w": 0.4561,
     "suspect": null
@@ -30,6 +32,7 @@
   "decode-275w": {
     "cap_w": 275,
     "kind": "decode",
+    "concurrency": 1,
     "tps": 226.32717924517988,
     "gpus": {
       "0": {
@@ -51,6 +54,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 64.0,
     "total_busy_w": 488.9,
     "tps_per_w": 0.4629,
     "suspect": null
@@ -58,6 +62,7 @@
   "decode-300w": {
     "cap_w": 300,
     "kind": "decode",
+    "concurrency": 1,
     "tps": 216.07317579556408,
     "gpus": {
       "0": {
@@ -79,6 +84,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 56.0,
     "total_busy_w": 472.5,
     "tps_per_w": 0.4573,
     "suspect": null
@@ -86,6 +92,7 @@
   "decode-325w": {
     "cap_w": 325,
     "kind": "decode",
+    "concurrency": 1,
     "tps": 228.99951818327318,
     "gpus": {
       "0": {
@@ -107,6 +114,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 45.0,
     "total_busy_w": 458.5,
     "tps_per_w": 0.4995,
     "suspect": null
@@ -114,6 +122,7 @@
   "prefill-250w": {
     "cap_w": 250,
     "kind": "prefill",
+    "concurrency": null,
     "tps": 7481.933098512456,
     "gpus": {
       "0": {
@@ -135,6 +144,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 74.0,
     "total_busy_w": 500.1,
     "tps_per_w": 14.9609,
     "suspect": null
@@ -142,6 +152,7 @@
   "prefill-275w": {
     "cap_w": 275,
     "kind": "prefill",
+    "concurrency": null,
     "tps": 7990.784198454164,
     "gpus": {
       "0": {
@@ -163,6 +174,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 71.0,
     "total_busy_w": 550.3,
     "tps_per_w": 14.5208,
     "suspect": null
@@ -170,6 +182,7 @@
   "prefill-300w": {
     "cap_w": 300,
     "kind": "prefill",
+    "concurrency": null,
     "tps": 8428.283434618888,
     "gpus": {
       "0": {
@@ -191,6 +204,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 64.0,
     "total_busy_w": 600.5,
     "tps_per_w": 14.0354,
     "suspect": null
@@ -198,6 +212,7 @@
   "prefill-325w": {
     "cap_w": 325,
     "kind": "prefill",
+    "concurrency": null,
     "tps": 8770.25710427468,
     "gpus": {
       "0": {
@@ -219,6 +234,7 @@
         "util_median_pct": 100.0
       }
     },
+    "temp_max_c": 56.0,
     "total_busy_w": 646.0,
     "tps_per_w": 13.5762,
     "suspect": null

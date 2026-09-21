@@ -40,6 +40,9 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | T2.4 | Baseline improvement sweep on V4-Flash | **done** — 1M/16-slot profile qualified (`GPU_MEMORY_UTILIZATION=0.9651 MAX_NUM_SEQS=16 MAX_CUDAGRAPH_CAPTURE_SIZE=96`; KV 1,184,027 tokens; C16 1,086 wall; 1M prefill 504 s) and recommended to the sibling; DSpark draft forward graph tested and rejected (neutral, C1-only); K fixed by checkpoint; FP8 KV already on; `max_num_batched_tokens` 8192 untested (low value) | BENCHMARKS.md §E15/T2.4, `evidence/e15-t24-v4-flash/summary.json` |
 | T2.5 | E14 model-to-model table: GLM-5.3-Flash (owner's reference recipe) vs V4-Flash vs V4.1 on this box, same harness/fixtures/power policy | **GLM + V4-Flash columns done** (BENCHMARKS.md §E14); GLM 300/250 W sweep done (`evidence/e14-glm53/power-sweep/`); open: GLM speculation-off C1 (hand launch without `--speculative-config`), V4-Flash footprint capture, V4.1 column after T3.6 | `evidence/e14-glm53/`, BENCHMARKS.md §E14 |
 | T2.6 | E15: eager vs CUDA graphs on V4-Flash | **done** — 4.4× / 5.6× penalty; feeds E6 design (CPU-expert call must be graph-compatible) | `evidence/e15-t24-v4-flash/`, BENCHMARKS.md §E15 |
+| T2.7 | E16: GLM 32 slots (derive capture size in GLM `serve.sh`, validator cap 32) | **done** — no gain (+1 % wall, +44 % TTFT); Mamba state caps GLM at ≈ 20 running sequences; GLM stays at 16 slots; script change committed in GLM repo `324f478` | `evidence/e16-glm-32slots/`, EXPERIMENTS E16 |
+| T2.8 | Populate measured V4-Flash profile into the sibling (`example.env`, `.env`, `docs/running.md`, README, operator-config test) | **done** — `GPU_MEMORY_UTILIZATION=0.9651 MAX_NUM_SEQS=16 MAX_CUDAGRAPH_CAPTURE_SIZE=96`, sibling commit `42e1f61`; `check-local.sh` passes (shellcheck now installed) | sibling repo |
+| T2.9 | 325 W where it is cap-bound: `bench-power-sweep.sh --concurrency 16 --caps 325,300` for GLM and V4-Flash (owner runs with sudo); record `temp_max_c` | **ready** — script gained `--concurrency`; both models sit at 86–88 °C already at 300 W under C16, so 325 W is a thermal question first | BENCHMARKS §power policy |
 
 ## P3 — 2-GPU hybrid build
 
@@ -73,7 +76,7 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 
 | ID | Task | Status | Output |
 |---|---|---|---|
-| T4.0 | Power decision for four cards: 2,000 W-class PSU (needs 240 V or 30 A circuit) **or** 250 W cap (driver floor) on the 1,500 W PSU | **decided by E8b: 250 W cap** for experiments — costs 0 % decode, 11 % prefill, best tok/s/W (15.0). 2,000 W PSU only if sustained 4-card serving is wanted (four cards at 250 W + 200 W CPU PPT ≈ 1,300 W, 87 % of the supply) | HARDWARE.md power table |
+| T4.0 | Power policy | **revised 2026-09-21 (owner):** no 4-GPU future-proofing — run at the 300 W default and use **325 W** wherever a phase is cap-pinned *and* `temp_max_c` stays under ~85 °C (prefill on both models; GLM decode C2+; V4-Flash decode C8+). 250 W is no longer recommended for anything; it only ever mattered as a 4-card PSU budget (still true: 4 × 300 W + CPU > 1,500 W, revisit if cards are added). 325 W measured so far: V4-Flash C1 229 tok/s (cap-insensitive), 32K prefill +4 % (8,770 vs 8,428); GLM untested at 325 | HARDWARE.md power table, T2.9 |
 | T4.1 | Acquire and install one or two more RTX PRO 6000 (Max-Q preferred for power); verify P2P OK and x16 on all slots | blocked on T4.0 | HARDWARE.md |
 | T4.1b | 3-GPU profile: EP3 or PP layout (TP3 invalid), 91% experts resident + hybrid remainder; llama.cpp layer-split as the simple variant | after T4.1 with 3 cards | `scripts/serve.sh` |
 | T4.2 | `preflight.sh` passes the memory gate on 4 GPUs | after T4.1 | — |
