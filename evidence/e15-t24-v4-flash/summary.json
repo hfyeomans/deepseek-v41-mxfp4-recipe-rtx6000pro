@@ -70,6 +70,88 @@
         "sm_clock_busy_median_mhz": 2332.0,
         "temp_max_c": 75.0
       }
+    },
+    "decode-1m-seqs16": {
+      "0": {
+        "busy_samples": 179,
+        "power_busy_median_w": 279.93,
+        "sm_clock_busy_median_mhz": 2265.0,
+        "temp_max_c": 80.0
+      },
+      "1": {
+        "busy_samples": 179,
+        "power_busy_median_w": 290.85,
+        "sm_clock_busy_median_mhz": 2265.0,
+        "temp_max_c": 77.0
+      }
+    },
+    "prefill-1m-seqs16": {
+      "0": {
+        "busy_samples": 492,
+        "power_busy_median_w": 300.0,
+        "sm_clock_busy_median_mhz": 1882.0,
+        "temp_max_c": 88.0
+      },
+      "1": {
+        "busy_samples": 492,
+        "power_busy_median_w": 300.0,
+        "sm_clock_busy_median_mhz": 1837.0,
+        "temp_max_c": 87.0
+      }
+    },
+    "decode-1m-seqs16-draftgraph": {
+      "0": {
+        "busy_samples": 180,
+        "power_busy_median_w": 289.09000000000003,
+        "sm_clock_busy_median_mhz": 2257.0,
+        "temp_max_c": 82.0
+      },
+      "1": {
+        "busy_samples": 182,
+        "power_busy_median_w": 297.595,
+        "sm_clock_busy_median_mhz": 2253.5,
+        "temp_max_c": 80.0
+      }
     }
+  },
+  "profile_1m_seqs16": {
+    "env": "GPU_MEMORY_UTILIZATION=0.9651 MAX_NUM_SEQS=16 MAX_CUDAGRAPH_CAPTURE_SIZE=96 MAX_MODEL_LEN=1000000",
+    "kv_pool_tokens": 1184027,
+    "max_concurrency_1m": 1.18,
+    "decode_wall_tps": {
+      "1": 208.6,
+      "4": 534.6,
+      "16": 1085.6
+    },
+    "decode_summed_tps": {
+      "1": 215.6,
+      "4": 603.3,
+      "16": 1444.0
+    },
+    "prefill_1m": {
+      "prompt_tokens": 972187,
+      "ttft_s": 504.4,
+      "tps": 1927.5
+    },
+    "verdict": "qualified; recommended multi-user profile"
+  },
+  "dspark_draft_forward_cudagraph": {
+    "how": "speculative-config fields dspark_forward_cudagraph=true, dspark_forward_cudagraph_allow_tp=true (hand-built container from serve.sh --print-spec)",
+    "captured_shapes": [
+      "(5,)"
+    ],
+    "engaged_at": "C1 only",
+    "decode_wall_tps": {
+      "1": 223.7,
+      "4": 491.9,
+      "16": 1216.5
+    },
+    "acceptance": {
+      "1": 0.603,
+      "4": 0.55,
+      "16": 0.601
+    },
+    "step_ms_c1_vs_baseline": "18.0 vs 17.8 (acceptance-normalised) \u2014 neutral",
+    "verdict": "not worth enabling"
   }
 }

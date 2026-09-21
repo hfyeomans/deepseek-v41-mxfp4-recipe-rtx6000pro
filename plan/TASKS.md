@@ -37,7 +37,7 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | T2.2 | E8 run against the V4-Flash NVFP4 TP2 deployment | **done** (incl. DSpark-off 89 tok/s and 1M prefill 1,898 tok/s) — decode C1–C8, prefill 8K–512K, 222K needles, power samples; DSpark-off and 1M prefill rows not re-run | `evidence/baseline-v4-flash/`, BENCHMARKS.md |
 | T2.2b | E8b power sweep (325/300/275/250 W; 225 W is below the driver floor) | **done** — decode 216–229 tok/s at every cap, prefill 8,770/8,428/7,991/7,482 tok/s; see BENCHMARKS.md §E8b | `evidence/e8b-power-sweep/summary.json` |
 | T2.3 | Fill BENCHMARKS.md baseline tables from JSON | after T2.2 | `docs/BENCHMARKS.md` |
-| T2.4 | Baseline improvement sweep on V4-Flash: slots (done: 16 slots at 262K → C16 1,258 tok/s, 2.2× GLM; 16 slots at 1M does not fit KV), DSpark block length (K fixed by checkpoint — closed, see E15 per-position acceptance), FP8 KV (already on), `gpu_memory_utilization` 0.9651 to recover the CUDA-graph reservation at 1M | slots done; remaining: util 0.9651 at 1M, 262K/16-slot profile documented as the multi-user config | BENCHMARKS.md §E15, `evidence/e15-t24-v4-flash/` |
+| T2.4 | Baseline improvement sweep on V4-Flash | **done** — 1M/16-slot profile qualified (`GPU_MEMORY_UTILIZATION=0.9651 MAX_NUM_SEQS=16 MAX_CUDAGRAPH_CAPTURE_SIZE=96`; KV 1,184,027 tokens; C16 1,086 wall; 1M prefill 504 s) and recommended to the sibling; DSpark draft forward graph tested and rejected (neutral, C1-only); K fixed by checkpoint; FP8 KV already on; `max_num_batched_tokens` 8192 untested (low value) | BENCHMARKS.md §E15/T2.4, `evidence/e15-t24-v4-flash/summary.json` |
 | T2.5 | E14 model-to-model table: GLM-5.3-Flash (owner's reference recipe) vs V4-Flash vs V4.1 on this box, same harness/fixtures/power policy | **GLM + V4-Flash columns done** (BENCHMARKS.md §E14); GLM 300/250 W sweep done (`evidence/e14-glm53/power-sweep/`); open: GLM speculation-off C1 (hand launch without `--speculative-config`), V4-Flash footprint capture, V4.1 column after T3.6 | `evidence/e14-glm53/`, BENCHMARKS.md §E14 |
 | T2.6 | E15: eager vs CUDA graphs on V4-Flash | **done** — 4.4× / 5.6× penalty; feeds E6 design (CPU-expert call must be graph-compatible) | `evidence/e15-t24-v4-flash/`, BENCHMARKS.md §E15 |
 
@@ -45,7 +45,7 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 
 | ID | Task | Status | Output |
 |---|---|---|---|
-| T3.1 | Download `deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a…` (475 GiB) to nvme0 | ready (disk: 1.7 TB free) | HF cache |
+| T3.1 | Download `deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a…` (475 GiB) to nvme0 | **in progress** — started 2026-09-21 17:16 with `hf download`, ~62 MB/s (135 GiB at 30 min); pid in `results/t3.1-download.pid`, log `results/t3.1-download.log` | HF cache `~/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash` |
 | T3.2 | Pull `lmsysorg/sglang:dev-dsv41` and `approachingai/ktransformers:DSV4-specific`; record digests in PROVENANCE.md | ready | PROVENANCE.md |
 | T3.3 | E5 2-GPU attempt with stock SGLang and vLLM generic offload; scrub and record logs | gpu-window, after T3.1–T3.2 | TROUBLESHOOTING.md |
 | T3.4 | E6 stage 1: sglang-kt hybrid with V4-Flash on 2 GPUs; sweep `--kt-num-gpu-experts`; calibrate the calculator | gpu-window, after T3.2 | `results/e6-stage1.json` |

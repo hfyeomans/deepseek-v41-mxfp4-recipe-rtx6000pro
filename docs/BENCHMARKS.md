@@ -162,6 +162,46 @@ Readout:
 - **K=5 does not hinder V4-Flash.** Position 5 still lands 40 % of the time and verification is nearly free on a bandwidth-bound step, so the fifth token adds ≈0.4 tokens per step for a few hundred microseconds of draft work. A longer draft would likely still pay; a shorter one would lose. K is fixed by the DSpark checkpoint anyway (sibling `.env` note).
 - **At concurrency every model is power-bound.** V4-Flash pinned both cards at 300 W from ~C8 (292–296 W median over the C1→C16 run), like GLM from C2. The 250 W cap decision (T4.0) trades a few percent at C8+ for the PSU margin; the C1 case stays free.
 
+### T2.4 result: the 1M / 16-slot profile is qualified, and the DSpark draft graph is not worth it
+
+Follow-up to the 16-slot launch failure above, same day. Three fixes were possible (utilisation 0.9651 as vLLM itself suggested; `max_model_len` 983,040; 8 slots). The first was tried first and worked.
+
+| V4-Flash profile (all TP2, DSpark K5, fp8 KV, graphs) | KV pool | 1M fits? | C1 wall | C4 wall | C16 wall | 1M prefill |
+|---|---:|---|---:|---:|---:|---:|
+| Shipped: 1M, 2 slots, util 0.96, capture 16 | ≈1M tokens (5.7 GiB) | 1 request | 207–239 | 301 | — | 972,187 tok / 512 s = 1,898 tok/s |
+| 262K, 16 slots, util 0.96, capture 96 | 690,615 | no (262K ceiling) | 217 | 558 | **1,258** | n/a |
+| **1M, 16 slots, util 0.9651, capture 96** | **1,184,027** | **yes, 1.18×** | 209 | 535 | **1,086** (summed 1,444; run spread 947–1,452) | **972,187 tok / 504 s = 1,927 tok/s**, 300 W, 1.84–1.88 GHz, 88 °C |
+| 1M, 16 slots + DSpark draft forward CUDA graph | 1,184,027 | yes | 224 (60 % acc.) | 492 | 1,216 | — |
+
+- **Recommended multi-user profile for the sibling deployment:** `GPU_MEMORY_UTILIZATION=0.9651 MAX_NUM_SEQS=16 MAX_CUDAGRAPH_CAPTURE_SIZE=96` with `MAX_MODEL_LEN=1000000` unchanged. Nothing is lost against the shipped profile — C1 and the 1M prefill are identical — and C16 gains 3.6× over the 2-slot ceiling. The extra 0.51 % of VRAM is exactly the CUDA-graph pool vLLM reserves (0.38 GiB actual). What "16 slots" means for agents: up to 16 requests decode in one batch as long as their contexts sum to ≈1.18M tokens; beyond that vLLM preempts the newest (recompute later) or queues. Sixteen 60K-context sub-agents fit; sixteen 200K ones do not. Prefix caching shares KV for a common system prompt.
+- **DSpark draft forward CUDA graph (opt-in prototype, `dspark_forward_cudagraph` + `_allow_tp` in `--speculative-config`; the sibling README lists it as untested):** captured for input shape `(5,)` only, so it engaged at C1 and fell back to the eager draft at C4/C16. At C1 the acceptance-normalised step time is 18.0 ms vs 17.8 ms without it — **neutral**; the C1 tok/s difference (224 vs 209) is the 60 % vs 54 % acceptance swing. The draft forward is a small slice of the step; target verification dominates. Not recommended; recorded so nobody re-tests it.
+- **What was measured and left as-is:** `max_num_batched_tokens` 2048 / long-prefill threshold 1792 (protects decode latency under concurrent prefill — untested at 8192); DSpark K (fixed by checkpoint, and the per-position curve says 5 is right); FP8 KV (already on).
+
+### Host CPU: does thread count matter, and are our scripts single-threaded?
+
+Two different questions, both already measured in P1 (`evidence/e1-dram-bandwidth.json`, `e1b-dram-read-bandwidth.json`, `e6-stage0-cpu-expert-gemv.json`, `e4b-dram-contention-cpu-vs-dma.json`):
+
+| Threads on the 9955WX (16 cores / 32 SMT, 2 CCDs) | DRAM read (torch f32 sum) | memcpy-style copy (N processes) | bf16 expert GEMV effective |
+|---:|---:|---:|---:|
+| 1 | — | 60 GB/s | — |
+| 8 | 67 GB/s | 117 GB/s | — |
+| 16 | **125 GB/s** | 140 GB/s | **94 GB/s** (76 ms/token) |
+| 32 (SMT) | 118 GB/s | 146 GB/s | 78 GB/s (91 ms/token, p90 146) |
+
+- **Multi-core matters and we already use it: 16 threads, one per physical core, is the sweet spot.** 8 threads gets half the bandwidth (one CCD's worth), 32 threads is slightly *worse* than 16 for reads and clearly worse for the GEMV (SMT siblings fight for the same load ports and caches). Every hybrid design number (50–78 tok/s) assumes 16 threads.
+- **The DIMMs are not the limit; the CPU's fabric is.** Eight channels of DDR5-6400 are 409.6 GB/s theoretical, and the cores reach 125–146. E4b showed the GPUs can DMA another 114 GB/s from the same DRAM *at the same time* (234 GB/s combined, additivity 0.98), so the memory itself has headroom the cores cannot use — consistent with the 2-CCD Infinity Fabric read limit (~64 GB/s per CCD). That is why option **B2 (split)** in FEASIBILITY exists: serve some DRAM experts from CPU compute and stream others over PCIe, using both read paths. A direct confirmation (STREAM in C or `pcm-memory` DIMM counters) is an open item in ROADMAP §measurements.
+- **Our harness scripts are single-process Python with threads for concurrent HTTP streams** (`ThreadPoolExecutor` in `bench-decode.py`); they wait on the network, so the GIL is irrelevant and one core is plenty. The engines are different: vLLM's scheduler/step loop is one Python thread per engine (which is why eager mode collapsed in E15 — the fix is graphs, not cores), and the CPU-expert path in KTransformers/llama.cpp is a native thread pool that will use all 16 cores. For the E6 hybrid the placement rule is: 16 compute threads on 16 cores, the engine's Python loop and the NVMe reader on the SMT siblings, hugepages for the expert arena (T1.6).
+
+### GLM-5.3-Flash: optimisations worth trying on the reference recipe (not run — it is the owner's daily driver)
+
+From the E14 measurements, in order of expected value:
+
+1. **`MAX_NUM_SEQS` 32 with `--max-cudagraph-capture-size 192`** (32 × 6). GLM's KV pool is 2.96M tokens and its C-scaling was still rising at 16 (424 → 569); V4-Flash gained 3.6× from slots. Expect C32 > 800 tok/s wall if the EXL3 dequant leaves SM headroom — it is compute-bound, so the gain will be smaller than V4-Flash's.
+2. **250 W cap.** Free at C1 (119 → 127 tok/s within acceptance noise), −11.6 % prefill, −100 W under concurrency where GLM pins the cap. Same T4.0 decision as V4-Flash.
+3. **`DFLASH_TOKENS` 4 instead of 5.** Only if the tpurtell runtime logs a per-position acceptance curve: at 34–40 % average acceptance the 5th position is probably < 20 %, and GLM's draft is a bf16 model whose extra token is not free the way DSpark's parallel draft is. Test at C1 on the code fixture; a 5-minute relaunch.
+4. **Prefill chunk / `max_num_batched_tokens`.** GLM's prefill is flat at 4.1K tok/s from 38K to 1M and sits at 300 W / 1.9 GHz — compute-bound in the dequant, so chunk tuning will move little. V4-Flash reaches 7.8K at 32K because NVFP4 GEMMs are cheaper; this is a format property, not a tune.
+5. **Structural, out of scope for a tune:** the decode ceiling is the EXL3 trellis dequant on the SMs (297 W under any load, 0.23 tok/s/W vs V4-Flash 0.46). A GLM-5.3-Flash checkpoint in a tensor-core-native 4-bit format (NVFP4/MXFP4) with an engine that has a Blackwell grouped GEMM would be the change that beats V4-Flash single-stream; that is a different recipe.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.
