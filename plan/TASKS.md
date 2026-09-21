@@ -53,6 +53,16 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | T3.10 | E11 Engram tiering: cache-hit simulation (GPU-free) then NVMe vs FP4/q3_K A/B | quiet-host / after T3.6 | BENCHMARKS.md |
 | T3.11 | `serve.sh` profile `2gpu-hybrid` (KT flags, Engram NVMe, hugepages) — labelled unqualified until T3.6 | after T3.5 | `config/example.env`, `scripts/serve.sh` |
 
+## Kernel track (cross-cutting)
+
+| ID | Task | Status | Output |
+|---|---|---|---|
+| TK.1 | Research SM120 FP4 kernel status (CUTLASS SM120 block-scaled GEMM, FlashInfer/vLLM Marlin fallback, TRT-LLM Triton MoE, cuBLAS gap, smem/TMEM constraints) | **done** | RESEARCH.md |
+| TK.2 | E12 kernel census on the V4-Flash baseline: nsys profile + backend log grep; measured GPU ms/token breakdown into the calculator | gpu-window | `evidence/e12-kernel-census/`, BENCHMARKS.md |
+| TK.3 | E13 stage 1: CUTLASS SM120 block-scaled grouped GEMM microbench at V4.1 expert shapes vs Marlin; settle MXFP4-UE8M0 vs NVFP4-UE4M3 acceptance on SM120 | build GPU-free in `dsv4-sm120:cuda-devel-https`; run gpu-window | `results/e13-stage1.json` |
+| TK.4 | E13 stage 2: integrate the winning kernel into the E6 engine's MoE backend; re-run E12 | decision, after TK.3 | fork + BENCHMARKS.md |
+| TK.5 | Hybrid glue kernels: activation gather/scatter to pinned host, stream-ordered H2D/D2H overlapped with CPU expert compute; Engram row gather from pinned host (zero-copy) or GPUDirect Storage from the 9100 PRO | after E6 stage 1 | fork |
+
 ## P4 — 3/4-GPU comparison
 
 | ID | Task | Status | Output |

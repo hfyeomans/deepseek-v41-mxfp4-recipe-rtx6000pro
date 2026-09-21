@@ -12,6 +12,7 @@ The memory math in [docs/FEASIBILITY.md](../docs/FEASIBILITY.md) rules out V4.1-
 |---|---|---|
 | **Baseline** | V4-Flash-0731 NVFP4 TP2 re-measured with this repo's harness — the number the hybrid competes with | scripts ready; needs a GPU window |
 | **2-GPU hybrid (primary)** | An engine that runs the three-tier layout for V4.1-Flash on this host, with decode/prefill/needle numbers. Routes, in order: (a) port `deepseek_v41` into KTransformers' sglang-kt; (b) llama.cpp `deepseek41` branch once CSA2 lands; (c) own PCIe expert-streaming prototype | microbenchmarks runnable now; port not started |
+| **Kernels (cross-cutting)** | Know which GPU kernels each engine actually dispatches on SM120 for this model family (native block-scaled FP4 vs Marlin W4A16 dequant), measure the GPU ms/token they cost, and build custom CUDA kernels where the stock path is a fallback: MXFP4 grouped GEMM sized for SM120's 99 KiB shared memory, hybrid glue (activation gather/scatter to pinned host, overlapped H2D/D2H), Engram row gather from pinned host or GPUDirect Storage | research done; E12 census needs a GPU window; E13 CUTLASS microbench buildable GPU-free, runs in a window |
 | **3/4-GPU comparison** | EP3/PP profile for a third card (91% experts resident, ~126 tok/s) and the SGLang `dev-dsv41` TP4 + Engram-in-DRAM profile for four (~200 tok/s), both ready to qualify when cards and power exist | `serve.sh` 4-GPU profile written, unqualified; 3-GPU profile to write |
 
 ## Phases
@@ -70,7 +71,8 @@ Exit criterion: one table with 2-, 3- and 4-GPU rows for the same fixture and po
 3. **Engram fully in DRAM on a 256 GB host** (4-GPU variant): nobody has published a consumer-GPU V4.1 result with the whole FP8 Engram table DRAM-resident. Measurable as prefill/TTFT delta vs NVMe mode.
 4. **Engram table tiering and quantization** (E11): NVMe + DRAM row cache vs FP4/q3_K tables in DRAM; the first quality measurement of quantized Engram tables.
 5. **Expert pruning for 2-GPU fit** (Option D): research-grade; only if E7 shows skew.
-6. **Baseline improvements** that need no new hardware: DSpark block size sweep, FP8 KV, concurrency scaling to C8/C16 on the existing V4-Flash recipe.
+6. **Custom SM120 kernels** (E12/E13): native MXFP4 grouped GEMM for the GPU-resident experts where every engine today falls back to Marlin W4A16 (40–50% slower, and it shifts DSpark acceptance because draft heads were trained on native FP4 activations); hybrid dispatch kernels that overlap CPU expert compute with GPU work; Engram gather straight from pinned host memory or NVMe via GPUDirect Storage. Measurable as GPU ms/token before/after under the same fixture, and as DSpark acceptance rate.
+7. **Baseline improvements** that need no new hardware: DSpark block size sweep, FP8 KV, concurrency scaling to C8/C16 on the existing V4-Flash recipe.
 
 ## Non-goals
 

@@ -69,6 +69,7 @@ Why it matters:
 
 - Weight capacity is the whole story: 95.6 GiB per card versus ~140 GiB per card needed for a 2-GPU split of the non-Engram weights. See the placement table in FEASIBILITY.md.
 - PCIe 5.0 x16 is 63 GB/s theoretical per direction; realistic pinned host-to-device copies land around 50 GiB/s. That number sets the ~42 tok/s ceiling of the PCIe-streaming fallback (versus ~56 tok/s for CPU compute at 146 GB/s DRAM) and the ~1.1 s per 4,096-token chunk of layerwise GPU prefill in the hybrid; E4 measures it.
+- SM120 is consumer/prosumer Blackwell: block-scaled FP4 `mma.sync` exists, but there is no TMEM/tcgen05 and shared memory is 99 KiB per block (228 KiB on B200), so datacenter FP4 kernels do not run here and every engine's default MoE path currently falls back to Marlin W4A16 dequant on these cards (RESEARCH.md, SM120 kernel status). Custom SM120 kernels are the kernel track in the plan (E12/E13).
 - P2P OK means TP2 all-reduce runs over PCIe peer copies rather than bouncing through host memory. vLLM SM120 reports still sometimes need `--disable-custom-all-reduce`.
 - Max-Q at 300 W: every published number from 600 W cards (or 0xSero's 275 W-capped cards) is a different power condition. Do not transfer throughput claims between machines.
 
