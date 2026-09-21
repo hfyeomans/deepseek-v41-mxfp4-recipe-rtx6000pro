@@ -26,20 +26,20 @@ The bytes are read from the shard headers of `deepseek-ai/DeepSeek-V4.1-Flash@db
 | **NVMe** (Samsung 9100 PRO) + DRAM row cache | Engram tables, 188.8 GiB FP8, 48 random 264 B reads per token | 64 GiB cache | 64 GiB cache | or all in DRAM |
 | Host needed / margin | | 200 / **+47 GiB** | 113 / +134 | 88 / +159 |
 | DRAM read per decoded token | | 1.75 GiB | 0.40 GiB | 0 |
-| **Decode ceiling** at 146 GB/s measured DRAM (E1 lower bound) / 300 GB/s | | **~56 / ~89 tok/s** | ~126 / ~156 | ~200 (GPU-bound) |
+| **Decode ceiling**, CPU compute at 125 GB/s measured DRAM read / **B2 split** with PCIe streaming (E4b) | | **~50 / ~78 tok/s** | ~119 / ~155 | ~200 (GPU-bound) |
 | Parallelism | | TP2 | **TP3 invalid** (64 heads) → EP3/PP | TP4 |
 | Power on the 1,500 W PSU | | fine | CPU PPT cap | **needs 2,000 W or 225 W/card** |
 
 Engram tiering on 2 GPUs: full FP8 tables in DRAM do **not** fit (−78 GiB); FP4 (+13 GiB) or q3_K (+32 GiB) tables do; NVMe + 64 GiB cache (+47 GiB) is the default because E3 showed both drives sustain decode-rate lookups. Full derivation, options and the 3/4-GPU columns: [docs/FEASIBILITY.md](docs/FEASIBILITY.md).
 
-Measured so far on this host (GPU-free, [docs/BENCHMARKS.md](docs/BENCHMARKS.md)): host DRAM copy 146 GB/s aggregate (E1, Python lower bound; theoretical 409.6); Engram-style random row gather 4.15 M rows/s from DRAM, 403K reads/s from the Samsung 9100 PRO, 347K from the Crucial T705 (E3).
+Measured so far on this host ([docs/BENCHMARKS.md](docs/BENCHMARKS.md)): CPU DRAM read 125 GB/s (E1b; a two-CCD fabric limit, 30 % of the 409.6 theoretical); GPU DMA reads of the same DRAM 114 GB/s over both x16 links and **additive** with the CPU's (E4/E4b, 234 GB/s together); GDDR7 ≈1,470 GB/s per card (E2); Engram-style random row gather 4.15 M rows/s from DRAM, 403K reads/s from the Samsung 9100 PRO, 347K from the Crucial T705 (E3); a native MXFP4×MXFP4 grouped GEMM for SM120 (`kernels/e13/`) that verifies and streams expert weights at 1,397 GB/s at decode shapes and reaches 1,060 TFLOPS dense at 300 W (E13).
 
 ### Paths, ranked
 
 | Path | Status | Expected result |
 |---|---|---|
 | **B. Three-tier hybrid on 2 GPUs** — port `deepseek_v41` into KTransformers' sglang-kt (validated for V4-Flash only), or run llama.cpp's `deepseek41` branch when CSA2 lands, or our own PCIe expert-streaming prototype | no engine runs it today; build track P3 | 56–89 tok/s decode at batch 1 (DRAM-bound), 2–3K tok/s prefill via layerwise GPU prefill; the first published 2-GPU V4.1-Flash number |
-| **E. Three GPUs**, 91% of experts resident, EP3/PP | future comparison; no card | ~126–156 tok/s |
+| **E. Three GPUs**, 91% of experts resident, EP3/PP | future comparison; no card | ~119–155 tok/s |
 | **A. Four RTX PRO 6000** + Engram tables in DRAM (SGLang `dev-dsv41` host-table path) | proven pattern on 4× SM120 by 0xSero; profile written, unqualified; **1,500 W PSU cannot carry four cards at 300 W** ([power](docs/HARDWARE.md#power-and-cooling-planning-inputs-for-option-a)) | ~200 tok/s C1, ~700 tok/s C8, ~7K tok/s prefill (0xSero, 275 W) |
 | **C/D. Sub-3-bit experts or 42% expert pruning** | no kernels / no evaluated artifact | research only; D gated on E7 routing skew |
 | **Baseline: DeepSeek-V4-Flash-0731 NVFP4, TP2** | already qualified on this host (sibling recipe) | 200.6 tok/s single-stream with DSpark K5, 1M context, 226 tok/s C2 — the number to beat per parameter |
@@ -72,6 +72,9 @@ Need a GPU window (stop the GLM container first):
 | Script | Purpose |
 |---|---|
 | `bench-pcie-h2d.py` (inside a torch container) | E2/E4: GDDR7 and PCIe bandwidth; prints the Option B decode ceiling |
+| `bench-dram-read.py` (inside a torch container, GPU-free) | E1b: read-only host DRAM bandwidth (fp32/int64 sum) at 8/16/32 threads |
+| `bench-dram-contention.py` (inside a torch container, `--gpus all`) | E4b: CPU DRAM reads and both-GPU H2D DMA alone and together; additivity |
+| `kernels/e13/build.sh`, `kernels/e13/run.py` | E13: build the SM120 MXFP4×MXFP4 grouped GEMM (GPU-free, `dsv4-sm120:cuda-devel-https`) and run it at V4.1 expert shapes |
 | `download-model.sh` → `preflight.sh` → `serve.sh` → `wait-ready.py` → `verify.py` | the recipe chain; `preflight.sh` **fails closed** on 2 GPUs |
 | `bench-decode.py`, `bench-prefill.py` | the shared benchmark harness (also for the V4-Flash baseline) |
 
@@ -84,7 +87,7 @@ git clone <this repo> && cd deepseek-v41-fp4-recipe-rtx6000pro
 scripts/ci.sh                                   # tests + consistency + identifier scan
 scripts/hardware-inventory.sh
 scripts/feasibility-calc.py evidence/budget-upstream-bf16fp8.json --gpus 2,3,4            # resident layouts: only 4 GPUs fit
-scripts/feasibility-calc.py evidence/budget-upstream-bf16fp8.json --gpus 2,3,4 --layout hybrid-cpu --engram nvme --dram-gbps 146
+scripts/feasibility-calc.py evidence/budget-upstream-bf16fp8.json --gpus 2,3,4 --layout hybrid-cpu --engram nvme --dram-gbps 125
 scripts/bench-engram-gather.py --backend dram --rows 20000000
 scripts/bench-engram-gather.py --backend nvme --path results/engram-nvme0.bin --rows 20000000   # results/ lives on nvme0
 ```

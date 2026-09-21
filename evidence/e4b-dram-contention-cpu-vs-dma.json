@@ -1,0 +1,45 @@
+{
+ "experiment": "E4b DRAM contention: CPU read vs GPU DMA",
+ "gpus": 2,
+ "cpu_threads": 16,
+ "seconds_per_phase": 8.0,
+ "phases": {
+  "cpu_only": {
+   "cpu_read_gbps": 123.7,
+   "h2d_total_gbps": 0.0,
+   "h2d_per_gpu_gbps": [
+    0.0,
+    0.0
+   ],
+   "combined_gbps": 123.7
+  },
+  "h2d_only": {
+   "cpu_read_gbps": 0.0,
+   "h2d_total_gbps": 114.0,
+   "h2d_per_gpu_gbps": [
+    57.0,
+    57.0
+   ],
+   "combined_gbps": 114.0
+  },
+  "both": {
+   "cpu_read_gbps": 120.1,
+   "h2d_total_gbps": 113.8,
+   "h2d_per_gpu_gbps": [
+    57.0,
+    56.9
+   ],
+   "combined_gbps": 233.9
+  },
+  "cpu_only_repeat": {
+   "cpu_read_gbps": 123.5,
+   "h2d_total_gbps": 0.0,
+   "h2d_per_gpu_gbps": [
+    0.0,
+    0.0
+   ],
+   "combined_gbps": 123.5
+  }
+ },
+ "additivity": 0.984
+}

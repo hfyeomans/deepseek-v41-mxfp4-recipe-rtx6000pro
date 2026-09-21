@@ -1,0 +1,200 @@
+{
+  "experiment": "E13 stage 1",
+  "binary": "kernels/e13/mxf4_grouped_gemm_n64k128",
+  "image": "dsv4-sm120:cuda-devel-https",
+  "iterations": 200,
+  "reinit_in_loop": false,
+  "gpu0": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 97887 MiB, 3090 MHz, 300.00 W",
+  "shapes": {
+    "gate_up": {
+      "n": 4608,
+      "k": 5120
+    },
+    "down": {
+      "n": 5120,
+      "k": 2304
+    }
+  },
+  "notes": [
+    "MXFP4 (E2M1 + UE8M0 block-32) x MXFP4 -> BF16, CUTLASS 4.7.1 SM120 block-scaled grouped GEMM (kind::mxf4nvf4), built for sm_120a",
+    "avg_ms includes gemm.initialize() per iteration as in the CUTLASS example unless reinit_in_loop=false",
+    "weight_GBps = MXFP4 weight+scale bytes / avg time; decode is weight-bandwidth bound",
+    "prefill_dense_proxy = 6 groups x M=4096 (all tokens to one expert), an upper bound"
+  ],
+  "cases": {
+    "decode_gate_up_m1_g6": {
+      "schedules": {
+        "cooperative": {
+          "verified": true,
+          "avg_ms": 0.0865515,
+          "tflops": 3.27106,
+          "weight_GBps": 868.8764492816416,
+          "flops_check_tflops": 3.271064279648533
+        },
+        "pingpong": {
+          "verified": true,
+          "avg_ms": 0.0864682,
+          "tflops": 3.27422,
+          "weight_GBps": 869.7134900460517,
+          "flops_check_tflops": 3.274215491938077
+        }
+      },
+      "weight_bytes": 75202560.0,
+      "flops": 283115520,
+      "wall_s": 5.5,
+      "phase": "decode",
+      "proj": "gate_up",
+      "num_groups": 6,
+      "mnk": [
+        1,
+        4608,
+        5120
+      ]
+    },
+    "decode_gate_up_m4_g6": {
+      "schedules": {
+        "cooperative": {
+          "verified": true,
+          "avg_ms": 0.0856605,
+          "tflops": 13.2204,
+          "weight_GBps": 877.9140910921604,
+          "flops_check_tflops": 13.220353371740767
+        },
+        "pingpong": {
+          "verified": true,
+          "avg_ms": 0.085317,
+          "tflops": 13.2736,
+          "weight_GBps": 881.4487147930658,
+          "flops_check_tflops": 13.273580646295578
+        }
+      },
+      "weight_bytes": 75202560.0,
+      "flops": 1132462080,
+      "wall_s": 5.5,
+      "phase": "decode",
+      "proj": "gate_up",
+      "num_groups": 6,
+      "mnk": [
+        4,
+        4608,
+        5120
+      ]
+    },
+    "decode_gate_up_m8_g6": {
+      "schedules": {
+        "cooperative": {
+          "verified": true,
+          "avg_ms": 0.0859235,
+          "tflops": 26.3598,
+          "weight_GBps": 875.2269169668367,
+          "flops_check_tflops": 26.359775381589436
+        },
+        "pingpong": {
+          "verified": true,
+          "avg_ms": 0.0844571,
+          "tflops": 26.8174,
+          "weight_GBps": 890.4231852621035,
+          "flops_check_tflops": 26.81745122671747
+        }
+      },
+      "weight_bytes": 75202560.0,
+      "flops": 2264924160,
+      "wall_s": 5.6,
+      "phase": "decode",
+      "proj": "gate_up",
+      "num_groups": 6,
+      "mnk": [
+        8,
+        4608,
+        5120
+      ]
+    },
+    "decode_down_m1_g6": {
+      "schedules": {
+        "cooperative": {
+          "verified": true,
+          "avg_ms": 0.0639133,
+          "tflops": 2.21484,
+          "weight_GBps": 588.3169856665202,
+          "flops_check_tflops": 2.214840416626899
+        },
+        "pingpong": {
+          "verified": true,
+          "avg_ms": 0.06324,
+          "tflops": 2.23842,
+          "weight_GBps": 594.5806451612901,
+          "flops_check_tflops": 2.238421252371916
+        }
+      },
+      "weight_bytes": 37601280.0,
+      "flops": 141557760,
+      "wall_s": 3.1,
+      "phase": "decode",
+      "proj": "down",
+      "num_groups": 6,
+      "mnk": [
+        1,
+        5120,
+        2304
+      ]
+    },
+    "decode_down_m4_g6": {
+      "schedules": {
+        "cooperative": {
+          "verified": true,
+          "avg_ms": 0.0469786,
+          "tflops": 12.053,
+          "weight_GBps": 800.3916676955038,
+          "flops_check_tflops": 12.052956878238176
+        },
+        "pingpong": {
+          "verified": true,
+          "avg_ms": 0.0470098,
+          "tflops": 12.045,
+          "weight_GBps": 799.8604546286093,
+          "flops_check_tflops": 12.044957434407294
+        }
+      },
+      "weight_bytes": 37601280.0,
+      "flops": 566231040,
+      "wall_s": 3.1,
+      "phase": "decode",
+      "proj": "down",
+      "num_groups": 6,
+      "mnk": [
+        4,
+        5120,
+        2304
+      ]
+    },
+    "decode_down_m8_g6": {
+      "schedules": {
+        "cooperative": {
+          "verified": true,
+          "avg_ms": 0.0514214,
+          "tflops": 22.0231,
+          "weight_GBps": 731.2379670720751,
+          "flops_check_tflops": 22.02316700828838
+        },
+        "pingpong": {
+          "verified": true,
+          "avg_ms": 0.0509174,
+          "tflops": 22.2411,
+          "weight_GBps": 738.4760415889264,
+          "flops_check_tflops": 22.241160781972372
+        }
+      },
+      "weight_bytes": 37601280.0,
+      "flops": 1132462080,
+      "wall_s": 3.1,
+      "phase": "decode",
+      "proj": "down",
+      "num_groups": 6,
+      "mnk": [
+        8,
+        5120,
+        2304
+      ]
+    }
+  }
+}

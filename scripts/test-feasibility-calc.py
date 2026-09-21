@@ -87,6 +87,25 @@ def test_hybrid_ceiling_responds_to_bandwidth_and_skew():
     assert abs(slow["dram_bytes_per_token_gib"] - expected) < 0.01
 
 
+def test_split_ceiling_sums_bandwidths_not_times():
+    """Option B2 (E4b): CPU reads and GPU DMA reads of DRAM are additive, so the split
+    path's DRAM time is bytes / (dram + pcie x gpus). A wrong implementation that summed
+    the two times, or averaged the two ceilings, would fail the asymmetric case below."""
+    b = calc.load_budget(EVIDENCE)
+    common = dict(gpus=2, gpu_gib=95.6, host_gib=246.8, util=0.95, gpu_reserve_gib=4, host_reserve_gib=24,
+                  context_tokens=262144, sequences=1, include_dspark=True, include_vision=False, engram="nvme",
+                  engram_cache_gib=64, gpu_ms_per_token=5.0, activation_skew=0.0)
+    r = calc.evaluate_hybrid(b, dram_gbps=100, pcie_gbps_per_gpu=30, **common)  # 100 + 60 = 160 GB/s
+    bytes_per_token = r["dram_bytes_per_token_gib"] * GIB
+    assert abs(r["split_ms_per_token"] - bytes_per_token / 160e9 * 1e3) < 0.02
+    assert r["decode_ceiling_split_tok_s"] > r["decode_ceiling_cpu_tok_s"] > r["decode_ceiling_pcie_stream_tok_s"]
+    assert abs(r["decode_ceiling_split_tok_s"] - 1e3 / (5.0 + r["split_ms_per_token"])) < 0.1
+    # Default calculator values (measured E1b 125, E4 57 x 2) give the FEASIBILITY.md table's 78 tok/s.
+    d = calc.evaluate_hybrid(b, dram_gbps=calc.DEFAULT_DRAM_GBPS, pcie_gbps_per_gpu=calc.DEFAULT_PCIE_GBPS_PER_GPU, **common)
+    assert 77 <= d["decode_ceiling_split_tok_s"] <= 79, d["decode_ceiling_split_tok_s"]
+    assert 49 <= d["decode_ceiling_cpu_tok_s"] <= 51, d["decode_ceiling_cpu_tok_s"]
+
+
 def test_bad_gpu_list_is_an_input_error():
     p = subprocess.run([sys.executable, str(HERE / "feasibility-calc.py"), str(EVIDENCE), "--gpus", "2,x"], capture_output=True, text=True)
     assert p.returncode == 2 and "--gpus" in p.stderr

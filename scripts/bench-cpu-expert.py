@@ -13,11 +13,16 @@ batch 1. Variants:
   bf16       weights stored bf16, torch.mv            -> memory-roofline of the
                                                         GEMV path (4x MXFP4 bytes)
   int8-deq   weights int8 + per-row scale, dequantised to bf16 on the fly,
-             then torch.mv                            -> compute proxy for a
-                                                        dequant-and-FMA kernel
-  read       plain torch.sum over the bf16 pool       -> E1b: DRAM read bandwidth
-                                                        from a C kernel, replacing
-                                                        the Python lower bound
+             then torch.mv                            -> NOT a valid compute proxy:
+                                                        torch materialises the
+                                                        dequantised matrix (E6 s0
+                                                        measured 584 ms/token).
+                                                        Kept for the record; use a
+                                                        real MXFP4 CPU kernel instead.
+  read       torch.sum over an fp32 tensor             -> DRAM read bandwidth (E1b).
+                                                        A bf16 sum is conversion-
+                                                        bound (10 GB/s measured) and
+                                                        was replaced by fp32.
 
 Reports median ms/token, bytes touched per token and effective GB/s per
 variant and thread count, plus the decode ceiling these imply if the MXFP4
@@ -102,17 +107,17 @@ def bench_variant(variant: str, pool: int, per_token: int, tokens: int, warmup: 
 
 
 def bench_read(size_gib: float, reps: int, gen: torch.Generator) -> dict:
-    n = int(size_gib * GIB / 2)
-    x = torch.randn(n, generator=gen).to(torch.bfloat16)
+    n = int(size_gib * GIB / 4)
+    x = torch.ones(n, dtype=torch.float32)  # fp32: the reduction is bandwidth-bound, unlike a bf16 sum
     x.sum()  # fault in
     times = []
     for _ in range(reps):
         t0 = time.perf_counter()
-        x.float().sum() if False else torch.sum(x, dtype=torch.float32)
+        x.sum()
         times.append(time.perf_counter() - t0)
     med = statistics.median(times)
     del x
-    return {"variant": "read", "size_gib": size_gib, "s_median": round(med, 4), "gbps": round(n * 2 / med / 1e9, 1)}
+    return {"variant": "read", "size_gib": size_gib, "s_median": round(med, 4), "gbps": round(n * 4 / med / 1e9, 1)}
 
 
 def main() -> int:

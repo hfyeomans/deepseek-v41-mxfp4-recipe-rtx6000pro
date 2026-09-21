@@ -49,11 +49,15 @@ ATTENTION_HEADS = 64  # TP degree must divide this for plain tensor parallelism
 # fp4: LibertAIDAI NVFP4 tables are 97.28 / 188.83 GiB of the FP8 ones.
 # q3k: vcruz305's GGUF ladder quotes ~40,284 MiB per table at q3_K (2 tables).
 ENGRAM_FRACTION = {"dram": 1.0, "dram-fp4": 97.28 / 188.83, "dram-q3k": 2 * 40284 / 1024 / 188.83}
-# Measured on this host (E1, evidence/e1-dram-bandwidth.json): 146 GB/s copy
-# bandwidth from Python; a lower bound. Theoretical 8ch DDR5-6400 is 409.6.
-DEFAULT_DRAM_GBPS = 146.0
-# PCIe 5.0 x16 pinned H2D per card, until E4 measures it.
-DEFAULT_PCIE_GBPS_PER_GPU = 50.0
+# Measured on this host: E1b read-only DRAM bandwidth from the CPU cores is
+# ~125 GB/s at 16 threads (evidence/e1b-dram-read-bandwidth.json); E1's 146 GB/s
+# counted read+write of a copy. Theoretical 8ch DDR5-6400 is 409.6; the gap is a
+# CPU-side (core-complex to IO-die) limit, not the DIMMs: E4b shows GPU DMA reads
+# of the same DRAM add on top (evidence/e4b-dram-contention-cpu-vs-dma.json).
+DEFAULT_DRAM_GBPS = 125.0
+# PCIe 5.0 x16 pinned H2D per card, measured in E4/E4b: 53 GiB/s = 57 GB/s per
+# card, both cards concurrently 114 GB/s aggregate (independent links).
+DEFAULT_PCIE_GBPS_PER_GPU = 57.0
 # GPU-side time per decoded token for the resident part of the model. The
 # sibling V4-Flash NVFP4 TP2 deployment decodes at ~200 tok/s = 5 ms/token on
 # these cards; V4.1 activates fewer parameters, so this is conservative.
@@ -165,6 +169,14 @@ def evaluate_hybrid(budget: dict, *, gpus: int, gpu_gib: float, host_gib: float,
     pcie_ms = bytes_per_token / (pcie_gbps_per_gpu * gpus * 1e9) * 1e3
     decode_cpu = 1e3 / (gpu_ms_per_token + dram_ms) if bytes_per_token else 1e3 / gpu_ms_per_token
     decode_pcie = 1e3 / (gpu_ms_per_token + pcie_ms) if bytes_per_token else 1e3 / gpu_ms_per_token
+    # Split: CPU cores compute some DRAM experts while the GPUs stream the rest
+    # over PCIe. E4b measured the two DRAM read paths as additive (98 %), so the
+    # DRAM side runs at the sum of both bandwidths. Upper bound: assumes CPU
+    # compute keeps up with its share of the bytes (E6 stage 0 reached 94 of
+    # 125 GB/s while computing) and perfect overlap with the GPU part.
+    split_gbps = dram_gbps + pcie_gbps_per_gpu * gpus
+    split_ms = bytes_per_token / (split_gbps * 1e9) * 1e3
+    decode_split = 1e3 / (gpu_ms_per_token + split_ms) if bytes_per_token else 1e3 / gpu_ms_per_token
 
     fits = expert_capacity >= 0 and host_margin >= 0
     return {
@@ -188,6 +200,8 @@ def evaluate_hybrid(budget: dict, *, gpus: int, gpu_gib: float, host_gib: float,
         "decode_ceiling_cpu_tok_s": round(decode_cpu, 1),
         "pcie_ms_per_token": round(pcie_ms, 2),
         "decode_ceiling_pcie_stream_tok_s": round(decode_pcie, 1),
+        "split_ms_per_token": round(split_ms, 2),
+        "decode_ceiling_split_tok_s": round(decode_split, 1),
         "fits": fits,
     }
 
@@ -263,12 +277,12 @@ def main() -> int:
         if hybrid_rows:
             print(f"  hybrid-cpu (experts that do not fit VRAM are computed on CPU from DRAM; Engram={args.engram}; "
                   f"DRAM {args.dram_gbps:.0f} GB/s; PCIe {args.pcie_gbps_per_gpu:.0f} GB/s/GPU; GPU {args.gpu_ms_per_token} ms/token; skew {args.activation_skew})")
-            print(f"  {'GPUs':>4s} {'GPU experts':>11s} {'CPU experts':>11s} {'CPU GiB':>8s} {'host need':>10s} {'host margin':>12s} {'GiB/token':>9s} {'CPU ceiling':>11s} {'PCIe ceiling':>12s}  verdict")
+            print(f"  {'GPUs':>4s} {'GPU experts':>11s} {'CPU experts':>11s} {'CPU GiB':>8s} {'host need':>10s} {'host margin':>12s} {'GiB/token':>9s} {'CPU ceiling':>11s} {'PCIe ceiling':>12s} {'split ceiling':>13s}  verdict")
             for r in hybrid_rows:
                 tp = "" if r["tp_valid"] else " (TP invalid: 64 heads; needs EP/PP)"
                 print(f"  {r['gpus']:4d} {r['gpu_experts']:5d} ({r['gpu_expert_fraction']*100:3.0f}%) {r['cpu_experts']:11d} {r['cpu_expert_gib']:8.1f} "
                       f"{r['host_need_gib']:10.1f} {r['host_margin_gib']:12.1f} {r['dram_bytes_per_token_gib']:9.2f} "
-                      f"{r['decode_ceiling_cpu_tok_s']:8.0f} t/s {r['decode_ceiling_pcie_stream_tok_s']:9.0f} t/s  {'FITS' if r['fits'] else 'DOES NOT FIT'}{tp}")
+                      f"{r['decode_ceiling_cpu_tok_s']:8.0f} t/s {r['decode_ceiling_pcie_stream_tok_s']:9.0f} t/s {r['decode_ceiling_split_tok_s']:10.0f} t/s  {'FITS' if r['fits'] else 'DOES NOT FIT'}{tp}")
     return 0 if all(r["fits"] for r in rows) else 3
 
 

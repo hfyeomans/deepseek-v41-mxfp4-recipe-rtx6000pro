@@ -27,7 +27,7 @@ Why it matters: the board has enough PCIe 5.0 x16 slots and CPU lanes to take **
 | ISA | AVX-512 (F, BF16, VNNI); **no AMX** | measured |
 | NUMA | 1 node (Threadripper PRO presents a single node) | measured |
 
-Why it matters: in the 2-GPU three-tier layout these 16 cores **compute 42% of the routed experts** (≈101 expert activations, 3.6 GMAC per decoded token) from DRAM, plus the Engram host-table gathers. KTransformers' `MXFP4` CPU method needs only AVX2, so the lack of AMX rules out KT's AMX-optimised INT8/BF16 paths but not the hybrid itself. Peak FP32 with two 512-bit FMA units per core is roughly 2 TFLOP/s across 16 cores; a dequant-and-FMA MXFP4 GEMV at a quarter of that is ~15 ms/token, the same order as the 12.9 ms DRAM time, so CPU compute must overlap DRAM streaming and is measured by E6 stage 0 rather than assumed.
+Why it matters: in the 2-GPU three-tier layout these 16 cores **compute 42% of the routed experts** (≈101 expert activations, 3.6 GMAC per decoded token) from DRAM, plus the Engram host-table gathers. KTransformers' `MXFP4` CPU method needs only AVX2, so the lack of AMX rules out KT's AMX-optimised INT8/BF16 paths but not the hybrid itself. Peak FP32 with two 512-bit FMA units per core is roughly 2 TFLOP/s across 16 cores. **Measured (E1b, E6 s0): these 16 cores read DRAM at only ≈125 GB/s** (30 % of the 409.6 GB/s the eight channels can deliver), and a bf16 expert GEMV sustains 94 GB/s of that — bandwidth, not FLOPs, binds the CPU side. The cause is structural: 16 Zen 5 cores are **two CCDs**, and each CCD's link to the IO die caps reads at roughly 60–65 GB/s. E4b confirmed the DIMMs themselves have headroom (GPU DMA adds another 114 GB/s on top). For the hybrid this means the CPU upgrade that matters is **CCD count** (9975WX 32-core = 4 CCDs, 9985WX 64-core = 8), not memory speed.
 
 ## System memory
 
@@ -49,7 +49,7 @@ Why it matters:
 - The full FP8 Engram tables (188.83 GiB) fit in DRAM with 34 GiB to spare after a 24 GiB OS reserve. On the 128 GB box that produced the only 4-GPU result, they did not; that recipe had to read Engram from NVMe with a 64 GiB DRAM cache. This host can run SGLang's `SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE=1` path with the *whole* table in DRAM — the one place this machine is better positioned than the published reference.
 - SGLang's host-table path wants huge pages. Reserving ~190 GiB of 2 MiB or 1 GiB hugepages is a boot-time (`hugepagesz=1G hugepages=190`) or runtime (`vm.nr_hugepages`) change; it is reversible and is task T2.2.
 - Decode Engram traffic is trivial: 48 random 264 B rows per token ≈ 12.4 KB. Prefill of 64K tokens is ≈ 3.1 M random row reads; at DRAM random-access latency (~80–120 ns, parallel across cores) that is well under a second. E3 measures it.
-- The 2-GPU three-tier layout (Option B) puts 112 GiB of routed experts in DRAM for CPU compute. With the full FP8 Engram also in DRAM that is 325 GiB — does not fit; with Engram on NVMe behind a 64 GiB row cache it is 200 GiB against 246.8 (+47 GiB), with FP4 tables 233 GiB (+13). **DRAM read bandwidth is the decode bottleneck of this layout**: 1.75 GiB of expert weights per token, 12.9 ms at the 146 GB/s measured in E1 and 4.6 ms at the 409.6 GB/s theoretical. Every measured GB/s moves the ceiling (`feasibility-calc.py --dram-gbps`).
+- The 2-GPU three-tier layout (Option B) puts 112 GiB of routed experts in DRAM for CPU compute. With the full FP8 Engram also in DRAM that is 325 GiB — does not fit; with Engram on NVMe behind a 64 GiB row cache it is 200 GiB against 246.8 (+47 GiB), with FP4 tables 233 GiB (+13). **DRAM read bandwidth is the decode bottleneck of this layout**: 1.75 GiB of expert weights per token, 15.0 ms at the 125 GB/s the CPU cores can read (E1b), 20 ms at the 94 GB/s they sustain while computing (E6 s0), 4.6 ms at the 409.6 GB/s theoretical. The CPU cannot reach the DIMMs' full rate (two-CCD fabric limit) but the GPUs' DMA engines can add 114 GB/s on top of the CPU's reads (E4b), so the hybrid should feed DRAM-resident experts through both paths (`feasibility-calc.py` `split ceiling`).
 
 ## GPUs
 
@@ -58,17 +58,17 @@ Why it matters:
 | Model | 2 × NVIDIA RTX PRO 6000 Blackwell **Max-Q** Workstation Edition | measured |
 | Architecture | Blackwell GB202, SM 12.0 (compute capability 12.0) | vendor spec |
 | VRAM | 97,887 MiB = 95.59 GiB each; 191.19 GiB total | measured |
-| Memory bus | 512-bit GDDR7 ECC; `clocks.max.memory` 14,001 MHz → 28 Gbps PAM3 → **1,792 GB/s** theoretical per card (NVIDIA lists 1.6 TB/s) | measured clock, derived bandwidth — **measure in E2** |
+| Memory bus | 512-bit GDDR7 ECC; `clocks.max.memory` 14,001 MHz → 28 Gbps PAM3 → 1,792 GB/s theoretical per card; **≈1,470 GB/s measured D2D copy (E2, read+write counted), 82 %** | measured |
 | Power | 300 W limit, 325 W max (Max-Q); the full Workstation Edition is 600 W | measured |
 | Max SM clock | 3,090 MHz | measured |
-| PCIe | Gen 5 x16 both cards; **P2P read: OK** both directions; topology NODE (same CPU, no NVLink) | measured |
+| PCIe | Gen 5 x16 both cards; **pinned H2D 53.1 / 52.9 GiB/s (57 GB/s) per card, 106.1 GiB/s (114 GB/s) both concurrently** (E4); **P2P read: OK** both directions; topology NODE (same CPU, no NVLink) | measured |
 | Driver / CUDA | 615.71.09 / CUDA 13.4 UMD | measured |
-| FP4 tensor throughput | ~2 PFLOPS dense NVFP4 (Max-Q throttles below the 600 W card) | vendor spec |
+| FP4 tensor throughput | ~2 PFLOPS dense FP4 spec for the 600 W card; **1,060 TFLOPS measured** on a 4,096×4608×5120 MXFP4 grouped GEMM at the 300 W Max-Q cap (E13 s1) | vendor spec / measured |
 
 Why it matters:
 
 - Weight capacity is the whole story: 95.6 GiB per card versus ~140 GiB per card needed for a 2-GPU split of the non-Engram weights. See the placement table in FEASIBILITY.md.
-- PCIe 5.0 x16 is 63 GB/s theoretical per direction; realistic pinned host-to-device copies land around 50 GiB/s. That number sets the ~42 tok/s ceiling of the PCIe-streaming fallback (versus ~56 tok/s for CPU compute at 146 GB/s DRAM) and the ~1.1 s per 4,096-token chunk of layerwise GPU prefill in the hybrid; E4 measures it.
+- PCIe 5.0 x16 is 63 GB/s theoretical per direction; measured pinned host-to-device is 53 GiB/s per card and 106 GiB/s for both together (E4). That sets the ~46 tok/s ceiling of the PCIe-streaming fallback (versus ~50 tok/s for CPU compute at the 125 GB/s the cores can read) and ≈1.06 s per 4,096-token chunk of layerwise GPU prefill in the hybrid. Because GPU DMA and CPU reads of host DRAM were measured as additive (E4b, 234 GB/s combined), the two paths can serve DRAM-resident experts simultaneously (Option B2, ~78 tok/s ceiling).
 - SM120 is consumer/prosumer Blackwell: block-scaled FP4 `mma.sync` exists, but there is no TMEM/tcgen05 and shared memory is 99 KiB per block (228 KiB on B200), so datacenter FP4 kernels do not run here and every engine's default MoE path currently falls back to Marlin W4A16 dequant on these cards (RESEARCH.md, SM120 kernel status). Custom SM120 kernels are the kernel track in the plan (E12/E13).
 - P2P OK means TP2 all-reduce runs over PCIe peer copies rather than bouncing through host memory. vLLM SM120 reports still sometimes need `--disable-custom-all-reduce`.
 - Max-Q at 300 W: every published number from 600 W cards (or 0xSero's 275 W-capped cards) is a different power condition. Do not transfer throughput claims between machines.

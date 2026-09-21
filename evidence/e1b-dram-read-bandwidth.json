@@ -1,0 +1,25 @@
+{
+ "experiment": "E1b-torch-dram-read",
+ "size_gib": 8,
+ "note": "read-only sum vs copy(read+write counted); bf16 sum in bench-cpu-expert.py is conversion-bound and not a DRAM probe",
+ "results": [
+  {
+   "threads": 8,
+   "f32_sum_gbps": 67.0,
+   "i64_sum_gbps": 62.7,
+   "f32_copy_rw_gbps": 60.5
+  },
+  {
+   "threads": 16,
+   "f32_sum_gbps": 124.7,
+   "i64_sum_gbps": 123.3,
+   "f32_copy_rw_gbps": 112.5
+  },
+  {
+   "threads": 32,
+   "f32_sum_gbps": 118.0,
+   "i64_sum_gbps": 119.9,
+   "f32_copy_rw_gbps": 108.7
+  }
+ ]
+}

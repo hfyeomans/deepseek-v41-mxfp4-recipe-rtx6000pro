@@ -32,15 +32,22 @@ E1 and E3 were run on this host while the GLM container was serving (GPU-free; C
 | E1 DRAM copy bandwidth, 1 process | GB/s (read+write) | 20–30 | **60.0** |
 | E1 DRAM copy bandwidth, 16 processes | GB/s (read+write) | 250–320 | **139.9** (max 148.4) |
 | E1 DRAM copy bandwidth, 32 processes | GB/s (read+write) | — | **146.2** (max 153.1) |
-| E2 GDDR7 D2D per card | GB/s | 1,450–1,650 | — |
+| E1b DRAM read-only, torch f32 sum, 16 threads (quiet host) | GB/s (read) | ≥ 200 | **124.7** (8 thr 67; 32 thr 118) |
+| E2 GDDR7 D2D per card | GB/s (read+write counted) | 1,450–1,650 | **≈1,470** (1,370 GiB/s) |
 | E3 Engram gather DRAM, 16 threads, 20 M-row table (4.9 GiB) | rows/s; 48-row p50 / p99 | ≥ 5 M; < 0.1 ms | **4.15 M**; 0.011 / 0.015 ms |
 | E3 Engram gather Samsung 9100 PRO (O_DIRECT 4 KiB, 16 threads) | rows/s; 48-row p50 / p99 | ≥ 600K; < 1 ms | **403K**; 1.90 / 2.11 ms |
 | E3 Engram gather Crucial T705 (O_DIRECT 4 KiB, 16 threads) | rows/s; 48-row p50 / p99 | lower than 9100 | **347K**; 2.20 / 2.38 ms |
-| E4 PCIe H2D pinned, per card | GiB/s | 48–55 | — |
-| E4 PCIe H2D pinned, both cards concurrently | GiB/s aggregate | ≥ 90 | — |
-| E6 stage 0 CPU expert GEMV, 101 experts/token, 16–32 threads | ms/token; GB/s | ≤ 13 ms (≤ DRAM time) | — |
-| Hybrid decode ceiling, 2 GPUs (`feasibility-calc.py --layout hybrid-cpu`; 1000 / (5 ms + 1.75 GiB ÷ DRAM GB/s)) | tok/s | 56 @146 GB/s; 89 @300 | — |
-| PCIe-streaming fallback ceiling, 2 GPUs (1000 / (5 ms + 1.75 GiB ÷ E4 aggregate)) | tok/s | ~42 @100 GiB/s | — |
+| E4 PCIe H2D pinned, per card | GiB/s | 48–55 | **53.1 / 52.9** (D2H 53.3 / 52.4) |
+| E4 PCIe H2D pinned, both cards concurrently | GiB/s aggregate | ≥ 90 | **106.1** (114 GB/s) |
+| E4b CPU read + both-GPU H2D at once | GB/s combined; additivity | additive (≥ 0.9) | **233.9** (120.1 + 113.8); **0.984** |
+| E6 stage 0 CPU expert GEMV, 101 experts/token, bf16, 16 threads | ms/token; GB/s | ≤ 13 ms (≤ DRAM time) | **76.1 ms** (7.15 GiB bf16) = **93.9 GB/s** → ≈20 ms at MXFP4 bytes |
+| Hybrid decode ceiling, 2 GPUs, CPU compute (`feasibility-calc.py --layout hybrid-cpu`; 1000 / (5 ms + 1.75 GiB ÷ DRAM GB/s)) | tok/s | 56 @146; 89 @300 | **50 @125** (E1b); 40 @94 (E6 s0 sustained) |
+| PCIe-streaming fallback ceiling, 2 GPUs (1000 / (5 ms + 1.75 GiB ÷ E4 aggregate)) | tok/s | ~42 @100 GiB/s | **46 @114 GB/s** |
+| **Split ceiling** (Option B2: CPU compute + PCIe streaming, E4b additive) | tok/s | — | **78 @125+114; 71 @94+114** |
+| E13 s1 MXFP4 grouped GEMM decode, gate/up 6×[1×4608×5120] | µs; weight GB/s | ≥ 1.3× Marlin | **53.8 µs; 1,397 GB/s** (93 % of E2) — Marlin pending (K5) |
+| E13 s1 decode, down 6×[1×5120×2304] | µs; weight GB/s | — | **39.6 µs; 949 GB/s** |
+| E13 s1 prefill, gate/up 384×[64×4608×5120] | ms; TFLOPS | — | **3.46 ms; 335 TFLOPS** |
+| E13 s1 dense proxy, gate/up 6×[4096×4608×5120] | TFLOPS | ~2,000 dense spec (600 W card) | **1,060** at 300 W |
 
 How to read E1 and E3:
 

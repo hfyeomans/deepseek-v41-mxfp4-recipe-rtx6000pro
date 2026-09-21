@@ -143,11 +143,17 @@ Why here: "honest statistics" is in the goal. Every claim in `docs/BENCHMARKS.md
 | E | Running it teaches | Read before |
 |---|---|---|
 | E1/E1b | What "memory bandwidth" means in practice and how far Python/torch get from STREAM | §7 DRAM row |
+| | *Surprise:* the CPU reads only 125 GB/s of a 410 GB/s memory system. The limit is the Zen 5 core-complex-to-IO-die fabric (16 cores = 2 CCDs), so the fix is a CPU with more CCDs, not faster DIMMs. Read up: AMD "Infinity Fabric" / GMI bandwidth per CCD, and why STREAM on low-core-count Threadrippers disappoints. [`e1b`](../evidence/e1b-dram-read-bandwidth.json) | |
 | E2 | GDDR7 bandwidth vs spec; how to measure with torch and CUDA events | §3 roofline row |
+| | *Surprise:* none — 82 % of the derived 1,792 GB/s, as expected for a copy. The lesson is in how a D2D copy counts bytes twice (read+write) so "1,370 GiB/s" and "1,470 GB/s" describe the same run. [`e2-e4`](../evidence/e2-e4-gpu-pcie-bandwidth.json) | |
 | E3 | Random-access throughput of DRAM vs NVMe; why rows/s, not GB/s, is the Engram metric | §7 NVMe + caching rows |
-| E4 | PCIe H2D reality and pinned memory; why 42 tok/s is the streaming ceiling | §3 PCIe row |
+| E4 | PCIe H2D reality and pinned memory; why ~46 tok/s is the streaming ceiling | §3 PCIe row |
+| | *Surprise:* both x16 links run at full rate together (106 GiB/s), and that aggregate is within 10 % of what the CPU itself can read from DRAM. [`e2-e4`](../evidence/e2-e4-gpu-pcie-bandwidth.json) | |
+| E4b | Whether two consumers of one memory share a bottleneck: measure each alone, then together, and compute additivity | §7 DRAM row; NUMA/fabric topology |
+| | *Surprise:* CPU reads and GPU DMA reads of the same DIMMs add up (234 GB/s, 0.98 additivity). That is what turned "the CPU is too slow" into "use both paths at once" (Option B2). Read up: how a PCIe root complex on the IO die reaches memory without crossing the CCD links. [`e4b`](../evidence/e4b-dram-contention-cpu-vs-dma.json) | |
 | E5 | How stock engines fail on an oversize model (OOM traces, offload flags that exist vs don't) | §6 |
 | E6 s0 | Whether a 16-core CPU can do 101 expert GEMVs per token; roofline on the CPU side | §7 SIMD row |
+| | *Surprise:* two of the three script variants measured torch, not the machine — a bf16 `sum` runs at 10 GB/s because it converts every element, and an int8 dequant written with tensor temporaries is 8× slower than the bf16 GEMV it was meant to proxy. Lesson: a micro-benchmark must be checked against a known roofline before its number is believed. The valid variant (bf16 GEMV, 94 GB/s) says bandwidth, not compute, binds. [`e6-stage0`](../evidence/e6-stage0-cpu-expert-gemv.json) | |
 | E6 s1 | KTransformers' hybrid in practice; expert placement flags; SM120 toolchain (flashinfer, tilelang) | §6 KTransformers row |
 | E6 s2 | The whole model architecture, by porting it (§1 end-to-end) | §1, all rows |
 | E7 | MoE routing statistics; Zipf-or-not; why placement can beat random | §1 MoE row |
@@ -156,6 +162,7 @@ Why here: "honest statistics" is in the goal. Every claim in `docs/BENCHMARKS.md
 | E11 | Quantizing a lookup table; cache simulation | §2 formats, §7 caching |
 | E12 | Reading an nsys timeline; identifying kernels by name; Marlin vs native | §5 |
 | E13 | CUTLASS block-scaled grouped GEMM end to end: types, builder, compile targets, correctness vs reference, TFLOP/s | §2, §3 PTX row, §4 all rows |
+| | *Surprise:* it just worked — a 40-line type swap on example 79d compiled in 34 s and passed the host reference; the "SM120 needs NVFP4 re-quant" folklore was a CUTLASS 3.8 limitation. Second surprise: at decode M=1 the kernel is already at 93 % of the memory roofline, so a "faster kernel" cannot help there; only fewer bytes (fewer experts per token, or a smarter M tile for the short-K down projection) can. Third: smaller N tiles made decode slower, because a 128-row M tile at M=1 is 99 % padding and each extra CTA pays fixed cost. Walk `kernels/e13/mxf4_grouped_gemm.cu` next to 79d with `diff` to see exactly what changed. [`e13`](../evidence/e13-stage1-mxf4-grouped-gemm.json) | |
 
 ## Keeping this current
 

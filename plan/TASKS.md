@@ -21,11 +21,12 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 |---|---|---|---|
 | T1.1 | E3 Engram gather: DRAM, nvme0, nvme1 | **done** | `evidence/e3-engram-gather-*.json` |
 | T1.2 | E1 DRAM bandwidth | **done** | `evidence/e1-dram-bandwidth.json` |
-| T1.3 | E4 PCIe H2D/D2H per GPU and both concurrently | gpu-window | `results/e4.json` |
-| T1.4 | E2 GDDR7 device bandwidth | gpu-window | `results/e2.json` |
-| T1.5 | Recompute the hybrid ceilings from T1.3/T1.7/T1.8 (`--dram-gbps`, `--pcie-gbps-per-gpu`, CPU ms/token); update FEASIBILITY.md §3a | after T1.3 | FEASIBILITY.md |
-| T1.7 | E6 stage 0: `bench-cpu-expert.py` CPU expert GEMV in the torch container, GPU-free | quiet-host (script written) | `evidence/e6-stage0-cpu-expert.json` |
-| T1.8 | E1b: torch DRAM read bandwidth (`bench-cpu-expert.py --variants read`), replacing the Python lower bound; also re-run E1 on a quiet host — the 146 GB/s was measured with the GLM container serving | quiet-host | `evidence/e1b-dram-read.json` |
+| T1.3 | E4 PCIe H2D/D2H per GPU and both concurrently | **done** — 53 GiB/s per card, 106 GiB/s both | `evidence/e2-e4-gpu-pcie-bandwidth.json` |
+| T1.4 | E2 GDDR7 device bandwidth | **done** — ≈1,470 GB/s D2D | `evidence/e2-e4-gpu-pcie-bandwidth.json` |
+| T1.5 | Recompute the hybrid ceilings from T1.3/T1.7/T1.8 (`--dram-gbps`, `--pcie-gbps-per-gpu`, CPU ms/token); update FEASIBILITY.md §3a | **done** — defaults 125 / 57; CPU 50, PCIe 46, split 78 tok/s | FEASIBILITY.md §3a, README |
+| T1.7 | E6 stage 0: `bench-cpu-expert.py` CPU expert GEMV in the torch container, GPU-free | **done** — bf16 GEMV 76 ms/token = 94 GB/s at 16 thr; `read`/`int8-deq` variants invalid (see E6) | `evidence/e6-stage0-cpu-expert-gemv.json` |
+| T1.8 | E1b: torch DRAM read bandwidth (`scripts/bench-dram-read.py`), replacing the Python lower bound | **done** — 125 GB/s read at 16 thr; CCD-fabric limit | `evidence/e1b-dram-read-bandwidth.json` |
+| T1.9 | E4b: CPU read vs GPU DMA contention on host DRAM (`scripts/bench-dram-contention.py`) | **done** — additive (0.98), 234 GB/s combined → Option B2 split | `evidence/e4b-dram-contention-cpu-vs-dma.json` |
 | T1.6 | Hugepage reservation test: `vm.nr_hugepages` for ~190 GiB of 2 MiB pages while GLM is running; confirm allocation succeeds and revert | ready (needs root) | TROUBLESHOOTING.md note |
 
 ## P2 — Baseline
@@ -60,7 +61,7 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | TK.1 | Research SM120 FP4 kernel status (CUTLASS SM120 block-scaled GEMM, FlashInfer/vLLM Marlin fallback, TRT-LLM Triton MoE, cuBLAS gap, smem/TMEM constraints) | **done** | RESEARCH.md |
 | TK.2 | E12 kernel census on the V4-Flash baseline: nsys profile + backend log grep; measured GPU ms/token breakdown into the calculator | gpu-window | `evidence/e12-kernel-census/`, BENCHMARKS.md |
 | TK.2b | Settle MXFP4-UE8M0 vs NVFP4-UE4M3 acceptance on SM120 from PTX ISA + CUTLASS source (open question 9) | **done** — native; type swap `nv_float4_t` → `mx_float4_t`, build `sm_120a` | RESEARCH.md "MXFP4 is native" |
-| TK.3 | E13 stage 1: mxf4×mxf4 grouped GEMM from example 79d (W4A4) and mxf8×mxf4 (W4A8) microbench at V4.1 expert shapes vs Marlin, with dequant-reference correctness | build GPU-free in `dsv4-sm120:cuda-devel-https`; run gpu-window | `results/e13-stage1.json` |
+| TK.3 | E13 stage 1: mxf4×mxf4 grouped GEMM from example 79d (W4A4) and mxf8×mxf4 (W4A8) microbench at V4.1 expert shapes vs Marlin, with dequant-reference correctness | **partial** — W4A4 built, verified, measured (1,397 GB/s decode, 1,060 TFLOPS dense); K3 tiles measured; W4A8 build, Marlin denominator (K5) and activation-error check still open | `kernels/e13/`, `evidence/e13-stage1-*.json` |
 | TK.4 | E13 stage 2: integrate the winning kernel into the E6 engine's MoE backend; re-run E12 | decision, after TK.3 | fork + BENCHMARKS.md |
 | TK.5 | Hybrid glue kernels: activation gather/scatter to pinned host, stream-ordered H2D/D2H overlapped with CPU expert compute; Engram row gather from pinned host (zero-copy) or GPUDirect Storage from the 9100 PRO | after E6 stage 1 | fork |
 
