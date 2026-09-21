@@ -64,12 +64,12 @@ Measured 2026-09-21 with this harness against the sibling deployment (`dsv4-nvfp
 |---|---:|---:|
 | Single-stream decode, no DSpark | 93.66 tok/s | **89.2 / 89.4 tok/s** (512 / 256 tok, 5 runs each, spread 89.1–89.5); C2 161 tok/s summed. Relaunched with `DSPARK=0`; 216 / 225 W per card |
 | Single-stream decode, DSpark K5, 256 tok | 200.64 tok/s | **171–188 tok/s median** across two 5-run sets (min 160, max 238); acceptance 40–45 % |
-| Single-stream decode, DSpark K5, 512 tok | — | **207–239 tok/s** (two 3-run sets; acceptance 51–63 %) |
+| Single-stream decode, DSpark K5, 512 tok | — | **207–239 tok/s** (two 3-run sets; acceptance 51–63 %); 228 tok/s at 57 % after the DSpark relaunch (5 runs) |
 | Aggregate decode C2 (summed per-seq rates) | 226 tok/s | **354 tok/s** (wall-clock 300 tok/s) |
 | Aggregate decode C4 / C8 | — | wall-clock **301 / 277 tok/s**; the summed figure (659 / 1,239) is invalid because `max_num_seqs=2` queues the rest (TTFT 0.77 s / 2.5 s) |
 | Prefill 8K / 32K / 128K | — | **6,123 / 7,810 / 6,157 tok/s** (TTFT 1.3 / 4.1 / 20.7 s, 3 runs each) |
 | Prefill 512K (1 run) | — | **3,237 tok/s** (158 s) |
-| 998,869-token prompt prefill | 513.8 s (≈ 1,944 tok/s) | not re-run (≈ 9 min per run) |
+| ~1M-token prompt prefill | 513.8 s (≈ 1,944 tok/s, 998,869 tok) | **512.2 s (1,898 tok/s, 972,187 tok)**, 1 run; both cards at 300 W for 489 s, SM sagged to 1,867 / 1,815 MHz, peak 88 / 87 °C |
 | 6-needle retrieval at ~222K tokens | 1M needle OK | **6/6**, TTFT 42.4 s (5.2K tok/s), `finish_reason=stop` |
 | Context ceiling | 1,048,576 | 1,000,000 (`max_model_len` in the sibling `.env`) |
 | GPU power, C1 decode | — | **242 / 249 W** busy-median per card, SM 2,272 / 2,310 MHz — below the 300 W cap |
@@ -79,7 +79,7 @@ Readout:
 
 - **DSpark is worth 2.4–2.7× on this baseline, and its absence removes the noise.** Without speculation the single stream is 89 tok/s regardless of fixture or output length (11.2 ms per forward step, ±0.2 %), 4.8 % under the sibling's 93.66. Everything above 89 in the DSpark rows is acceptance, which is why those rows scatter 171–239. Energy follows: 0.20 tok/s/W without DSpark vs 0.46 with — speculation more than doubles decode efficiency because the verify step costs 15.3 ms (E12) for 2.5–3 accepted tokens instead of 11.2 ms for one.
 - **The 5 % hypothesis failed on decode.** C1 with the 256-token fixture is 6–15 % under the sibling's 200.6; with 512 tokens it brackets it (207–239). The spread tracks DSpark acceptance (40 → 63 %), which depends on the content the fixture makes the model write, not on the GPUs. Comparisons between engines must therefore hold the fixture *and* output length fixed, and report acceptance next to tok/s. The 512-token row is the one to carry forward.
-- **Prefill is length-dependent, not "~2K tok/s".** The sibling's 1,944 tok/s is a 1M-token number; short prompts run 3–4× faster. The curve 7.8K (32K) → 6.2K (128K) → 5.2K (222K) → 3.2K (512K) → 1.9K (1M) is the attention/indexer cost growing with context; it is the baseline any V4.1 engine's CSA2 path is compared against.
+- **Prefill is length-dependent, not "~2K tok/s".** The sibling's 1,944 tok/s is a 1M-token number, reproduced here at 1,898 (−2 %); short prompts run 3–4× faster. The 1M run is also the only *sustained* load in the set: 8 minutes at the 300 W cap took the cards to 88 °C and SM clocks 6 % below the 32K-prefill figure (1.87 vs 1.98 GHz), so short prefill benches overstate long-context throughput by roughly that much on top of the length curve. The curve 7.8K (32K) → 6.2K (128K) → 5.2K (222K) → 3.2K (512K) → 1.9K (1M) is the attention/indexer cost growing with context; it is the baseline any V4.1 engine's CSA2 path is compared against.
 - **`bench-decode.py` now reports `wall tok/s`** (total completion tokens ÷ batch wall time, TTFT included) beside the summed per-sequence rate. Use the wall figure whenever concurrency exceeds the server's `max_num_seqs`.
 - **Power:** decode already sits at 242–249 W per card with the cap at 300 W, so a 250 W cap (the driver's `power.min_limit` on these cards — 225 W is not settable) should cost decode almost nothing; prefill runs into the cap and drops SM clocks ~15 %. Measured in E8b below.
 

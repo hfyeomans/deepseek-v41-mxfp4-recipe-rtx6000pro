@@ -34,10 +34,11 @@ Status: `done`, `ready` (can run now), `quiet-host` (GPU-free but needs the host
 | ID | Task | Status | Output |
 |---|---|---|---|
 | T2.1 | Port fixture/method from the GLM and V4-Flash recipes into `bench-decode.py` / `bench-prefill.py` so numbers are comparable | done (harness written) | `scripts/bench-*.py` |
-| T2.2 | E8 run against the V4-Flash NVFP4 TP2 deployment | **done** — decode C1–C8, prefill 8K–512K, 222K needles, power samples; DSpark-off and 1M prefill rows not re-run | `evidence/baseline-v4-flash/`, BENCHMARKS.md |
+| T2.2 | E8 run against the V4-Flash NVFP4 TP2 deployment | **done** (incl. DSpark-off 89 tok/s and 1M prefill 1,898 tok/s) — decode C1–C8, prefill 8K–512K, 222K needles, power samples; DSpark-off and 1M prefill rows not re-run | `evidence/baseline-v4-flash/`, BENCHMARKS.md |
 | T2.2b | E8b power sweep (325/300/275/250 W; 225 W is below the driver floor) | **done** — decode 216–229 tok/s at every cap, prefill 8,770/8,428/7,991/7,482 tok/s; see BENCHMARKS.md §E8b | `evidence/e8b-power-sweep/summary.json` |
 | T2.3 | Fill BENCHMARKS.md baseline tables from JSON | after T2.2 | `docs/BENCHMARKS.md` |
 | T2.4 | Baseline improvement sweep on V4-Flash: DSpark block 3/5/7, FP8 KV, C8/C16 | gpu-window | BENCHMARKS.md |
+| T2.5 | E14 model-to-model table: GLM-5.3-Flash (owner's reference recipe) vs V4-Flash vs V4.1 on this box, same harness/fixtures/power policy | scoped; GLM column needs a GPU window with the GLM container up; V4-Flash column needs C16 + footprint only | `evidence/e14-*/`, BENCHMARKS.md §E14 |
 
 ## P3 — 2-GPU hybrid build
 

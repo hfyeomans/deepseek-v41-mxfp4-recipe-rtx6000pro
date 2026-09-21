@@ -100,6 +100,7 @@ Why it matters:
 | Current GPU power limit | 2 × 300 W (325 W max, **250 W minimum** — `power.min_limit`; the driver rejects `-pl 225`) | measured (`nvidia-smi --query-gpu=power.min_limit`) |
 | Measured GPU draw, V4-Flash TP2 C1 decode | 242 / 249 W per card at 2,272 / 2,310 MHz SM — not touching the cap | measured (E8, `evidence/baseline-v4-flash/power-decode-c1-300w.csv`) |
 | Measured GPU draw, 32K prefill | 300 / 300 W (at the cap), SM throttled to 1,950 MHz | measured (E8, `power-prefill-32k-300w.csv`) |
+| Sustained: ~1M-token prefill, 8 min | 300 / 300 W for 489 s; SM 1,867 / 1,815 MHz (−6 % vs the 32K burst); **88 / 87 °C peak** — the thermal ceiling to watch with four cards in the chassis | measured (E8, `power-prefill-1m-300w.csv`) |
 | Power-cap sweep 325 / 300 / 275 / 250 W | decode 216–229 tok/s at every cap (never reaches the cap; 228–251 W/card, spread is temperature); prefill pinned at each cap: **8,770 / 8,428 / 7,991 / 7,482 tok/s** at 2.09 / 1.98 / 1.86 / 1.72 GHz → 13.6 / 14.0 / 14.5 / 15.0 tok/s/W | measured (E8b, `evidence/e8b-power-sweep/summary.json`) |
 | CPU | Threadripper PRO 9955WX, 350 W TDP | vendor spec |
 | Platform (board, 8 RDIMMs at 1.4 V EXPO, 2 NVMe, fans) | ~80–120 W | estimate |
