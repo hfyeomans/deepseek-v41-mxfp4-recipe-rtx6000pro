@@ -155,7 +155,8 @@ def test_engram_tables_counted_only_in_gpu_only_layout():
 
 if __name__ == "__main__":
     for fn in (test_two_gpu_does_not_fit_any_resident_layout, test_two_gpu_hybrid_fits_with_nvme_engram_but_not_fp8_dram_engram,
-               test_hybrid_gpu_count_scaling, test_hybrid_ceiling_responds_to_bandwidth_and_skew, test_bad_gpu_list_is_an_input_error,
+               test_hybrid_gpu_count_scaling, test_hybrid_ceiling_responds_to_bandwidth_and_skew, test_split_ceiling_sums_bandwidths_not_times,
+               test_bad_gpu_list_is_an_input_error,
                test_two_gpu_text_only_still_does_not_fit_even_at_full_utilisation,
                test_four_gpu_calibration_against_0xsero, test_four_gpu_this_host_engram_in_dram_fits, test_kv_bytes_math,
                test_engram_tables_counted_only_in_gpu_only_layout):
