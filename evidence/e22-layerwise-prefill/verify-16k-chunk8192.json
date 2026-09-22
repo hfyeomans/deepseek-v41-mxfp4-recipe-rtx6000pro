@@ -1,0 +1,62 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "checks": [
+    {
+      "name": "models_alias",
+      "pass": true,
+      "model": "dsv41-flash-hybrid",
+      "max_model_len": 32768
+    },
+    {
+      "name": "context_ceiling",
+      "pass": true,
+      "max_model_len": 32768,
+      "required": 16384
+    },
+    {
+      "name": "arithmetic_thinking_off",
+      "pass": true,
+      "reply": "323",
+      "ttft_s": 1.081,
+      "usage": {
+        "prompt_tokens": 17,
+        "total_tokens": 19,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null,
+        "reasoning_tokens": 0
+      }
+    },
+    {
+      "name": "thinking_toggle",
+      "pass": true,
+      "tokens_on": 21,
+      "tokens_off": 2
+    },
+    {
+      "name": "tool_call",
+      "pass": true,
+      "tool_calls": [
+        {
+          "id": "call_1016a8e2151c4fd0b71f4a86",
+          "index": 0,
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\": \"Lisbon\"}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "multi_needle",
+      "pass": true,
+      "found": 3,
+      "needles": 3,
+      "prompt_tokens": 13463,
+      "ttft_s": 9.81,
+      "total_s": 10.57,
+      "finish_reason": "stop"
+    }
+  ],
+  "pass": true
+}

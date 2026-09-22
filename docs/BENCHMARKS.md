@@ -296,7 +296,7 @@ Healthy runs say **+6 % prefill (8,582 vs 8,068) and +8 % decode (1,279 vs 1,188
 
 The first V4.1-Flash that runs on this box. Layout from E6-DESIGN: 208 experts per layer on the GPUs (MXFP4), 176 per layer on the CPU via kt-kernel (16 cores, TP rank 0 only), Engram tables on NVMe. Launch: `bash scripts/serve-hybrid.sh` (container `dsv41-kt`, model name `dsv41-flash-hybrid`), 300 W cap. Same harness as the scoreboard above; decode is 256 tokens, 3 runs, distinct prompts. Full logs in `plan/EXPERIMENTS.md` E19–E21 and `evidence/t36d-first-serve/`, `evidence/e20-*/`, `evidence/e21-kt-fixed-floor/`.
 
-| Metric | E19 first serve (attempt 6) | E20 tuned FP8 GEMM config | E21 deferral D=4 (**current default**) | E22c + streamed prefill (`KT_GPU_PREFILL_MIN_TOKENS=1024`, chunk 4096; **not default**, see NaN) |
+| Metric | E19 first serve (attempt 6) | E20 tuned FP8 GEMM config | E21 deferral D=4 (**current default**) | E22 streamed prefill (`KT_GPU_PREFILL_MIN_TOKENS=1024`, **default since 2026-09-22**; chunk 4096 / 8192) |
 |---|---|---|---|---|
 | C1 decode, median | 13.98 tok/s | 31.60 tok/s | **38.53 tok/s** | not measured — server asserted before the decode check |
 | C2 decode, aggregate | 28.0 | ≈ 38 (19/stream; the bs=2 dip) | 45.44 (22.7/stream; dip still there) | — |
@@ -315,9 +315,20 @@ The first V4.1-Flash that runs on this box. Layout from E6-DESIGN: 208 experts p
 - **Against the targets.** E14 asked for ≥ 130 tok/s C1 and ≥ 3.8K tok/s prefill. The hybrid is at 38.5 and 216: 3.4× and 18× short. FEASIBILITY's 50–78 tok/s decode ceiling assumed bandwidth-bound expert reads; the measured step is overhead-bound (40 per-layer CPU-tier waits, Engram graph breaks of 2.4–3 ms/step, rank 0 doing all CPU work at ≈ 1,880 % CPU while rank 1 idles at 120 %). Watts are irrelevant here: the GPUs sit at 150–190 W under a 300 W cap, so the 325 W discussion above does not apply to this recipe.
 - **Quality gate.** `scripts/nll-score.py` (teacher-forced NLL on a frozen 4,795-token corpus) is bit-identical across reruns and relaunches; greedy-token agreement is not (near-tie flips), so use NLL, not greedy diffs, to judge any change to the hybrid.
 
-### E22 — streamed prefill (2026-09-22, interim)
+### E22 — streamed prefill (2026-09-22, closed)
 
-`evidence/e22-layerwise-prefill/`. Each ≥ 1,024-token prefill chunk exports the 176 CPU experts of a layer from kt-kernel into a shared pinned buffer (6.5 GiB, POSIX shm, both TP ranks), DMAs each rank's slice (2.27 GiB GPU staging per rank) and runs the FlashInfer SM120 fused MoE on them, layer by layer, double-buffered. Measured: export 51.8 GB/s at 16 threads (core-bound), per-chunk streaming 4.66–5.13 s for 4,096 tokens and 4.24 s for 1,175 (flat in tokens), **16K prefill 837 tok/s, 32K 811 tok/s** vs 216 before (3.9×). Because the cost per chunk is flat, `CHUNKED_PREFILL_SIZE` 8192/16384 should land near 1.6K/3K tok/s — not yet run. The serve ended in a NaN assert on the first decode after a 4 × 256-token streamed batch (TROUBLESHOOTING), so the decode regression check is missing and the knob stays off by default until E22d finds the cause.
+`evidence/e22-layerwise-prefill/`. Each ≥ 1,024-token prefill chunk exports the 176 CPU experts of a layer from kt-kernel into a shared pinned buffer (6.5 GiB, POSIX shm, both TP ranks), DMAs each rank's slice (2.27 GiB GPU staging per rank) and runs the FlashInfer SM120 fused MoE on them, layer by layer, double-buffered. Export 51.8 GB/s at 16 threads (core-bound). Per-chunk host time is nearly flat in tokens: 4.7–5.1 s for a 4,096-token chunk, 5.4–5.8 s for 8,192.
+
+| Prefill (tok/s, warm) | E21 CPU path | chunk 4096 (default) | chunk 8192 (`CHUNKED_PREFILL_SIZE=8192`) |
+|---|---|---|---|
+| 16K prompt | 216 | 837 (TTFT 19.1 s) | **1,375** (TTFT 11.6 s; first post-launch run 547) |
+| 32K prompt | ≈ 210 | 811 (TTFT 38.4 s) | **1,404** (TTFT 22.8 s) |
+| verify 16K (needles 3/3) | pass | pass, TTFT 35.5 s | pass, TTFT 9.8 s |
+| ΔNLL vs `nll-d0.json` | — | −0.0013 (pass) | same kernel; not re-scored |
+| free VRAM after a 32K prefill | — | ≈ 3.7 GiB | ≈ 1.2 GiB |
+
+Decode is unchanged with the streamer resident (`decode-streamer-on.json`, 256 tokens × 3 runs): C1 38.41, C2 47.81, C4 144.97 tok/s aggregate vs E21 38.5 / 45.4 / 147. A 16,384 chunk does not fit: the KV pool is only ≈ 3.4 GB (MLA + sliding-window KV), so `MEM_FRACTION_STATIC` cannot free the ≈ 6 GB the activations would need; fewer GPU experts would. The E22c NaN (4-seq batch) was **not** the streamed path — the batch had 664 real tokens (< 1,024; the scheduler's `#new-token` is padded per sequence to 256) and ran the regular D=4 CPU path; it did not reproduce in 20 same-shape batches with a per-layer finite probe (`KT_NAN_PROBE_MIN_TOKENS`); tracked under E24.
+
 
 ### E23 — speculative decoding rounds (planned; table filled as rounds land)
 

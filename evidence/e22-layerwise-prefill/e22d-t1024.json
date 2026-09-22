@@ -1,0 +1,74 @@
+{
+  "args": {
+    "weight_path": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+    "layer": 5,
+    "num_experts": 384,
+    "num_gpu_experts": 208,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "swiglu_limit": 10.0,
+    "threads": 16,
+    "threadpool_count": 1,
+    "gpu_tp": 2,
+    "groups": "8,16,32,44",
+    "iters": 3,
+    "check_experts": "0",
+    "skip_gpu": false,
+    "check_kernel": true,
+    "check_tokens": 1024,
+    "x_scale": 1.0,
+    "seed": 0,
+    "skip_timing": true,
+    "json": "/out/e22d-t1024.json"
+  },
+  "torch": "2.13.0+cu130",
+  "kt_kernel": "0.7.0.post4",
+  "load_seconds": 1.36,
+  "bytes_per_expert_per_rank": 9953280,
+  "bytes_per_layer_all_ranks": 3503554560,
+  "byte_compare": [
+    {
+      "compact_id": 0,
+      "global_id": 208,
+      "rank": 0,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    },
+    {
+      "compact_id": 0,
+      "global_id": 208,
+      "rank": 1,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    }
+  ],
+  "byte_compare_all_identical": true,
+  "kernel_check": {
+    "tokens": 1024,
+    "layout_bytes_identical_per_rank": [
+      [
+        true,
+        true,
+        true,
+        true
+      ],
+      [
+        true,
+        true,
+        true,
+        true
+      ]
+    ],
+    "streamed_vs_resident_max_abs_diff": 0.0,
+    "streamed_rel_l2_err_vs_ref": 0.0440315306186676,
+    "resident_rel_l2_err_vs_ref": 0.0440315306186676,
+    "ref_abs_mean": 0.7193040251731873,
+    "out_finite": true,
+    "seconds": 16.3
+  }
+}

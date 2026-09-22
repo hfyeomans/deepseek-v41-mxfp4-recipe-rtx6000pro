@@ -48,8 +48,13 @@ KT_MAX_DEFERRED="${KT_MAX_DEFERRED:-4}"
 # stream each layer's CPU experts to the GPUs (kt-kernel export -> shared pinned
 # buffer -> per-rank H2D -> FlashInfer MoE) instead of computing them on the CPU.
 # 0 keeps every chunk on the CPU path. KT_GPU_PREFILL_LOG=1 logs per-chunk timing.
-KT_GPU_PREFILL_MIN_TOKENS="${KT_GPU_PREFILL_MIN_TOKENS:-0}"
+# Default 1024 since E22 (2026-09-22): 837 tok/s at 16K with the 4096 chunk,
+# 1.4K tok/s with CHUNKED_PREFILL_SIZE=8192 (leaves ~1.2 GiB VRAM; no room for
+# DSpark drafts). Decode is unchanged (E22d: C1 38.4 / C2 47.8 / C4 145).
+KT_GPU_PREFILL_MIN_TOKENS="${KT_GPU_PREFILL_MIN_TOKENS:-1024}"
 KT_GPU_PREFILL_LOG="${KT_GPU_PREFILL_LOG:-0}"
+# E22d debugging: per-layer non-finite check on forwards of >= N MoE tokens (0 = off).
+KT_NAN_PROBE_MIN_TOKENS="${KT_NAN_PROBE_MIN_TOKENS:-0}"
 # Speculative decoding (E23 / T3.9): DSPARK=1 adds the three MTP draft stages
 # (--speculative-algorithm DSPARK, block size DSPARK_K). Off by default: E6-DESIGN
 # 4.6 predicts K=5 loses under a CPU-bound MoE; E23 measures off / K=2 / K=5.
@@ -58,6 +63,8 @@ DSPARK="${DSPARK:-0}"
 DSPARK_K="${DSPARK_K:-5}"
 MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.92}"
 CONTEXT_LENGTH="${CONTEXT_LENGTH:-32768}"
+# 4096 keeps ~3.7 GiB VRAM free after a 32K prefill (E23 needs it for the draft
+# stages); 8192 gives 1.4K tok/s prefill but only ~1.2 GiB free. 16384 does not fit.
 CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-4096}"
 MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-4}"
 CUDA_GRAPH_MAX_BS="${CUDA_GRAPH_MAX_BS:-4}"
@@ -117,6 +124,7 @@ docker_cmd=(
   -e SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0
   -e "KT_GPU_PREFILL_MIN_TOKENS=${KT_GPU_PREFILL_MIN_TOKENS}"
   -e "KT_GPU_PREFILL_LOG=${KT_GPU_PREFILL_LOG}"
+  -e "KT_NAN_PROBE_MIN_TOKENS=${KT_NAN_PROBE_MIN_TOKENS}"
   "$IMAGE"
   "${server_args[@]}"
 )
