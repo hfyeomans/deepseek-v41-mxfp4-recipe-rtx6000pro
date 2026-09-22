@@ -1,0 +1,76 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 256,
+  "runs": 3,
+  "warmup": 1,
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 13.976051515380561,
+      "min_tps": 13.906522370615319,
+      "max_tps": 14.020274862429853,
+      "median_wall_tps": 13.224748035033198,
+      "median_ttft_s": 1.111840673000188,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 13.906522370615319,
+          "wall_tps": 13.162330417838744,
+          "wall_s": 19.449443363999308,
+          "per_seq_tps": [
+            13.906522370615319
+          ],
+          "ttft_s": [
+            1.1123245589988073
+          ],
+          "completion_tokens": [
+            256
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 13.976051515380561,
+          "wall_tps": 13.224748035033198,
+          "wall_s": 19.357646688000386,
+          "per_seq_tps": [
+            13.976051515380561
+          ],
+          "ttft_s": [
+            1.111840673000188
+          ],
+          "completion_tokens": [
+            256
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 14.020274862429853,
+          "wall_tps": 13.266944127017442,
+          "wall_s": 19.296078851999482,
+          "per_seq_tps": [
+            14.020274862429853
+          ],
+          "ttft_s": [
+            1.1078237689998787
+          ],
+          "completion_tokens": [
+            256
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-21T20:37:27-0400"
+}

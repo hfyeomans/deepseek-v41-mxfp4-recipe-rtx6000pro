@@ -235,6 +235,12 @@ The measured facts every later decision rests on. Each links to the experiment t
 | The 2-GPU incumbents to beat | GLM: 132 tok/s C1, 569 C16, 3.8K tok/s at 1M; V4-Flash: 207–239 C1, 1.9K at 1M | V4.1 on 2 GPUs will not win single-stream (hybrid ceiling 50–78); its case is quality/context, and speed needs the 3-/4-GPU layouts | E14 |
 | Prefill is a length curve | 7.8K (32K) → 1.9K tok/s (1M) | Any V4.1 CSA2 engine is judged against this curve, not a scalar | E8 |
 | Engram lookups from NVMe keep up with decode | both drives sustain the random-row rate | Engram on NVMe + 64 GiB DRAM cache is the default tiering; DRAM stays for experts | E3 |
+| The 2-GPU hybrid is overhead-bound, not bandwidth-bound | C1 14 tok/s (71 ms/step) with GPUs at 140 W and rank 0 at 1,880 % CPU; C4 per-stream slower than C1 even with shared routing | FEASIBILITY's 50–78 tok/s ceiling modelled bytes/step; the real step is ~40 CPU syncs + 2 Engram graph breaks. Attack the fixed cost first (T3.6d3) | E19 |
+| Distinct routing is free at bs=4 on the hybrid | C4 same-prompt 72 tok/s wall vs 76 with 4 different prompts (≈ 4× the CPU expert bytes) | If the CPU tier were DRAM-bound this would be ~4× slower; it is not → per-step fixed cost dominates. Keep `--distinct-prompts` on for every offloaded-MoE number anyway | E19, `bench-decode.py --distinct-prompts` |
+| CPU experts and Engram run on TP rank 0 only | rank 0 1,880 % vs rank 1 120 % CPU; GPU1 reads 97 % 'utilization' from the NCCL spin-wait while GPU0 reads 46 % | nvidia-smi utilization is 'a kernel is resident', not work; power (135/153 W) is the honest signal. Splitting dispatch across ranks is a lever | E19 |
+| SM120 defaults can silently pick a path the model cannot take | `SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=1`/`SGLANG_OPT_USE_TILELANG_INDEXER=1` on SM120, but V4.1's indexer needs DeepGEMM FP4 metadata | Read the env defaults for your arch when a kernel receives `None` | E19, TROUBLESHOOTING |
+| Compressed KV pools are paged at `page_size // ratio` | 256-token page → c1 256, c2 128, c4 64, c128 2; FlashInfer's SM120 prefill only compiles 64 and 2 | 38 of V4.1's 43 layers hit an uncompiled page size; re-paging costs ≈ 3 GB/card | E19 |
+| Prefill through CPU experts is 216 tok/s | 16K prompt: 75 s TTFT, GPUs at 90–115 W | Without GPU-side layer-wise prefill of CPU-resident experts (T3.6b2) long context is unusable on the hybrid | E19 |
 
 ## Keeping this current
 

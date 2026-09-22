@@ -41,6 +41,30 @@ Do not "fix" this by installing `sgl-deep-gemm==0.2.0` or by moving the image to
 
 Runs made on the clobbered image (E17 one-layer test, E18 Engram bench) did not touch `sgl_kernel` or `deep_gemm`, so their numbers stand.
 
+## `dsv41-kt` dies in `deep_gemm.fp8_fp4_paged_mqa_logits` with `deep_gemm_metadata=None`
+
+Second T3.6d blocker (2026-09-21). On SM120 SGLang defaults `SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=1` and `SGLANG_OPT_USE_TILELANG_INDEXER=1` (the torch/TileLang fallbacks for the indexer), but V4.1-Flash's low-ratio indexer calls the FP4 DeepGEMM kernel unconditionally and expects the metadata those fallbacks never build.
+
+Fix: launch with `--enable-deepseek-v4-fp4-indexer` **and** `-e SGLANG_OPT_USE_TILELANG_INDEXER=0 -e SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0`. The cu13 `deep_gemm` in `dsv41-kt:recipe` runs the FP4 indexer on SM120 fine once it is actually asked to.
+
+## `Unsupported BCG output type: LogitsProcessorOutput` from the breakable decode graph
+
+Third T3.6d blocker. `--cuda-graph-backend-decode breakable` (needed because the Engram `file` lookup is a graph break) copies outputs between graph segments and only knew tensors and containers, not the `LogitsProcessorOutput` dataclass the model returns.
+
+Fix: overlay commit `cd55166a` (`breakable_cuda_graph_backend.py`) recurses into dataclasses. Upstream instead moved logits out of the graph (#40222) and no longer needs `breakable` for Engram; our `file` layout still does, so keep the overlay until the layout is ported onto that design.
+
+## `sparse_mla_sm120_prefill.cu dispatch_dsv4_dual` aborts during the server's warmup prefill
+
+Fourth T3.6d blocker. FlashInfer 0.6.18 compiles the SM120 DSv4 dual-pool prefill kernel only for `extra_page_block_size ∈ {64, 2}`. SGLang pages each compressed KV pool at `page_size // compress_ratio`, so with the default 256-token page the V4.1 pools come out at c1 = 256, c2 = 128, c4 = 64, c128 = 2 — and V4.1's `compress_ratios` (5×0, 20×1, 18×2) means 20 layers hit the unsupported 256 and 18 more the unsupported 128. The decode kernel takes `pbs_extra` at runtime and is unaffected; only prefills with more than 64 query rows (the warmup, every real prompt) crash.
+
+Fix: overlay `cd55166a` in `flash_mla_sm120.py` — when the extra pool's page size is not 64 or 2 and divides by 64, re-page the touched pages to 64 through `_split_kv_pages_to_64(..., buffer_tag="extra")` (the tag keeps a separate cache buffer from the SWA split). Cost: ≈ 2–3 GB per card out of the ≈ 7 GB "available" pool; GPU used went 90 → 93.1 GB per card. A real fix is a FlashInfer build that instantiates 128/256, or running SGLang with `--page-size 64`.
+
+## `probability tensor contains either inf, nan or element < 0` after minutes of clean serving
+
+Fifth T3.6d blocker (attempt 5, 12 minutes in). Device-side assert in sampling on the first decode after a 4-sequence prefill with **distinct** prompts; the async error surfaces wherever the next sync happens (`engram.py _engram_file_rows` inside the breakable replay), which is misleading. Not reproducible on demand: every prompt alone, C3/C4 distinct at 64 tokens, and the original c2→c4 256-token sequence all passed on attempt 6.
+
+If it fires: save `docker logs dsv41-kt` (the file is the only evidence; the crash dump interleaves both ranks), `docker rm -f dsv41-kt`, relaunch. A GPU left at "100 % utilization, 2 MiB, ~95 W" with no process after the crash is the dead context's kernel state; it clears when the next process creates a context, so no `nvidia-smi -r` is needed. Suspects and probes are in E19 item 8.
+
 ## Thinking mode surprises
 
 DeepSeek-V4.1 reasoning is on by default at effort 50 in both engines. Every client in this repo sends `chat_template_kwargs: {"thinking": false}` unless asked otherwise. If your own client sees long, slow answers, that is why. The recipe's smoke test is `17*19` → `323`.

@@ -33,6 +33,12 @@ Recorded in [`evidence/hardware-inventory.json`](evidence/hardware-inventory.jso
 - `~/dev/src/deepseek-v4-flash-nvfp4-tp2` commit `42e1f61` (local): `example.env`/`.env` profile → `GPU_MEMORY_UTILIZATION=0.9651 MAX_NUM_SEQS=16 MAX_CUDAGRAPH_CAPTURE_SIZE=96` (E15/T2.4 measurements), `docs/running.md` profile table, README summary line, `tests/test_operator_config.py` pins.
 - `~/dev/src/glm-5.3-flash-2x-rtx-pro-6000-blackwell` commit `324f478` (local): `scripts/serve.sh` capture size derived from `MAX_NUM_SEQS × (DFLASH_TOKENS + 1)` (was hard-coded 96), `scripts/validate-config.sh` accepts up to 32 slots, `config/example.env`/`.env` comment recording the ≈ 20-sequence ceiling (E16). Profile values unchanged.
 
+## Overlay commits (`~/dev/src/sglang-dsv41-overlay`, branch `dsv41-kt-hybrid`, local only)
+
+- `3805730e` compact CPU expert view in the kt-kernel loader (E17).
+- `a1ca246a` Engram `file` layout (E18).
+- `cd55166a` breakable-graph dataclass outputs + `extra` KV pool re-page to 64-row pages for FlashInfer's SM120 prefill (E19 blockers 3–4).
+
 ## Qualification status
 
 **No V4.1-Flash profile in this repository is qualified.** The 4-GPU profile in `serve.sh` is assembled from the SGLang cookbook and the 0xSero recipe and has not run on this host. The README verdict flips only when experiment E9 in [`plan/EXPERIMENTS.md`](plan/EXPERIMENTS.md) produces the tables in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).

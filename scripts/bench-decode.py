@@ -36,6 +36,27 @@ FIXTURE = (
     "    return a\n\ndef main():\n    cfg = merge(load('base'), load('override'))\n    print(json.dumps(cfg))\n```\n"
 )
 
+# Domain-diverse prompts for --distinct-prompts. With one shared fixture, every
+# concurrent stream routes to nearly the same experts, so a CPU/DRAM expert tier
+# reads each expert once for all streams and the aggregate rate overstates what
+# mixed traffic gets. Streams cycle through these; stream i also gets its own seed.
+DISTINCT_FIXTURES = [
+    FIXTURE,
+    "Write a 600-word short story set in a lighthouse during a winter storm, told from the keeper's point of view. "
+    "Include dialogue with a stranded sailor and end on an unresolved note.",
+    "Explain, for a strong undergraduate, why the Fourier transform of a Gaussian is a Gaussian. Derive it, then "
+    "discuss what this implies for the uncertainty principle and for the heat equation.",
+    "Draft a detailed itinerary for a 10-day cycling trip through the Pyrenees in September: daily distances, climbs, "
+    "towns to sleep in, food, and how to handle a mechanical failure far from a bike shop.",
+    "Compare the tax treatment of a sole proprietorship, an S corporation, and a C corporation for a US consultant "
+    "earning about $300k a year. Walk through the arithmetic for each and name the assumptions.",
+    "Translate the following into idiomatic Spanish and then critique your own translation line by line: "
+    "'The committee, having reviewed the evidence at length, declined to act, citing procedural concerns it never specified.'",
+    "You are a Kubernetes SRE. A deployment's pods are OOMKilled every 40 minutes although the container's RSS never "
+    "exceeds half its limit. List the hypotheses in order of likelihood and the exact commands to test each.",
+    "Summarize the causes of the 1873 financial panic and compare them with 2008. Where do the analogies break down?",
+]
+
 SPEC_PATTERNS = {
     "accepted": re.compile(r"^(?:sglang:|vllm:)?spec_decode_num_accepted_tokens_total(?:\{[^}]*\})?\s+([0-9.e+]+)", re.M),
     "draft": re.compile(r"^(?:sglang:|vllm:)?spec_decode_num_draft_tokens_total(?:\{[^}]*\})?\s+([0-9.e+]+)", re.M),
@@ -55,11 +76,16 @@ def spec_counters(url: str) -> dict[str, float] | None:
     return out or None
 
 
-def one_run(url: str, model: str, concurrency: int, max_tokens: int, seed: int) -> dict:
+def one_run(url: str, model: str, concurrency: int, max_tokens: int, seed: int, distinct: bool = False,
+            fixture_offset: int = 0) -> dict:
     before = spec_counters(url)
     t0 = time.perf_counter()
+
+    def prompt(i: int) -> str:
+        return DISTINCT_FIXTURES[(i + fixture_offset) % len(DISTINCT_FIXTURES)] if distinct else FIXTURE
+
     with cf.ThreadPoolExecutor(max_workers=concurrency) as ex:
-        futs = [ex.submit(chat_stream, url, model, [{"role": "user", "content": FIXTURE}], max_tokens=max_tokens,
+        futs = [ex.submit(chat_stream, url, model, [{"role": "user", "content": prompt(i)}], max_tokens=max_tokens,
                           temperature=0.2, seed=seed + i, thinking=False,
                           extra={"min_tokens": max_tokens, "ignore_eos": True}) for i in range(concurrency)]
         results = [f.result() for f in futs]
@@ -98,19 +124,28 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--output", type=Path)
+    ap.add_argument("--distinct-prompts", action="store_true",
+                    help="give each concurrent stream a different-domain prompt (defeats expert-routing overlap "
+                         "between streams; use for CPU/DRAM-offloaded MoE)")
+    ap.add_argument("--fixture-offset", type=int, default=0,
+                    help="with --distinct-prompts, start the fixture cycle at this index (isolate one prompt at C=1)")
     args = ap.parse_args()
 
     model = args.model or get_json(f"{args.url}/v1/models")["data"][0]["id"]
     levels = [int(x) for x in args.concurrency.split(",")]
     report = {"url": args.url, "model": model, "max_tokens": args.max_tokens, "runs": args.runs, "warmup": args.warmup,
+              "distinct_prompts": args.distinct_prompts, "fixture_offset": args.fixture_offset,
               "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
               "levels": []}
-    print(f"model={model}  runs={args.runs} warmup={args.warmup} max_tokens={args.max_tokens}")
+    print(f"model={model}  runs={args.runs} warmup={args.warmup} max_tokens={args.max_tokens}"
+          f"{'  distinct-prompts' if args.distinct_prompts else ''}")
     print(f"{'C':>3} {'median tok/s':>13} {'min':>9} {'max':>9} {'wall tok/s':>11} {'med TTFT s':>11} {'accept':>7}")
     for c in levels:
         for _ in range(args.warmup):
-            one_run(args.url, model, c, args.max_tokens, args.seed)
-        runs = [one_run(args.url, model, c, args.max_tokens, args.seed + 100 * i) for i in range(args.runs)]
+            one_run(args.url, model, c, args.max_tokens, args.seed, args.distinct_prompts, args.fixture_offset)
+        runs = [one_run(args.url, model, c, args.max_tokens, args.seed + 100 * i, args.distinct_prompts,
+                        args.fixture_offset)
+                for i in range(args.runs)]
         aggs = [r["aggregate_decode_tps"] for r in runs]
         walls = [r["wall_tps"] for r in runs]
         ttfts = [t for r in runs for t in r["ttft_s"]]
