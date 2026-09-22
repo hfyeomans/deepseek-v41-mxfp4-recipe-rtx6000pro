@@ -70,6 +70,10 @@ MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-4}"
 CUDA_GRAPH_MAX_BS="${CUDA_GRAPH_MAX_BS:-4}"
 ENGRAM_FILE_THREADS="${ENGRAM_FILE_THREADS:-16}"
 EXTRA_SERVER_ARGS="${EXTRA_SERVER_ARGS:-}"          # appended verbatim (word-split)
+# Space-separated KEY=VALUE pairs passed into the container as -e flags, e.g.
+# EXTRA_DOCKER_ENV="CUDA_LAUNCH_BLOCKING=1" to make async CUDA faults report
+# at the kernel that raised them (much slower; diagnosis only).
+EXTRA_DOCKER_ENV="${EXTRA_DOCKER_ENV:-}"
 
 snapshot_dir="/hfm/snapshots/${SNAPSHOT}"
 
@@ -104,6 +108,11 @@ fi
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 server_args+=($EXTRA_SERVER_ARGS)
 
+extra_env_flags=()
+for kv in $EXTRA_DOCKER_ENV; do
+  extra_env_flags+=(-e "$kv")
+done
+
 docker_cmd=(
   docker run -d --name "$CONTAINER_NAME"
   --gpus all
@@ -125,6 +134,7 @@ docker_cmd=(
   -e "KT_GPU_PREFILL_MIN_TOKENS=${KT_GPU_PREFILL_MIN_TOKENS}"
   -e "KT_GPU_PREFILL_LOG=${KT_GPU_PREFILL_LOG}"
   -e "KT_NAN_PROBE_MIN_TOKENS=${KT_NAN_PROBE_MIN_TOKENS}"
+  "${extra_env_flags[@]}"
   "$IMAGE"
   "${server_args[@]}"
 )

@@ -54,6 +54,8 @@ ENGRAM_FRACTION = {"dram": 1.0, "dram-fp4": 97.28 / 188.83, "dram-q3k": 2 * 4028
 # counted read+write of a copy. Theoretical 8ch DDR5-6400 is 409.6; the gap is a
 # CPU-side (core-complex to IO-die) limit, not the DIMMs: E4b shows GPU DMA reads
 # of the same DRAM add on top (evidence/e4b-dram-contention-cpu-vs-dma.json).
+# E25 (C/OpenMP, pinned) confirmed it directly: 62-63 GB/s per CCD, 125 with both,
+# 235 socket total with both GPUs' DMA (evidence/e25-dram-revalidation/). Unchanged.
 DEFAULT_DRAM_GBPS = 125.0
 # PCIe 5.0 x16 pinned H2D per card, measured in E4/E4b: 53 GiB/s = 57 GB/s per
 # card, both cards concurrently 114 GB/s aggregate (independent links).

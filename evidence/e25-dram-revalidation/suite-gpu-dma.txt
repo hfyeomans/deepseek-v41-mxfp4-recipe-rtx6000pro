@@ -1,0 +1,9 @@
+topology: 2 CCDs [8, 8] cores, 1 NUMA node(s); size 8.0 GiB; iters 6 (first = warm-up); GB/s = min / median / max of steady iterations
+gpu-dma  cpu read + DMA gpus 0              read         thr=16  120.0 /  122.0 /  124.2 GB/s   3948 MHz  126 W  57 C
+    gpu0 h2d 57.0 GB/s over 40.0s
+gpu-dma  cpu read + DMA gpus 1              read         thr=16  123.6 /  124.8 /  124.9 GB/s   4538 MHz  127 W  55 C
+    gpu1 h2d 56.9 GB/s over 40.1s
+gpu-dma  cpu read + DMA gpus 0,1            read         thr=16  119.2 /  121.2 /  121.9 GB/s   4119 MHz  144 W  57 C
+    gpu0 h2d 57.0 GB/s over 40.0s
+    gpu1 h2d 57.0 GB/s over 40.0s
+wrote evidence/e25-dram-revalidation/suite-gpu-dma.json

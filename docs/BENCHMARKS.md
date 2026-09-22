@@ -65,6 +65,11 @@ E1 and E3 were run on this host while the GLM container was serving (GPU-free; C
 | E4 PCIe H2D pinned, per card | GiB/s | 48–55 | **53.1 / 52.9** (D2H 53.3 / 52.4) |
 | E4 PCIe H2D pinned, both cards concurrently | GiB/s aggregate | ≥ 90 | **106.1** (114 GB/s) |
 | E4b CPU read + both-GPU H2D at once | GB/s combined; additivity | additive (≥ 0.9) | **233.9** (120.1 + 113.8); **0.984** |
+| E25 DRAM read, C/OpenMP, 16 threads split across both CCDs (quiet host) | GB/s (read) | ≈ 125 (E1b) or higher if E1b was torch-limited | **125.0** (min 123.7 / max 125.4); 4 threads split already 125.2 |
+| E25 DRAM read, one CCD (8 physical cores) / (2 cores) | GB/s (read) | ≈ 62 if fabric-bound | **63.1** / **62.1** — per-CCD link limit, direct |
+| E25 write / write-nt / copy / copy-nt / triad, 16 threads split | GB/s (bytes moved) | — | 77.8 / 96.8 / 115.1 / 136.4 / 121.7 (each exactly 2× the one-CCD figure) |
+| E25 kt-shaped expert reads (random 21.8 MiB chunks, barrier per 1 / 3 / 100 chunks), 16 threads | GB/s | ≈ E17's 127 | 121.0 / 120.2 / 124.8 (2 MiB pages); 4 KiB pages within 1 %; 32 SMT threads **91.8** |
+| E25 CPU read + GPU0 / GPU1 / both H2D at once | GB/s | additive (E4b) | 122.0 + 57.0; 124.8 + 56.9; **121.2 + 57.0 + 57.0 = 235** (CPU −3 %) |
 | E6 stage 0 CPU expert GEMV, 101 experts/token, bf16, 16 threads | ms/token; GB/s | ≤ 13 ms (≤ DRAM time) | **76.1 ms** (7.15 GiB bf16) = **93.9 GB/s** → ≈20 ms at MXFP4 bytes |
 | Hybrid decode ceiling, 2 GPUs, CPU compute (`feasibility-calc.py --layout hybrid-cpu`; 1000 / (5 ms + 1.75 GiB ÷ DRAM GB/s)) | tok/s | 56 @146; 89 @300 | **50 @125** (E1b); 40 @94 (E6 s0 sustained) |
 | PCIe-streaming fallback ceiling, 2 GPUs (1000 / (5 ms + 1.75 GiB ÷ E4 aggregate)) | tok/s | ~42 @100 GiB/s | **46 @114 GB/s** |
@@ -213,7 +218,20 @@ Two different questions, both already measured in P1 (`evidence/e1-dram-bandwidt
 | 32 (SMT) | 118 GB/s | 146 GB/s | 78 GB/s (91 ms/token, p90 146) |
 
 - **Multi-core matters and we already use it: 16 threads, one per physical core, is the sweet spot.** 8 threads gets half the bandwidth (one CCD's worth), 32 threads is slightly *worse* than 16 for reads and clearly worse for the GEMV (SMT siblings fight for the same load ports and caches). Every hybrid design number (50–78 tok/s) assumes 16 threads.
-- **The DIMMs are not the limit; the CPU's fabric is.** Eight channels of DDR5-6400 are 409.6 GB/s theoretical, and the cores reach 125–146. E4b showed the GPUs can DMA another 114 GB/s from the same DRAM *at the same time* (234 GB/s combined, additivity 0.98), so the memory itself has headroom the cores cannot use — consistent with the 2-CCD Infinity Fabric read limit (~64 GB/s per CCD). That is why option **B2 (split)** in FEASIBILITY exists: serve some DRAM experts from CPU compute and stream others over PCIe, using both read paths. A direct confirmation (STREAM in C or `pcm-memory` DIMM counters) is an open item in ROADMAP §measurements.
+- **The DIMMs are not the limit; the CPU's fabric is.** Eight channels of DDR5-6400 are 409.6 GB/s theoretical, and the cores reach 125–146. E4b showed the GPUs can DMA another 114 GB/s from the same DRAM *at the same time* (234 GB/s combined, additivity 0.98), so the memory itself has headroom the cores cannot use — consistent with the 2-CCD Infinity Fabric read limit (~64 GB/s per CCD). That is why option **B2 (split)** in FEASIBILITY exists: serve some DRAM experts from CPU compute and stream others over PCIe, using both read paths. **E25 (2026-09-22) made this direct** — see the next table.
+
+#### E25: the four bandwidth tiers, measured with a C/OpenMP suite (quiet host, no power/thermal limiting)
+
+`scripts/bench-dram-stream.c` + `scripts/bench-dram-suite.py`, 8 GiB buffers, threads pinned per CCD; raw `evidence/e25-dram-revalidation/suite-cpu.json`, `suite-gpu-dma.json`. The E1b torch row above is kept as the historical measurement; E25 reproduces it within 0.3 %. Full method and result in [plan/EXPERIMENTS.md E25](../plan/EXPERIMENTS.md).
+
+| Tier | Value | How known | What could move it |
+|---|---:|---|---|
+| Theoretical DIMM / channel | **409.6 GB/s** | 8 ch × 8 B × 6,400 MT/s | Memory Frequency (irrelevant while the CPU cannot reach it) |
+| Socket-sustainable, all requesters | **≥ 235 GB/s** | CPU 121.2 + GPU0 57.0 + GPU1 57.0 measured concurrently; true ceiling unknown — only the GPUs' DMA engines reach past the CPU | more DMA requesters; DIMM counters (root) would give the ceiling |
+| Reachable from this CPU (2 CCDs) | **125 GB/s read**; 78 write; 97 write-nt; 115 copy; 136 copy-nt; 122 triad; **62–63 GB/s per CCD** in every pattern | scaling: ccd0 ×1 39.9, ×2 62.1, ×4 62.8, ×8 63.1; split ×2 105.9, ×4 125.2, ×8 124.5, ×16 125.0; SMT ×32 118.6 | FCLK (per-CCD link; overclocking, BIOS guide Tier 3) or more CCDs (H1) |
+| Effective for kt-kernel CPU experts | **≈ 120–127 GB/s** | E17 T=1 cold 1.08 ms/layer = 127; E25 kt-shaped random 21.8 MiB chunks with a barrier per layer 120–125; 32 SMT threads 92 | nothing kt-side — it is at the ceiling; per-layer sync costs ≈ 3 % |
+
+Read scaling in one line: **one CCD saturates at 62 GB/s with two threads; four threads split across the two CCDs already give the socket's 125 GB/s; 8, 12 and 16 threads add nothing; SMT siblings subtract.** Page size (4 KiB vs 2 MiB) is within 1 % for streaming reads. Conditions: cores 2.8–5.2 GHz, socket 87–144 W, Tctl ≤ 57 °C. Consequence for every projection in this repo: none changed (`--dram-gbps 125`, CPU floor 50–55 tok/s, B2 78). The firmware knobs that can and cannot touch these tiers are mapped in [docs/BIOS-OPTIMIZATION-GUIDE.md](BIOS-OPTIMIZATION-GUIDE.md).
 - **Our harness scripts are single-process Python with threads for concurrent HTTP streams** (`ThreadPoolExecutor` in `bench-decode.py`); they wait on the network, so the GIL is irrelevant and one core is plenty. The engines are different: vLLM's scheduler/step loop is one Python thread per engine (which is why eager mode collapsed in E15 — the fix is graphs, not cores), and the CPU-expert path in KTransformers/llama.cpp is a native thread pool that will use all 16 cores. For the E6 hybrid the placement rule is: 16 compute threads on 16 cores, the engine's Python loop and the NVMe reader on the SMT siblings, hugepages for the expert arena (T1.6).
 
 ### GLM-5.3-Flash: optimisations worth trying on the reference recipe (not run — it is the owner's daily driver)
@@ -336,10 +354,12 @@ Protocol in EXPERIMENTS E23 / TASKS T3.9a–f. Reference row R0 is the E21 defau
 
 | Round | D | Spec | C1 wall | C3 wall (per stream) | C4 wall (per stream) | acc. tok/verify | CPU wait ms / accepted tok | DRAM GB/s | Engram ms/step | GPU W (per card) | NLL Δ | soak |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| R0 | 4 | off | | | | 1.00 | | | | | | |
+| R0 | 4 | off | **36.0** (stream 38.7) | 98.2 (37.2) | 131.9 (37.0) | 1.00 | E21: ≈ 40 waits/step, hidden by D=4 | — | — | — | 0 (E21 D=4: −0.0013) | E22 verify pass |
 | R1 | 4 | K=2 | | | | | | | | | | |
 | R1 | 4 | K=5 | | | | | | | | | | |
 | R2 | 0 | off / K=2 / K=5 | | | | | | | | | | |
+
+R0 (2026-09-22, `r0-baseline-d4-specoff.json`, server in the E22 chunk-8192 config, TTFT 1.02 / 1.45 / 1.63 s, 512 tokens every stream, `finish_reason=length`): reproduces E21 within +0.5 % (C1 38.5 → 38.7, C4 147 → 148.3 summed). Wall tok/s is 7 % (C1) to 11 % (C4) below the summed stream rate because it includes TTFT and the ramp; that is the number speculation must beat by ≥ 10 % (C1 wall ≥ 39.6).
 
 Fit check first (T3.9a): DSpark's three MTP stages are 7.4 GiB (≈ 3.7 GiB per card at TP2); the E22c server finished capture with 7.1–7.4 GB free and dipped to 0.98 GiB free on TP1 during a streamed prefill, so speculation + streamed prefill + 208 GPU experts may not coexist at 32K. Which lever gives (streamed prefill off, 200 GPU experts, lower `MEM_FRACTION_STATIC`) is recorded with the round.
 

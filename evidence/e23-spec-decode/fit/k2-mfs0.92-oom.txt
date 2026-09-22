@@ -1,0 +1,55 @@
+# E23 T3.9a fit check — DSPARK=1 DSPARK_K=2 MEM_FRACTION_STATIC=0.92 (default), 208/176 placement,
+# KT_GPU_PREFILL_MIN_TOKENS=1024 (E22 streamer resident), CHUNKED_PREFILL_SIZE=4096, 2026-09-22 17:58 EDT.
+# Outcome: scheduler exception before capture — draft weights consume the whole static budget.
+[TP1] Load weight end. elapsed=55.08 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=10.89 GB, mem usage=82.97 GB.
+[TP0] Load weight end. elapsed=105.55 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=10.97 GB, mem usage=82.97 GB.
+[TP0] Draft checkpoint bundles a DSpark head; loading draft arch DeepseekV4ForCausalLMDSpark.
+[TP0] Load weight end. elapsed=13.48 s, type=DeepseekV4ForCausalLMDSpark, quant=fp8, avail mem=7.12 GB, mem usage=3.85 GB.
+[TP1] Load weight end. elapsed=13.38 s, type=DeepseekV4ForCausalLMDSpark, quant=fp8, avail mem=7.04 GB, mem usage=3.85 GB.
+[TP0] DSpark gamma mismatch: using gamma=2 (from speculative_num_draft_tokens=3) but draft config block_size=5.
+[TP0] Initialized DSpark draft runner. attention_backend=dsv4, model=DeepseekV4ForCausalLMDSpark, gamma=2, verify_num_draft_tokens=3, query_token_num=2, sample_from_anchor=True
+ValueError: Loaded weights leave no GPU memory for the KV cache under --mem-fraction-static=0.92. Raise --mem-fraction-static above 0.926 (minimum viable = 1 - available/pre = 0.9251). If using speculative decoding, draft weights are now counted.
+# kt loader lines confirm only the 40 main layers get CPU experts (draft stages 0..2 are all-GPU, 128 <= 208):
+[MXFP4SafeTensorLoader] Loaded 176 CPU experts from layers.0.ffn.experts as compact ids 0..175 (208 GPU experts not loaded)
+# Arithmetic: static budget = 0.92 x pre-load free (~94.8 GB) = 87.2 GB; main 82.97 + draft 3.85 = 86.8 GB + 0.1 GB mm reserve -> KV budget <= 0.
+# Without the draft the same fraction left 3.4 GB for KV = 1.79M tokens, 13x what 32K x 4 seqs needs -> re-run with MEM_FRACTION_STATIC=0.935.
+
+# --- Attempt 2: MEM_FRACTION_STATIC=0.935 (same otherwise), 18:02 EDT ---
+[TP0] Load weight begin. avail mem=93.94 GB
+[TP0] Load weight end. type=DeepseekV4ForCausalLM, avail mem=10.97 GB, mem usage=82.97 GB
+[TP0] Load weight end. type=DeepseekV4ForCausalLMDSpark, avail mem=7.12 GB, mem usage=3.85 GB
+[TP0] Memory pool end. avail mem=6.21 GB     (KV pool ~0.9 GB; fits)
+# Capture of the speculative verify shape then died in the target model's first graph break:
+#   deepseek_v4.py:3646 _forward_layers_hc_pre_from_prev -> bcg_deepseek_v4_engram_hash_ids
+#   deepseek_v4.py:743  forward_batch = get_tc_piecewise_forward_context().forward_batch
+#   AttributeError: 'NoneType' object has no attribute 'forward_batch'
+# Root cause: ForwardMode.TARGET_VERIFY satisfies is_extend(), so the three prefill-graph breaks
+# (engram hash ids, low-ratio sources, attention_with_output) fire inside the *decode* graph runner,
+# which never sets the tc-piecewise context. Upstream main has the same gates (no fix as of 2026-09-22;
+# its TBO gate already uses is_extend_without_speculative() for exactly this reason).
+# Fix: overlay commit 6032dd44 switches the three gates to is_extend_without_speculative().
+
+# --- Attempt 3 (overlay 6032dd44 + 3b1fedce), 18:17 EDT: capture completes ---
+[TP0] Capture target verify CUDA graph begin. backend=breakable, num_tokens_per_req=3, bs=[1, 2, 3, 4], avail mem=5.94 GB
+[TP0] Capture draft verify CUDA graph end. elapsed=5.67 s, mem usage=0.00 GB, avail mem=5.74 GB.
+[TP0] max_total_num_tokens=279808, chunked_prefill_size=4096, max_prefill_tokens=16384, max_running_requests=4, context_len=32768, available_gpu_mem=5.74 GB
+Engine startup timings (s): load_weight=113.98, kv_cache_allocation=0.38, scheduler_e2e=197.56, cuda_graph={target_verify=4.51, draft_verify=5.67}
+# KV pool 279,808 tokens (>= 32K x 4 = 131K needed). 5.74 GB free after capture (E22 no-spec: ~7.0).
+# First request (server warmup, 256-token prefill) then died in the draft:
+#   dspark_draft.py:449 RuntimeError: DSpark draft returned 2 hidden rows, expected 4.
+# Root cause: overlay cd55166a taught the breakable backend to carry LogitsProcessorOutput (a dataclass) through
+# capture by taking the MIN row count over its tensor fields; the draft's logits have bs rows while its
+# hidden_states have bs*gamma rows, so hidden_states was sliced to the logits' rows.
+# Fix: overlay 71645529 resolves rows per field. Attempt 4 relaunched 18:24 EDT.
+
+# --- Attempt 4 (overlay 71645529), 18:25 EDT: same error ---
+#   dspark_draft.py:449 RuntimeError: DSpark draft returned 2 hidden rows, expected 4.
+# The per-field fix was aimed at the wrong layer: the draft returns next_token_logits=None, so the MIN-over-fields
+# rule never applied. Actual root cause: BreakableCudaGraphBackend.capture_one caps every stored output at
+# ShapeKey.size, and DecodeCudaGraphRunner keys graphs by *batch size* (non-ragged), while a speculative
+# TARGET_VERIFY body returns bs x captured_req_width rows (draft: gamma=2; target: num_draft_tokens=3).
+# At bs=2 the 4-row hidden output was stored as a 2-row view. FullCudaGraphBackend stores outputs unsliced,
+# which is why upstream (full backend) never trips this; our recipe captures decode graphs with `breakable`
+# so the KT CPU-expert stages can break the graph.
+# Fix: overlay 95f2fe3d — output cap = ShapeKey.size x runner.captured_req_width (1 in ragged/prefill mode).
+# Attempt 5 relaunched 18:56 EDT (DSPARK=1 DSPARK_K=2 MEM_FRACTION_STATIC=0.935 KT_NAN_PROBE_MIN_TOKENS=512).
