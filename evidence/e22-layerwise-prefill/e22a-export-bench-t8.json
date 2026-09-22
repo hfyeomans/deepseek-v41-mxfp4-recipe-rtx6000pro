@@ -1,0 +1,100 @@
+{
+  "args": {
+    "weight_path": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+    "layer": 5,
+    "num_experts": 384,
+    "num_gpu_experts": 208,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "swiglu_limit": 10.0,
+    "threads": 8,
+    "threadpool_count": 1,
+    "gpu_tp": 2,
+    "groups": "16,32",
+    "iters": 3,
+    "check_experts": "0",
+    "skip_gpu": false,
+    "json": "/out/e22a-t8.json"
+  },
+  "torch": "2.13.0+cu130",
+  "kt_kernel": "0.7.0.post4",
+  "load_seconds": 1.04,
+  "bytes_per_expert_per_rank": 9953280,
+  "bytes_per_layer_all_ranks": 3503554560,
+  "byte_compare": [
+    {
+      "compact_id": 0,
+      "global_id": 208,
+      "rank": 0,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    },
+    {
+      "compact_id": 0,
+      "global_id": 208,
+      "rank": 1,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    }
+  ],
+  "byte_compare_all_identical": true,
+  "export_all": {
+    "seconds": [
+      0.1285,
+      0.1219,
+      0.1223
+    ],
+    "best_seconds": 0.1219,
+    "gbps_best": 28.74,
+    "ms_per_expert_best": 0.693
+  },
+  "export_grouped": {
+    "16": {
+      "seconds": 0.1235,
+      "gbps": 28.36
+    },
+    "32": {
+      "seconds": 0.1255,
+      "gbps": 27.93
+    }
+  },
+  "h2d_full_layer": {
+    "cards": 2,
+    "copy_only_seconds": [
+      0.0371,
+      0.0372,
+      0.037
+    ],
+    "copy_plus_scales_seconds": [
+      0.0388,
+      0.0387,
+      0.0386
+    ],
+    "gib_per_s_per_card_best": 44.13
+  },
+  "pipelined": {
+    "16": {
+      "seconds": [
+        0.1469,
+        0.1448,
+        0.1431
+      ],
+      "best_seconds": 0.1431,
+      "layer_gbps_best": 24.48
+    },
+    "32": {
+      "seconds": [
+        0.1425,
+        0.1415,
+        0.1436
+      ],
+      "best_seconds": 0.1415,
+      "layer_gbps_best": 24.76
+    }
+  }
+}

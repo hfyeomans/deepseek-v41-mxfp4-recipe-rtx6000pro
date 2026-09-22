@@ -44,6 +44,18 @@ KT_CPUINFER="${KT_CPUINFER:-16}"                   # one thread per core (E17)
 # teacher-forced NLL unchanged (ΔNLL −0.006, z 1.4). D=5 is also NLL-neutral but
 # NaN-crashes on the first bs=4 decode step; D=6 loses 0.23 nats/token. 0 disables.
 KT_MAX_DEFERRED="${KT_MAX_DEFERRED:-4}"
+# Layerwise GPU prefill (E22): prefill chunks with at least this many tokens
+# stream each layer's CPU experts to the GPUs (kt-kernel export -> shared pinned
+# buffer -> per-rank H2D -> FlashInfer MoE) instead of computing them on the CPU.
+# 0 keeps every chunk on the CPU path. KT_GPU_PREFILL_LOG=1 logs per-chunk timing.
+KT_GPU_PREFILL_MIN_TOKENS="${KT_GPU_PREFILL_MIN_TOKENS:-0}"
+KT_GPU_PREFILL_LOG="${KT_GPU_PREFILL_LOG:-0}"
+# Speculative decoding (E23 / T3.9): DSPARK=1 adds the three MTP draft stages
+# (--speculative-algorithm DSPARK, block size DSPARK_K). Off by default: E6-DESIGN
+# 4.6 predicts K=5 loses under a CPU-bound MoE; E23 measures off / K=2 / K=5.
+# Draft weights are ~3.7 GiB per card, so check free VRAM after graph capture.
+DSPARK="${DSPARK:-0}"
+DSPARK_K="${DSPARK_K:-5}"
 MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.92}"
 CONTEXT_LENGTH="${CONTEXT_LENGTH:-32768}"
 CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-4096}"
@@ -79,6 +91,9 @@ server_args=(
   --reasoning-parser deepseek-v41
   --tool-call-parser deepseekv41
 )
+if [[ "$DSPARK" == "1" ]]; then
+  server_args+=(--speculative-algorithm DSPARK --speculative-dspark-block-size "$DSPARK_K")
+fi
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 server_args+=($EXTRA_SERVER_ARGS)
 
@@ -100,6 +115,8 @@ docker_cmd=(
   # SM120 indexer defaults pick paths V4.1 cannot take (TROUBLESHOOTING).
   -e SGLANG_OPT_USE_TILELANG_INDEXER=0
   -e SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0
+  -e "KT_GPU_PREFILL_MIN_TOKENS=${KT_GPU_PREFILL_MIN_TOKENS}"
+  -e "KT_GPU_PREFILL_LOG=${KT_GPU_PREFILL_LOG}"
   "$IMAGE"
   "${server_args[@]}"
 )

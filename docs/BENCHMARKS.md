@@ -296,24 +296,41 @@ Healthy runs say **+6 % prefill (8,582 vs 8,068) and +8 % decode (1,279 vs 1,188
 
 The first V4.1-Flash that runs on this box. Layout from E6-DESIGN: 208 experts per layer on the GPUs (MXFP4), 176 per layer on the CPU via kt-kernel (16 cores, TP rank 0 only), Engram tables on NVMe. Launch: `bash scripts/serve-hybrid.sh` (container `dsv41-kt`, model name `dsv41-flash-hybrid`), 300 W cap. Same harness as the scoreboard above; decode is 256 tokens, 3 runs, distinct prompts. Full logs in `plan/EXPERIMENTS.md` E19–E21 and `evidence/t36d-first-serve/`, `evidence/e20-*/`, `evidence/e21-kt-fixed-floor/`.
 
-| Metric | E19 first serve (attempt 6) | E20 tuned FP8 GEMM config | E21 deferral D=4 (**current default**) |
-|---|---|---|---|
-| C1 decode, median | 13.98 tok/s | 31.60 tok/s | **38.53 tok/s** |
-| C2 decode, aggregate | 28.0 | ≈ 38 (19/stream; the bs=2 dip) | 45.44 (22.7/stream; dip still there) |
-| C3 decode, aggregate | 64.0 (64 tok) | — | 111.71 (soak, 37.2/stream) |
-| C4 decode, aggregate | 86.7 | ≈ 120 | **146.96** (soak 146.86) |
-| Per-step at bs=1 | ≈ 71 ms | ≈ 32 ms | ≈ 26 ms |
-| Prefill, 16K prompt | 215.6 tok/s (TTFT 75 s) | not re-run (same CPU path) | not re-run |
-| Needles, 3/3 at 13,463 tokens | pass, TTFT 57 s | pass, TTFT 74 s | pass, TTFT 57.9 s |
-| `verify.py` 16K | all pass | all pass | all pass |
-| Quality, teacher-forced NLL (`nll-score.py`) | — | 1.48741 (D=0, the baseline) | ΔNLL −0.0061, paired z +1.44 (neutral) |
-| GPU power during C1 / C4 decode | 144/159 W / 172/189 W | — | never near the 300 W cap |
-| GPU temps C1 / C4 | 69/67 °C / 73/72 °C | — | — |
+| Metric | E19 first serve (attempt 6) | E20 tuned FP8 GEMM config | E21 deferral D=4 (**current default**) | E22c + streamed prefill (`KT_GPU_PREFILL_MIN_TOKENS=1024`, chunk 4096; **not default**, see NaN) |
+|---|---|---|---|---|
+| C1 decode, median | 13.98 tok/s | 31.60 tok/s | **38.53 tok/s** | not measured — server asserted before the decode check |
+| C2 decode, aggregate | 28.0 | ≈ 38 (19/stream; the bs=2 dip) | 45.44 (22.7/stream; dip still there) | — |
+| C3 decode, aggregate | 64.0 (64 tok) | — | 111.71 (soak, 37.2/stream) | — |
+| C4 decode, aggregate | 86.7 | ≈ 120 | **146.96** (soak 146.86) | — |
+| Per-step at bs=1 | ≈ 71 ms | ≈ 32 ms | ≈ 26 ms | unchanged path (decode stays on the CPU tier) |
+| Prefill, 16K prompt | 215.6 tok/s (TTFT 75 s) | not re-run (same CPU path) | not re-run | **837 tok/s (TTFT 19.1 s)**; 32K: 811 tok/s (TTFT 38.4 s); 4.7–5.1 s streaming per 4K chunk |
+| Needles, 3/3 at 13,463 tokens | pass, TTFT 57 s | pass, TTFT 74 s | pass, TTFT 57.9 s | pass, TTFT 35.5 s |
+| `verify.py` 16K | all pass | all pass | all pass | all pass |
+| Quality, teacher-forced NLL (`nll-score.py`) | — | 1.48741 (D=0, the baseline) | ΔNLL −0.0061, paired z +1.44 (neutral) | ΔNLL −0.0013 vs D=0, z +0.35 (neutral); mean \|Δlogp\| 0.125 (GPU-tier MXFP8 activations now compute the streamed experts) |
+| GPU power during C1 / C4 decode | 144/159 W / 172/189 W | — | never near the 300 W cap | — |
+| GPU temps C1 / C4 | 69/67 °C / 73/72 °C | — | — | — |
 
 - **What moved it.** E19→E20 (2.3×): the SGLang fork's `fp8_gemm` Triton config was an H100 default, 57 % of the step; a SM120-tuned config fixed it. E20→E21 (+22 %): `--kt-max-deferred-experts-per-token 4` lets kt-kernel skip up to 4 of the 176 CPU experts per token per layer when the GPU tier has them; NLL says the quality cost is zero within noise. D=5/D=6 crash the sampler with `probability tensor contains inf/nan` at bs≥4 (D=6 also costs +0.23 nats), so 4 is the ceiling until the NaN is root-caused.
 - **What has not moved.** Prefill runs the 176 CPU experts per layer on 16 cores: 216 tok/s, so a 16K prompt is 75 s TTFT and a 32K prompt would be ≈ 2.5 min. That is T3.6b2 (GPU-side layerwise prefill for CPU-resident experts). The bs=2 dip (per-stream throughput lower than bs=1 or bs=3) is open.
 - **Against the targets.** E14 asked for ≥ 130 tok/s C1 and ≥ 3.8K tok/s prefill. The hybrid is at 38.5 and 216: 3.4× and 18× short. FEASIBILITY's 50–78 tok/s decode ceiling assumed bandwidth-bound expert reads; the measured step is overhead-bound (40 per-layer CPU-tier waits, Engram graph breaks of 2.4–3 ms/step, rank 0 doing all CPU work at ≈ 1,880 % CPU while rank 1 idles at 120 %). Watts are irrelevant here: the GPUs sit at 150–190 W under a 300 W cap, so the 325 W discussion above does not apply to this recipe.
 - **Quality gate.** `scripts/nll-score.py` (teacher-forced NLL on a frozen 4,795-token corpus) is bit-identical across reruns and relaunches; greedy-token agreement is not (near-tie flips), so use NLL, not greedy diffs, to judge any change to the hybrid.
+
+### E22 — streamed prefill (2026-09-22, interim)
+
+`evidence/e22-layerwise-prefill/`. Each ≥ 1,024-token prefill chunk exports the 176 CPU experts of a layer from kt-kernel into a shared pinned buffer (6.5 GiB, POSIX shm, both TP ranks), DMAs each rank's slice (2.27 GiB GPU staging per rank) and runs the FlashInfer SM120 fused MoE on them, layer by layer, double-buffered. Measured: export 51.8 GB/s at 16 threads (core-bound), per-chunk streaming 4.66–5.13 s for 4,096 tokens and 4.24 s for 1,175 (flat in tokens), **16K prefill 837 tok/s, 32K 811 tok/s** vs 216 before (3.9×). Because the cost per chunk is flat, `CHUNKED_PREFILL_SIZE` 8192/16384 should land near 1.6K/3K tok/s — not yet run. The serve ended in a NaN assert on the first decode after a 4 × 256-token streamed batch (TROUBLESHOOTING), so the decode regression check is missing and the knob stays off by default until E22d finds the cause.
+
+### E23 — speculative decoding rounds (planned; table filled as rounds land)
+
+Protocol in EXPERIMENTS E23 / TASKS T3.9a–f. Reference row R0 is the E21 default (D=4, speculation off) re-measured with 512-token outputs. Every cell reports wall tok/s (per stream and aggregate), TTFT, ITL p50/p95, accepted tokens per verification, CPU-tier wait per accepted token, host DRAM GB/s, Engram ms/step, GPU W/util — from one JSON per cell under `evidence/e23-spec-decode/<round>/`.
+
+| Round | D | Spec | C1 wall | C3 wall (per stream) | C4 wall (per stream) | acc. tok/verify | CPU wait ms / accepted tok | DRAM GB/s | Engram ms/step | GPU W (per card) | NLL Δ | soak |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| R0 | 4 | off | | | | 1.00 | | | | | | |
+| R1 | 4 | K=2 | | | | | | | | | | |
+| R1 | 4 | K=5 | | | | | | | | | | |
+| R2 | 0 | off / K=2 / K=5 | | | | | | | | | | |
+
+Fit check first (T3.9a): DSpark's three MTP stages are 7.4 GiB (≈ 3.7 GiB per card at TP2); the E22c server finished capture with 7.1–7.4 GB free and dipped to 0.98 GiB free on TP1 during a streamed prefill, so speculation + streamed prefill + 208 GPU experts may not coexist at 32K. Which lever gives (streamed prefill off, 200 GPU experts, lower `MEM_FRACTION_STATIC`) is recorded with the round.
 
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 

@@ -82,6 +82,7 @@ Need a GPU window (stop the GLM container first):
 | `kt-cpu-per-step.sh`, `sched-wait-per-step.py` | E21: kt CPU-seconds per decode step, and per-thread run-queue wait / context switches (`/proc/<tid>/schedstat`) around one bench run |
 | `nll-score.py` | quality metric for approximations (expert deferral, kernels): teacher-forced mean NLL of `scripts/fixtures/nll-corpus.txt`, `--compare` a baseline JSON |
 | `greedy-logprobs.py` | gross sanity only — greedy picks flip at near-ties run-to-run on the hybrid (E21 r7); use `nll-score.py` for numbers |
+| `kt-export-bench.py` | E22a: exports one layer's CPU experts from kt-kernel into pinned host buffers (`gpu_tp_count=2`), byte-compares the slices against the safetensors shards, times export / H2D / pipelined streaming, and checks the staged FlashInfer SM120 MoE output against the resident layout and an fp32 reference (`--check-tokens`, `--skip-timing`, `--json`); runs inside `dsv41-kt:recipe` without a server |
 
 `scripts/ci.sh` runs unit tests, checks that the README verdict still agrees with the calculator, and scans tracked files for identifiers.
 

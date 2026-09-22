@@ -1,0 +1,162 @@
+{
+  "args": {
+    "weight_path": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+    "layer": 5,
+    "num_experts": 384,
+    "num_gpu_experts": 208,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "swiglu_limit": 10.0,
+    "threads": 16,
+    "threadpool_count": 1,
+    "gpu_tp": 2,
+    "groups": "8,16,32,44",
+    "iters": 3,
+    "check_experts": "0,1,175",
+    "skip_gpu": false,
+    "json": "/out/e22a.json"
+  },
+  "torch": "2.13.0+cu130",
+  "kt_kernel": "0.7.0.post4",
+  "load_seconds": 1.39,
+  "bytes_per_expert_per_rank": 9953280,
+  "bytes_per_layer_all_ranks": 3503554560,
+  "byte_compare": [
+    {
+      "compact_id": 0,
+      "global_id": 208,
+      "rank": 0,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    },
+    {
+      "compact_id": 0,
+      "global_id": 208,
+      "rank": 1,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    },
+    {
+      "compact_id": 1,
+      "global_id": 209,
+      "rank": 0,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    },
+    {
+      "compact_id": 1,
+      "global_id": 209,
+      "rank": 1,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    },
+    {
+      "compact_id": 175,
+      "global_id": 383,
+      "rank": 0,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    },
+    {
+      "compact_id": 175,
+      "global_id": 383,
+      "rank": 1,
+      "w13_weight": "identical",
+      "w13_scale_bf16": "identical",
+      "w2_weight": "identical",
+      "w2_scale_bf16": "identical"
+    }
+  ],
+  "byte_compare_all_identical": true,
+  "export_all": {
+    "seconds": [
+      0.0712,
+      0.0686,
+      0.0676
+    ],
+    "best_seconds": 0.0676,
+    "gbps_best": 51.85,
+    "ms_per_expert_best": 0.384
+  },
+  "export_grouped": {
+    "8": {
+      "seconds": 0.0691,
+      "gbps": 50.69
+    },
+    "16": {
+      "seconds": 0.0687,
+      "gbps": 51.0
+    },
+    "32": {
+      "seconds": 0.0684,
+      "gbps": 51.22
+    },
+    "44": {
+      "seconds": 0.068,
+      "gbps": 51.54
+    }
+  },
+  "h2d_full_layer": {
+    "cards": 2,
+    "copy_only_seconds": [
+      0.0369,
+      0.0367,
+      0.0367
+    ],
+    "copy_plus_scales_seconds": [
+      0.0384,
+      0.0384,
+      0.0384
+    ],
+    "gib_per_s_per_card_best": 44.41
+  },
+  "pipelined": {
+    "8": {
+      "seconds": [
+        0.0928,
+        0.0935,
+        0.0975
+      ],
+      "best_seconds": 0.0928,
+      "layer_gbps_best": 37.77
+    },
+    "16": {
+      "seconds": [
+        0.0894,
+        0.091,
+        0.0891
+      ],
+      "best_seconds": 0.0891,
+      "layer_gbps_best": 39.33
+    },
+    "32": {
+      "seconds": [
+        0.0876,
+        0.0876,
+        0.0872
+      ],
+      "best_seconds": 0.0872,
+      "layer_gbps_best": 40.19
+    },
+    "44": {
+      "seconds": [
+        0.0906,
+        0.0906,
+        0.0901
+      ],
+      "best_seconds": 0.0901,
+      "layer_gbps_best": 38.89
+    }
+  }
+}

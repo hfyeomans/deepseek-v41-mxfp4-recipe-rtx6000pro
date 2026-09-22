@@ -1,0 +1,22 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 1,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization",
+  "sizes": [
+    {
+      "target_tokens": 32000,
+      "median_prompt_tokens": 31150,
+      "median_prefill_tps": 811.0142759163944,
+      "median_ttft_s": 38.40869504399598,
+      "runs": [
+        {
+          "prompt_tokens": 31150,
+          "ttft_s": 38.40869504399598,
+          "prefill_tps": 811.0142759163944
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-22T12:58:29-0400"
+}
