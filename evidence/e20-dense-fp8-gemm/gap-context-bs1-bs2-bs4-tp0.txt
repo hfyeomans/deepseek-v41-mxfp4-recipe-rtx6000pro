@@ -1,0 +1,126 @@
+=================== bs1
+353 gaps >= 100.0 us, total 161.16 ms
+
+kernel before -> kernel after (count, total ms):
+   302   136.00 ms  _ZN7cutlass13device_kernelINS_4gemm6kernel13…  ->  Memcpy HtoD (Pinned -> Device)
+    16    19.26 ms  Memcpy DtoH (Device -> Pageable)  ->  Memcpy HtoD (Pageable -> Device)
+    15     2.01 ms  Memcpy DtoD (Device -> Device)  ->  void sglang::cross_device_reduce_1stage<__nv…
+     5     0.77 ms  void at::native::index_elementwise_kernel<12…  ->  alloc_decode_kernel
+     3     0.56 ms  alloc_decode_kernel  ->  Memcpy HtoD (Pinned -> Device)
+     2     0.24 ms  alloc_decode_kernel  ->  void at::native::index_elementwise_kernel<12…
+     1     0.16 ms  alloc_decode_kernel  ->  alloc_decode_kernel
+     1     0.32 ms  void at::native::vectorized_elementwise_kern…  ->  void at::native::index_elementwise_kernel<12…
+
+host CUDA calls overlapping gaps (count, total gap ms):
+   264   132.68 ms  cudaMemcpyAsync
+    39    28.28 ms  cudaStreamIsCapturing
+    39    19.87 ms  cudaEventQuery
+    30     7.99 ms  cudaGraphLaunch
+    26     9.76 ms  cudaLaunchKernel
+    19     9.03 ms  cudaDeviceSynchronize
+    16    19.26 ms  cudaStreamSynchronize
+    14     5.71 ms  cudaEventRecordWithFlags
+
+shortest cpu_op/annotation covering the gap midpoint:
+   225  aten::copy_
+    49  step[DECODE bs=1]
+    34  scheduler.run_batch
+    10  scheduler.get_next_batch_to_run
+     6  scheduler.process_batch_result
+     4  copy_result_to_cpu
+     2  aten::item
+     2  aten::multinomial
+
+largest gaps:
+      1445 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1391 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1363 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1351 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1329 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1323 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1293 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1228 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+=================== bs2
+369 gaps >= 100.0 us, total 334.51 ms
+
+kernel before -> kernel after (count, total ms):
+   314   272.34 ms  _ZN7cutlass13device_kernelINS_4gemm6kernel13…  ->  Memcpy HtoD (Pinned -> Device)
+    16    29.38 ms  Memcpy DtoH (Device -> Pageable)  ->  Memcpy HtoD (Pageable -> Device)
+    16     2.36 ms  Memcpy DtoD (Device -> Device)  ->  void sglang::cross_device_reduce_1stage<__nv…
+     6     0.88 ms  void at::native::index_elementwise_kernel<12…  ->  alloc_decode_kernel
+     6     1.20 ms  alloc_decode_kernel  ->  alloc_decode_kernel
+     4     2.13 ms  void at::native::vectorized_elementwise_kern…  ->  Memcpy HtoD (Pinned -> Device)
+     1     0.10 ms  void at::native::vectorized_elementwise_kern…  ->  void at::native::vectorized_elementwise_kern…
+     1    25.11 ms  void at::native::vectorized_elementwise_kern…  ->  void at::native::index_elementwise_kernel<12…
+
+host CUDA calls overlapping gaps (count, total gap ms):
+   296   297.25 ms  cudaMemcpyAsync
+    45    52.65 ms  cudaEventQuery
+    43    73.56 ms  cudaStreamIsCapturing
+    31    39.89 ms  cudaGraphLaunch
+    26    43.24 ms  cudaLaunchKernel
+    20    19.18 ms  cudaDeviceSynchronize
+    17    37.72 ms  cudaEventRecordWithFlags
+    16    29.38 ms  cudaStreamSynchronize
+
+shortest cpu_op/annotation covering the gap midpoint:
+   260  aten::copy_
+    43  step[DECODE bs=2]
+    29  scheduler.run_batch
+    12  scheduler.get_next_batch_to_run
+     4  scheduler.process_batch_result
+     3  aten::item
+     2  aten::sum
+     2  scheduler.recv_requests
+
+largest gaps:
+     25111 us  void at::native::vectorized_elementwise… -> void at::native::index_elementwise_kern…
+     10264 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1663 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1650 us  _ZN7cutlass13device_kernelINS_4gemm6ker… -> Memcpy HtoD (Pinned -> Device)
+      1645 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1550 us  _ZN7cutlass13device_kernelINS_4gemm6ker… -> Memcpy HtoD (Pinned -> Device)
+      1494 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1490 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+=================== bs4
+313 gaps >= 100.0 us, total 161.09 ms
+
+kernel before -> kernel after (count, total ms):
+   258   117.46 ms  _ZN7cutlass13device_kernelINS_4gemm6kernel13…  ->  Memcpy HtoD (Pinned -> Device)
+    16    23.97 ms  Memcpy DtoH (Device -> Pageable)  ->  Memcpy HtoD (Pageable -> Device)
+    16     2.34 ms  Memcpy DtoD (Device -> Device)  ->  void sglang::cross_device_reduce_1stage<__nv…
+     5     0.78 ms  alloc_decode_kernel  ->  void at::native::index_elementwise_kernel<12…
+     4     0.80 ms  void at::native::vectorized_elementwise_kern…  ->  void at::native::vectorized_elementwise_kern…
+     3     0.87 ms  alloc_decode_kernel  ->  alloc_decode_kernel
+     2     0.31 ms  void at::native::index_elementwise_kernel<12…  ->  alloc_decode_kernel
+     2     0.44 ms  void at::native::vectorized_elementwise_kern…  ->  Memcpy HtoD (Pinned -> Device)
+
+host CUDA calls overlapping gaps (count, total gap ms):
+   223   132.28 ms  cudaMemcpyAsync
+    43    48.47 ms  cudaStreamIsCapturing
+    40    37.51 ms  cudaEventQuery
+    35    26.06 ms  cudaLaunchKernel
+    29    19.93 ms  cudaGraphLaunch
+    16    20.24 ms  cudaEventRecordWithFlags
+    16    23.97 ms  cudaStreamSynchronize
+    16     6.77 ms  cudaDeviceSynchronize
+
+shortest cpu_op/annotation covering the gap midpoint:
+   189  aten::copy_
+    51  step[DECODE bs=4]
+    25  scheduler.run_batch
+    15  scheduler.get_next_batch_to_run
+     7  scheduler.process_batch_result
+     3  scheduler.recv_requests
+     2  copy_result_to_cpu
+     2  aten::sum
+
+largest gaps:
+     12891 us  void at::native::vectorized_elementwise… -> void at::native::index_elementwise_kern…
+      2181 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1788 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1779 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1651 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1576 us  _ZN7cutlass13device_kernelINS_4gemm6ker… -> Memcpy HtoD (Pinned -> Device)
+      1565 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)
+      1477 us  Memcpy DtoH (Device -> Pageable) -> Memcpy HtoD (Pageable -> Device)

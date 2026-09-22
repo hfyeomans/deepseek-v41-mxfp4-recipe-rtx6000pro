@@ -1,0 +1,362 @@
+{
+  "trace": {
+    "trace": "evidence/e20-dense-fp8-gemm/prof-e20-bs4/1790046814.6210282-TP-0.trace.json.gz",
+    "steps": 8,
+    "gpu_events": 19559,
+    "per_step_ms": {
+      "span": 38.722,
+      "gpu_busy": 15.739,
+      "idle_total": 22.983,
+      "idle_gaps_ge_100us": 20.136,
+      "n_gaps_ge_100us": 39.1
+    },
+    "by_category_ms_per_step": {
+      "moe_expert_gpu": 6.121,
+      "dense_fp8_gemm": 3.483,
+      "collective": 2.787,
+      "other": 2.044,
+      "attention_indexer": 1.216,
+      "elementwise_index": 0.649,
+      "rope_norm_act": 0.38,
+      "fp8_quant": 0.258,
+      "memcpy_memset": 0.219,
+      "bf16_gemm": 0.173,
+      "sampling": 0.095,
+      "engram": 0.014
+    },
+    "top_kernels": [
+      {
+        "name": "_w8a8_block_fp8_matmul_hopper",
+        "calls_per_step": 205.0,
+        "ms_per_step": 3.085,
+        "avg_us": 15.0,
+        "category": "dense_fp8_gemm"
+      },
+      {
+        "name": "sglang::cross_device_reduce_1stage<__nv_bfloat16, 2>",
+        "calls_per_step": 83.0,
+        "ms_per_step": 2.752,
+        "avg_us": 33.2,
+        "category": "collective"
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 2.479,
+        "avg_us": 62.0,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 1.38,
+        "avg_us": 34.5,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_32x32_128x2_tn_align8>",
+        "calls_per_step": 40.0,
+        "ms_per_step": 1.049,
+        "avg_us": 26.2,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_hc_mix_stats_partial_kernel",
+        "calls_per_step": 80.0,
+        "ms_per_step": 0.724,
+        "avg_us": 9.1,
+        "category": "other"
+      },
+      {
+        "name": "_hc_mix_reduce_sinkhorn_kernel",
+        "calls_per_step": 80.0,
+        "ms_per_step": 0.612,
+        "avg_us": 7.7,
+        "category": "other"
+      },
+      {
+        "name": "flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.596,
+        "avg_us": 14.9,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_64x64_64x6_tn_align8>",
+        "calls_per_step": 1.0,
+        "ms_per_step": 0.414,
+        "avg_us": 414.0,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_w8a8_block_fp8_matmul",
+        "calls_per_step": 2.0,
+        "ms_per_step": 0.398,
+        "avg_us": 199.0,
+        "category": "dense_fp8_gemm"
+      },
+      {
+        "name": "flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_merge_kernel<64, 512, 64, 8>",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.268,
+        "avg_us": 6.7,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "_reduce_block_fp8_split_k",
+        "calls_per_step": 165.0,
+        "ms_per_step": 0.264,
+        "avg_us": 1.6,
+        "category": "other"
+      },
+      {
+        "name": "sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bfloat16\u2026",
+        "calls_per_step": 207.0,
+        "ms_per_step": 0.258,
+        "avg_us": 1.2,
+        "category": "fp8_quant"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::doActivationKernel<__nv_fp8_e4m3, __nv_bfloat16, \u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.227,
+        "avg_us": 5.7,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_hc_combine_norm",
+        "calls_per_step": 79.0,
+        "ms_per_step": 0.214,
+        "avg_us": 2.7,
+        "category": "rope_norm_act"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel<__nv_fp8_e4m3, __nv_fp8_e4m\u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.205,
+        "avg_us": 5.1,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "sglang::tiny_n_gemm_kernel<sglang::GEMMTraitN<384u, 5120u, 3u, 32u>, 4u, float, true>",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.173,
+        "avg_us": 4.3,
+        "category": "bf16_gemm"
+      },
+      {
+        "name": "_page_split_kernel",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.17,
+        "avg_us": 4.2,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "tensorrt_llm::kernels::quantize_with_block_size<",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.153,
+        "avg_us": 3.8,
+        "category": "other"
+      },
+      {
+        "name": "_router_triton_kernel",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.127,
+        "avg_us": 3.2,
+        "category": "other"
+      }
+    ],
+    "largest_gaps_us": [
+      12891.2,
+      2181.0,
+      1788.1,
+      1778.6,
+      1651.1,
+      1576.3,
+      1565.2,
+      1476.8,
+      1468.2,
+      1450.0
+    ]
+  },
+  "compare": {
+    "trace": "evidence/e20-dense-fp8-gemm/prof-e20-bs1/1790046200.9749055-TP-0.trace.json.gz",
+    "steps": 8,
+    "gpu_events": 18863,
+    "per_step_ms": {
+      "span": 34.747,
+      "gpu_busy": 12.333,
+      "idle_total": 22.414,
+      "idle_gaps_ge_100us": 20.145,
+      "n_gaps_ge_100us": 44.1
+    },
+    "by_category_ms_per_step": {
+      "dense_fp8_gemm": 3.398,
+      "moe_expert_gpu": 2.265,
+      "collective": 2.08,
+      "other": 2.001,
+      "bf16_gemm": 1.654,
+      "attention_indexer": 1.008,
+      "elementwise_index": 0.515,
+      "rope_norm_act": 0.363,
+      "fp8_quant": 0.249,
+      "memcpy_memset": 0.201,
+      "sampling": 0.065,
+      "engram": 0.014
+    },
+    "top_kernels": [
+      {
+        "name": "sglang::cross_device_reduce_1stage<__nv_bfloat16, 2>",
+        "calls_per_step": 83.0,
+        "ms_per_step": 2.066,
+        "avg_us": 24.9,
+        "category": "collective"
+      },
+      {
+        "name": "_w8a8_block_fp8_matmul_hopper",
+        "calls_per_step": 160.0,
+        "ms_per_step": 1.908,
+        "avg_us": 11.9,
+        "category": "dense_fp8_gemm"
+      },
+      {
+        "name": "_w8a8_block_fp8_matmul",
+        "calls_per_step": 42.0,
+        "ms_per_step": 1.49,
+        "avg_us": 35.5,
+        "category": "dense_fp8_gemm"
+      },
+      {
+        "name": "std::enable_if<!",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.998,
+        "avg_us": 25.0,
+        "category": "bf16_gemm"
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.996,
+        "avg_us": 24.9,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_hc_mix_stats_partial_kernel",
+        "calls_per_step": 80.0,
+        "ms_per_step": 0.787,
+        "avg_us": 9.8,
+        "category": "other"
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.612,
+        "avg_us": 15.3,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.545,
+        "avg_us": 13.6,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "_hc_mix_reduce_sinkhorn_kernel",
+        "calls_per_step": 80.0,
+        "ms_per_step": 0.494,
+        "avg_us": 6.2,
+        "category": "other"
+      },
+      {
+        "name": "std::enable_if<!",
+        "calls_per_step": 1.0,
+        "ms_per_step": 0.448,
+        "avg_us": 448.2,
+        "category": "bf16_gemm"
+      },
+      {
+        "name": "sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bfloat16\u2026",
+        "calls_per_step": 202.0,
+        "ms_per_step": 0.249,
+        "avg_us": 1.2,
+        "category": "fp8_quant"
+      },
+      {
+        "name": "_reduce_block_fp8_split_k",
+        "calls_per_step": 160.0,
+        "ms_per_step": 0.236,
+        "avg_us": 1.5,
+        "category": "other"
+      },
+      {
+        "name": "_router_triton_kernel",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.223,
+        "avg_us": 5.6,
+        "category": "other"
+      },
+      {
+        "name": "_hc_combine_norm",
+        "calls_per_step": 79.0,
+        "ms_per_step": 0.21,
+        "avg_us": 2.7,
+        "category": "rope_norm_act"
+      },
+      {
+        "name": "flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_merge_kernel<64, 512, 64, 8>",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.194,
+        "avg_us": 4.9,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::doActivationKernel<__nv_fp8_e4m3, __nv_bfloat16, \u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.187,
+        "avg_us": 4.7,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel<__nv_fp8_e4m3, __nv_fp8_e4m\u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.173,
+        "avg_us": 4.3,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_page_split_kernel",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.165,
+        "avg_us": 4.1,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "sglang::tiny_n_gemm_kernel<sglang::GEMMTraitN<384u, 5120u, 3u, 32u>, 1u, float, true>",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.155,
+        "avg_us": 3.9,
+        "category": "bf16_gemm"
+      },
+      {
+        "name": "tensorrt_llm::kernels::quantize_with_block_size<",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.135,
+        "avg_us": 3.4,
+        "category": "other"
+      }
+    ],
+    "largest_gaps_us": [
+      1445.3,
+      1390.6,
+      1363.4,
+      1350.8,
+      1329.0,
+      1323.2,
+      1292.8,
+      1228.4,
+      1164.6,
+      1152.4
+    ]
+  }
+}

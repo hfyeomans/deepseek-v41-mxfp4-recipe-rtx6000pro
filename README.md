@@ -77,6 +77,11 @@ Need a GPU window (stop the GLM container first):
 | `kernels/e13/build.sh`, `kernels/e13/run.py` | E13: build the SM120 MXFP4×MXFP4 grouped GEMM (GPU-free, `dsv4-sm120:cuda-devel-https`) and run it at V4.1 expert shapes |
 | `download-model.sh` → `preflight.sh` → `serve.sh` → `wait-ready.py` → `verify.py` | the recipe chain; `preflight.sh` **fails closed** on 2 GPUs |
 | `bench-decode.py`, `bench-prefill.py` | the shared benchmark harness (also for the V4-Flash baseline) |
+| `serve-hybrid.sh` | E19–E21: the 2-GPU + CPU-expert (kt-kernel) hybrid; `EXTRA_SERVER_ARGS`, `KT_CPUINFER`, `KT_MAX_DEFERRED` |
+| `step-profile.py`, `gap-context.py` | E20/E21: per-step kernel timeline from a torch-profiler trace (`/start_profile`), and what surrounds each GPU idle gap |
+| `kt-cpu-per-step.sh`, `sched-wait-per-step.py` | E21: kt CPU-seconds per decode step, and per-thread run-queue wait / context switches (`/proc/<tid>/schedstat`) around one bench run |
+| `nll-score.py` | quality metric for approximations (expert deferral, kernels): teacher-forced mean NLL of `scripts/fixtures/nll-corpus.txt`, `--compare` a baseline JSON |
+| `greedy-logprobs.py` | gross sanity only — greedy picks flip at near-ties run-to-run on the hybrid (E21 r7); use `nll-score.py` for numbers |
 
 `scripts/ci.sh` runs unit tests, checks that the README verdict still agrees with the calculator, and scans tracked files for identifiers.
 

@@ -38,6 +38,12 @@ OVERLAY_DIR="${OVERLAY_DIR:-$HOME/dev/src/sglang-dsv41-overlay}"
 # Expert placement and CPU tier (E6-DESIGN, E17, E19).
 KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-208}"   # of 384 per layer; 224 does not fit at 32K
 KT_CPUINFER="${KT_CPUINFER:-16}"                   # one thread per core (E17)
+# Expert deferral (E21): each token's D lowest-scored routed experts are computed
+# during the next layer and added one layer late, hiding most of the CPU-tier wait.
+# D=4 keeps every token's top-2 on time: +22 % C1 / +17 % C2 / +22 % C4 over D=0,
+# teacher-forced NLL unchanged (ΔNLL −0.006, z 1.4). D=5 is also NLL-neutral but
+# NaN-crashes on the first bs=4 decode step; D=6 loses 0.23 nats/token. 0 disables.
+KT_MAX_DEFERRED="${KT_MAX_DEFERRED:-4}"
 MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.92}"
 CONTEXT_LENGTH="${CONTEXT_LENGTH:-32768}"
 CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-4096}"
@@ -62,6 +68,7 @@ server_args=(
   --kt-method MXFP4
   --kt-num-gpu-experts "$KT_NUM_GPU_EXPERTS"
   --kt-cpuinfer "$KT_CPUINFER"
+  --kt-max-deferred-experts-per-token "$KT_MAX_DEFERRED"
   --kt-threadpool-count 1
   --cuda-graph-backend-decode breakable
   --mem-fraction-static "$MEM_FRACTION_STATIC"

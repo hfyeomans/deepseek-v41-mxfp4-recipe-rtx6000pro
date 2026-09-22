@@ -1,0 +1,7 @@
+PASS models_alias {"model": "dsv41-flash-hybrid", "max_model_len": 32768}
+PASS context_ceiling {"max_model_len": 32768, "required": 16384}
+PASS arithmetic_thinking_off {"reply": "323", "ttft_s": 0.509, "usage": {"prompt_tokens": 17, "total_tokens": 19, "completion_tokens": 2, "prompt_tokens_details": null, "reasoning_tokens": 0}}
+PASS thinking_toggle {"tokens_on": 20, "tokens_off": 2}
+PASS tool_call {"tool_calls": [{"id": "call_2916d3f27bc64b9f846d2937", "index": 0, "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\": \"Lisbon\"}"}}]}
+PASS multi_needle {"found": 3, "needles": 3, "prompt_tokens": 13463, "ttft_s": 61.28, "total_s": 62.12, "finish_reason": "stop"}
+ALL PASS

@@ -1,0 +1,29 @@
+concurrency=2 max_tokens=200 steps=200
+  2         36.16     36.16     36.16       30.82       1.972     n/a
+
+thread group                                   n  run ms/step  rq-wait ms/step  wait/run  slices/step  vol cs/step  nonvol cs/step
+kt workers (numa_*)                           12      779.597            0.026     0.000          1.2          0.0            1.14
+TP main thread                                 2      127.269            0.023     0.000         30.7         30.3            0.45
+sglang::scheduler (TP main + helpers)         36       53.464            0.002     0.000        171.1        171.0            0.07
+cuda-EvtHandlr                                 2        0.899            0.008     0.009        185.4        185.4            0.00
+python3                                        1        0.540            0.000     0.000          1.9          1.8            0.01
+gloo_tcp_loop                                 14        0.488            0.020     0.041        102.2        102.2            0.01
+sglang::detoken                                1        0.260            0.000     0.000          1.1          1.1            0.00
+pt_gloo_runloop                                4        0.185            0.000     0.002         18.5         18.5            0.01
+ZMQbg/IO/0                                     3        0.070            0.000     0.000          2.5          2.5            0.00
+ZMQbg/IO/1                                     2        0.039            0.000     0.000          2.0          2.0            0.00
+pt_nccl_watchdg                                3        0.032            0.002     0.054          2.0          2.0            0.00
+
+per thread (top 12 by rq-wait):
+  sglang::schedul  pid 258987 tid 258987: run  63.237 ms/step, rq-wait   0.017 ms/step, nonvol   0.19/step, vol    16.0/step
+  numa_0_t_5       pid 258986 tid 259590: run  64.958 ms/step, rq-wait   0.010 ms/step, nonvol   0.19/step, vol     0.0/step
+  cuda-EvtHandlr   pid 258986 tid 259388: run   0.837 ms/step, rq-wait   0.008 ms/step, nonvol   0.00/step, vol   181.6/step
+  gloo_tcp_loop    pid 258987 tid 259469: run   0.021 ms/step, rq-wait   0.007 ms/step, nonvol   0.00/step, vol     6.5/step
+  gloo_tcp_loop    pid 258986 tid 259424: run   0.045 ms/step, rq-wait   0.007 ms/step, nonvol   0.01/step, vol    11.8/step
+  numa_0_t_1       pid 258986 tid 259586: run  64.962 ms/step, rq-wait   0.006 ms/step, nonvol   0.35/step, vol     0.0/step
+  sglang::schedul  pid 258986 tid 258986: run  64.033 ms/step, rq-wait   0.005 ms/step, nonvol   0.26/step, vol    14.2/step
+  numa_0_t_3       pid 258986 tid 259588: run  64.964 ms/step, rq-wait   0.004 ms/step, nonvol   0.07/step, vol     0.0/step
+  numa_0_m_0       pid 258986 tid 259598: run  64.966 ms/step, rq-wait   0.003 ms/step, nonvol   0.17/step, vol     0.0/step
+  gloo_tcp_loop    pid 258986 tid 259491: run   0.075 ms/step, rq-wait   0.003 ms/step, nonvol   0.00/step, vol     6.5/step
+  gloo_tcp_loop    pid 258986 tid 259486: run   0.028 ms/step, rq-wait   0.003 ms/step, nonvol   0.00/step, vol     6.5/step
+  pt_nccl_watchdg  pid 258986 tid 259402: run   0.012 ms/step, rq-wait   0.002 ms/step, nonvol   0.00/step, vol     0.7/step

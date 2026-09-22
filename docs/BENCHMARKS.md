@@ -32,6 +32,8 @@ Best measured runs with one harness (`scripts/bench-decode.py`, `bench-prefill.p
 
 **Verdict:** DSV4-Flash wins throughput about 2× across decode and short prefill and 2× on efficiency; GLM wins long-context prefill (cold 1M prompt in 261 s vs 504 s), VRAM headroom and vision. DSV4-Flash's decode lead is partly DSpark's higher acceptance, which is content-dependent. Both recipes now carry their measured best profiles (GLM: 16 slots, capture derived; DSV4: 16 slots, util 0.9651, capture 96) and the 325 W cap decision is in HARDWARE.md.
 
+**Where V4.1-Flash stands (2026-09-22):** the 2-GPU sglang-kt hybrid decodes at 38.5 tok/s C1 / 147 tok/s C4 and prefills at 216 tok/s — 3.4× below GLM's C1 and 18× below its prefill. See the E19–E21 section below.
+
 ## Checkpoint budget (measured from shard headers, P0)
 
 Source: [`evidence/budget-*.json`](../evidence/) via [`scripts/checkpoint-budget.py`](../scripts/checkpoint-budget.py).
@@ -289,6 +291,29 @@ Healthy runs say **+6 % prefill (8,582 vs 8,068) and +8 % decode (1,279 vs 1,188
 - **Efficiency cost:** decode 2.02 → 1.85 tok/s/W (−8 %) for nothing.
 - **Decision:** one system-wide cap, **325 W**, because GLM is the daily driver and V4-Flash loses no throughput and shows no thermal event at 86 °C. If V4-Flash becomes primary, `nvidia-smi -pl 300` (or disable `gpu-power-limit.service`) recovers the efficiency. Corrects E8b's "+4 % prefill at 325 W" — that was a 3-run median; with 5 runs and cache hits removed the gain is ≈ 1 %.
 - **Lesson for V4.1:** whatever engine serves it will be NVFP4/MXFP4 tensor-core GEMMs like V4-Flash, so expect power caps to be irrelevant to its decode and marginal to its prefill; the levers there are bytes per token, not watts.
+
+## E19–E21 — DeepSeek-V4.1-Flash on 2 GPUs: the sglang-kt hybrid (32K context, 2026-09-22)
+
+The first V4.1-Flash that runs on this box. Layout from E6-DESIGN: 208 experts per layer on the GPUs (MXFP4), 176 per layer on the CPU via kt-kernel (16 cores, TP rank 0 only), Engram tables on NVMe. Launch: `bash scripts/serve-hybrid.sh` (container `dsv41-kt`, model name `dsv41-flash-hybrid`), 300 W cap. Same harness as the scoreboard above; decode is 256 tokens, 3 runs, distinct prompts. Full logs in `plan/EXPERIMENTS.md` E19–E21 and `evidence/t36d-first-serve/`, `evidence/e20-*/`, `evidence/e21-kt-fixed-floor/`.
+
+| Metric | E19 first serve (attempt 6) | E20 tuned FP8 GEMM config | E21 deferral D=4 (**current default**) |
+|---|---|---|---|
+| C1 decode, median | 13.98 tok/s | 31.60 tok/s | **38.53 tok/s** |
+| C2 decode, aggregate | 28.0 | ≈ 38 (19/stream; the bs=2 dip) | 45.44 (22.7/stream; dip still there) |
+| C3 decode, aggregate | 64.0 (64 tok) | — | 111.71 (soak, 37.2/stream) |
+| C4 decode, aggregate | 86.7 | ≈ 120 | **146.96** (soak 146.86) |
+| Per-step at bs=1 | ≈ 71 ms | ≈ 32 ms | ≈ 26 ms |
+| Prefill, 16K prompt | 215.6 tok/s (TTFT 75 s) | not re-run (same CPU path) | not re-run |
+| Needles, 3/3 at 13,463 tokens | pass, TTFT 57 s | pass, TTFT 74 s | pass, TTFT 57.9 s |
+| `verify.py` 16K | all pass | all pass | all pass |
+| Quality, teacher-forced NLL (`nll-score.py`) | — | 1.48741 (D=0, the baseline) | ΔNLL −0.0061, paired z +1.44 (neutral) |
+| GPU power during C1 / C4 decode | 144/159 W / 172/189 W | — | never near the 300 W cap |
+| GPU temps C1 / C4 | 69/67 °C / 73/72 °C | — | — |
+
+- **What moved it.** E19→E20 (2.3×): the SGLang fork's `fp8_gemm` Triton config was an H100 default, 57 % of the step; a SM120-tuned config fixed it. E20→E21 (+22 %): `--kt-max-deferred-experts-per-token 4` lets kt-kernel skip up to 4 of the 176 CPU experts per token per layer when the GPU tier has them; NLL says the quality cost is zero within noise. D=5/D=6 crash the sampler with `probability tensor contains inf/nan` at bs≥4 (D=6 also costs +0.23 nats), so 4 is the ceiling until the NaN is root-caused.
+- **What has not moved.** Prefill runs the 176 CPU experts per layer on 16 cores: 216 tok/s, so a 16K prompt is 75 s TTFT and a 32K prompt would be ≈ 2.5 min. That is T3.6b2 (GPU-side layerwise prefill for CPU-resident experts). The bs=2 dip (per-stream throughput lower than bs=1 or bs=3) is open.
+- **Against the targets.** E14 asked for ≥ 130 tok/s C1 and ≥ 3.8K tok/s prefill. The hybrid is at 38.5 and 216: 3.4× and 18× short. FEASIBILITY's 50–78 tok/s decode ceiling assumed bandwidth-bound expert reads; the measured step is overhead-bound (40 per-layer CPU-tier waits, Engram graph breaks of 2.4–3 ms/step, rank 0 doing all CPU work at ≈ 1,880 % CPU while rank 1 idles at 120 %). Watts are irrelevant here: the GPUs sit at 150–190 W under a 300 W cap, so the 325 W discussion above does not apply to this recipe.
+- **Quality gate.** `scripts/nll-score.py` (teacher-forced NLL on a frozen 4,795-token corpus) is bit-identical across reruns and relaunches; greedy-token agreement is not (near-tie flips), so use NLL, not greedy diffs, to judge any change to the hybrid.
 
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 

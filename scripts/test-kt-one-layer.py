@@ -150,6 +150,13 @@ def main() -> int:
     ap.add_argument("--check-tokens", type=int, default=8)
     ap.add_argument("--bench-tokens", default="1,4,8,16,64,256")
     ap.add_argument("--bench-iters", type=int, default=20)
+    ap.add_argument("--cpu-slots-per-token", type=int, default=None,
+                    help="bench routing: how many of the top-k slots hit CPU experts "
+                         "(rest get GPU ids kt must skip). Default: all top-k (worst case). "
+                         "0 = every slot on GPU -> measures kt's fixed per-call floor.")
+    ap.add_argument("--shared-routing", action="store_true",
+                    help="bench routing: every token in the batch selects the same expert ids "
+                         "(tests whether cost follows distinct experts or token*expert calls)")
     ap.add_argument("--bench-cold", action="store_true",
                     help="draw fresh expert ids every iteration so the weights are not L3-hot "
                          "(the 64 MiB L3 holds half of a T=1 working set otherwise)")
@@ -298,8 +305,16 @@ def main() -> int:
         x = torch.randn(T, args.hidden).to(torch.bfloat16).to(dev)
         n_sets = args.bench_iters if args.bench_cold else 1
         routing = []
+        cpu_slots = args.topk if args.cpu_slots_per_token is None else args.cpu_slots_per_token
         for _ in range(n_sets):
             ids, w = random_routing(T)
+            if args.shared_routing:
+                ids = ids[:1].expand(T, -1).clone()
+            if cpu_slots < args.topk:
+                # slots [cpu_slots, topk) -> distinct GPU expert ids (kt skips them)
+                ids[:, cpu_slots:] = torch.stack(
+                    [torch.randperm(args.num_gpu_experts)[: args.topk - cpu_slots] for _ in range(T)]
+                )
             routing.append((to_kt_ids(ids.to(dev)), w.to(dev)))
         for i in range(3):
             ids, w = routing[i % n_sets]
@@ -318,7 +333,8 @@ def main() -> int:
             "ms_median": round(med, 3),
             "ms_min": round(times[0], 3),
             "ms_per_token": round(med / T, 4),
-            "expert_calls_per_step": T * args.topk,
+            "expert_calls_per_step": T * cpu_slots,
+            "cpu_slots_per_token": cpu_slots,
             "cold_ids": bool(args.bench_cold),
         }
         print(f"bench T={T:4d}: median {med:8.3f} ms  min {times[0]:8.3f} ms  ({med / T:.3f} ms/token)")
