@@ -39,7 +39,42 @@ No serials, UUIDs, asset tags or MAC addresses are recorded anywhere in this rep
 | GPU power | 300 W default, 325 W max, 325 W set system-wide (T2.9) | `nvidia-smi` |
 | Kernel perf access | `perf_event_paranoid=4` (uncore/DF counters unreadable without root) | sysfs |
 
-Not observable from Linux without root MSR/SMU access, so left blank in the "current" column below: FCLK, UCLK:MEMCLK mode, DRAM timings and voltages, PBO/PPT/TDC/EDC values, Determinism mode, Power Profile Selection, APBDIS, prefetcher state, interleave/hash modes, patrol scrubber. The owner can read them from the BIOS screens (photograph them, §5 step 1) or, for FCLK/UCLK, from `sudo` tools such as `zenpower`/`ryzen_smu` if installed — not done.
+Not observable from Linux without root MSR/SMU access: FCLK, UCLK:MEMCLK mode, DRAM timings and voltages, PBO/PPT/TDC/EDC values, Determinism mode, Power Profile Selection, APBDIS, prefetcher state, interleave/hash modes, patrol scrubber. §1.1 fills in what the owner's Boot 0 screen survey showed; the rest stays blank until the AMD CBS screens are photographed.
+
+### 1.1 Boot 0 screen survey (owner photographs, 2026-09-22; photos kept outside git)
+
+Read from 17 BIOS screen photographs (Main, Ai Tweaker and its sub-menus, Advanced, Tool, Server Mgmt). Values below are what the screens *display as set*; the AI Features prediction screen is excluded because it shows what AI Overclocking *would* apply, not what is applied.
+
+| Screen | Setting | Value shown | Note |
+|---|---|---|---|
+| Main | BIOS / AGESA | **1317**, build 02/03/2026; **ComboSP6PI 1.0.0.1e**; EC MBEC-X690-0135 | confirms sysfs DMI |
+| Main | CPU speed / memory | 5450 MHz (fused boost limit); 256 GB DDR5, Memory Frequency **6400 MHz** | |
+| Ai Tweaker | Ai Overclock Tuner | **[EXPO]** — profile `DDR5-6400 32-39-39-80 1.40 V / 1.40 V` | resolves the "unverified 1.4 V" row in §3.1: DRAM VDD/VDDQ **1.40 V**, i.e. EXPO, not JEDEC 1.1 V |
+| Ai Tweaker | Target CPU / DRAM | 4500 MHz / 6400 MHz; BCLK1 100.0000; PCIE Frequency Auto | |
+| Ai Tweaker | **FCLK Frequency** | **[Auto]** (option range shown 800–3000 MHz) | Auto is the *policy*, not the running clock. Under AGESA Auto with MEMCLK 3200 (UCLK=MEMCLK) the fabric typically settles at 2000 MHz — **inferred, not measured**; §7 row 1 records it as unknown until read from a monitoring page or `ryzen_smu` |
+| Ai Tweaker | CPU Core Ratio / Per-CCX / Core VID 0–1 / CCX0 Ratio (Rail0/Rail1) / Dynamic OC Switcher | all **Auto** | no manual core OC |
+| Ai Tweaker | Performance Bias / AI Features / DIGI+VRM / CPU Core0, Core1, VSOC voltage | all **Auto** | no manual voltage |
+| DRAM Timing Control | Primaries | **32-39-39-39-80** (tCL 32, tRCD 39/39, tRP 39, tRAS 80); every secondary/tertiary timing Auto | exactly the EXPO profile; tREFI not displayed on the photographed page, so the community "1317 resets tREFI" report stays unverified |
+| Tweaker's Paradise | Spread spectrum, skews, RComp | all Auto | |
+| Precision Boost Overdrive | PBO | **[Auto]**; Medium Load Boostit Auto; Peak Current Control Auto; Disable Current Limiter Auto; Per Core Power Offset **Disabled**; PBO Scalar Auto; CPU Fused Boost Clock Limit **5450**; Boost Clock Override Auto; Per-Core Boost Clock Limit Auto; Platform Thermal Throttle Limit Auto | stock limits; §3.5 "Current" updated |
+| Curve Shaper | Min Frequency – Low Temperature | Enabled, sign +, magnitude **0**; all other 14 regions Auto | a zero offset — effectively off; nothing to revert |
+| Advanced | — | menu only (USB4 item highlighted); **no AMD CBS values captured** | see gaps |
+| Tool | BIOS Image Rollback | Disabled; ASUS User Profile menu present | slot 1 save **not confirmed** |
+| Server Mgmt | BMC | firmware 2.01.30; OS Watchdog Timer Disabled | |
+
+**Verdict:** the board is running one vendor profile (EXPO DDR5-6400 @ 1.40 V) on top of factory-Auto everything else. There is no manual overclock, undervolt, fabric or timing change to unwind before Tier 1 — the "baseline" is the EXPO profile plus AGESA Auto.
+
+**Gaps that block Boot 1 (T1-d + T1-b) from being logged against a known "before" state** — none of the AMD CBS pages were photographed:
+
+- Advanced → AMD CBS → **DF Common Options**: NUMA nodes per socket (NPS), Memory interleaving, ACPI SRAT L3 as NUMA domain.
+- **SMU Common Options**: APBDIS, Power Profile Selection, DF PState Latency/Frequency Optimizer, DF Cstates, Determinism Control, TDP/PPT/TDC/EDC.
+- **UMC Common Options → DDR Options**: Power Down Enable, **DDR RAS** (Patrol Scrubber, Redirect Scrubber, Corrected Error Counter), ECC mode, memory interleave/hash.
+- **NBIO Common Options**: PCIe Speed PWM Control, IOMMU, ACS.
+- **CPU Common Options**: SMT, Global C-state Control, prefetchers.
+- The **actual FCLK** (Ai Tweaker only shows the Auto policy).
+- Confirmation that **User Profile slot 1** was saved (Tool → ASUS User Profile).
+
+The owner's photo folder also contains non-BIOS shots (terminal, `nvtop` under load, a Wi‑Fi module label with MAC/serial, case interior). That folder is listed in `.gitignore` and must never be committed.
 
 ## 2. What E25 says a BIOS change can and cannot buy
 
@@ -68,13 +103,13 @@ Manual: Ai Tweaker (Ai Overclock Tuner, Memory Frequency, DRAM Timing Control, D
 
 | Setting (path) | Current | Vendor default | Candidates | Mechanism / expected effect (BW · kt · PCIe) | Risk · ECC · rollback | Tier |
 |---|---|---|---|---|---|---|
-| Ai Overclock Tuner (Ai Tweaker) | an EXPO/XMP profile (configured 6400 vs SPD 4800) | Auto (= JEDEC SPD, 4800) | Auto; EXPO I; EXPO II; Manual | Selects which SPD profile programs frequency, primary timings and DRAM voltage. **BW: none expected CPU-side** (E25: cores pinned at 125 by the fabric); socket-level combined CPU+DMA falls only if 235 GB/s were near the DIMM limit (it is not at 4800). kt: none. PCIe: none | Auto → 1.1 V JEDEC, cooler DIMMs, more ECC margin; requires retraining (one long POST). Rollback: reload saved profile | 2 (H2 test) |
-| Memory Frequency (Ai Tweaker) | 6400 (via profile) | Auto | DDR5-4800; DDR5-5600; DDR5-6400 | Same as above with the profile's timings kept; 5600 is an intermediate point if 4800 shows a CPU-side drop (would falsify "fabric-bound" — E25 says it will not) | Retraining; a frequency the DIMM is not rated for is Tier 3 | 2 |
-| UCLK DIV1 MODE (Ai Tweaker) | — | Auto | Auto; UCLK=MEMCLK; UCLK=MEMCLK/2 | Memory-controller clock vs DRAM clock. UCLK=MEMCLK (1:1, 3200 MHz at 6400) is the low-latency mode; 1:2 halves controller clock. **kt: latency-side**, could move the per-layer wait a few %; BW: no CPU-side change expected (fabric-bound) | Auto already picks 1:1 when the SoC can hold it; forcing 1:1 at 6400 may need more SoC voltage → training failures. Rollback: profile | 3 |
-| FCLK Frequency (Ai Tweaker) / Infinity Fabric Frequency and Dividers (AMD Overclocking) | — (not readable) | Auto (manual: Auto = FCLK follows MCLK rules) | 2000; 2100; 2200 | **The one knob with a mechanism to lift the 62–63 GB/s per-CCD ceiling** (bytes per fabric clock × FCLK). Expected +5 % per +100 MHz on CPU read BW and on kt's T=1 latency if the link, not the DIMMs, is the wall — E25 says it is. PCIe: DMA also crosses the fabric; may rise slightly | **Overclocking.** Instability shows as MCE/WHEA-equivalent, silent data corruption risk before a crash; ECC covers DRAM only, not fabric transfers. Needs the full §5 gate incl. NLL and NaN soak. Rollback: profile / Clear CMOS | **3** |
-| DRAM Timing Control: tCL/tRCD/tRP/tRAS, Trfc1/Trfc2/Trfcsb, Refresh Interval (tREFI) | — | Auto (profile) | Auto | Timings change latency, not the fabric ceiling; kt's m=1 GEMV does long sequential reads where timings matter little. **Do not hand-tune.** Note the community report that BIOS 1317 resets tREFI to 12643 on POST (unverified here) — if the profile's value differs, that is a firmware bug to check on the Ai Tweaker screen, not a knob to tune | Tighter timings + ECC = corrected-error storms then UE. Tier 3 by definition | 3 |
+| Ai Overclock Tuner (Ai Tweaker) | **[EXPO]** — DDR5-6400 32-39-39-80 1.40 V (screen, §1.1) | Auto (= JEDEC SPD, 4800) | Auto; EXPO I; EXPO II; Manual | Selects which SPD profile programs frequency, primary timings and DRAM voltage. **BW: none expected CPU-side** (E25: cores pinned at 125 by the fabric); socket-level combined CPU+DMA falls only if 235 GB/s were near the DIMM limit (it is not at 4800). kt: none. PCIe: none | Auto → 1.1 V JEDEC, cooler DIMMs, more ECC margin; requires retraining (one long POST). Rollback: reload saved profile | 2 (H2 test) |
+| Memory Frequency (Ai Tweaker) | DDR5-6400 (via EXPO; screen) | Auto | DDR5-4800; DDR5-5600; DDR5-6400 | Same as above with the profile's timings kept; 5600 is an intermediate point if 4800 shows a CPU-side drop (would falsify "fabric-bound" — E25 says it will not) | Retraining; a frequency the DIMM is not rated for is Tier 3 | 2 |
+| UCLK DIV1 MODE (Ai Tweaker) | — (not on the photographed pages) | Auto | Auto; UCLK=MEMCLK; UCLK=MEMCLK/2 | Memory-controller clock vs DRAM clock. UCLK=MEMCLK (1:1, 3200 MHz at 6400) is the low-latency mode; 1:2 halves controller clock. **kt: latency-side**, could move the per-layer wait a few %; BW: no CPU-side change expected (fabric-bound) | Auto already picks 1:1 when the SoC can hold it; forcing 1:1 at 6400 may need more SoC voltage → training failures. Rollback: profile | 3 |
+| FCLK Frequency (Ai Tweaker) / Infinity Fabric Frequency and Dividers (AMD Overclocking) | **[Auto]** (screen; range 800–3000); running clock unknown, likely 2000 (inferred) | Auto (manual: Auto = FCLK follows MCLK rules) | 2000; 2100; 2200 | **The one knob with a mechanism to lift the 62–63 GB/s per-CCD ceiling** (bytes per fabric clock × FCLK). Expected +5 % per +100 MHz on CPU read BW and on kt's T=1 latency if the link, not the DIMMs, is the wall — E25 says it is. PCIe: DMA also crosses the fabric; may rise slightly | **Overclocking.** Instability shows as MCE/WHEA-equivalent, silent data corruption risk before a crash; ECC covers DRAM only, not fabric transfers. Needs the full §5 gate incl. NLL and NaN soak. Rollback: profile / Clear CMOS | **3** |
+| DRAM Timing Control: tCL/tRCD/tRP/tRAS, Trfc1/Trfc2/Trfcsb, Refresh Interval (tREFI) | 32-39-39-39-80 primaries, all else Auto (screen); tREFI not shown | Auto (profile) | Auto | Timings change latency, not the fabric ceiling; kt's m=1 GEMV does long sequential reads where timings matter little. **Do not hand-tune.** Note the community report that BIOS 1317 resets tREFI to 12643 on POST (unverified here) — if the profile's value differs, that is a firmware bug to check on the Ai Tweaker screen, not a knob to tune | Tighter timings + ECC = corrected-error storms then UE. Tier 3 by definition | 3 |
 | DRAM Refresh Rate (UMC: 3.9 µs / 1.95 µs) | — | Auto | Auto | Higher refresh rate halves the refresh interval for hot DIMMs — a *reliability* knob; costs a few % of BW | Set 1.95 µs only if DIMM temperatures exceed vendor limits (not measured; RDIMM SPD-hub thermal sensors are readable with root `dmidecode`/`i2c` — not done) | 1 (reliability) |
-| DRAM VDD / VDDQ / VPP, VDDIO, SoC/Uncore voltage (Ai Tweaker) | — (SMBIOS shows the JEDEC 1.1 V; EXPO 6400 profiles are typically 1.4 V VDD — **unverified**) | Auto (profile) | Auto | Voltage does not move bandwidth; it is what a profile needs for stability | Manual voltage = overclocking, thermal and DIMM-life risk. **Never manual without approval** | 3 |
+| DRAM VDD / VDDQ / VPP, VDDIO, SoC/Uncore voltage (Ai Tweaker) | VDD/VDDQ **1.40 V** from the EXPO profile (screen); VSOC, Core0/Core1 Auto; SMBIOS still reports the JEDEC 1.1 V nominal | Auto (profile) | Auto | Voltage does not move bandwidth; it is what a profile needs for stability | Manual voltage = overclocking, thermal and DIMM-life risk. **Never manual without approval** | 3 |
 | Memory Context Restore (Ai Tweaker / CBS) | — | Auto | Enabled | Skips full DRAM training on warm boot → shorter POST. No runtime effect | Known on some AGESA versions to cause boot loops with 4 DPC / high-capacity kits; with 1 DPC generally fine. Rollback: disable | 1 (convenience) |
 | DDR Training Runtime Reduction; DDR5 Nitro Mode; M_ORDERING | — | Auto | Auto | Training-time and controller-ordering knobs from the desktop OC menu. No known mechanism for our sequential-read workload | Nitro Mode trades latency for stability at high MT/s; leave Auto | 3 |
 | Power Down Enable (UMC / Ai Tweaker) | — | Auto (enabled) | Disabled | DRAM power-down between accesses adds exit latency on the first access after idle. **kt: latency-side** — the CPU tier idles between the ≈ 40 per-layer bursts; disabling could shave µs per burst. BW: none | Slightly higher idle DRAM power; safe. Rollback: Auto | 1 |
@@ -121,8 +156,8 @@ Manual: Ai Tweaker → Precision Boost Overdrive [Auto/Disabled/Enabled/Manual/E
 |---|---|---|---|---|---|---|
 | Determinism Control (SMU) | — | Auto (= Power determinism on TR PRO, i.e., run to the PPT) | Performance | Performance determinism clamps every part to the same guaranteed frequency curve (lower variance, lower peak); Power determinism lets this specific chip run to its power limit. **For a throughput box Power (default) is right**; Performance only lowers run-to-run variance at a cost | Reversible; no training | 1 (benchmark variance only; not recommended as a default) |
 | PPT / TDC / EDC limits (PBO Manual or SMU) | socket cap **350 W** (hsmp); E25 peak 144 W; E21 decode rank-0 process ≈ 19 threads busy — socket power under decode not yet logged (T1.11 adds it) | Auto (350 W PPT class) | keep Auto | Raising limits above stock is PBO (Tier 3). The workload never approached 350 W in any host bench; raising buys nothing. **Lowering** (e.g., 280 W) is a thermal/PSU option if the 1,500 W budget ever binds with 2 × 325 W GPUs (HARDWARE.md power table) | Lower PPT = lower sustained clocks → slower export (core-bound). Reversible | 1 (only as a power-budget tool) |
-| Precision Boost Overdrive | — | Auto | Disabled (= stock limits) or Auto | PBO Enabled/Enhancement raises PPT/TDC/EDC and boost beyond warranty limits | **Tier 3.** Not needed: no host bench was power-limited | 3 |
-| Curve Optimizer | — | Auto (off) | off | Per-core voltage-frequency offset; undervolting = OC territory; instability shows as silent errors before crashes | 3 | 3 |
+| Precision Boost Overdrive | **Auto** (screen); Fused Boost Clock Limit 5450; Per Core Power Offset Disabled; Boost Override, Scalar, Thermal Throttle Limit Auto | Auto | Disabled (= stock limits) or Auto | PBO Enabled/Enhancement raises PPT/TDC/EDC and boost beyond warranty limits | **Tier 3.** Not needed: no host bench was power-limited | 3 |
+| Curve Optimizer | Curve Shaper: one region Enabled with magnitude 0 (= no offset), rest Auto (screen) | Auto (off) | off | Per-core voltage-frequency offset; undervolting = OC territory; instability shows as silent errors before crashes | 3 | 3 |
 | Platform Thermal Throttle Limit / TjMax Control | — | Auto (95 °C class) | keep | Lowering caps sustained clocks earlier; Tctl peaked 57 °C in E25 — thermal headroom is not a problem after the owner's three case fans | — | — |
 
 ### 3.6 CPPC, P-states, C-states, fabric and SoC power management
@@ -248,11 +283,14 @@ Not in the first set (Tier 1 but expected negative or already testable in the OS
 
 | Date | Trial | Profile slot | Settings changed | Result | Kept? | Evidence |
 |---|---|---|---|---|---|---|
-| 2026-09-22 | baseline (no change) | 1 (to be saved by owner) | — | E25 numbers; EDAC ce=0 ue=0 | — | `evidence/e25-dram-revalidation/` |
+| 2026-09-22 | baseline (no change) — Boot 0 survey | 1 (save **not yet confirmed**) | — | BIOS 1317 / AGESA 1.0.0.1e; EXPO DDR5-6400 32-39-39-80 @ 1.40 V; FCLK Auto (running clock unknown); PBO Auto, all core/SoC voltages and timings Auto; AMD CBS pages not yet photographed. E25 numbers; EDAC ce=0 ue=0 | — | `evidence/e25-dram-revalidation/`; §1.1 |
 
 ## 8. Owner checklist before the first trial
 
-- [ ] Save User Profile slot 1 and photograph the screens (§5 step 1).
+- [x] Photograph the Ai Tweaker screens (§1.1, done 2026-09-22).
+- [ ] Save User Profile slot 1 and confirm it (Tool → ASUS User Profile).
+- [ ] Photograph Advanced → AMD CBS: DF Common, SMU Common, UMC → DDR Options (incl. DDR RAS), NBIO Common, CPU Common — these are the pages Boot 1 changes.
+- [ ] Read the running FCLK (a BIOS monitoring page, or `ryzen_smu` with root) so T3-a has a measured starting point.
 - [ ] Run the owner-only baselines: `sudo dmidecode -t memory` (configured speed + voltage line), `sudo journalctl -k | grep -icE 'mce|edac|ecc|xid'`, `nvidia-smi topo -p2p r`.
 - [ ] Confirm nothing is serving (`docker ps`), GPUs idle, no active benchmark.
 - [ ] Approve the exact trial (T1-a … T1-d as written, or an edited list). The agent then prepares the measurement commands; the owner performs the BIOS change and reboot.
