@@ -1,0 +1,6909 @@
+{
+  "device_name": "NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition",
+  "block_shape": [
+    32,
+    32
+  ],
+  "passes": [
+    "evidence/e20-dense-fp8-gemm/pass1",
+    "evidence/e20-dense-fp8-gemm/pass1b",
+    "evidence/e20-dense-fp8-gemm/pass2"
+  ],
+  "shapes": {
+    "N=16384,K=1280": {
+      "1": {
+        "baseline_us": 370.66,
+        "best_us": 30.72,
+        "speedup": 12.07,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 685.3,
+        "weight_GBps_baseline": 56.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 30.75,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 31.1,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 32.19,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 32.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "2": {
+        "baseline_us": 192.51,
+        "best_us": 30.62,
+        "speedup": 6.29,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 687.5,
+        "weight_GBps_baseline": 109.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 30.82,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 31.18,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 31.42,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 32.61,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "3": {
+        "baseline_us": 159.74,
+        "best_us": 30.72,
+        "speedup": 5.2,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 685.3,
+        "weight_GBps_baseline": 131.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 30.82,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 30.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 32.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "4": {
+        "baseline_us": 184.29,
+        "best_us": 32.67,
+        "speedup": 5.64,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4,
+          "SWAP_AB": true
+        },
+        "weight_GBps_best": 644.4,
+        "weight_GBps_baseline": 114.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 32.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "8": {
+        "baseline_us": 73.73,
+        "best_us": 32.38,
+        "speedup": 2.28,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 650.1,
+        "weight_GBps_baseline": 285.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 32.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 32.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 32.59,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "16": {
+        "baseline_us": 59.33,
+        "best_us": 32.8,
+        "speedup": 1.81,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 641.9,
+        "weight_GBps_baseline": 354.9,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 32.8,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 33.79,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 34.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 34.69,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 34.82,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "32": {
+        "baseline_us": 59.39,
+        "best_us": 36.86,
+        "speedup": 1.61,
+        "best_config": {
+          "BLOCK_SIZE_M": 32,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 571.1,
+        "weight_GBps_baseline": 354.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 36.86,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 37.89,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 8,
+            "num_stages": 4
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 4
+          },
+          {
+            "us": 40.96,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "64": {
+        "baseline_us": 63.49,
+        "best_us": 40.9,
+        "speedup": 1.55,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 514.8,
+        "weight_GBps_baseline": 331.6,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 40.9,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 40.96,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 41.17,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 41.34,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 42.62,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "128": {
+        "baseline_us": 79.9,
+        "best_us": 45.06,
+        "speedup": 1.77,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 467.3,
+        "weight_GBps_baseline": 263.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 45.06,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 45.44,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 4
+          },
+          {
+            "us": 47.02,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 8,
+            "num_stages": 4
+          },
+          {
+            "us": 47.1,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 49.15,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "256": {
+        "baseline_us": 137.18,
+        "best_us": 73.73,
+        "speedup": 1.86,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 285.6,
+        "weight_GBps_baseline": 153.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 73.73,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 75.1,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 75.68,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 75.78,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 75.82,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "512": {
+        "baseline_us": 282.62,
+        "best_us": 107.52,
+        "speedup": 2.63,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 195.8,
+        "weight_GBps_baseline": 74.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 107.52,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 110.5,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 114.69,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 116.7,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 118.21,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "1024": {
+        "baseline_us": 561.12,
+        "best_us": 194.53,
+        "speedup": 2.88,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 108.2,
+        "weight_GBps_baseline": 37.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 194.53,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 198.77,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 202.75,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 202.82,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 206.88,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "2048": {
+        "baseline_us": 1096.7,
+        "best_us": 379.94,
+        "speedup": 2.89,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 55.4,
+        "weight_GBps_baseline": 19.2,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 379.94,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 387.14,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 405.57,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 407.49,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 414.75,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "4096": {
+        "baseline_us": 2177.04,
+        "best_us": 720.9,
+        "speedup": 3.02,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 29.2,
+        "weight_GBps_baseline": 9.7,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 720.9,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 722.46,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 796.74,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 796.77,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 803.36,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      }
+    },
+    "N=1792,K=5120": {
+      "1": {
+        "baseline_us": 118.78,
+        "best_us": 14.34,
+        "speedup": 8.29,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 77.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 14.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.37,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.37,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.37,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "2": {
+        "baseline_us": 90.11,
+        "best_us": 14.34,
+        "speedup": 6.29,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 102.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 14.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.37,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.4,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.4,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "3": {
+        "baseline_us": 85.97,
+        "best_us": 14.34,
+        "speedup": 6.0,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 107.1,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 14.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.37,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.37,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.4,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 14.5,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "4": {
+        "baseline_us": 83.87,
+        "best_us": 16.35,
+        "speedup": 5.13,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 563.3,
+        "weight_GBps_baseline": 109.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 16.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "8": {
+        "baseline_us": 81.92,
+        "best_us": 16.29,
+        "speedup": 5.03,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 565.5,
+        "weight_GBps_baseline": 112.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 16.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "16": {
+        "baseline_us": 83.97,
+        "best_us": 16.42,
+        "speedup": 5.12,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 561.1,
+        "weight_GBps_baseline": 109.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 16.42,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.4,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.4,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "32": {
+        "baseline_us": 86.02,
+        "best_us": 26.59,
+        "speedup": 3.23,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 346.4,
+        "weight_GBps_baseline": 107.1,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 26.59,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "64": {
+        "baseline_us": 98.13,
+        "best_us": 30.72,
+        "speedup": 3.19,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 299.8,
+        "weight_GBps_baseline": 93.9,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.75,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 32.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "128": {
+        "baseline_us": 96.26,
+        "best_us": 40.96,
+        "speedup": 2.35,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 224.9,
+        "weight_GBps_baseline": 95.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 40.96,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 42.98,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 42.98,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 43.01,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 43.01,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "256": {
+        "baseline_us": 104.51,
+        "best_us": 69.73,
+        "speedup": 1.5,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 132.1,
+        "weight_GBps_baseline": 88.1,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 69.73,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 69.82,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 81.73,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 8,
+            "num_stages": 3
+          },
+          {
+            "us": 81.76,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 81.92,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 8,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "512": {
+        "baseline_us": 122.88,
+        "best_us": 84.13,
+        "speedup": 1.46,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 109.5,
+        "weight_GBps_baseline": 75.0,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 84.13,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 90.11,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 92.16,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 92.16,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 92.16,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "1024": {
+        "baseline_us": 221.22,
+        "best_us": 124.96,
+        "speedup": 1.77,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 73.7,
+        "weight_GBps_baseline": 41.6,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 124.96,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 124.96,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 129.06,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 129.06,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 131.49,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "2048": {
+        "baseline_us": 481.31,
+        "best_us": 221.2,
+        "speedup": 2.18,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 41.6,
+        "weight_GBps_baseline": 19.1,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 221.2,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 221.22,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 222.59,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 223.42,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 227.33,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "4096": {
+        "baseline_us": 892.67,
+        "best_us": 409.63,
+        "speedup": 2.18,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 22.5,
+        "weight_GBps_baseline": 10.3,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 409.63,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 413.66,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 419.84,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 424.5,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 425.95,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      }
+    },
+    "N=2304,K=5120": {
+      "1": {
+        "baseline_us": 149.5,
+        "best_us": 16.38,
+        "speedup": 9.13,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 722.8,
+        "weight_GBps_baseline": 79.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.42,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "2": {
+        "baseline_us": 118.78,
+        "best_us": 18.43,
+        "speedup": 6.44,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 99.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "3": {
+        "baseline_us": 90.18,
+        "best_us": 18.43,
+        "speedup": 4.89,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 131.3,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "4": {
+        "baseline_us": 88.06,
+        "best_us": 18.43,
+        "speedup": 4.78,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 134.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "8": {
+        "baseline_us": 84.06,
+        "best_us": 18.43,
+        "speedup": 4.56,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 140.9,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "16": {
+        "baseline_us": 85.5,
+        "best_us": 20.48,
+        "speedup": 4.18,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 578.3,
+        "weight_GBps_baseline": 138.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 20.48,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 20.48,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 20.48,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 20.48,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 20.48,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "32": {
+        "baseline_us": 88.1,
+        "best_us": 28.67,
+        "speedup": 3.07,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 413.0,
+        "weight_GBps_baseline": 134.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "64": {
+        "baseline_us": 98.3,
+        "best_us": 36.9,
+        "speedup": 2.66,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 321.0,
+        "weight_GBps_baseline": 120.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 36.9,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 38.88,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "128": {
+        "baseline_us": 100.32,
+        "best_us": 49.31,
+        "speedup": 2.03,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 240.2,
+        "weight_GBps_baseline": 118.0,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 49.31,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.17,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.2,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.2,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.23,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "256": {
+        "baseline_us": 104.83,
+        "best_us": 77.79,
+        "speedup": 1.35,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 152.2,
+        "weight_GBps_baseline": 113.0,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 77.79,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 77.82,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 86.02,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 88.06,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 90.08,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 8,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "512": {
+        "baseline_us": 167.97,
+        "best_us": 100.38,
+        "speedup": 1.67,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 118.0,
+        "weight_GBps_baseline": 70.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 100.38,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 102.4,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 102.4,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 102.43,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 102.51,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "1024": {
+        "baseline_us": 311.36,
+        "best_us": 141.34,
+        "speedup": 2.2,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 83.8,
+        "weight_GBps_baseline": 38.0,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 141.34,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 141.34,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 145.44,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 147.49,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 153.6,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "2048": {
+        "baseline_us": 637.98,
+        "best_us": 245.79,
+        "speedup": 2.6,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 48.2,
+        "weight_GBps_baseline": 18.6,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 245.79,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 245.79,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 253.98,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 255.78,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 256.03,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      },
+      "4096": {
+        "baseline_us": 1250.51,
+        "best_us": 475.86,
+        "speedup": 2.63,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 24.9,
+        "weight_GBps_baseline": 9.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 475.86,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 476.62,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 507.9,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 507.98,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 512.0,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1"
+      }
+    },
+    "N=25600,K=6144": {
+      "1": {
+        "baseline_us": 1219.73,
+        "best_us": 217.09,
+        "speedup": 5.62,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 727.4,
+        "weight_GBps_baseline": 129.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 217.09,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 229.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 229.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 231.42,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 237.18,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2": {
+        "baseline_us": 711.17,
+        "best_us": 210.94,
+        "speedup": 3.37,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 748.5,
+        "weight_GBps_baseline": 222.0,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 210.94,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 227.33,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 227.33,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 227.36,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 233.47,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "3": {
+        "baseline_us": 563.2,
+        "best_us": 212.99,
+        "speedup": 2.64,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 741.3,
+        "weight_GBps_baseline": 280.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 212.99,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 227.33,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 235.52,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 235.52,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 236.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4": {
+        "baseline_us": 581.95,
+        "best_us": 213.15,
+        "speedup": 2.73,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 740.8,
+        "weight_GBps_baseline": 271.3,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 213.15,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 229.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 229.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 231.42,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 235.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "8": {
+        "baseline_us": 444.42,
+        "best_us": 235.52,
+        "speedup": 1.89,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SWAP_AB": true
+        },
+        "weight_GBps_best": 670.4,
+        "weight_GBps_baseline": 355.3,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 235.52,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 235.65,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 239.23,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 240.64,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 247.84,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "16": {
+        "baseline_us": 423.97,
+        "best_us": 254.08,
+        "speedup": 1.67,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SWAP_AB": true
+        },
+        "weight_GBps_best": 621.5,
+        "weight_GBps_baseline": 372.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 254.08,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 260.1,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 260.13,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 261.63,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 264.19,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "32": {
+        "baseline_us": 440.32,
+        "best_us": 284.7,
+        "speedup": 1.55,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SWAP_AB": true
+        },
+        "weight_GBps_best": 554.6,
+        "weight_GBps_baseline": 358.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 284.7,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 284.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 288.83,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 290.8,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 290.82,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "64": {
+        "baseline_us": 477.22,
+        "best_us": 362.46,
+        "speedup": 1.32,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 435.6,
+        "weight_GBps_baseline": 330.9,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 362.46,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 362.5,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 372.74,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 372.74,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 380.96,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "128": {
+        "baseline_us": 643.1,
+        "best_us": 464.93,
+        "speedup": 1.38,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 339.6,
+        "weight_GBps_baseline": 245.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 464.93,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 485.38,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 485.38,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 487.52,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 489.49,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "256": {
+        "baseline_us": 1053.76,
+        "best_us": 592.32,
+        "speedup": 1.78,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 266.6,
+        "weight_GBps_baseline": 149.8,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 592.32,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 606.26,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 612.38,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 613.42,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 3
+          },
+          {
+            "us": 623.62,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "512": {
+        "baseline_us": 2135.07,
+        "best_us": 899.07,
+        "speedup": 2.37,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 175.6,
+        "weight_GBps_baseline": 74.0,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 899.07,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 899.1,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 923.65,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 933.92,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 950.34,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "1024": {
+        "baseline_us": 4166.19,
+        "best_us": 1549.34,
+        "speedup": 2.69,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 101.9,
+        "weight_GBps_baseline": 37.9,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 1549.34,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 1648.66,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 1650.69,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 1708.38,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 1741.89,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2048": {
+        "baseline_us": 8522.82,
+        "best_us": 2805.28,
+        "speedup": 3.04,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 56.3,
+        "weight_GBps_baseline": 18.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 2805.28,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 3079.17,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 3082.24,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 3227.2,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 3362.3,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4096": {
+        "baseline_us": 17034.3,
+        "best_us": 5605.41,
+        "speedup": 3.04,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 28.2,
+        "weight_GBps_baseline": 9.3,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 5605.41,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 5930.0,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 5940.26,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 6325.15,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 6672.45,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      }
+    },
+    "N=4096,K=1280": {
+      "1": {
+        "baseline_us": 102.4,
+        "best_us": 12.29,
+        "speedup": 8.33,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 428.3,
+        "weight_GBps_baseline": 51.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2": {
+        "baseline_us": 57.34,
+        "best_us": 12.29,
+        "speedup": 4.67,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 428.3,
+        "weight_GBps_baseline": 91.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "3": {
+        "baseline_us": 47.1,
+        "best_us": 12.29,
+        "speedup": 3.83,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 428.3,
+        "weight_GBps_baseline": 111.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 16
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4": {
+        "baseline_us": 38.91,
+        "best_us": 12.29,
+        "speedup": 3.17,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 428.3,
+        "weight_GBps_baseline": 135.3,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.32,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.32,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "8": {
+        "baseline_us": 34.82,
+        "best_us": 12.29,
+        "speedup": 2.83,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 428.3,
+        "weight_GBps_baseline": 151.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.32,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.45,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 13.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "16": {
+        "baseline_us": 34.82,
+        "best_us": 16.38,
+        "speedup": 2.13,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 321.3,
+        "weight_GBps_baseline": 151.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "32": {
+        "baseline_us": 32.77,
+        "best_us": 18.43,
+        "speedup": 1.78,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 285.6,
+        "weight_GBps_baseline": 160.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "64": {
+        "baseline_us": 34.82,
+        "best_us": 20.54,
+        "speedup": 1.69,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 256.2,
+        "weight_GBps_baseline": 151.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 20.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 20.61,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 22.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 22.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 22.5,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "128": {
+        "baseline_us": 38.91,
+        "best_us": 26.59,
+        "speedup": 1.46,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 197.9,
+        "weight_GBps_baseline": 135.3,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 26.59,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "256": {
+        "baseline_us": 40.96,
+        "best_us": 30.72,
+        "speedup": 1.33,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 171.3,
+        "weight_GBps_baseline": 128.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 34.82,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 34.82,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 256,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "512": {
+        "baseline_us": 63.49,
+        "best_us": 34.82,
+        "speedup": 1.82,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 151.2,
+        "weight_GBps_baseline": 82.9,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 34.82,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 36.45,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 36.86,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 38.8,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 38.88,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "1024": {
+        "baseline_us": 143.39,
+        "best_us": 61.41,
+        "speedup": 2.34,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 85.7,
+        "weight_GBps_baseline": 36.7,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 61.41,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 61.44,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 61.44,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 61.44,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 63.49,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2048": {
+        "baseline_us": 278.53,
+        "best_us": 106.88,
+        "speedup": 2.61,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 49.2,
+        "weight_GBps_baseline": 18.9,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 106.88,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 108.16,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 108.51,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 108.54,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 108.54,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4096": {
+        "baseline_us": 548.86,
+        "best_us": 192.54,
+        "speedup": 2.85,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 27.3,
+        "weight_GBps_baseline": 9.6,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 192.54,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 194.56,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 200.74,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 202.66,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 202.75,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      }
+    },
+    "N=5120,K=1152": {
+      "1": {
+        "baseline_us": 114.69,
+        "best_us": 12.29,
+        "speedup": 9.33,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 481.9,
+        "weight_GBps_baseline": 51.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2": {
+        "baseline_us": 63.49,
+        "best_us": 12.29,
+        "speedup": 5.17,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 481.9,
+        "weight_GBps_baseline": 93.3,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "3": {
+        "baseline_us": 49.54,
+        "best_us": 12.29,
+        "speedup": 4.03,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 481.9,
+        "weight_GBps_baseline": 119.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4": {
+        "baseline_us": 40.96,
+        "best_us": 12.29,
+        "speedup": 3.33,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 481.9,
+        "weight_GBps_baseline": 144.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 12.29,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "8": {
+        "baseline_us": 34.75,
+        "best_us": 14.3,
+        "speedup": 2.43,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 414.0,
+        "weight_GBps_baseline": 170.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 14.3,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 14.3,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 14.3,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 14.32,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 14.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "16": {
+        "baseline_us": 33.15,
+        "best_us": 14.34,
+        "speedup": 2.31,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 413.0,
+        "weight_GBps_baseline": 178.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 14.34,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 14.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 14.69,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 16.24,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 16.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "32": {
+        "baseline_us": 32.77,
+        "best_us": 18.43,
+        "speedup": 1.78,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 321.2,
+        "weight_GBps_baseline": 180.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 20.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "64": {
+        "baseline_us": 34.67,
+        "best_us": 24.46,
+        "speedup": 1.42,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 242.0,
+        "weight_GBps_baseline": 170.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 24.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 24.53,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 24.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 24.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 24.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "128": {
+        "baseline_us": 38.91,
+        "best_us": 26.62,
+        "speedup": 1.46,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 222.4,
+        "weight_GBps_baseline": 152.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 26.66,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 26.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 28.26,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "256": {
+        "baseline_us": 40.96,
+        "best_us": 30.72,
+        "speedup": 1.33,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 192.8,
+        "weight_GBps_baseline": 144.6,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 31.1,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 8,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "512": {
+        "baseline_us": 73.76,
+        "best_us": 34.78,
+        "speedup": 2.12,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 170.2,
+        "weight_GBps_baseline": 80.3,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 34.78,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 34.78,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 36.83,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 36.86,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 36.86,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "1024": {
+        "baseline_us": 157.81,
+        "best_us": 57.34,
+        "speedup": 2.75,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 103.3,
+        "weight_GBps_baseline": 37.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 57.34,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 59.39,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 59.39,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 59.39,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 61.44,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2048": {
+        "baseline_us": 314.37,
+        "best_us": 114.72,
+        "speedup": 2.74,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 51.6,
+        "weight_GBps_baseline": 18.8,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 114.72,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 114.86,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 116.77,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 116.83,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 118.78,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4096": {
+        "baseline_us": 626.66,
+        "best_us": 227.42,
+        "speedup": 2.76,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 26.0,
+        "weight_GBps_baseline": 9.4,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 227.42,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 229.41,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 233.5,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 235.55,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 235.55,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      }
+    },
+    "N=5120,K=4096": {
+      "1": {
+        "baseline_us": 258.05,
+        "best_us": 30.72,
+        "speedup": 8.4,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 2,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 685.3,
+        "weight_GBps_baseline": 81.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2": {
+        "baseline_us": 147.46,
+        "best_us": 30.72,
+        "speedup": 4.8,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 2,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 685.3,
+        "weight_GBps_baseline": 142.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "3": {
+        "baseline_us": 114.69,
+        "best_us": 30.72,
+        "speedup": 3.73,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 2,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 685.3,
+        "weight_GBps_baseline": 183.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.75,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.85,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4": {
+        "baseline_us": 100.32,
+        "best_us": 30.72,
+        "speedup": 3.27,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 2,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 685.3,
+        "weight_GBps_baseline": 209.9,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.75,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "8": {
+        "baseline_us": 94.21,
+        "best_us": 30.75,
+        "speedup": 3.06,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 2,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 684.6,
+        "weight_GBps_baseline": 223.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.75,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.78,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "16": {
+        "baseline_us": 86.02,
+        "best_us": 32.77,
+        "speedup": 2.62,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 642.5,
+        "weight_GBps_baseline": 244.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.77,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.83,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 34.66,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 2,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "32": {
+        "baseline_us": 90.11,
+        "best_us": 40.38,
+        "speedup": 2.23,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 521.3,
+        "weight_GBps_baseline": 233.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 40.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.85,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.93,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.93,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.96,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "64": {
+        "baseline_us": 92.11,
+        "best_us": 51.2,
+        "speedup": 1.8,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 411.2,
+        "weight_GBps_baseline": 228.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 51.2,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.3,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 53.25,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 53.28,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 53.28,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass2"
+      },
+      "128": {
+        "baseline_us": 92.16,
+        "best_us": 75.78,
+        "speedup": 1.22,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 277.8,
+        "weight_GBps_baseline": 228.4,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 75.78,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 75.84,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 81.89,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 8,
+            "num_stages": 4
+          },
+          {
+            "us": 81.92,
+            "BLOCK_SIZE_M": 32,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 8,
+            "num_stages": 4
+          },
+          {
+            "us": 81.92,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "256": {
+        "baseline_us": 112.67,
+        "best_us": 88.06,
+        "speedup": 1.28,
+        "best_config": {
+          "BLOCK_SIZE_M": 64,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 239.1,
+        "weight_GBps_baseline": 186.9,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 88.06,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 88.19,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 92.1,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 92.16,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 94.21,
+            "BLOCK_SIZE_M": 64,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "512": {
+        "baseline_us": 264.19,
+        "best_us": 120.83,
+        "speedup": 2.19,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 174.2,
+        "weight_GBps_baseline": 79.7,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 120.83,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 122.62,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 122.88,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 123.22,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 124.93,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "1024": {
+        "baseline_us": 546.85,
+        "best_us": 196.64,
+        "speedup": 2.78,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 107.1,
+        "weight_GBps_baseline": 38.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 196.64,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 198.66,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 198.69,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 199.68,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 204.83,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "2048": {
+        "baseline_us": 1081.41,
+        "best_us": 401.44,
+        "speedup": 2.69,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 1,
+          "num_warps": 4,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 52.4,
+        "weight_GBps_baseline": 19.5,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 401.44,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 401.46,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 403.49,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 403.52,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 405.25,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      },
+      "4096": {
+        "baseline_us": 2135.07,
+        "best_us": 787.47,
+        "speedup": 2.71,
+        "best_config": {
+          "BLOCK_SIZE_M": 128,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 2
+        },
+        "weight_GBps_best": 26.7,
+        "weight_GBps_baseline": 9.9,
+        "configs_tried": 144,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 787.47,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 791.57,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 2
+          },
+          {
+            "us": 798.5,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          },
+          {
+            "us": 798.59,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 816.22,
+            "BLOCK_SIZE_M": 128,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 1,
+            "num_warps": 4,
+            "num_stages": 3
+          }
+        ],
+        "from_pass": "evidence/e20-dense-fp8-gemm/pass1b"
+      }
+    }
+  }
+}

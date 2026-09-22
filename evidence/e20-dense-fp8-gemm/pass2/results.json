@@ -1,0 +1,1561 @@
+{
+  "device_name": "NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition",
+  "torch": "2.13.0+cu130",
+  "triton": "3.7.1",
+  "block_shape": [
+    32,
+    32
+  ],
+  "default_config": {
+    "BLOCK_SIZE_M": 64,
+    "BLOCK_SIZE_N": 32,
+    "BLOCK_SIZE_K": 32,
+    "GROUP_SIZE_M": 32,
+    "num_warps": 4,
+    "num_stages": 3
+  },
+  "small_m_max": 128,
+  "shapes": {
+    "N=16384,K=1280": {
+      "32": {
+        "baseline_us": 59.78,
+        "best_us": 38.91,
+        "speedup": 1.54,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SPLIT_K": 2
+        },
+        "weight_GBps_best": 541.1,
+        "weight_GBps_baseline": 352.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          }
+        ]
+      },
+      "64": {
+        "baseline_us": 63.42,
+        "best_us": 54.96,
+        "speedup": 1.15,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true
+        },
+        "weight_GBps_best": 383.1,
+        "weight_GBps_baseline": 331.9,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 54.96,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 55.3,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 55.3,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 55.31,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 59.2,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true
+          }
+        ]
+      },
+      "128": {
+        "baseline_us": 83.97,
+        "best_us": 67.17,
+        "speedup": 1.25,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4
+        },
+        "weight_GBps_best": 313.4,
+        "weight_GBps_baseline": 250.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 67.17,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 67.52,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 67.57,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4
+          },
+          {
+            "us": 67.58,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 67.58,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true
+          }
+        ]
+      }
+    },
+    "N=1792,K=5120": {
+      "32": {
+        "baseline_us": 86.02,
+        "best_us": 26.59,
+        "speedup": 3.23,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 346.4,
+        "weight_GBps_baseline": 107.1,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 26.59,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          }
+        ]
+      },
+      "64": {
+        "baseline_us": 98.13,
+        "best_us": 30.72,
+        "speedup": 3.19,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 299.8,
+        "weight_GBps_baseline": 93.9,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 30.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 30.75,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 32.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 32.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          }
+        ]
+      },
+      "128": {
+        "baseline_us": 96.26,
+        "best_us": 40.96,
+        "speedup": 2.35,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 224.9,
+        "weight_GBps_baseline": 95.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 40.96,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 42.98,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 42.98,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 43.01,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 43.01,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 4
+          }
+        ]
+      }
+    },
+    "N=2304,K=5120": {
+      "32": {
+        "baseline_us": 88.1,
+        "best_us": 28.67,
+        "speedup": 3.07,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 16
+        },
+        "weight_GBps_best": 413.0,
+        "weight_GBps_baseline": 134.4,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 28.67,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 16
+          }
+        ]
+      },
+      "64": {
+        "baseline_us": 98.3,
+        "best_us": 36.9,
+        "speedup": 2.66,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 321.0,
+        "weight_GBps_baseline": 120.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 36.9,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 38.88,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 16
+          },
+          {
+            "us": 38.91,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          }
+        ]
+      },
+      "128": {
+        "baseline_us": 100.32,
+        "best_us": 49.31,
+        "speedup": 2.03,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 240.2,
+        "weight_GBps_baseline": 118.0,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 49.31,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.17,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.2,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.2,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.23,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          }
+        ]
+      }
+    },
+    "N=25600,K=6144": {
+      "32": {
+        "baseline_us": 440.32,
+        "best_us": 284.7,
+        "speedup": 1.55,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SWAP_AB": true
+        },
+        "weight_GBps_best": 554.6,
+        "weight_GBps_baseline": 358.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 284.7,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 284.72,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 288.83,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 290.8,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 290.82,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          }
+        ]
+      },
+      "64": {
+        "baseline_us": 476.19,
+        "best_us": 366.54,
+        "speedup": 1.3,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3
+        },
+        "weight_GBps_best": 430.8,
+        "weight_GBps_baseline": 331.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 366.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3
+          },
+          {
+            "us": 370.69,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          },
+          {
+            "us": 380.96,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4
+          },
+          {
+            "us": 387.07,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true
+          },
+          {
+            "us": 391.23,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SWAP_AB": true
+          }
+        ]
+      },
+      "128": {
+        "baseline_us": 648.54,
+        "best_us": 532.54,
+        "speedup": 1.22,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 296.5,
+        "weight_GBps_baseline": 243.5,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 532.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 534.59,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 548.03,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 548.94,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 559.14,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          }
+        ]
+      }
+    },
+    "N=4096,K=1280": {
+      "32": {
+        "baseline_us": 32.77,
+        "best_us": 18.43,
+        "speedup": 1.78,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 32,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 285.6,
+        "weight_GBps_baseline": 160.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          }
+        ]
+      },
+      "64": {
+        "baseline_us": 34.82,
+        "best_us": 20.54,
+        "speedup": 1.69,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 4,
+          "SWAP_AB": true,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 256.2,
+        "weight_GBps_baseline": 151.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 20.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 20.61,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 22.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 22.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 3,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 22.5,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          }
+        ]
+      },
+      "128": {
+        "baseline_us": 38.91,
+        "best_us": 26.59,
+        "speedup": 1.46,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 197.9,
+        "weight_GBps_baseline": 135.3,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 26.59,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          }
+        ]
+      }
+    },
+    "N=5120,K=1152": {
+      "32": {
+        "baseline_us": 32.77,
+        "best_us": 18.43,
+        "speedup": 1.78,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 4,
+          "num_stages": 5,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 321.2,
+        "weight_GBps_baseline": 180.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.43,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 18.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 20.35,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 8
+          }
+        ]
+      },
+      "64": {
+        "baseline_us": 34.67,
+        "best_us": 24.46,
+        "speedup": 1.42,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 242.0,
+        "weight_GBps_baseline": 170.8,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 24.46,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 24.53,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 24.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 24.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 24.54,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SPLIT_K": 8
+          }
+        ]
+      },
+      "128": {
+        "baseline_us": 38.91,
+        "best_us": 26.62,
+        "speedup": 1.46,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5
+        },
+        "weight_GBps_best": 222.4,
+        "weight_GBps_baseline": 152.2,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 26.62,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          },
+          {
+            "us": 26.66,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 26.74,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 28.26,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5
+          }
+        ]
+      }
+    },
+    "N=5120,K=4096": {
+      "32": {
+        "baseline_us": 90.11,
+        "best_us": 40.38,
+        "speedup": 2.23,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 3,
+          "SPLIT_K": 8
+        },
+        "weight_GBps_best": 521.3,
+        "weight_GBps_baseline": 233.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 40.38,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 3,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.85,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.93,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.93,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 8
+          },
+          {
+            "us": 40.96,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 32,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          }
+        ]
+      },
+      "64": {
+        "baseline_us": 92.11,
+        "best_us": 51.2,
+        "speedup": 1.8,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 64,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true,
+          "SPLIT_K": 4
+        },
+        "weight_GBps_best": 411.2,
+        "weight_GBps_baseline": 228.6,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 51.2,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 51.3,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 53.25,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 4,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 53.28,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 4
+          },
+          {
+            "us": 53.28,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 4
+          }
+        ]
+      },
+      "128": {
+        "baseline_us": 100.38,
+        "best_us": 79.87,
+        "speedup": 1.26,
+        "best_config": {
+          "BLOCK_SIZE_M": 16,
+          "BLOCK_SIZE_N": 128,
+          "BLOCK_SIZE_K": 32,
+          "GROUP_SIZE_M": 32,
+          "num_warps": 2,
+          "num_stages": 5,
+          "SWAP_AB": true
+        },
+        "weight_GBps_best": 263.6,
+        "weight_GBps_baseline": 209.7,
+        "configs_tried": 480,
+        "configs_failed_to_launch": 0,
+        "configs_rejected_numerically": 0,
+        "top5": [
+          {
+            "us": 79.87,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true
+          },
+          {
+            "us": 79.9,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 4,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 79.94,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SWAP_AB": true,
+            "SPLIT_K": 2
+          },
+          {
+            "us": 81.86,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 64,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5
+          },
+          {
+            "us": 81.86,
+            "BLOCK_SIZE_M": 16,
+            "BLOCK_SIZE_N": 128,
+            "BLOCK_SIZE_K": 32,
+            "GROUP_SIZE_M": 32,
+            "num_warps": 2,
+            "num_stages": 5,
+            "SPLIT_K": 2
+          }
+        ]
+      }
+    }
+  },
+  "tuning_seconds": 363.5
+}

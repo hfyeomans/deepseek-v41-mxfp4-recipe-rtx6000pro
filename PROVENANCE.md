@@ -38,6 +38,8 @@ Recorded in [`evidence/hardware-inventory.json`](evidence/hardware-inventory.jso
 - `3805730e` compact CPU expert view in the kt-kernel loader (E17).
 - `a1ca246a` Engram `file` layout (E18).
 - `cd55166a` breakable-graph dataclass outputs + `extra` KV pool re-page to 64-row pages for FlashInfer's SM120 prefill (E19 blockers 3–4).
+- `32a25f37` seven tuned `w8a8 block_shape=[32, 32]` Triton configs for `NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition` and the `is_sm90` → `is_sm90 or is_sm120` gate in `fp8_kernel.py` (E20).
+- `1d6a98d3` zero-fill the SM120 page-split scratch buffers in `flash_mla_sm120.py` (T3.6d2 NaN probe).
 
 ## Qualification status
 
