@@ -321,6 +321,7 @@ Legend: **GPU-free** experiments do not touch the cards but still need a quiet h
 - Go criteria (initial, owner's): ≥ 10 % C1 wall-throughput gain over R0, no material per-stream regression at C3/C4, acceptance ≥ ~55 % as a health signal (throughput decides, not acceptance), NLL within gate, zero NaNs. **Stop or retune** if CPU wait per accepted token does not fall, if draft memory forces a worse expert/KV placement whose cost exceeds the gain, or if any instability appears.
 - Decision fed: `serve-hybrid.sh` gains `DSPARK` (0/1) and `DSPARK_K` env plumbing (default off until a round passes); BENCHMARKS.md gets the round tables; the E14 scoreboard's V4.1 column gets a "speculation on" row.
 - Learning pointers: LEARNING.md §1 (DSpark/MTP), §6 (how SGLang schedules verify steps), §10 E23 row.
+- Background and the reasoning behind the matrix (why a multi-token verify might amortise the ≈ 40 CPU boundaries, the fit arithmetic, the four-agent router context this feeds): [docs/research/HETEROGENEOUS-ROUTING-AND-OPTIMIZATION-NOTES.md](../docs/research/HETEROGENEOUS-ROUTING-AND-OPTIMIZATION-NOTES.md) §3–4; consolidated E19→E23 tables in [docs/research/BENCHMARK-EVOLUTION-AND-E20-FP8.md](../docs/research/BENCHMARK-EVOLUTION-AND-E20-FP8.md).
 
 ## E24 — NaN as a release defect: root-cause the remaining asserts and make a bad row fail the request, not the server (GPU + code reading; T3.13)
 

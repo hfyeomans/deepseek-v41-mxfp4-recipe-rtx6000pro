@@ -35,11 +35,19 @@ Recorded in [`evidence/hardware-inventory.json`](evidence/hardware-inventory.jso
 
 ## Overlay commits (`~/dev/src/sglang-dsv41-overlay`, branch `dsv41-kt-hybrid`, local only)
 
+Base: upstream `sgl-project/sglang` commit `da64c5cb` ("[DSV4.1] Support raw-index output in TopK v2 (port of #33672) (#39098)"), the commit the `dev-dsv41` image above was built from. Nothing is pushed; no fork or tag exists. Series on top of the base, oldest first (state 2026-09-22; per-commit upstream candidacy in [docs/research/OPEN-SOURCE-PLAN.md](docs/research/OPEN-SOURCE-PLAN.md)):
+
 - `3805730e` compact CPU expert view in the kt-kernel loader (E17).
 - `a1ca246a` Engram `file` layout (E18).
 - `cd55166a` breakable-graph dataclass outputs + `extra` KV pool re-page to 64-row pages for FlashInfer's SM120 prefill (E19 blockers 3–4).
 - `32a25f37` seven tuned `w8a8 block_shape=[32, 32]` Triton configs for `NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition` and the `is_sm90` → `is_sm90 or is_sm120` gate in `fp8_kernel.py` (E20).
 - `1d6a98d3` zero-fill the SM120 page-split scratch buffers in `flash_mla_sm120.py` (T3.6d2 NaN probe).
+- `11e7f745` kt expert deferral with the compact CPU view, `-1`-tolerant selector (E21).
+- `0138c6ad` layerwise streamed GPU prefill coordinator for CPU experts, `KT_GPU_PREFILL_MIN_TOKENS` (E22b).
+- `670994ac` `KT_NAN_PROBE_MIN_TOKENS` per-layer non-finite probe (E22d).
+- `6032dd44`, `3b1fedce` prefill-graph breaks gated on `is_extend_without_speculative()` (E23).
+- `71645529` breakable-graph dataclass outputs keep per-field row counts (E23).
+- `95f2fe3d` breakable-graph output cap = batch size × `captured_req_width` (E23).
 
 ## Qualification status
 
