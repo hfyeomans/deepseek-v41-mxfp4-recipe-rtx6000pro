@@ -37,6 +37,8 @@ This order avoids implementing rank-0 assumptions twice. Low-coupling kernel/dat
 - **Projected work:** replace the large-M block-scaled FP8 prefill path with a CUTLASS/DeepGEMM implementation behind the existing matmul contract. E20 measured only about **15% of FP8 peak** at `M=4096`; ownership does not change the GEMM mathematics.
 - **Projected work:** allocate fixed-address Engram gather/prefetch/staging buffers, prefetch layer-14 rows while layer 1 proceeds, and make graph-compatible copies consume those buffers. Keep file-backed mmap/page-cache ownership unchanged.
 - **Conditional projected work:** optimise kt export only if Stage 1 tracing shows conversion/copy dominates its **measured 90–117 ms per layer** rather than barriers or contention. Preserve the exported layout contract.
+- **Projected work (added 2026-09-23, Option B2 — the largest projected single-user lever):** a rank-0-only *prototype* that streams a fixed subset of the DRAM-resident experts over PCIe into fixed device buffers each decode step and computes them with the E13 SM120 grouped GEMM, while kt-kernel computes the rest on the cores. This validates the dataflow (DMA overlapped with the forward, byte accounting, E13 dispatch from the served path) and the one measured premise it rests on — E4b's **measured** additivity of CCD reads and PCIe DMA (121 + 114 = 235 GB/s) held for synthetic reads, not yet under a real forward. Calculator ceiling at the slot-3 bandwidth: **52 → 79 tok/s (projected)**. Stage 2 item 0 below; ROADMAP layout B2 and kernel-track K7 point here.
+- **Do not do yet (B2's other half):** the *placement policy* — which experts go to VRAM, CPU compute or PCIe streaming, per rank — and the PCIe-root/NUMA affinity of the streaming buffers. Both depend on rank ownership and belong to Stage 3.
 - **Do not do:** a native scheduler, native rank-0 dispatcher, or broad C++ rewrite of SGLang coordination.
 
 **Do at the multi-rank architecture stage, in Python first:**
@@ -45,6 +47,7 @@ This order avoids implementing rank-0 assumptions twice. Low-coupling kernel/dat
 - Validate fixed buffer addresses under CUDA graph capture/replay and batch-size changes.
 - Measure per-rank CPU work, barriers, H2D, Engram graph breaks, p99 inter-token latency, and failure containment.
 - Decide duplicate versus shared host state and pin each rank's workers/buffers to the appropriate CCD/NUMA locality.
+- Decide the B2 placement policy per rank (VRAM / CPU compute / PCIe stream) and each rank's streaming-buffer affinity to its own PCIe root; the Stage 2 prototype's fixed subset becomes a policy input here.
 
 **Do after the Python prototype passes:**
 
@@ -219,7 +222,7 @@ Rust is not a default migration destination. It becomes reasonable only for a se
              └────────────────────┘
 ```
 
-Stage 2 can proceed beside E23/E24 diagnosis, but Stage 3 cannot become the default until correctness gates pass. Stage 5 depends on stable Stage 3/4 contracts; it must not dictate them prematurely.
+Stage 2 can proceed beside E23/E24 diagnosis, but Stage 3 cannot become the default until correctness gates pass. Inside Stage 2 the B2 prototype (item 0) is independent of items 1–3 and is the first to run once Stage 1's attribution exists; its placement half is a Stage 3 input, not a Stage 2 deliverable. Stage 5 depends on stable Stage 3/4 contracts; it must not dictate them prematurely.
 
 ## Stage 0 — Preserve and stabilise the current qualified baseline
 
@@ -288,6 +291,7 @@ Keep rank-0 ownership and Python coordination. Change only kernels and dataflow 
 
 ### Work ordered by durability
 
+0. **Option B2 decode prototype — PCIe-streamed experts beside CPU-computed experts (added 2026-09-23).** Rank 0 only; kt-kernel path unchanged for the experts it keeps. Each decode step: DMA a fixed subset *S* of the CPU-resident experts' MXFP4 weights (chosen once at launch, e.g. the ≈ 40–60 highest-frequency CPU-tier experts per layer from the E7/E28 placement census) from pinned or page-cache host memory into a fixed device buffer on a side stream, overlapped with attention and the GPU-resident experts; compute them with the E13 kernel (`kernels/e13/`, **measured 1,397 GB/s at M=1**); merge with the kt outputs at the existing combine point. Why it is low-coupling: the buffer, the DMA schedule and the E13 dispatch have no rank in their contract — a later rank split changes *which* experts stream from *which* rank, not how. Why it is first: it is the only remaining lever whose ceiling the byte model puts above 60 tok/s on this box (**projected 79 tok/s split vs 52 CPU-only**, `feasibility-calc.py --dram-gbps 131`), and every environment knob is exhausted (E26). Prerequisites: Stage 1's per-step timeline (E26 A3's GPU-only step profile is a partial substitute: **measured** gpu_busy 15.4 ms of a ≈ 27 ms C1 step, every large gap a wait for the CPU tier); a pinned-host copy or page-cache-resident view of the streamed experts' weights (kt packs all experts per layer into host RAM already — **measured 8 GiB/layer**, so no new host footprint if the view aliases kt's buffer; a separate pinned copy costs |S| × 17.9 MiB × 40 layers). Go/stop gate: ≥ +10 % C1 wall at a fixed 226/158 placement with |S| ≈ 40 (**projected** +12–15 % if additivity holds: ≈ 0.7 GB/step leaves the CCD path), zero NaNs on the streamed experts (`verify-batch-consistency` + NLL gate), and the HSMP DRAM counter reading ≈ CCD + PCIe bytes rather than contention; stop if C1 does not move at |S| ≈ 40 (additivity fails under a real forward — record it, it kills B2 outright) or if the side-stream DMA extends the step (overlap fails — retune before abandoning). Rollback: `|S| = 0` is today's path. Tracks: ROADMAP layout B2, K7 (unblocked by this item), TASKS T3.6e–g tail.
 1. **Large-M block-scaled FP8 prefill kernel.** Keep E20's small-M Triton configs; introduce CUTLASS/DeepGEMM for large-M shapes behind shape-based dispatch. E20 measured **about 15% of FP8 peak at M=4096** and measured **2.2–3.0×** gains over the old default at that shape, leaving a native-kernel opportunity independent of ownership.
 2. **Fixed Engram buffers and early prefetch.** Keep mmap/page cache. Allocate fixed host/device slots; issue layer-14 requests while layer 1 runs; use residency-aware prefetch; copy into graph-consumable device addresses. Current Engram lookup is **measured 1.02 ms cold per token**, **measured about 3 µs warm**, but the two eager graph breaks are **measured 2.4–3 ms per step**.
 3. **Export optimisation only when proven.** Current streamed-prefill export is **measured 51.8 GB/s** in isolation and **measured core-bound**; server export is **measured about 90–117 ms per layer**. Optimise conversion/copy loops only if Stage 1 attributes a dominant fraction there. If barriers dominate, change buffering/barrier granularity without embedding rank ownership.
@@ -305,6 +309,7 @@ Keep rank-0 ownership and Python coordination. Change only kernels and dataflow 
 - Fixed-buffer replay survives all captured C1–C4 and verify widths in the candidate configuration (**pending**).
 - Engram graph-break time decreases from the **measured 2.4–3 ms per step** toward a **projected ≤1 ms per step target** without changing lookup results.
 - Export changes reduce measured server-side export or barrier time by a **projected ≥15%** before they are retained.
+- B2 prototype (item 0): ≥ +10 % C1 wall at fixed placement with ≈ 40 streamed experts per layer, zero NaN, NLL within the standing gate (|Δ| < 0.002), no C3/C4 per-stream regression beyond the **projected 5 % tolerance** (**pending**).
 
 ### Rollback
 
