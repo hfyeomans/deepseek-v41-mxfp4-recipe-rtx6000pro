@@ -1,0 +1,18 @@
+Boot 2 (T2-a, JEDEC) OS-side inventory, 2026-09-23 (owner confirmed BIOS shows 4800 MT/s; dmidecode needs sudo, see note)
+7.0.0-31-generic
+Model name:                              AMD Ryzen Threadripper PRO 9955WX 16-Cores
+Thread(s) per core:                      2
+Core(s) per socket:                      16
+Socket(s):                               1
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-31
+available: 1 nodes (0)
+node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+MemTotal:       258790840 kB
+HugePages_Total:       0
+Hugepagesize:       2048 kB
+/sys/devices/system/edac/mc/mc0/ce_count 0
+/sys/devices/system/edac/mc/mc0/ue_count 0
+journalctl -k -b | grep -ci 'mce:\|edac.*err\|Xid': 1
+0, 300.00 W
+1, 300.00 W
