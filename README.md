@@ -67,6 +67,7 @@ Runnable now, no model download, no GPU contention:
 | `hardware-inventory.sh [--json]` | identifier-free hardware sheet |
 | `bench-engram-gather.py --backend dram\|nvme` | E3: 48-row random gathers per token, DRAM vs NVMe |
 | `bench-dram.py` | E1: host copy bandwidth |
+| `hsmp-clocks.py [--watch 1 --n 30]` | live FCLK / MCLK / DDR-controller GB/s / socket W from the kernel `hsmp_acpi` driver, unprivileged — the BIOS Tier 3 clock check (E27) |
 
 Need a GPU window (stop the GLM container first):
 
