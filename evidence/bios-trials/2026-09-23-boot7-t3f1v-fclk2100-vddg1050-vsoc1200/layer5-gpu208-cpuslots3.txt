@@ -1,0 +1,43 @@
+/opt/sglang/lib/python3.12/site-packages/numpy/_core/getlimits.py:559: UserWarning: The value of the smallest subnormal for <class 'numpy.float32'> type is zero.
+  setattr(self, word, getattr(machar, word).flat[0])
+/opt/sglang/lib/python3.12/site-packages/numpy/_core/getlimits.py:91: UserWarning: The value of the smallest subnormal for <class 'numpy.float32'> type is zero.
+  return self._float_to_str(self.smallest_subnormal)
+/opt/sglang/lib/python3.12/site-packages/numpy/_core/getlimits.py:559: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
+  setattr(self, word, getattr(machar, word).flat[0])
+/opt/sglang/lib/python3.12/site-packages/numpy/_core/getlimits.py:91: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
+  return self._float_to_str(self.smallest_subnormal)
+set_mempolicy: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+[MXFP4SafeTensorLoader] Loaded 176 CPU experts from layers.5.ffn.experts as compact ids 0..175 (208 GPU experts not loaded)
+[NativeMoEWrapper Layer 5] load_experts: 301.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 2.1ms, cpp_load_weights: 455.0ms, cleanup: 280.0ms, total: 1038.7ms
+load: 1.3s  RSS 1.17->5.03 GiB  anon 0.67->4.40 GiB  (21.7 MiB per CPU expert; packed FP4+scale in checkpoint = 17.9 MiB)
+bench T=   1: median    0.582 ms  min    0.422 ms  (0.582 ms/token)
+bench T=   2: median    1.072 ms  min    0.980 ms  (0.536 ms/token)
+bench T=   3: median    1.554 ms  min    1.419 ms  (0.518 ms/token)
+bench T=   4: median    2.002 ms  min    1.771 ms  (0.501 ms/token)
+bench T=   8: median    3.836 ms  min    3.555 ms  (0.480 ms/token)
+wrote /out/layer5-gpu208-cpuslots3.json
+CPUInfer[0x1979a8e0]: Hello
+WorkerPool[0x18bdc0e0] 1 subpools, [numa:threads][0:16] 
+===========In NumaPool============
+In Numa Worker Pool at NUMA 0, 16 threads
+TP MOE layer 5, pool: 0x18bdc0e0, expert num: 176, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+CPUInfer[0x1979a8e0]: Goodbye
