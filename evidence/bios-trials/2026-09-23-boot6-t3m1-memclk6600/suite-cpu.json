@@ -1,0 +1,2373 @@
+{
+ "experiment": "E25 host DRAM bandwidth revalidation",
+ "date": "2026-09-23",
+ "topology": {
+  "ccds": {
+   "0": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "1": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ]
+  },
+  "numa_nodes": 1
+ },
+ "size_gib": 8.0,
+ "iters": 6,
+ "units": "GB/s decimal; read counts S, copy 2S, triad 3S",
+ "results": [
+  {
+   "pattern": "read",
+   "threads": 1,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.168331,
+    0.163818,
+    0.170298,
+    0.168758,
+    0.168848,
+    0.167897
+   ],
+   "gbps": [
+    51.03,
+    52.44,
+    50.44,
+    50.9,
+    50.87,
+    51.16
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0
+   ],
+   "pattern_label": "read",
+   "gbps_min": 50.44,
+   "gbps_median": 50.9,
+   "gbps_max": 52.44,
+   "wall_s": 1.42,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4893.4,
+     "max": 5422.9
+    },
+    "tctl_c": {
+     "mean": 38.9,
+     "max": 40.2
+    },
+    "socket_w": {
+     "mean": 79.5,
+     "max": 87.9
+    },
+    "samples": 8
+   },
+   "section": "scaling",
+   "label": "ccd0 x1"
+  },
+  {
+   "pattern": "read",
+   "threads": 2,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.139163,
+    0.139027,
+    0.138496,
+    0.137356,
+    0.137247,
+    0.137163
+   ],
+   "gbps": [
+    61.73,
+    61.79,
+    62.02,
+    62.54,
+    62.59,
+    62.63
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    1
+   ],
+   "pattern_label": "read",
+   "gbps_min": 61.79,
+   "gbps_median": 62.54,
+   "gbps_max": 62.63,
+   "wall_s": 1.11,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4714.0,
+     "max": 5417.6
+    },
+    "tctl_c": {
+     "mean": 40.3,
+     "max": 40.5
+    },
+    "socket_w": {
+     "mean": 83.1,
+     "max": 91.1
+    },
+    "samples": 6
+   },
+   "section": "scaling",
+   "label": "ccd0 x2"
+  },
+  {
+   "pattern": "read",
+   "threads": 4,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.139276,
+    0.139197,
+    0.136849,
+    0.137134,
+    0.136789,
+    0.139299
+   ],
+   "gbps": [
+    61.68,
+    61.71,
+    62.77,
+    62.64,
+    62.8,
+    61.67
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "pattern_label": "read",
+   "gbps_min": 61.67,
+   "gbps_median": 62.64,
+   "gbps_max": 62.8,
+   "wall_s": 1.08,
+   "monitor": {
+    "core_mhz": {
+     "mean": 5017.3,
+     "max": 5415.4
+    },
+    "tctl_c": {
+     "mean": 40.8,
+     "max": 40.9
+    },
+    "socket_w": {
+     "mean": 93.6,
+     "max": 99.8
+    },
+    "samples": 6
+   },
+   "section": "scaling",
+   "label": "ccd0 x4"
+  },
+  {
+   "pattern": "read",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.13776,
+    0.139081,
+    0.137314,
+    0.139334,
+    0.140231,
+    0.139039
+   ],
+   "gbps": [
+    62.35,
+    61.76,
+    62.56,
+    61.65,
+    61.26,
+    61.78
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "pattern_label": "read",
+   "gbps_min": 61.26,
+   "gbps_median": 61.76,
+   "gbps_max": 62.56,
+   "wall_s": 1.08,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4876.5,
+     "max": 5407.0
+    },
+    "tctl_c": {
+     "mean": 41.2,
+     "max": 41.9
+    },
+    "socket_w": {
+     "mean": 102.1,
+     "max": 113.9
+    },
+    "samples": 6
+   },
+   "section": "scaling",
+   "label": "ccd0 x8"
+  },
+  {
+   "pattern": "read",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.13551,
+    0.13575,
+    0.137865,
+    0.137031,
+    0.137641,
+    0.137095
+   ],
+   "gbps": [
+    63.39,
+    63.28,
+    62.31,
+    62.69,
+    62.41,
+    62.66
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "pattern_label": "read",
+   "gbps_min": 62.31,
+   "gbps_median": 62.66,
+   "gbps_max": 63.28,
+   "wall_s": 1.06,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4621.3,
+     "max": 5040.9
+    },
+    "tctl_c": {
+     "mean": 41.6,
+     "max": 42.0
+    },
+    "socket_w": {
+     "mean": 95.7,
+     "max": 104.4
+    },
+    "samples": 6
+   },
+   "section": "scaling",
+   "label": "ccd1 x8"
+  },
+  {
+   "pattern": "read",
+   "threads": 2,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.087334,
+    0.088611,
+    0.087517,
+    0.088564,
+    0.087931,
+    0.088348
+   ],
+   "gbps": [
+    98.36,
+    96.94,
+    98.15,
+    96.99,
+    97.69,
+    97.23
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8
+   ],
+   "pattern_label": "read",
+   "gbps_min": 96.94,
+   "gbps_median": 97.23,
+   "gbps_max": 98.15,
+   "wall_s": 0.75,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4230.7,
+     "max": 5238.0
+    },
+    "tctl_c": {
+     "mean": 41.0,
+     "max": 41.1
+    },
+    "socket_w": {
+     "mean": 88.1,
+     "max": 104.1
+    },
+    "samples": 4
+   },
+   "section": "scaling",
+   "label": "split x2"
+  },
+  {
+   "pattern": "read",
+   "threads": 4,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.068639,
+    0.068546,
+    0.068552,
+    0.068588,
+    0.068549,
+    0.070958
+   ],
+   "gbps": [
+    125.15,
+    125.32,
+    125.31,
+    125.24,
+    125.31,
+    121.06
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9
+   ],
+   "pattern_label": "read",
+   "gbps_min": 121.06,
+   "gbps_median": 125.31,
+   "gbps_max": 125.32,
+   "wall_s": 0.57,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4385.7,
+     "max": 5236.0
+    },
+    "tctl_c": {
+     "mean": 41.0,
+     "max": 41.0
+    },
+    "socket_w": {
+     "mean": 93.6,
+     "max": 102.6
+    },
+    "samples": 3
+   },
+   "section": "scaling",
+   "label": "split x4"
+  },
+  {
+   "pattern": "read",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.070775,
+    0.068978,
+    0.069167,
+    0.068532,
+    0.068471,
+    0.068079
+   ],
+   "gbps": [
+    121.37,
+    124.53,
+    124.19,
+    125.34,
+    125.45,
+    126.18
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11
+   ],
+   "pattern_label": "read",
+   "gbps_min": 124.19,
+   "gbps_median": 125.34,
+   "gbps_max": 126.18,
+   "wall_s": 0.55,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4509.0,
+     "max": 5231.0
+    },
+    "tctl_c": {
+     "mean": 40.9,
+     "max": 41.0
+    },
+    "socket_w": {
+     "mean": 113.2,
+     "max": 122.4
+    },
+    "samples": 3
+   },
+   "section": "scaling",
+   "label": "split x8"
+  },
+  {
+   "pattern": "read",
+   "threads": 12,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.068577,
+    0.068752,
+    0.070614,
+    0.070849,
+    0.069535,
+    0.069243
+   ],
+   "gbps": [
+    125.26,
+    124.94,
+    121.65,
+    121.24,
+    123.53,
+    124.05
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13
+   ],
+   "pattern_label": "read",
+   "gbps_min": 121.24,
+   "gbps_median": 123.53,
+   "gbps_max": 124.94,
+   "wall_s": 0.55,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4162.3,
+     "max": 5224.7
+    },
+    "tctl_c": {
+     "mean": 41.0,
+     "max": 41.0
+    },
+    "socket_w": {
+     "mean": 116.7,
+     "max": 135.5
+    },
+    "samples": 3
+   },
+   "section": "scaling",
+   "label": "split x12"
+  },
+  {
+   "pattern": "read",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.06868,
+    0.068338,
+    0.068215,
+    0.068441,
+    0.06838,
+    0.068559
+   ],
+   "gbps": [
+    125.07,
+    125.7,
+    125.92,
+    125.51,
+    125.62,
+    125.29
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "read",
+   "gbps_min": 125.29,
+   "gbps_median": 125.62,
+   "gbps_max": 125.92,
+   "wall_s": 0.54,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4097.8,
+     "max": 5223.1
+    },
+    "tctl_c": {
+     "mean": 41.2,
+     "max": 41.2
+    },
+    "socket_w": {
+     "mean": 125.9,
+     "max": 141.0
+    },
+    "samples": 3
+   },
+   "section": "scaling",
+   "label": "split x16"
+  },
+  {
+   "pattern": "read",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.143029,
+    0.142957,
+    0.142884,
+    0.143031,
+    0.142925,
+    0.143097
+   ],
+   "gbps": [
+    60.06,
+    60.09,
+    60.12,
+    60.06,
+    60.1,
+    60.03
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+   ],
+   "pattern_label": "read",
+   "gbps_min": 60.03,
+   "gbps_median": 60.09,
+   "gbps_max": 60.12,
+   "wall_s": 1.11,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4785.8,
+     "max": 5407.5
+    },
+    "tctl_c": {
+     "mean": 41.5,
+     "max": 41.8
+    },
+    "socket_w": {
+     "mean": 106.5,
+     "max": 109.3
+    },
+    "samples": 6
+   },
+   "section": "scaling",
+   "label": "smt-ccd0 x16"
+  },
+  {
+   "pattern": "read",
+   "threads": 32,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.072096,
+    0.073872,
+    0.07242,
+    0.071762,
+    0.071593,
+    0.071717
+   ],
+   "gbps": [
+    119.15,
+    116.28,
+    118.61,
+    119.7,
+    119.98,
+    119.77
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15,
+    16,
+    24,
+    17,
+    25,
+    18,
+    26,
+    19,
+    27,
+    20,
+    28,
+    21,
+    29,
+    22,
+    30,
+    23,
+    31
+   ],
+   "pattern_label": "read",
+   "gbps_min": 116.28,
+   "gbps_median": 119.7,
+   "gbps_max": 119.98,
+   "wall_s": 0.57,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4233.5,
+     "max": 5224.0
+    },
+    "tctl_c": {
+     "mean": 41.9,
+     "max": 42.0
+    },
+    "socket_w": {
+     "mean": 117.6,
+     "max": 140.2
+    },
+    "samples": 3
+   },
+   "section": "scaling",
+   "label": "smt-all x32"
+  },
+  {
+   "pattern": "read",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": false,
+   "anon_hugepages_kib": 0,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.068799,
+    0.071183,
+    0.069276,
+    0.069739,
+    0.069217,
+    0.069172
+   ],
+   "gbps": [
+    124.85,
+    120.67,
+    124.0,
+    123.17,
+    124.1,
+    124.18
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "read",
+   "gbps_min": 120.67,
+   "gbps_median": 124.0,
+   "gbps_max": 124.18,
+   "wall_s": 0.76,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4382.0,
+     "max": 5223.2
+    },
+    "tctl_c": {
+     "mean": 43.1,
+     "max": 43.4
+    },
+    "socket_w": {
+     "mean": 131.0,
+     "max": 143.1
+    },
+    "samples": 4
+   },
+   "section": "scaling",
+   "label": "split x16 4KiB pages"
+  },
+  {
+   "pattern": "read",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.068422,
+    0.06835,
+    0.068395,
+    0.068741,
+    0.06977,
+    0.071292
+   ],
+   "gbps": [
+    125.54,
+    125.68,
+    125.59,
+    124.96,
+    123.12,
+    120.49
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "read",
+   "gbps_min": 120.49,
+   "gbps_median": 124.96,
+   "gbps_max": 125.68,
+   "wall_s": 0.54,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3955.3,
+     "max": 5223.5
+    },
+    "tctl_c": {
+     "mean": 43.1,
+     "max": 43.1
+    },
+    "socket_w": {
+     "mean": 115.2,
+     "max": 140.5
+    },
+    "samples": 3
+   },
+   "section": "scaling",
+   "label": "split x16 repeat"
+  },
+  {
+   "pattern": "write",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.111609,
+    0.110994,
+    0.110731,
+    0.110008,
+    0.110082,
+    0.110024
+   ],
+   "gbps": [
+    76.96,
+    77.39,
+    77.57,
+    78.08,
+    78.03,
+    78.07
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "write",
+   "gbps_min": 77.39,
+   "gbps_median": 78.03,
+   "gbps_max": 78.08,
+   "wall_s": 0.79,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4476.2,
+     "max": 5227.1
+    },
+    "tctl_c": {
+     "mean": 42.9,
+     "max": 43.0
+    },
+    "socket_w": {
+     "mean": 123.5,
+     "max": 129.7
+    },
+    "samples": 4
+   },
+   "section": "patterns",
+   "label": "split x16"
+  },
+  {
+   "pattern": "write",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.219259,
+    0.218604,
+    0.218256,
+    0.219474,
+    0.218688,
+    0.218597
+   ],
+   "gbps": [
+    39.18,
+    39.29,
+    39.36,
+    39.14,
+    39.28,
+    39.3
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "pattern_label": "write",
+   "gbps_min": 39.14,
+   "gbps_median": 39.29,
+   "gbps_max": 39.36,
+   "wall_s": 1.56,
+   "monitor": {
+    "core_mhz": {
+     "mean": 5201.9,
+     "max": 5413.8
+    },
+    "tctl_c": {
+     "mean": 42.6,
+     "max": 42.8
+    },
+    "socket_w": {
+     "mean": 105.3,
+     "max": 116.2
+    },
+    "samples": 8
+   },
+   "section": "patterns",
+   "label": "ccd0 x8"
+  },
+  {
+   "pattern": "write",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": true,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.088603,
+    0.088462,
+    0.088458,
+    0.088846,
+    0.08848,
+    0.088487
+   ],
+   "gbps": [
+    96.95,
+    97.1,
+    97.11,
+    96.68,
+    97.08,
+    97.08
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "write-nt",
+   "gbps_min": 96.68,
+   "gbps_median": 97.08,
+   "gbps_max": 97.11,
+   "wall_s": 0.66,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4221.8,
+     "max": 5225.0
+    },
+    "tctl_c": {
+     "mean": 42.3,
+     "max": 42.4
+    },
+    "socket_w": {
+     "mean": 114.3,
+     "max": 127.3
+    },
+    "samples": 4
+   },
+   "section": "patterns",
+   "label": "split x16"
+  },
+  {
+   "pattern": "write",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": true,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.177052,
+    0.176925,
+    0.177198,
+    0.176979,
+    0.176978,
+    0.1769
+   ],
+   "gbps": [
+    48.52,
+    48.55,
+    48.48,
+    48.54,
+    48.54,
+    48.56
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "pattern_label": "write-nt",
+   "gbps_min": 48.48,
+   "gbps_median": 48.54,
+   "gbps_max": 48.56,
+   "wall_s": 1.31,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4958.2,
+     "max": 5415.2
+    },
+    "tctl_c": {
+     "mean": 42.0,
+     "max": 42.1
+    },
+    "socket_w": {
+     "mean": 93.7,
+     "max": 99.0
+    },
+    "samples": 7
+   },
+   "section": "patterns",
+   "label": "ccd0 x8"
+  },
+  {
+   "pattern": "copy",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 17179869184,
+   "hugepage": true,
+   "anon_hugepages_kib": 16777216,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.166119,
+    0.165629,
+    0.165092,
+    0.163018,
+    0.163172,
+    0.164261
+   ],
+   "gbps": [
+    103.42,
+    103.73,
+    104.06,
+    105.39,
+    105.29,
+    104.59
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "copy",
+   "gbps_min": 103.73,
+   "gbps_median": 104.59,
+   "gbps_max": 105.39,
+   "wall_s": 1.24,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4712.9,
+     "max": 5225.4
+    },
+    "tctl_c": {
+     "mean": 41.9,
+     "max": 41.9
+    },
+    "socket_w": {
+     "mean": 127.5,
+     "max": 141.2
+    },
+    "samples": 7
+   },
+   "section": "patterns",
+   "label": "split x16"
+  },
+  {
+   "pattern": "copy",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 17179869184,
+   "hugepage": true,
+   "anon_hugepages_kib": 16777216,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.299328,
+    0.300798,
+    0.299904,
+    0.298314,
+    0.300602,
+    0.29916
+   ],
+   "gbps": [
+    57.39,
+    57.11,
+    57.28,
+    57.59,
+    57.15,
+    57.43
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "pattern_label": "copy",
+   "gbps_min": 57.11,
+   "gbps_median": 57.28,
+   "gbps_max": 57.59,
+   "wall_s": 2.28,
+   "monitor": {
+    "core_mhz": {
+     "mean": 5122.5,
+     "max": 5411.9
+    },
+    "tctl_c": {
+     "mean": 41.9,
+     "max": 42.1
+    },
+    "socket_w": {
+     "mean": 106.4,
+     "max": 114.2
+    },
+    "samples": 12
+   },
+   "section": "patterns",
+   "label": "ccd0 x8"
+  },
+  {
+   "pattern": "copy",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 17179869184,
+   "hugepage": true,
+   "anon_hugepages_kib": 16777216,
+   "nt": true,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.125705,
+    0.127125,
+    0.126377,
+    0.125546,
+    0.12552,
+    0.125219
+   ],
+   "gbps": [
+    136.67,
+    135.14,
+    135.94,
+    136.84,
+    136.87,
+    137.2
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "copy-nt",
+   "gbps_min": 135.14,
+   "gbps_median": 136.84,
+   "gbps_max": 137.2,
+   "wall_s": 1.01,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4462.1,
+     "max": 5227.7
+    },
+    "tctl_c": {
+     "mean": 42.2,
+     "max": 42.2
+    },
+    "socket_w": {
+     "mean": 119.5,
+     "max": 135.7
+    },
+    "samples": 5
+   },
+   "section": "patterns",
+   "label": "split x16"
+  },
+  {
+   "pattern": "copy",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 17179869184,
+   "hugepage": true,
+   "anon_hugepages_kib": 16777216,
+   "nt": true,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.254279,
+    0.253337,
+    0.253073,
+    0.25346,
+    0.253284,
+    0.253108
+   ],
+   "gbps": [
+    67.56,
+    67.81,
+    67.89,
+    67.78,
+    67.83,
+    67.88
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "pattern_label": "copy-nt",
+   "gbps_min": 67.78,
+   "gbps_median": 67.83,
+   "gbps_max": 67.89,
+   "wall_s": 2.01,
+   "monitor": {
+    "core_mhz": {
+     "mean": 5288.7,
+     "max": 5411.1
+    },
+    "tctl_c": {
+     "mean": 42.0,
+     "max": 42.1
+    },
+    "socket_w": {
+     "mean": 107.3,
+     "max": 126.7
+    },
+    "samples": 10
+   },
+   "section": "patterns",
+   "label": "ccd0 x8"
+  },
+  {
+   "pattern": "triad",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 25769803776,
+   "hugepage": true,
+   "anon_hugepages_kib": 25165824,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.228958,
+    0.225411,
+    0.223584,
+    0.22293,
+    0.225808,
+    0.225188
+   ],
+   "gbps": [
+    112.55,
+    114.32,
+    115.26,
+    115.6,
+    114.12,
+    114.44
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "triad",
+   "gbps_min": 114.12,
+   "gbps_median": 114.44,
+   "gbps_max": 115.6,
+   "wall_s": 1.7,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4923.8,
+     "max": 5225.5
+    },
+    "tctl_c": {
+     "mean": 42.6,
+     "max": 43.2
+    },
+    "socket_w": {
+     "mean": 137.6,
+     "max": 145.8
+    },
+    "samples": 9
+   },
+   "section": "patterns",
+   "label": "split x16"
+  },
+  {
+   "pattern": "triad",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 25769803776,
+   "hugepage": true,
+   "anon_hugepages_kib": 25165824,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.424483,
+    0.423364,
+    0.425636,
+    0.424048,
+    0.425097,
+    0.42361
+   ],
+   "gbps": [
+    60.71,
+    60.87,
+    60.54,
+    60.77,
+    60.62,
+    60.83
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "pattern_label": "triad",
+   "gbps_min": 60.54,
+   "gbps_median": 60.77,
+   "gbps_max": 60.87,
+   "wall_s": 3.21,
+   "monitor": {
+    "core_mhz": {
+     "mean": 5198.4,
+     "max": 5411.2
+    },
+    "tctl_c": {
+     "mean": 43.4,
+     "max": 43.8
+    },
+    "socket_w": {
+     "mean": 109.8,
+     "max": 118.6
+    },
+    "samples": 16
+   },
+   "section": "patterns",
+   "label": "ccd0 x8"
+  },
+  {
+   "pattern": "copy",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 17179869184,
+   "hugepage": false,
+   "anon_hugepages_kib": 0,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.164553,
+    0.163994,
+    0.163423,
+    0.162381,
+    0.162368,
+    0.165625
+   ],
+   "gbps": [
+    104.4,
+    104.76,
+    105.13,
+    105.8,
+    105.81,
+    103.73
+   ],
+   "sink": 0,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "copy",
+   "gbps_min": 103.73,
+   "gbps_median": 105.13,
+   "gbps_max": 105.81,
+   "wall_s": 1.65,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4380.1,
+     "max": 5224.0
+    },
+    "tctl_c": {
+     "mean": 45.9,
+     "max": 46.6
+    },
+    "socket_w": {
+     "mean": 127.2,
+     "max": 144.3
+    },
+    "samples": 9
+   },
+   "section": "patterns",
+   "label": "split x16 4KiB pages"
+  },
+  {
+   "pattern": "expert-chunk",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": true,
+   "anon_hugepages_kib": 33554432,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 3,
+   "iters_seconds": [
+    0.019538,
+    0.019255,
+    0.019172,
+    0.018675,
+    0.018765,
+    0.018761
+   ],
+   "gbps": [
+    117.0,
+    118.72,
+    119.23,
+    122.4,
+    121.82,
+    121.85
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-chunk",
+   "gbps_min": 118.72,
+   "gbps_median": 121.82,
+   "gbps_max": 122.4,
+   "wall_s": 0.63,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4203.4,
+     "max": 5227.3
+    },
+    "tctl_c": {
+     "mean": 45.6,
+     "max": 45.8
+    },
+    "socket_w": {
+     "mean": 111.4,
+     "max": 131.8
+    },
+    "samples": 4
+   },
+   "section": "expert",
+   "label": "split x16 2MiB "
+  },
+  {
+   "pattern": "expert-chunk",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": false,
+   "anon_hugepages_kib": 0,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 3,
+   "iters_seconds": [
+    0.018957,
+    0.018906,
+    0.019433,
+    0.019167,
+    0.018886,
+    0.018812
+   ],
+   "gbps": [
+    120.58,
+    120.91,
+    117.63,
+    119.26,
+    121.04,
+    121.51
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-chunk",
+   "gbps_min": 117.63,
+   "gbps_median": 120.91,
+   "gbps_max": 121.51,
+   "wall_s": 1.46,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3517.1,
+     "max": 5221.0
+    },
+    "tctl_c": {
+     "mean": 47.0,
+     "max": 48.9
+    },
+    "socket_w": {
+     "mean": 110.0,
+     "max": 150.7
+    },
+    "samples": 8
+   },
+   "section": "expert",
+   "label": "split x16 4KiB "
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": true,
+   "anon_hugepages_kib": 33554432,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 3,
+   "iters_seconds": [
+    0.01867,
+    0.018673,
+    0.018723,
+    0.018629,
+    0.018517,
+    0.018761
+   ],
+   "gbps": [
+    122.43,
+    122.42,
+    122.09,
+    122.7,
+    123.45,
+    121.85
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 121.85,
+   "gbps_median": 122.42,
+   "gbps_max": 123.45,
+   "wall_s": 0.63,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4100.3,
+     "max": 5223.6
+    },
+    "tctl_c": {
+     "mean": 47.6,
+     "max": 47.9
+    },
+    "socket_w": {
+     "mean": 111.0,
+     "max": 132.2
+    },
+    "samples": 4
+   },
+   "section": "expert",
+   "label": "split x16 2MiB --chunks-per-sync 3"
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": false,
+   "anon_hugepages_kib": 0,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 3,
+   "iters_seconds": [
+    0.01879,
+    0.018763,
+    0.018541,
+    0.018607,
+    0.018487,
+    0.019167
+   ],
+   "gbps": [
+    121.65,
+    121.83,
+    123.29,
+    122.85,
+    123.65,
+    119.26
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 119.26,
+   "gbps_median": 122.85,
+   "gbps_max": 123.65,
+   "wall_s": 1.43,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3470.0,
+     "max": 5221.6
+    },
+    "tctl_c": {
+     "mean": 48.4,
+     "max": 50.1
+    },
+    "socket_w": {
+     "mean": 107.3,
+     "max": 152.1
+    },
+    "samples": 8
+   },
+   "section": "expert",
+   "label": "split x16 4KiB --chunks-per-sync 3"
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": true,
+   "anon_hugepages_kib": 33554432,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 100,
+   "iters_seconds": [
+    0.018253,
+    0.018248,
+    0.01824,
+    0.018237,
+    0.01857,
+    0.018368
+   ],
+   "gbps": [
+    125.23,
+    125.27,
+    125.32,
+    125.34,
+    123.1,
+    124.45
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 123.1,
+   "gbps_median": 125.27,
+   "gbps_max": 125.34,
+   "wall_s": 0.62,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3884.4,
+     "max": 5227.4
+    },
+    "tctl_c": {
+     "mean": 48.7,
+     "max": 49.0
+    },
+    "socket_w": {
+     "mean": 110.8,
+     "max": 129.8
+    },
+    "samples": 4
+   },
+   "section": "expert",
+   "label": "split x16 2MiB --chunks-per-sync 100"
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": false,
+   "anon_hugepages_kib": 0,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 100,
+   "iters_seconds": [
+    0.018387,
+    0.018335,
+    0.018546,
+    0.018336,
+    0.019186,
+    0.019205
+   ],
+   "gbps": [
+    124.32,
+    124.67,
+    123.26,
+    124.67,
+    119.14,
+    119.03
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 119.03,
+   "gbps_median": 123.26,
+   "gbps_max": 124.67,
+   "wall_s": 1.45,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3461.5,
+     "max": 5222.3
+    },
+    "tctl_c": {
+     "mean": 49.3,
+     "max": 50.8
+    },
+    "socket_w": {
+     "mean": 110.7,
+     "max": 150.9
+    },
+    "samples": 8
+   },
+   "section": "expert",
+   "label": "split x16 4KiB --chunks-per-sync 100"
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": true,
+   "anon_hugepages_kib": 33554432,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 1,
+   "iters_seconds": [
+    0.019015,
+    0.01901,
+    0.019043,
+    0.018936,
+    0.019049,
+    0.019167
+   ],
+   "gbps": [
+    120.22,
+    120.25,
+    120.04,
+    120.72,
+    120.0,
+    119.26
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 119.26,
+   "gbps_median": 120.04,
+   "gbps_max": 120.72,
+   "wall_s": 0.63,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3827.8,
+     "max": 5227.7
+    },
+    "tctl_c": {
+     "mean": 50.0,
+     "max": 50.4
+    },
+    "socket_w": {
+     "mean": 111.5,
+     "max": 132.8
+    },
+    "samples": 4
+   },
+   "section": "expert",
+   "label": "split x16 2MiB --chunks-per-sync 1"
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": false,
+   "anon_hugepages_kib": 0,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 1,
+   "iters_seconds": [
+    0.019049,
+    0.019147,
+    0.019096,
+    0.019206,
+    0.019166,
+    0.019128
+   ],
+   "gbps": [
+    120.0,
+    119.39,
+    119.7,
+    119.02,
+    119.27,
+    119.5
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 119.02,
+   "gbps_median": 119.39,
+   "gbps_max": 119.7,
+   "wall_s": 1.44,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3381.3,
+     "max": 5222.1
+    },
+    "tctl_c": {
+     "mean": 50.0,
+     "max": 51.4
+    },
+    "socket_w": {
+     "mean": 106.8,
+     "max": 152.7
+    },
+    "samples": 8
+   },
+   "section": "expert",
+   "label": "split x16 4KiB --chunks-per-sync 1"
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 32,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": true,
+   "anon_hugepages_kib": 33554432,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 3,
+   "iters_seconds": [
+    0.019606,
+    0.019639,
+    0.020008,
+    0.021447,
+    0.019575,
+    0.029308
+   ],
+   "gbps": [
+    116.59,
+    116.4,
+    114.25,
+    106.58,
+    116.78,
+    78.0
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15,
+    16,
+    24,
+    17,
+    25,
+    18,
+    26,
+    19,
+    27,
+    20,
+    28,
+    21,
+    29,
+    22,
+    30,
+    23,
+    31
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 78.0,
+   "gbps_median": 114.25,
+   "gbps_max": 116.78,
+   "wall_s": 0.67,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4526.4,
+     "max": 5224.0
+    },
+    "tctl_c": {
+     "mean": 49.8,
+     "max": 50.1
+    },
+    "socket_w": {
+     "mean": 115.9,
+     "max": 137.7
+    },
+    "samples": 4
+   },
+   "section": "expert",
+   "label": "smt-all x32 2MiB"
+  },
+  {
+   "pattern": "expert-rows",
+   "threads": 8,
+   "allowed_cpus": 1,
+   "size_bytes": 34359738368,
+   "bytes_per_iter": 2285894400,
+   "hugepage": true,
+   "anon_hugepages_kib": 33554432,
+   "nt": false,
+   "chunk_bytes": 22858944,
+   "active_chunks": 100,
+   "chunks_per_sync": 3,
+   "iters_seconds": [
+    0.036441,
+    0.03753,
+    0.037322,
+    0.036764,
+    0.036451,
+    0.036427
+   ],
+   "gbps": [
+    62.73,
+    60.91,
+    61.25,
+    62.18,
+    62.71,
+    62.75
+   ],
+   "sink": 7714893600,
+   "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "pattern_label": "expert-rows",
+   "gbps_min": 60.91,
+   "gbps_median": 62.18,
+   "gbps_max": 62.75,
+   "wall_s": 1.2,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4902.0,
+     "max": 5409.6
+    },
+    "tctl_c": {
+     "mean": 48.8,
+     "max": 49.2
+    },
+    "socket_w": {
+     "mean": 96.0,
+     "max": 106.0
+    },
+    "samples": 6
+   },
+   "section": "expert",
+   "label": "ccd0 x8 2MiB"
+  }
+ ]
+}
