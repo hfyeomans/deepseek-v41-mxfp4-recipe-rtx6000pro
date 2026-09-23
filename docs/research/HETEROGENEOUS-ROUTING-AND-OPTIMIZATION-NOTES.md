@@ -209,9 +209,10 @@ Capacity: **≈ 90–120 complete experts/layer** on the third card depending on
 
 | Placement | Experts per layer | GPU-resident share |
 |---|---:|---:|
-| Current (**measured** config) | 208 GPU / 176 CPU | 54 % |
-| Third card at 100 experts | 308 GPU / 76 CPU | 80 % |
-| Third card at 90–120 | 298–328 GPU / 56–86 CPU | 78–85 % |
+| Current (**measured** config, E28 2026-09-23) | 226 GPU / 158 CPU | 59 % |
+| E19–E26 config (superseded) | 208 GPU / 176 CPU | 54 % |
+| Third card at 100 experts | 326 GPU / 58 CPU (from 226; was 308 / 76 from 208) | 85 % |
+| Third card at 90–120 | 316–346 GPU / 38–68 CPU | 82–90 % |
 
 A static ≈ 100-expert partition is the recommended first implementation; frequency-based placement waits for V4.1 routing statistics (kt-kernel's `frequency` strategy selects a global top-N across layers, T3.6a). An earlier "91 % resident" figure assumed a generic EP3/PP hybrid and was not an implementation result.
 

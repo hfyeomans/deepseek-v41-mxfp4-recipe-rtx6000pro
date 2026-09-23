@@ -36,7 +36,14 @@ SNAPSHOT="${SNAPSHOT:-dba1be0a40aa45a94ad051997016db3960a90277}"
 OVERLAY_DIR="${OVERLAY_DIR:-$HOME/dev/src/sglang-dsv41-overlay}"
 
 # Expert placement and CPU tier (E6-DESIGN, E17, E19).
-KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-208}"   # of 384 per layer; 224 does not fit at 32K
+# Of 384 per layer; GPU experts are the contiguous IDs 0..N-1, the rest run on the CPU.
+# T3.6g (2026-09-23): 208 -> 226 once the KV pool was capped (MAX_TOTAL_TOKENS below);
+# each expert costs ~0.33 GB per rank. 226 leaves 779 MiB on the busier GPU with all
+# four slots at ~30K and decoding (scripts/stress-kv-full.py) - the ceiling for
+# 32K x 4 slots with CHUNKED_PREFILL_SIZE=4096; 228 is projected not to fit. C1 wall
+# 33.9 -> 36.1 tok/s, C4 47.5 -> 51.9, NLL neutral. 222 is the conservative fallback
+# (~2.9 GB free in the same worst case). Provisional until the E24 soak runs on it.
+KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-226}"
 # One kt worker per physical core (E17; E26 A1 on the 16-core 9955WX: 14 and 16
 # threads are a plateau at C1 ≈ 33.5 wall tok/s, 24 costs −12 %, 30 collapses to
 # 5 tok/s). kt-kernel pins each worker to a distinct hwloc core and busy-spins
@@ -70,12 +77,23 @@ KT_NAN_PROBE_MIN_TOKENS="${KT_NAN_PROBE_MIN_TOKENS:-0}"
 # Draft weights are ~3.7 GiB per card, so check free VRAM after graph capture.
 DSPARK="${DSPARK:-0}"
 DSPARK_K="${DSPARK_K:-5}"
-MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.92}"
+# 0.92 -> 0.96 with T3.6g: the KV pool is capped by MAX_TOTAL_TOKENS, so the fraction
+# no longer sizes it; it only has to leave room for prefill activations and capture.
+MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.96}"
 CONTEXT_LENGTH="${CONTEXT_LENGTH:-32768}"
-# 4096 keeps ~3.7 GiB VRAM free after a 32K prefill (E23 needs it for the draft
-# stages); 8192 gives 1.4K tok/s prefill but only ~1.2 GiB free. 16384 does not fit.
+# 4096 kept ~3.3 GiB VRAM free after a 32K prefill at 208 experts (E26 A4); that
+# headroom is now spent on experts. 8192 (1.4K tok/s prefill) needed ~2.2 GB more
+# and does not fit beside 226 experts (projected from E22's 1.2 GiB at 208); use it
+# only with KT_NUM_GPU_EXPERTS=208. 16384 never fit.
 CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-4096}"
 MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-4}"
+# KV pool cap (T3.6g). Left to the fraction, SGLang sized the pool at 1,933,056 tokens
+# (~3.3 GB/rank) for a server that admits MAX_RUNNING_REQUESTS x CONTEXT_LENGTH =
+# 131,072 - 15x oversized (E26 A4). Derived here as slots x context + one 16K chunk
+# of headroom (147,456 at the defaults; ~0.6 GB/rank). The freed ~2.7 GB/rank holds
+# 18 more experts per layer. Set MAX_TOTAL_TOKENS="" to let the fraction size it
+# again (needed if CONTEXT_LENGTH grows past what the experts leave room for).
+MAX_TOTAL_TOKENS="${MAX_TOTAL_TOKENS-$(( MAX_RUNNING_REQUESTS * CONTEXT_LENGTH + 16384 ))}"
 CUDA_GRAPH_MAX_BS="${CUDA_GRAPH_MAX_BS:-4}"
 # Explicit decode capture list. SGLang derives [1, 2, 4] from --cuda-graph-max-bs-decode 4 and
 # pads a 3-row batch to 4, which cost C3 22 % (38.3 vs 49.0 summed tok/s, E26 B1). Capturing
@@ -127,6 +145,9 @@ fi
 if [[ -n "$CUDA_GRAPH_BS" ]]; then
   # shellcheck disable=SC2206  # intentional word splitting of the batch-size list
   server_args+=(--cuda-graph-bs-decode $CUDA_GRAPH_BS)
+fi
+if [[ -n "$MAX_TOTAL_TOKENS" ]]; then
+  server_args+=(--max-total-tokens "$MAX_TOTAL_TOKENS")
 fi
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 server_args+=($EXTRA_SERVER_ARGS)

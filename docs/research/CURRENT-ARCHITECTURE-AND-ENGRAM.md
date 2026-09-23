@@ -1,5 +1,7 @@
 # Current architecture of the V4.1-Flash hybrid, and the Engram placement decision
 
+> **Update 2026-09-23 (E28):** expert placement moved from 208 GPU / 176 CPU experts per layer to **226 / 158**, with the KV pool capped at 147,456 tokens (`--max-total-tokens`; ≈ 0.6 GB/card instead of 3.3) and `MEM_FRACTION_STATIC=0.96`. The diagram and RAM table below carry the new numbers; prose that says "176 CPU experts" describes the E19–E26 configuration and its measurements. C1 is now 41.2 summed / 36.1 wall tok/s (BENCHMARKS "E28").
+
 Written 2026-09-22. §1 describes what `scripts/serve-hybrid.sh` actually runs today (overlay `dsv41-kt-hybrid` at `95f2fe3d`, image `dsv41-kt:recipe`), so that later changes can be diffed against it. §2 records the Engram decision (T3.12) with its measurements and RAM accounting. Labels per [README.md](README.md).
 
 ## 1. Current architecture
@@ -37,15 +39,15 @@ The E20 work is about the **dense W8A8 FP8** GEMM; the routed experts' MXFP4 ker
  ┌─────────────────────────────── TP2 (NCCL over PCIe) ───────────────────────────────┐
  │  GPU0 / rank 0                                  GPU1 / rank 1                      │
  │  dense FP8 (N sharded)        ◀── all-reduce ──▶ dense FP8 (N sharded)             │
- │  attention: MLA + sliding-window, KV pool ≈ 3.4 GB/card, page 256 (re-paged 64)    │
- │  208 GPU experts/layer (MXFP4)                  208 GPU experts/layer (MXFP4)       │
+ │  attention: MLA + sliding-window, KV pool ≈ 0.6 GB/card, page 256 (re-paged 64)    │
+ │  226 GPU experts/layer (MXFP4)                  226 GPU experts/layer (MXFP4)       │
  │  Engram rows (file layout, graph break)         [waits: NCCL spin ≈ 97 % "util"]   │
  │  kt-kernel submit/sync  ─┐                                                          │
  └──────────────────────────┼──────────────────────────────────────────────────────────┘
                             │ pinned H2D/D2H per layer, one submit + one sync
                             ▼
               host CPU tier (rank 0 process, 16 kt threads, ≈ 1,880 % CPU)
-              176 CPU experts/layer, compact MXFP4 view: 21.8 MiB/expert, ≈ 150 GiB
+              158 CPU experts/layer, compact MXFP4 view: 21.8 MiB/expert, ≈ 135 GiB
               deferral D=4: the 4 lowest-scored experts of a token run one layer late
                             │
                             ▼  (page cache, WILLNEED prefetch on 16 threads)
@@ -117,7 +119,7 @@ Keep the full FP8 Engram file-backed through `mmap` and the Linux page cache (th
 | Consumer | GiB | Label |
 |---|---:|---|
 | Host RAM usable | ≈ 247 | measured |
-| CPU experts, compact view, 176/layer × 40 × 21.8 MiB | ≈ 150 | measured (E17: 21.8 MiB/expert; 136 GiB at 160/layer) |
+| CPU experts, compact view, 158/layer × 40 × 21.8 MiB (176/layer × 40 = 150 GiB before E28) | ≈ 135 | measured (E17: 21.8 MiB/expert; 136 GiB at 160/layer) |
 | Rank-0 process, kt-kernel buffers, engine, pinned H2D/D2H | ≈ 5–10 | inferred from the observed ≈ 155 GiB process footprint |
 | Streamed-prefill shared pinned buffer | 6.5 | measured (E22) |
 | Remaining for page cache, OS, kiosk | ≈ 80–85 | projected |
