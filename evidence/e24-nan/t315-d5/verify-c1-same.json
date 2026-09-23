@@ -1,0 +1,44 @@
+{
+  "label": "",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 1,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": false,
+  "same_prompt": true,
+  "rows_identical": null,
+  "min_pairwise_row_prefix": null,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "Sunlight is made up of all colors, but they don't all travel through the atmosphere the same way. The atmosphere is full of tiny molecules that scatter shorter wavelengths of light\u2014like blue and violet\u2014much more strongly than longer wavelengths like red. This is called Rayleigh scattering. When sunlight passes through the air, the blue light gets bounced around in all directions, and some of it reaches your eyes from every part of the sky, making the whole sky look blue.\n\nAt sunset",
+      "completion_tokens": 96,
+      "ttft_s": 0.35589818800053763,
+      "total_s": 2.518539480000072,
+      "wall_s": 2.5186676230005105,
+      "finish_reason": "length",
+      "gibberish": 0.024390243902439025
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 39,
+      "ref_chars": 486,
+      "conc_chars": 492,
+      "gibberish": 0.024390243902439025,
+      "ok": false,
+      "concurrent": {
+        "text": "Sunlight is made up of all colors, but it travels through the atmosphere as a mix of wavelengths. Air molecules scatter shorter wavelengths\u2014like blue and violet\u2014much more strongly than longer ones, a phenomenon called Rayleigh scattering. This scattered blue light reaches our eyes from all directions, so the sky looks blue during the day.\n\nAt sunset, sunlight has to pass through a much longer stretch of atmosphere because the sun is low on the horizon. Along that longer path, most of the",
+        "completion_tokens": 96,
+        "ttft_s": 0.3374625360002028,
+        "total_s": 2.458176222000475,
+        "wall_s": 2.4583876200003942,
+        "finish_reason": "length",
+        "gibberish": 0.024390243902439025
+      }
+    }
+  ]
+}

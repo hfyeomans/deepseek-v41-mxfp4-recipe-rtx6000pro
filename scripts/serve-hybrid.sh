@@ -58,8 +58,11 @@ fi
 # Expert deferral (E21): each token's D lowest-scored routed experts are computed
 # during the next layer and added one layer late, hiding most of the CPU-tier wait.
 # D=4 keeps every token's top-2 on time: +22 % C1 / +17 % C2 / +22 % C4 over D=0,
-# teacher-forced NLL unchanged (ΔNLL −0.006, z 1.4). D=5 is also NLL-neutral but
-# NaN-crashes on the first bs=4 decode step; D=6 loses 0.23 nats/token. 0 disables.
+# teacher-forced NLL unchanged (ΔNLL −0.006, z 1.4). D=5 no longer crashes on the
+# patched image (E24/T3.15, 2026-09-23: the bs=4 NaN was kt bug C) and is +4.7 % C1
+# wall, but ΔNLL +0.00287 breaks the 0.002 gate and greedy bs=1 output diverges
+# run-to-run after 9-39 chars (D=4: 225-365) -- rejected on quality. D=6 loses
+# 0.23 nats/token. 0 disables.
 KT_MAX_DEFERRED="${KT_MAX_DEFERRED:-4}"
 # Layerwise GPU prefill (E22): prefill chunks with at least this many tokens
 # stream each layer's CPU experts to the GPUs (kt-kernel export -> shared pinned

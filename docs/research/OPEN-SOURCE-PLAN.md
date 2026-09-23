@@ -106,7 +106,7 @@ Do not submit the hybrid runtime as one PR. Each unit below lists the change, th
 | Compact CPU-expert view for kt-kernel EP | `3805730e` | changes kt-kernel's memory model (8 GiB/layer for all experts → 3.4 GiB for the CPU subset); touches the loader contract and kt-kernel 0.7's API |
 | File-backed Engram (`layout=file`) | `a1ca246a` | new env surface, thread pool inside the model forward, graph-break requirement (`breakable` decode); the upstream host-table path assumes `cudaHostRegister` |
 | Layerwise streamed prefill of CPU experts | `0138c6ad` | POSIX-shm pinned buffer shared by TP ranks, per-layer export from kt-kernel, double-buffered DMA; a scheduler-adjacent feature with a known open NaN sighting (E22c/E24) |
-| Expert deferral with the compact view | `11e7f745` | depends on kt-kernel's `--kt-max-deferred-experts-per-token`; D ≥ 5 NaN is unresolved; quality argued by teacher-forced NLL, which upstream may want as a test |
+| Expert deferral with the compact view | `11e7f745` | depends on kt-kernel's `--kt-max-deferred-experts-per-token`; ~~D ≥ 5 NaN is unresolved~~ the D≥5 NaN was kt-kernel bug C (T3.15, 2026-09-23); D=5 is rejected on ΔNLL +0.00287 and greedy-consistency grounds, so the upstreamable claim is "D ≤ 4 is quality-neutral"; quality argued by teacher-forced NLL, which upstream may want as a test |
 
 ## 4. Licences and provenance
 

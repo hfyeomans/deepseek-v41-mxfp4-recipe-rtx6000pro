@@ -450,6 +450,18 @@ VRAM at the default: 91,354 MiB/GPU after capture, 94,468 / 94,596 MiB after a 3
 
 Verdict: `KT_CPUINFER=16`, `KT_MAX_DEFERRED=4` stay; the +10 % Part A bar (C1 wall ≥ 37) is not reachable from environment knobs alone — placement (T3.6g), D=5 (T3.15) and FCLK (E27) each project ≈ +2–4 %.
 
+### T3.15 — deferral D=0 / 4 / 5 on the qualified defaults (2026-09-23 evening, E24 lead result)
+
+Same launcher defaults as the E27 Boot 12 soak (226 GPU / 158 CPU experts, capture `1 2 3 4`, spec off, FCLK 2100 slot 3, **300 W**, patched image), `KT_NAN_PROBE_MIN_TOKENS=1`, one launch per D; C1 = 12 runs × 512 tokens, distinct prompts, seed 4242, fixture offset 6; C2–C4 at D=5 with the soak's offsets. The owner's 340 GB download to the other NVMe ran throughout (it cost D=4 C1 ≈ 0.6 % vs the download-free soak), so the D column is apples-to-apples and the C2–C4 comparison to the soak carries that bias. Evidence [`evidence/e24-nan/t315-d5/`](../evidence/e24-nan/t315-d5/).
+
+| `KT_MAX_DEFERRED` | C1 summed / **wall** tok/s | C1 TTFT s | C2 | C3 | C4 | ΔNLL vs E22 (gate < 0.002) | greedy bs=1 same-prompt, chars before divergence (gate ≥ 40) | NaN / Xid |
+|---|---|---|---|---|---|---|---|---|
+| 0 (control) | 33.58 / **32.04** | 0.74 | — | — | — | — (E21: neutral) | 388; repeats 363 / 323 / 323 | 0 / 0 |
+| **4 (default)** | 41.76 / **39.83** | 0.62 | soak: 52.12 / 49.80 | 56.00 / 54.38 | 58.09 / 55.79 | +0.0018 (z −0.48) | 310–364; repeats 362 / 225 / 225 | 0 / 0 |
+| 5 | 43.76 / **41.69** (+4.7 % wall) | 0.60 | 52.94 / 50.54 (+1.5 %) | 56.23 / 54.61 (+0.4 %) | 57.77 / 55.52 (−0.5 %) | **+0.00287** (z −0.74; 150 worse / 156 better) | **9–39**; repeats 9 / 33 / 9; C4 same-prompt rows agree for 9 chars | **0 / 0** over 63K tokens incl. the E21 trigger (first bs=4 step) |
+
+Reading: D=5 no longer crashes (the E21 D≥5 assert was kt-kernel bug C) and clears the +3–5 % C1 bar, but it fails both quality gates. The consistency column is the one to understand: bs=1 greedy output is not run-to-run exact at *any* D (E21 saw this and moved the quality gate to teacher-forced NLL), because the serving path flips near-tie tokens; deferral pulls the first flip forward — 320–390 → 225–365 → 9–39 chars — and at D=5 the first sentence itself changes, so the +0.00287 is a real shift in the distribution, not noise. `--flush-cache` (new in `verify-batch-consistency.py`) rules the radix cache out; a librarian read of kt-kernel's `task_queue.cpp`/`moe_base.hpp` rules the deferred queue out (single FIFO dispatcher, ordered reductions). Decision: **`KT_MAX_DEFERRED=4` stays**; D=5 is a rejected lever, and the remaining single-user lever with the same coefficient is placement (E28 / T3.6g2). GPU peaks 167 / 178 W, 71 / 69 °C at 300 W — the cap never binds on the hybrid.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.

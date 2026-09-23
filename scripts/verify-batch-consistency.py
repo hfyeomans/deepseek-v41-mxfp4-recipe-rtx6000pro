@@ -25,6 +25,14 @@ told a different story.
 Exit 0 when every concurrent slot shares at least --min-prefix characters with
 its bs=1 reference, no slot exceeds --max-gibberish, and (with --same-prompt)
 all concurrent rows are identical to each other.
+
+Prefix cache caveat (E24/T3.15): with the radix cache on (the launcher default),
+the reference request prefills the whole prompt while the later identical
+prompt hits the cache and computes only its last token through a different
+kernel path, so even ``--concurrency 1 --same-prompt`` can diverge for reasons
+unrelated to batching. ``--flush-cache`` POSTs ``/flush_cache`` before every
+request group so each request prefills from scratch; use it whenever the
+question is "is the server deterministic run-to-run", not "does bs>1 match bs=1".
 """
 from __future__ import annotations
 
@@ -65,6 +73,26 @@ def common_prefix_len(a: str, b: str) -> int:
     return i
 
 
+def flush_cache(url: str) -> None:
+    """Drop the server's radix (prefix) cache so the next request prefills from scratch."""
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(f"{url.rstrip('/')}/flush_cache", data=b"", method="POST")
+    # SGLang answers 400 ("not flushed, requests pending") while the scheduler
+    # still holds a request, e.g. the previous stream's final bookkeeping.
+    for attempt in range(10):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                resp.read()
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 400 or attempt == 9:
+                raise
+            time.sleep(1.0)
+    time.sleep(0.5)
+
+
 def run_one(url: str, model: str, prompt: str, max_tokens: int, seed: int) -> dict:
     t0 = time.perf_counter()
     r = chat_stream(url, model, [{"role": "user", "content": prompt}], max_tokens=max_tokens, temperature=0.0, seed=seed)
@@ -91,6 +119,9 @@ def main() -> int:
     ap.add_argument("--min-prefix", type=int, default=40, help="minimum shared character prefix with the bs=1 reference")
     ap.add_argument("--max-gibberish", type=float, default=0.15)
     ap.add_argument("--label", default="")
+    ap.add_argument("--flush-cache", action="store_true",
+                    help="POST /flush_cache before every reference request and before the concurrent group "
+                         "(removes the radix-cache hit/miss difference between reference and repeat)")
     ap.add_argument("--output", type=Path)
     args = ap.parse_args()
 
@@ -104,10 +135,14 @@ def main() -> int:
     print(f"== bs=1 references ({len(prompts)} prompts, {args.max_tokens} tok, greedy)")
     refs: dict[str, dict] = {}
     for p in prompts:
+        if args.flush_cache:
+            flush_cache(args.url)
         refs[p] = run_one(args.url, args.model, p, args.max_tokens, args.seed)
         print(f"  ref {p[:48]!r}: {refs[p]['completion_tokens']} tok, gib {refs[p]['gibberish']:.2f}")
 
-    print(f"== concurrent run (C={args.concurrency})")
+    print(f"== concurrent run (C={args.concurrency}{', cache flushed' if args.flush_cache else ''})")
+    if args.flush_cache:
+        flush_cache(args.url)
     with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
         futs = [ex.submit(run_one, args.url, args.model, p, args.max_tokens, args.seed) for p in slots]
         conc = [f.result() for f in futs]
@@ -147,7 +182,7 @@ def main() -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps({"label": args.label, "url": args.url, "model": args.model,
                                            "concurrency": args.concurrency, "max_tokens": args.max_tokens,
-                                           "seed": args.seed, "pass": ok, "same_prompt": args.same_prompt,
+                                           "seed": args.seed, "pass": ok, "same_prompt": args.same_prompt, "flush_cache": args.flush_cache,
                                            "rows_identical": rows_identical, "min_pairwise_row_prefix": min_pair_prefix,
                                            "references": {p: r for p, r in refs.items()}, "slots": rows}, indent=2))
         print(f"wrote {args.output}")

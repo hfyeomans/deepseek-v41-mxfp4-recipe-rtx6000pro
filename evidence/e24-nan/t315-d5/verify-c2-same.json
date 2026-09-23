@@ -1,0 +1,63 @@
+{
+  "label": "",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 2,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": false,
+  "same_prompt": true,
+  "rows_identical": false,
+  "min_pairwise_row_prefix": 33,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "Sunlight is made up of all colors, but as it passes through the atmosphere, it collides with tiny gas molecules. These molecules scatter shorter wavelengths\u2014like blue and violet\u2014much more strongly than longer wavelengths like red. This is called Rayleigh scattering, and it explains why blue light gets bounced around the sky in every direction, making the sky look blue to our eyes.\n\nAt sunset, the sun is low on the horizon, so its light must travel through a much thicker slice",
+      "completion_tokens": 96,
+      "ttft_s": 0.35856684600003064,
+      "total_s": 2.4765704020001067,
+      "wall_s": 2.4767446539999582,
+      "finish_reason": "length",
+      "gibberish": 0.024691358024691357
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 39,
+      "ref_chars": 480,
+      "conc_chars": 486,
+      "gibberish": 0.025,
+      "ok": false,
+      "concurrent": {
+        "text": "Sunlight is made up of all colors, but the gases in Earth's atmosphere scatter shorter wavelengths\u2014like blue and violet\u2014much more strongly than longer wavelengths. This process, called Rayleigh scattering, sends blue light in all directions across the sky, so when you look up away from the Sun, you see that scattered blue light coming toward your eyes. That's why the sky appears blue during the day.\n\nAt sunset, sunlight has to travel through a much longer path of atmosphere because",
+        "completion_tokens": 96,
+        "ttft_s": 0.5393237719999888,
+        "total_s": 4.054210786999647,
+        "wall_s": 4.054340210999726,
+        "finish_reason": "length",
+        "gibberish": 0.025
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 33,
+      "ref_chars": 480,
+      "conc_chars": 467,
+      "gibberish": 0.02531645569620253,
+      "ok": false,
+      "concurrent": {
+        "text": "Sunlight is made up of all colors mixed together. When it enters Earth's atmosphere, it collides with tiny gas molecules. These molecules scatter shorter wavelengths of light\u2014like blue and violet\u2014much more strongly than longer wavelengths like red. This is called Rayleigh scattering, and it's why we see a blue sky: the blue light is bounced around the sky and reaches our eyes from all directions.\n\nAt sunset, the sun is low on the horizon, so its light must travel",
+        "completion_tokens": 96,
+        "ttft_s": 0.5388365799999519,
+        "total_s": 4.05443543399997,
+        "wall_s": 4.054547432000618,
+        "finish_reason": "length",
+        "gibberish": 0.02531645569620253
+      }
+    }
+  ]
+}

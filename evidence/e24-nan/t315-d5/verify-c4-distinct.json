@@ -1,0 +1,128 @@
+{
+  "label": "",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": false,
+  "same_prompt": false,
+  "rows_identical": null,
+  "min_pairwise_row_prefix": null,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "Sunlight is made up of all colors mixed together, but it travels through the atmosphere as a spectrum. When sunlight enters the atmosphere, it collides with tiny gas molecules like nitrogen and oxygen. These molecules scatter shorter wavelengths of light\u2014the blues and violets\u2014much more strongly than the longer wavelengths like reds and oranges. This effect, called Rayleigh scattering, sends blue light bouncing in all directions across the sky, so when you look up, you see that scattered blue light",
+      "completion_tokens": 96,
+      "ttft_s": 0.3314846100001887,
+      "total_s": 2.5064028059996417,
+      "wall_s": 2.5065470230001665,
+      "finish_reason": "length",
+      "gibberish": 0.02531645569620253
+    },
+    "Write a Python function that returns the n-th Fibonacci number iteratively, then show its output for n=10.": {
+      "text": "# Iterative Fibonacci Function\n\n```python\ndef fibonacci(n):\n    \"\"\"\n    Returns the n-th Fibonacci number iteratively.\n    \n    The Fibonacci sequence is defined as:\n        F(0) = 0, F(1) = 1\n        F(n) = F(n-1) + F(n-2) for n > 1\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"n must be a non-negative integer\")\n    if",
+      "completion_tokens": 96,
+      "ttft_s": 1.270127749000494,
+      "total_s": 3.4959588629999416,
+      "wall_s": 3.496148629000345,
+      "finish_reason": "length",
+      "gibberish": 0.20833333333333334
+    },
+    "List the planets of the solar system in order from the Sun, one per line, with one fact about each.": {
+      "text": "Mercury \u2013 It has the most eccentric orbit of any planet in the solar system.\nVenus \u2013 It rotates in the opposite direction to most other planets.\nEarth \u2013 It is the only planet known to support life.\nMars \u2013 It is home to Olympus Mons, the tallest volcano in the solar system.\nJupiter \u2013 It has the shortest day of any planet, rotating once in under 10 hours.\nSaturn \u2013 Its rings are made mostly of ice and rock particles.\nUran",
+      "completion_tokens": 96,
+      "ttft_s": 0.39828869000029954,
+      "total_s": 2.54680333000033,
+      "wall_s": 2.5469492890006222,
+      "finish_reason": "length",
+      "gibberish": 0.07317073170731707
+    },
+    "Summarize the plot of Romeo and Juliet in five sentences without naming any character other than the two leads.": {
+      "text": "Two young people from feuding families meet and fall in love at first sight. They secretly marry with the help of a friar, hoping to unite their warring households. When the boy is banished for killing a kinsman in a street fight, the girl's parents arrange for her to wed another man. The friar gives her a potion that makes her appear dead so she can escape to be with her love. Believing she is truly gone, the boy kills",
+      "completion_tokens": 96,
+      "ttft_s": 0.5780974819999756,
+      "total_s": 2.720556960000067,
+      "wall_s": 2.720706154000254,
+      "finish_reason": "length",
+      "gibberish": 0.0
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 9,
+      "ref_chars": 502,
+      "conc_chars": 534,
+      "gibberish": 0.02531645569620253,
+      "ok": false,
+      "concurrent": {
+        "text": "Sunlight contains all colors, but they travel through the atmosphere at different efficiencies. Air molecules scatter shorter wavelengths\u2014blues and violets\u2014much more strongly than longer wavelengths, a phenomenon called Rayleigh scattering. This scattered blue light reaches our eyes from all directions, making the sky appear blue during the day.\n\nAt sunset, sunlight must pass through a much longer path of atmosphere near the horizon. Along that path, the blue light is scattered away before it reaches us, while longer wavelengths",
+        "completion_tokens": 96,
+        "ttft_s": 1.7053676739997172,
+        "total_s": 8.18093799000053,
+        "wall_s": 8.181112000000212,
+        "finish_reason": "length",
+        "gibberish": 0.02531645569620253
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Write a Python function that returns the n-th Fibonacci number iteratively, then show its output for n=10.",
+      "exact": false,
+      "prefix_chars": 32,
+      "ref_chars": 323,
+      "conc_chars": 363,
+      "gibberish": 0.1276595744680851,
+      "ok": false,
+      "concurrent": {
+        "text": "# Iterative Fibonacci Function\n\nHere's a Python function that computes the n-th Fibonacci number iteratively:\n\n```python\ndef fibonacci(n):\n    \"\"\"\n    Return the n-th Fibonacci number using iteration.\n    \n    The Fibonacci sequence: F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2)\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"n must be a non-negative integer\")\n    if n ==",
+        "completion_tokens": 96,
+        "ttft_s": 1.7053828759999305,
+        "total_s": 8.180833872999756,
+        "wall_s": 8.180945540999346,
+        "finish_reason": "length",
+        "gibberish": 0.1276595744680851
+      }
+    },
+    {
+      "slot": 2,
+      "prompt": "List the planets of the solar system in order from the Sun, one per line, with one fact about each.",
+      "exact": true,
+      "prefix_chars": 422,
+      "ref_chars": 422,
+      "conc_chars": 422,
+      "gibberish": 0.07317073170731707,
+      "ok": true,
+      "concurrent": {
+        "text": "Mercury \u2013 It has the most eccentric orbit of any planet in the solar system.\nVenus \u2013 It rotates in the opposite direction to most other planets.\nEarth \u2013 It is the only planet known to support life.\nMars \u2013 It is home to Olympus Mons, the tallest volcano in the solar system.\nJupiter \u2013 It has the shortest day of any planet, rotating once in under 10 hours.\nSaturn \u2013 Its rings are made mostly of ice and rock particles.\nUran",
+        "completion_tokens": 96,
+        "ttft_s": 1.7041036949995032,
+        "total_s": 8.180227893999472,
+        "wall_s": 8.180346340999677,
+        "finish_reason": "length",
+        "gibberish": 0.07317073170731707
+      }
+    },
+    {
+      "slot": 3,
+      "prompt": "Summarize the plot of Romeo and Juliet in five sentences without naming any character other than the two leads.",
+      "exact": false,
+      "prefix_chars": 82,
+      "ref_chars": 423,
+      "conc_chars": 430,
+      "gibberish": 0.0,
+      "ok": true,
+      "concurrent": {
+        "text": "Two young people from feuding families meet and fall in love at first sight. They marry in secret with the help of a friar, hoping to unite their households. When the young man is banished for killing a kinsman in a street fight, the two lovers hatch a desperate plan to reunite. The young woman fakes her death with a potion, but a misdelivered message leaves the young man believing she is truly dead. In grief, he kills himself",
+        "completion_tokens": 96,
+        "ttft_s": 1.7038843360005558,
+        "total_s": 8.179668053000569,
+        "wall_s": 8.179778678999355,
+        "finish_reason": "length",
+        "gibberish": 0.0
+      }
+    }
+  ]
+}
