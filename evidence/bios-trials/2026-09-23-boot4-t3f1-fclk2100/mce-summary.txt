@@ -1,0 +1,38 @@
+# T3-F1: FCLK 2100 MHz explicit, EXPO 6400, UCLK Auto, all voltages Auto — FAILED (corrected-MCE storm on the GMI link)
+# Two cold boots at FCLK 2100 (kernel journal boots -2 and -1 relative to the reverted boot). Owner reverted to profile slot 2 (FCLK Auto) after seeing the console flood.
+# PPIN and hostname redacted. Counts = 'uniq -c' over the decoded MCE lines of each boot.
+
+== journal boot -2: 2026-09-23 12:02:00 -> 2026-09-23 12:02:32
+  17073 Machine check events logged
+  14792 FRU Text: Perr S0:T000:B10
+  14767 PPIN: <redacted>
+  14753 Global Memory Interconnect PCS Unit Ext. Error Code: 6
+  14723 Corrected error, no action required.
+  14552 IPID: 0x0000024113309200, Syndrome: 0x0000812d4a000000
+  14317 0x9820000000060150
+  14120 cache level: RESV, tx: INSN, mem-tx: IRD
+   2246 CPU 0: Machine Check: 0 Bank 16: 9820000000060150
+    991 PROCESSOR 2:b00f81 TIME 1790179323 SOCKET 0 APIC 0 microcode b008121
+-- total 'Hardware Error' lines: 127156
+-- DRAM EDAC lines (expect none): 0
+-- first MCE at: 2.716915 s after boot
+-- workqueue hog warnings: 8
+
+== journal boot -1: 2026-09-23 12:04:33 -> 2026-09-23 12:04:56
+   9659 Machine check events logged
+   8118 PPIN: <redacted>
+   8087 FRU Text: Perr S0:T000:B10
+   8053 Corrected error, no action required.
+   8029 Global Memory Interconnect PCS Unit Ext. Error Code: 6
+   7966 0x9820000000060150
+   7962 cache level: RESV, tx: INSN, mem-tx: IRD
+   7945 IPID: 0x0000024113309200, Syndrome: 0x0000812d4a000000
+   1594 CPU 0: Machine Check: 0 Bank 16: 9820000000060150
+    525 PROCESSOR 2:b00f81 TIME 1790179477 SOCKET 0 APIC 0 microcode b008121
+-- total 'Hardware Error' lines: 70871
+-- DRAM EDAC lines (expect none): 0
+-- first MCE at: 1.027948 s after boot
+-- workqueue hog warnings: 6
+
+== decoded fields (identical in every event)
+bank 16 = Global Memory Interconnect PCS Unit (GMI, the CCD<->IOD link clocked by FCLK); Ext. Error Code 6; status 0x9820000000060150 (CE, MiscV, SyndV); IPID 0x0000024113309200; syndrome 0x0000812d4a000000; FRU 'Perr S0:T000:B10'; 'cache level: RESV, tx: INSN, mem-tx: IRD'; 'Corrected error, no action required.'

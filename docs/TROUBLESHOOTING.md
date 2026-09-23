@@ -124,6 +124,14 @@ Seen 2026-09-23 (E26 A3). A C1 trace captured with `"activities": ["CPU","GPU"]`
 
 Seen 2026-09-23 (E26 A1) on the 16-core / 32-thread 9955WX: `KT_CPUINFER=24` gave C1 29.9 wall tok/s (−12 % vs 16), `KT_CPUINFER=30` gave **4.9** (−86 %) and 4K prefill fell 862 → 471 tok/s; nothing crashed, `nvidia-smi` showed the GPUs mostly idle. kt-kernel pins one worker per hwloc *core* and each worker busy-spins for 50 ms after every job before sleeping (`cpu_backend/worker_pool.cpp`); workers beyond the core count fail affinity and float on SMT siblings, where they starve the two TP-rank launch threads. Fix: `KT_CPUINFER` ≤ physical cores (16 here; 14 is equal within noise). `serve-hybrid.sh` prints a warning when the value exceeds `lscpu`'s core count. Do not "fix" this by disabling SMT in the BIOS — the recipe's Python, NCCL and Engram threads live on the siblings (BIOS guide §3, SMT row).
 
+## Boot floods the console/journal with `Hardware Error … Global Memory Interconnect PCS Unit … Corrected error` after a BIOS clock change
+
+**Symptom.** POST passes, DRAM trains, then from ≈ 1–3 s into the kernel the console scrolls thousands of `mce: [Hardware Error]: … Bank 16 … Global Memory Interconnect PCS Unit Ext. Error Code: 6 … Corrected error, no action required.` lines (≈ 500/s, `mce_gen_pool_process hogged` warnings). No DRAM EDAC counts. Seen 2026-09-23 after setting Infinity Fabric Frequency and Dividers = 2100 MHz with all voltages Auto (E27 T3-F1).
+
+**Cause.** The GMI (CCD↔IO-die) link is not clean at the requested FCLK. "Corrected" means the link is retrying every transaction, not that it is fine — the machine is not usable and the fabric has no ECC of its own to lean on.
+
+**Fix.** Do not add voltage. Reboot into setup, reload the last known-good profile (slot 2 here: FCLK Auto → 2000 MHz), cold boot, then verify: `python3 scripts/hsmp-clocks.py` reads the expected FCLK/MCLK; `cat /sys/devices/system/edac/mc/mc0/{ce_count,ue_count}` = 0 0; `journalctl -k -b 0 --no-pager | grep -c 'Hardware Error'` = 0. Forensics on the failed boots without needing a shell during them: `journalctl --list-boots`, then `journalctl -k -b -1 --no-pager | grep -c 'Hardware Error'` and `… | grep -E 'Bank|Ext. Error Code|IPID|Syndrome' | sort | uniq -c`. Redact PPIN and hostname before committing. Record the trial as failed in BIOS guide §7 — the protocol stops the tier on any MCE (`evidence/bios-trials/2026-09-23-boot4-t3f1-fclk2100/`).
+
 ## `nvidia-smi -pl 325` is gone after a reboot
 
 The power cap is not persistent: both cards come up at the 300 W default (Boot 1, 2026-09-22). Re-run `sudo nvidia-smi -pl 325` before any GPU bench, or install the `systemd/gpu-power-limit.service` unit (HARDWARE.md power table). Every bench row in `evidence/` states the cap it ran at; check it before comparing across reboots.
