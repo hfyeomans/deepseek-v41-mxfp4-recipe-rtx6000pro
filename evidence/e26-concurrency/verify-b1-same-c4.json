@@ -1,0 +1,101 @@
+{
+  "label": "b1-same-c4",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 128,
+  "seed": 0,
+  "pass": true,
+  "same_prompt": true,
+  "rows_identical": false,
+  "min_pairwise_row_prefix": 155,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, sunlight must travel through a much longer path of atmosphere because the Sun is low on the horizon. Over that long distance, most of the blue and green light gets scattered out",
+      "completion_tokens": 128,
+      "ttft_s": 0.3787649309999779,
+      "total_s": 3.5518107929999587,
+      "wall_s": 3.5519638020000457,
+      "finish_reason": "length",
+      "gibberish": 0.01818181818181818
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 155,
+      "ref_chars": 679,
+      "conc_chars": 666,
+      "gibberish": 0.01834862385321101,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes Rayleigh scattering, in which shorter wavelengths\u2014blue and violet\u2014are scattered far more strongly than longer ones. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, sunlight must travel through a much longer path of atmosphere because the Sun is low on the horizon. Along that longer path, most of the blue and violet light is scattered away before it reaches our eyes, leaving the",
+        "completion_tokens": 128,
+        "ttft_s": 1.1280076499999723,
+        "total_s": 9.557024846999866,
+        "wall_s": 9.557179038999948,
+        "finish_reason": "length",
+        "gibberish": 0.01834862385321101
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 502,
+      "ref_chars": 679,
+      "conc_chars": 661,
+      "gibberish": 0.01834862385321101,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, the sun is low on the horizon, so its light must travel through a much thicker slice of atmosphere to reach your eyes. Along that longer path, most of the blue",
+        "completion_tokens": 128,
+        "ttft_s": 1.1276787570000124,
+        "total_s": 9.556692769999927,
+        "wall_s": 9.556788093000023,
+        "finish_reason": "length",
+        "gibberish": 0.01834862385321101
+      }
+    },
+    {
+      "slot": 2,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 225,
+      "ref_chars": 679,
+      "conc_chars": 670,
+      "gibberish": 0.01818181818181818,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, sunlight must travel through a much longer path of atmosphere to reach your eyes because the Sun is low on the horizon. Over that long path, most of the blue and green light",
+        "completion_tokens": 128,
+        "ttft_s": 1.173552840999946,
+        "total_s": 9.556675272999883,
+        "wall_s": 9.556729313999995,
+        "finish_reason": "length",
+        "gibberish": 0.01818181818181818
+      }
+    },
+    {
+      "slot": 3,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 225,
+      "ref_chars": 679,
+      "conc_chars": 670,
+      "gibberish": 0.01818181818181818,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, sunlight must travel through a much longer path of atmosphere to reach your eyes because the Sun is low on the horizon. Over that long path, most of the blue and green light",
+        "completion_tokens": 128,
+        "ttft_s": 1.1730918910000128,
+        "total_s": 9.556192689,
+        "wall_s": 9.556307971000024,
+        "finish_reason": "length",
+        "gibberish": 0.01818181818181818
+      }
+    }
+  ]
+}

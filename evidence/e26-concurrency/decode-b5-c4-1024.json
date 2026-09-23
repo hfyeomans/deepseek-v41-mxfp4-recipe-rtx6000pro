@@ -1,0 +1,84 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 1024,
+  "runs": 2,
+  "warmup": 0,
+  "distinct_prompts": true,
+  "fixture_offset": 0,
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 4,
+      "median_tps": 51.434919630437555,
+      "min_tps": 51.40850218660853,
+      "max_tps": 51.46133707426658,
+      "median_wall_tps": 50.30612709882338,
+      "median_ttft_s": 1.8008872465001105,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 51.40850218660853,
+          "wall_tps": 50.173197929474775,
+          "wall_s": 81.63721207799995,
+          "per_seq_tps": [
+            12.858909874451733,
+            12.83181378688621,
+            12.858911688955061,
+            12.858866836315523
+          ],
+          "ttft_s": [
+            2.079988781999873,
+            1.9118694230000983,
+            2.079781880999917,
+            2.0794810500001404
+          ],
+          "completion_tokens": [
+            1024,
+            1024,
+            1024,
+            1024
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 51.46133707426658,
+          "wall_tps": 50.439056268171996,
+          "wall_s": 81.20691192599998,
+          "per_seq_tps": [
+            12.865320282592892,
+            12.865327559658645,
+            12.865328099407982,
+            12.865361132607065
+          ],
+          "ttft_s": [
+            1.6899050700001226,
+            1.6897936230000141,
+            1.6896488459999546,
+            1.6889784800000598
+          ],
+          "completion_tokens": [
+            1024,
+            1024,
+            1024,
+            1024
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-23T12:44:46-0400"
+}

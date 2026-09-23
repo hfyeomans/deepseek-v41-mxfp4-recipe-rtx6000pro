@@ -1,0 +1,101 @@
+{
+  "label": "b3-d0-same-c4",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 128,
+  "seed": 0,
+  "pass": true,
+  "same_prompt": true,
+  "rows_identical": false,
+  "min_pairwise_row_prefix": 290,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red. Although violet light scatters even more than blue, our eyes are less sensitive to violet, and some of it is absorbed in the upper atmosphere, so the scattered light we see across the sky appears predominantly blue.\n\nAt sunset, the sun is low on the horizon, so its light must travel through a much thicker slice of the atmosphere to reach your eyes. Over that",
+      "completion_tokens": 128,
+      "ttft_s": 1.3423634050000146,
+      "total_s": 5.690766009000072,
+      "wall_s": 5.690897467000013,
+      "finish_reason": "length",
+      "gibberish": 0.01818181818181818
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 377,
+      "ref_chars": 672,
+      "conc_chars": 667,
+      "gibberish": 0.01834862385321101,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears predominantly blue.\n\nAt sunset, the sun is low on the horizon, so its light must travel through a much thicker layer of atmosphere to reach your eyes. Over that longer path, most of the blue and",
+        "completion_tokens": 128,
+        "ttft_s": 1.7075099239996234,
+        "total_s": 11.515597212999637,
+        "wall_s": 11.51576601700026,
+        "finish_reason": "length",
+        "gibberish": 0.01834862385321101
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 310,
+      "ref_chars": 672,
+      "conc_chars": 658,
+      "gibberish": 0.028037383177570093,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Because blue light is scattered in all directions across the sky, it reaches your eyes from every part of the sky, making the whole dome appear blue. (Violet is scattered even more, but our eyes are less sensitive to it, and some of it is absorbed in the upper atmosphere, so blue dominates.)\n\nAt sunset, the geometry changes. When the",
+        "completion_tokens": 128,
+        "ttft_s": 1.7069872900001428,
+        "total_s": 11.515433047999977,
+        "wall_s": 11.515536511999926,
+        "finish_reason": "length",
+        "gibberish": 0.028037383177570093
+      }
+    },
+    {
+      "slot": 2,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 290,
+      "ref_chars": 672,
+      "conc_chars": 655,
+      "gibberish": 0.01834862385321101,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer ones like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky takes on a blue appearance.\n\nAt sunset, the sun sits low on the horizon, so its light must travel through a much thicker slice of atmosphere to reach your eyes. Over that long path, most",
+        "completion_tokens": 128,
+        "ttft_s": 1.70701219700004,
+        "total_s": 11.51509172499982,
+        "wall_s": 11.51516523600003,
+        "finish_reason": "length",
+        "gibberish": 0.01834862385321101
+      }
+    },
+    {
+      "slot": 3,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 290,
+      "ref_chars": 672,
+      "conc_chars": 680,
+      "gibberish": 0.01818181818181818,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer ones. Although violet light scatters even more than blue, our eyes are less sensitive to violet, and some of it is absorbed in the upper atmosphere, so the scattered light we see across the sky appears predominantly blue.\n\nAt sunset, sunlight must travel through a much longer path of atmosphere to reach our eyes because the Sun is low on the horizon. Over that extended distance, the blue",
+        "completion_tokens": 128,
+        "ttft_s": 2.128761677000057,
+        "total_s": 11.569835787000102,
+        "wall_s": 11.569940163999945,
+        "finish_reason": "length",
+        "gibberish": 0.01818181818181818
+      }
+    }
+  ]
+}

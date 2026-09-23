@@ -1,0 +1,90 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 256,
+  "runs": 3,
+  "warmup": 1,
+  "distinct_prompts": true,
+  "fixture_offset": 0,
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 2,
+      "median_tps": 45.60013405521765,
+      "min_tps": 45.188618814198165,
+      "max_tps": 45.68165564376484,
+      "median_wall_tps": 40.823866351151686,
+      "median_ttft_s": 1.2578225239999483,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 45.60013405521765,
+          "wall_tps": 37.96936038510376,
+          "wall_s": 13.484556885000075,
+          "per_seq_tps": [
+            22.800091170751326,
+            22.800042884466322
+          ],
+          "ttft_s": [
+            2.30000109599996,
+            2.299477028999945
+          ],
+          "completion_tokens": [
+            256,
+            256
+          ],
+          "finish_reasons": [
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 45.188618814198165,
+          "wall_tps": 40.823866351151686,
+          "wall_s": 12.54168322999999,
+          "per_seq_tps": [
+            22.594709189863288,
+            22.593909624334874
+          ],
+          "ttft_s": [
+            1.2551779759999135,
+            1.2546038149998822
+          ],
+          "completion_tokens": [
+            256,
+            256
+          ],
+          "finish_reasons": [
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 45.68165564376484,
+          "wall_tps": 41.215142182713016,
+          "wall_s": 12.422618797000041,
+          "per_seq_tps": [
+            22.84092635733631,
+            22.84072928642853
+          ],
+          "ttft_s": [
+            1.2580344519999471,
+            1.2576105959999495
+          ],
+          "completion_tokens": [
+            256,
+            256
+          ],
+          "finish_reasons": [
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-23T12:37:58-0400"
+}

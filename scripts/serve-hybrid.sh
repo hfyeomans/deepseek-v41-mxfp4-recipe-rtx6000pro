@@ -77,6 +77,12 @@ CONTEXT_LENGTH="${CONTEXT_LENGTH:-32768}"
 CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-4096}"
 MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-4}"
 CUDA_GRAPH_MAX_BS="${CUDA_GRAPH_MAX_BS:-4}"
+# Explicit decode capture list. SGLang derives [1, 2, 4] from --cuda-graph-max-bs-decode 4 and
+# pads a 3-row batch to 4, which cost C3 22 % (38.3 vs 49.0 summed tok/s, E26 B1). Capturing
+# bs=3 too costs ~nothing (6.2 GB free before capture) and leaves bs=1 untouched (NLL gate
+# ΔNLL −0.001, same-prompt gate PASS at C2/C3/C4). Provisional default until the E24 soak
+# has run on it. Set CUDA_GRAPH_BS="" to fall back to the derived list.
+CUDA_GRAPH_BS="${CUDA_GRAPH_BS-1 2 3 4}"
 ENGRAM_FILE_THREADS="${ENGRAM_FILE_THREADS:-16}"
 EXTRA_SERVER_ARGS="${EXTRA_SERVER_ARGS:-}"          # appended verbatim (word-split)
 # Space-separated KEY=VALUE pairs passed into the container as -e flags, e.g.
@@ -117,6 +123,10 @@ server_args=(
 )
 if [[ "$DSPARK" == "1" ]]; then
   server_args+=(--speculative-algorithm DSPARK --speculative-dspark-block-size "$DSPARK_K")
+fi
+if [[ -n "$CUDA_GRAPH_BS" ]]; then
+  # shellcheck disable=SC2206  # intentional word splitting of the batch-size list
+  server_args+=(--cuda-graph-bs-decode $CUDA_GRAPH_BS)
 fi
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 server_args+=($EXTRA_SERVER_ARGS)
