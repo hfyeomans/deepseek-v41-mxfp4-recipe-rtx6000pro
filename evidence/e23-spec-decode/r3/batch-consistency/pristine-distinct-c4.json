@@ -1,0 +1,125 @@
+{
+  "label": "pristine-distinct",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": false,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, the sun",
+      "completion_tokens": 96,
+      "ttft_s": 0.3714976680021209,
+      "total_s": 2.7013496720028343,
+      "wall_s": 2.7014845429985144,
+      "finish_reason": "length",
+      "gibberish": 0.025
+    },
+    "Write a Python function that returns the n-th Fibonacci number iteratively, then show its output for n=10.": {
+      "text": "# Iterative Fibonacci Function\n\nHere's a Python function that computes the n-th Fibonacci number iteratively:\n\n```python\ndef fibonacci(n):\n    \"\"\"\n    Return the n-th Fibonacci number using an iterative approach.\n    \n    The Fibonacci sequence is defined as:\n        F(0) = 0\n        F(1) = 1\n        F(n) = F(n-1) + F(n-2) for n > 1\n    \"\"\"\n    if n",
+      "completion_tokens": 96,
+      "ttft_s": 1.256529928999953,
+      "total_s": 3.675673721001658,
+      "wall_s": 3.6758420650003245,
+      "finish_reason": "length",
+      "gibberish": 0.17307692307692307
+    },
+    "List the planets of the solar system in order from the Sun, one per line, with one fact about each.": {
+      "text": "Mercury - It has the shortest year of any planet, orbiting the Sun in just 88 Earth days.\nVenus - It rotates backwards compared to most planets, and its day is longer than its year.\nEarth - It is the only known planet with liquid water on its surface and life.\nMars - It is home to Olympus Mons, the tallest volcano in the solar system.\nJupiter - It is the largest planet and has a Great Red Spot, a storm larger than Earth",
+      "completion_tokens": 96,
+      "ttft_s": 0.42899404499985394,
+      "total_s": 2.8273048749979353,
+      "wall_s": 2.827442951998819,
+      "finish_reason": "length",
+      "gibberish": 0.05952380952380952
+    },
+    "Summarize the plot of Romeo and Juliet in five sentences without naming any character other than the two leads.": {
+      "text": "Two young people from feuding families in Verona meet and fall in love at a party. They marry in secret with the help of a friar, hoping to unite their households. When Romeo is banished for killing Juliet's cousin in a street fight, the friar devises a plan for the lovers to reunite. Juliet takes a potion that makes her appear dead, but Romeo receives false news and believes she is truly gone. He returns and takes his own life",
+      "completion_tokens": 96,
+      "ttft_s": 0.5894126439998217,
+      "total_s": 2.9739848589997564,
+      "wall_s": 2.974125410000852,
+      "finish_reason": "length",
+      "gibberish": 0.0
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 502,
+      "ref_chars": 509,
+      "conc_chars": 515,
+      "gibberish": 0.025,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, sunlight must",
+        "completion_tokens": 96,
+        "ttft_s": 2.108516223001061,
+        "total_s": 4.697827153002436,
+        "wall_s": 4.697930367998197,
+        "finish_reason": "length",
+        "gibberish": 0.025
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Write a Python function that returns the n-th Fibonacci number iteratively, then show its output for n=10.",
+      "exact": false,
+      "prefix_chars": 62,
+      "ref_chars": 351,
+      "conc_chars": 390,
+      "gibberish": 0.12962962962962962,
+      "ok": true,
+      "concurrent": {
+        "text": "# Iterative Fibonacci Function\n\nHere's a Python function that returns the n-th Fibonacci number iteratively:\n\n```python\ndef fibonacci(n):\n    \"\"\"Return the n-th Fibonacci number iteratively.\"\"\"\n    if n < 0:\n        raise ValueError(\"n must be a non-negative integer\")\n    \n    if n == 0:\n        return 0\n    if n == 1:\n        return 1\n    \n    # Iteratively compute from n=2 onward\n    a",
+        "completion_tokens": 96,
+        "ttft_s": 2.107995603000745,
+        "total_s": 4.697556417002488,
+        "wall_s": 4.697641685001145,
+        "finish_reason": "length",
+        "gibberish": 0.12962962962962962
+      }
+    },
+    {
+      "slot": 2,
+      "prompt": "List the planets of the solar system in order from the Sun, one per line, with one fact about each.",
+      "exact": false,
+      "prefix_chars": 8,
+      "ref_chars": 423,
+      "conc_chars": 447,
+      "gibberish": 0.04938271604938271,
+      "ok": false,
+      "concurrent": {
+        "text": "Mercury \u2014 the smallest planet in the solar system and closest to the Sun; it has no true atmosphere, just a thin layer of gases.\nVenus \u2014 the hottest planet, with surface temperatures hot enough to melt lead, and it has a thick toxic atmosphere.\nEarth \u2014 the only planet known to support life, with over 70% of its surface covered by water.\nMars \u2014 a reddish planet known for its iron oxide surface, thin atmosphere, and ongoing exploration by rovers",
+        "completion_tokens": 96,
+        "ttft_s": 2.162341813000239,
+        "total_s": 4.696998250001343,
+        "wall_s": 4.697066120999807,
+        "finish_reason": "length",
+        "gibberish": 0.04938271604938271
+      }
+    },
+    {
+      "slot": 3,
+      "prompt": "Summarize the plot of Romeo and Juliet in five sentences without naming any character other than the two leads.",
+      "exact": false,
+      "prefix_chars": 4,
+      "ref_chars": 431,
+      "conc_chars": 446,
+      "gibberish": 0.0,
+      "ok": false,
+      "concurrent": {
+        "text": "Two feuding families in Verona oppose their children falling in love, so the pair secretly meet and vow to marry despite their households' enmity. A priest helps them wed in secret, but a sudden violent tragedy forces the young husband to flee before the marriage can be consummated. The bride, believing her spouse dead, agrees to a scheme to wed another man she despises, only to learn too late that the plan was a lethal trap. She leaps to her",
+        "completion_tokens": 96,
+        "ttft_s": 2.1620515670001623,
+        "total_s": 4.696842034998554,
+        "wall_s": 4.696993632998783,
+        "finish_reason": "length",
+        "gibberish": 0.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "label": "pristine-same",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": false,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, the sun",
+      "completion_tokens": 96,
+      "ttft_s": 1.1334937749998062,
+      "total_s": 3.5087076970012276,
+      "wall_s": 3.508852705002937,
+      "finish_reason": "length",
+      "gibberish": 0.025
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 502,
+      "ref_chars": 509,
+      "conc_chars": 515,
+      "gibberish": 0.025,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more than blue, our eyes are more sensitive to blue, and some violet is absorbed in the upper atmosphere, so the sky appears blue.\n\nAt sunset, sunlight must",
+        "completion_tokens": 96,
+        "ttft_s": 14.34903819000101,
+        "total_s": 17.317698790000577,
+        "wall_s": 17.31789292099711,
+        "finish_reason": "length",
+        "gibberish": 0.025
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 16,
+      "ref_chars": 509,
+      "conc_chars": 529,
+      "gibberish": 0.0125,
+      "ok": false,
+      "concurrent": {
+        "text": "During the day, the sky appears blue because sunlight is scattered by tiny molecules in the atmosphere\u2014a phenomenon called Rayleigh scattering. As sunlight passes through the air, the small gas molecules and aerosols preferentially scatter shorter-wavelength light, especially the blue part of the visible spectrum, in all directions. This scattered blue light reaches our eyes from across the sky, making the daytime sky look blue rather than, say, green or violet.\n\nAt sunset, the balance of scattering changes dramatically. As",
+        "completion_tokens": 96,
+        "ttft_s": 14.348265069998888,
+        "total_s": 17.316871567996714,
+        "wall_s": 17.317013921998296,
+        "finish_reason": "length",
+        "gibberish": 0.0125
+      }
+    },
+    {
+      "slot": 2,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 16,
+      "ref_chars": 509,
+      "conc_chars": 505,
+      "gibberish": 0.0,
+      "ok": false,
+      "concurrent": {
+        "text": "During the day, the sky appears blue because sunlight from the Sun is scattered and reflected by tiny molecules of air in Earth's atmosphere. These small molecules scatter blue light from the Sun more effectively than other colors, spreading it throughout the sky in all directions. This scattered blue light is what our eyes perceive, making the sky look blue from every angle rather than just straight at the Sun.\n\nAt sunset, the sky appears red, orange, and yellow because the sunlight path to our eyes",
+        "completion_tokens": 96,
+        "ttft_s": 14.433886661001452,
+        "total_s": 17.316603697003302,
+        "wall_s": 17.31667223000113,
+        "finish_reason": "length",
+        "gibberish": 0.0
+      }
+    },
+    {
+      "slot": 3,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 0,
+      "ref_chars": 509,
+      "conc_chars": 461,
+      "gibberish": 0.07246376811594203,
+      "ok": false,
+      "concurrent": {
+        "text": "The phrase \"Explain\" is incomplete and lacks context. To provide a meaningful explanation, I need more information about what specifically you are asking to be explained. \n\nPlease clarify your request by providing:\n1. **The subject or concept** you want explained (e.g., a word, theory, mathematical formula, historical event, etc.).\n2. **The context or purpose** of the explanation (e.g., for a homework assignment, general knowledge, or to settle a debate).\n\n",
+        "completion_tokens": 96,
+        "ttft_s": 14.796505264999723,
+        "total_s": 17.3415418279983,
+        "wall_s": 17.341634686999896,
+        "finish_reason": "length",
+        "gibberish": 0.07246376811594203
+      }
+    }
+  ]
+}

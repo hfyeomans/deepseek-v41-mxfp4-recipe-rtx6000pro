@@ -1,0 +1,46 @@
+# K=5, D=4, first bs=4 TARGET_VERIFY replay (24 tokens/step) — host SIGSEGV in rank 0 (the kt-kernel rank) inside torch.cuda.graphs.replay. 2026-09-23 04:36 UTC. No Xid. rank 1 survived until the TCPStore vanished.
+# launch: DSPARK=1 DSPARK_K=5 MEM_FRACTION_STATIC=0.935 SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0 (overlay 838490a6)
+# --- last scheduler lines before the fault ---
+[2026-09-23 04:35:13 TP0] Prefill batch, #new-seq: 3, #new-token: 768, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 1, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 16.14
+[2026-09-23 04:35:19 TP0] Decode batch, #running-req: 3, #full token: 768, full token usage: 0.00, #swa token: 768, swa token usage: 0.04, accept len: 2.60, accept rate: 0.32, cuda graph: True, gen throughput (token/s): 24.08, #queue-req: 0
+[2026-09-23 04:35:30 TP0] Decode batch, #running-req: 3, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.05, accept len: 2.99, accept rate: 0.40, cuda graph: True, gen throughput (token/s): 34.61, #queue-req: 0
+[2026-09-23 04:35:40 TP0] Decode batch, #running-req: 3, #full token: 1792, full token usage: 0.01, #swa token: 1536, swa token usage: 0.08, accept len: 3.48, accept rate: 0.50, cuda graph: True, gen throughput (token/s): 40.01, #queue-req: 0
+[2026-09-23 04:35:50 TP0] Decode batch, #running-req: 2, #full token: 1280, full token usage: 0.00, #swa token: 1024, swa token usage: 0.05, accept len: 3.09, accept rate: 0.42, cuda graph: True, gen throughput (token/s): 34.99, #queue-req: 0
+[2026-09-23 04:35:55 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.03, accept len: 2.35, accept rate: 0.27, cuda graph: True, gen throughput (token/s): 24.25, #queue-req: 0
+[2026-09-23 04:35:59 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.03, accept len: 2.27, accept rate: 0.26, cuda graph: True, gen throughput (token/s): 22.34, #queue-req: 0
+[2026-09-23 04:36:02 TP0] Prefill batch, #new-seq: 3, #new-token: 768, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 1, #queue-req: 1, #pending-token: 49, cuda graph: False, input throughput (token/s): 15.87
+# --- faulting thread ---
+Current thread 0x00007a6256633300 (most recent call first):
+  File "/opt/sglang/lib/python3.12/site-packages/torch/cuda/graphs.py", line 186 in replay
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py", line 307 in replay
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py", line 332 in replay
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py", line 1536 in execute
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1777 in _forward_raw
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1645 in forward
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636 in forward_batch_generation
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 305 in _forward_prepared_verify
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 275 in run_non_compact
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 808 in _forward_decode
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 532 in forward_batch_generation
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181 in run_batch
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109 in wrapper
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937 in event_loop_overlap
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124 in decorate_context
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542 in dispatch_event_loop
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1839 in run_event_loop
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5696 in run_scheduler_process
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108 in run
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314 in _bootstrap
+  File "/usr/lib/python3.12/multiprocessing/spawn.py", line 135 in _main
+  File "/usr/lib/python3.12/multiprocessing/spawn.py", line 122 in spawn_main
+  File "<string>", line 1 in <module>
+
+# --- capture geometry (two runners: target verify then draft) ---
+Capturing batches (bs=1 avail_mem=5.18 GB)
+Capturing batches (bs=1 avail_mem=5.62 GB)
+Capturing batches (bs=2 avail_mem=5.19 GB)
+Capturing batches (bs=2 avail_mem=5.63 GB)
+Capturing batches (bs=3 avail_mem=5.19 GB)
+Capturing batches (bs=3 avail_mem=5.65 GB)
+Capturing batches (bs=4 avail_mem=5.65 GB)
+Capturing batches (bs=4 avail_mem=5.82 GB)

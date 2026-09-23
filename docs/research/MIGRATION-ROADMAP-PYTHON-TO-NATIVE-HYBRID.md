@@ -235,6 +235,7 @@ Freeze the current behavioural reference: TP2, **measured 208 GPU / 176 CPU expe
 ### Acceptance gates
 
 - Reproduce **measured** R0 within a **projected ±5% tolerance**: C1 **38.7 tok/s per-stream summed / 36.0 wall**, C3 **111.7 aggregate / 98.2 wall**, C4 **148.3 aggregate / 131.9 wall**, with **measured 512-token outputs** and **measured TTFT about 1.0–1.6 s**.
+- **Erratum 2026-09-23:** the C3/C4 R0 gates above are artifacts of kt-kernel bug C (only row 0 received correct CPU-expert output in the bs=4 graph; bs=3 padded into it). Replace them with the patched-image references C3 **38.3 summed / 35.8 wall tok/s (12.8 per stream)** and C4 **50.8 / 47.0 (12.7 per stream)**. See `docs/BENCHMARKS.md` “Erratum” and `docs/TROUBLESHOOTING.md` bug C.
 - Preserve E22 warm prefill: **measured 1,375 tok/s at 16K** and **measured 1,404 tok/s at 32K** with chunk 8192; keep chunk 4096 as the current default.
 - Resolve E24's remaining NaN causes and prove per-request rejection rather than server death (**pending**).
 - Resolve E23 target-verify correctness before treating speculation as a migration accelerator (**pending**). Preliminary **measured 2026-09-23** evidence: K=2 graph mode first crashed because SM120 page-split scratch buffers grew after capture and freed tensors remained graph targets; overlay commit `838490a6` uses retire-not-free plus pool-geometry pre-sizing. A second captured-graph multi-stream corruption is **measured preliminary** and currently avoided with `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0`.
@@ -487,6 +488,8 @@ Every candidate records all rows; an optimisation cannot hide a regression by re
 | NLL | **measured D=4 ΔNLL −0.0061 nats/token vs D=0; E22 ΔNLL −0.0013** | no unexplained drift (**pending**) | no ownership-induced drift (**pending**) | candidate-specific gate; speculation requires **pending absolute ΔNLL <0.002** |
 | Needle | **measured 16K pass** | 16K pass (**pending**) | 16K pass and long-context candidate pass (**pending**) | 16K plus qualified 262K if claimed (**pending**) |
 | Soak | **pending E24 release gate despite prior clean runs** | zero new failure in focused soak (**pending**) | **pending ≥20K-token mixed soak** | **pending ≥20K-token minimum plus production-duration target** |
+
+**Erratum 2026-09-23:** the historical C4 reference row is retained for provenance but is a bug-C artifact. Apply the percentage gates to the qualified **50.8 summed / 47.0 wall tok/s (12.7 per stream)** reference. Any migration or rank-balancing projection that assumed C4 ≈ 4 × C1 is **pending recomputation**.
 
 The speculation NLL threshold above is a gate, not a result.
 

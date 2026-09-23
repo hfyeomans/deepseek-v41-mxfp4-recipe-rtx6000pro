@@ -140,8 +140,8 @@ Measured 2026-09-21 with this harness, same fixtures, same 512-token output, sam
 | VRAM after load, per card | 92.4 GiB (`gpu_memory_utilization` 0.95) | ≈94 GiB by config (0.96; not captured) | — |
 | KV pool / context ceiling | 2,963,974 tokens (2.8 × 1M requests) / 1,048,576 | `max_num_seqs` 2 / 1,000,000 | — |
 | Tokenizer, same fixture text | +16 % tokens vs V4 (38,169 for the 32K target) | 32,004 for the 32K target | — |
-| C1 decode, speculation on, 512 tok | **132.5 tok/s** (DFlash acceptance 40 %; 135 at 256 tok, 42 %) | **207–239 tok/s** (DSpark 51–63 %); 228 on relaunch | — |
-| C1 decode, speculation off | not run (recipe requires the draft; see below) | **89 tok/s** | — |
+| C1 decode, speculation on, 512 tok | **132.5 tok/s** (DFlash acceptance 40 %; 135 at 256 tok, 42 %) | **207–239 tok/s** (DSpark 51–63 %); 228 on relaunch | 2-GPU hybrid, E23: DSpark K=2 **36.1 wall** / 38.9 summed (accept 0.67), K=5 30.1 / 32.1 (accept 0.38) — **speculation loses on the CPU-bound hybrid**, default off |
+| C1 decode, speculation off | not run (recipe requires the draft; see below) | **89 tok/s** | 2-GPU hybrid, E23 R0: **36.0 wall** / 38.7 summed (E21 default D=4, 325 W) |
 | Decode C2 / C4 / C8 / C16, wall-clock | 193 / 288 / 424 / **569 tok/s** (summed 203 / 306 / 462 / 629) | 300 / 301 / 277 / — (`max_num_seqs` 2 queues the rest) | — |
 | GPU draw during C1 decode (sweep, 300 W cap) | 256 / 259 W per card, SM 2,197 / 2,242 MHz | 233–250 W per card, SM 2,265–2,310 MHz | — |
 | GPU draw during C2→C16 decode | **300 / 300 W — pinned at the cap**, SM 1.89–1.91 GHz (580-sample median) | not pinned (C2 summed 300 tok/s at ~250 W) | — |
@@ -310,7 +310,24 @@ Healthy runs say **+6 % prefill (8,582 vs 8,068) and +8 % decode (1,279 vs 1,188
 - **Decision:** one system-wide cap, **325 W**, because GLM is the daily driver and V4-Flash loses no throughput and shows no thermal event at 86 °C. If V4-Flash becomes primary, `nvidia-smi -pl 300` (or disable `gpu-power-limit.service`) recovers the efficiency. Corrects E8b's "+4 % prefill at 325 W" — that was a 3-run median; with 5 runs and cache hits removed the gain is ≈ 1 %.
 - **Lesson for V4.1:** whatever engine serves it will be NVFP4/MXFP4 tensor-core GEMMs like V4-Flash, so expect power caps to be irrelevant to its decode and marginal to its prefill; the levers there are bytes per token, not watts.
 
+## Erratum (2026-09-23): every V4.1-hybrid C3 and C4 decode figure from E19 to E23 R0 is an artifact of kt-kernel bug C
+
+**What was wrong.** The unpatched kt-kernel bs=4 decode CUDA graph was baked to a pinned host buffer that the first prefill freed ([TROUBLESHOOTING, bug C and the entry after it](TROUBLESHOOTING.md#c4-decode-drops-from--148-to--50-toks-after-the-bug-c-patch--and-four-identical-greedy-prompts-in-one-batch-return-four-different-answers-on-the-old-build)). It never crashed; it computed CPU experts for effectively one row of the batch and copied stale bytes for rows 1–3. Two consequences: (1) the bs=4 step took as long as a bs=1 step, so C4 looked like 4 × C1 ("near-linear batching") and C3 (padded into the bs=4 graph) like 3 × C1; (2) rows 1–3 of every C3/C4 request since E19 were **wrong** — four identical greedy prompts in one batch returned four different answers on the old build, one of them having lost the prompt. bs=1 and bs=2 were always correct, so every C1 and C2 figure stands, as do prefill, TTFT, NLL (bs=1) and needle results.
+
+**Corrected figures (measured 2026-09-23, patched image `dsv41-kt:recipe`, D=4, speculation off, 325 W, 256 tokens, distinct prompts, 3 runs after 1 warmup; `evidence/e23-spec-decode/r3/decode-patched-c1234.json`, `decode-patched-c4-sameprompt.json`):**
+
+| C | summed tok/s (median) | wall tok/s | per stream | TTFT s | old (artifact) summed | note |
+|---|---|---|---|---|---|---|
+| 1 | **39.2** | 34.0 | 39.2 | 1.03 | 38.5–38.7 | unchanged |
+| 2 | **44.9** | 40.6 | 22.5 | 1.27 | 45.4–47.8 | unchanged — the "bs=2 dip" was the honest row |
+| 3 | **38.3** | 35.8 | 12.8 | 1.49 | 98–112 | pads into the bs=4 graph, so it pays four rows for three tokens |
+| 4 | **50.8** | 47.0 | 12.7 | 1.69 | 145–148 | same-prompt (full expert reuse) 56.2 / 49.6 — only +11 % |
+
+Step time fits ≈ 8 ms + 17.7 ms × rows. The CPU tier's decode cost is per (token, expert) evaluation — rows that route to the *same* experts save only 11 % — so at M ≤ 4 kt's MXFP4 CPU kernel does not amortise weight reads across rows. Batching buys ≈ +30 % aggregate at C4 for a 3× slower stream. This confirms the E23 verdict (a verify step multiplies rows) and invalidates every projection that multiplied C1 by ≈ 4 for C4: the four-agent router advice, the third-GPU C4 estimate and the "CPU tier is not read-bound" reading of E19 item 3 are marked pending recomputation where they appear. Historical rows below are kept as written with this erratum as the reader's guide; the same-prompt gate `scripts/verify-batch-consistency.py` is now part of the release gate (TASKS standing rules).
+
 ## E19–E21 — DeepSeek-V4.1-Flash on 2 GPUs: the sglang-kt hybrid (32K context, 2026-09-22)
+
+> **Erratum 2026-09-23:** the C3 and C4 rows in this table and the "near-linear" readings below are artifacts of kt-kernel bug C — see the Erratum section above. C1, C2, prefill, NLL and needle rows stand.
 
 The first V4.1-Flash that runs on this box. Layout from E6-DESIGN: 208 experts per layer on the GPUs (MXFP4), 176 per layer on the CPU via kt-kernel (16 cores, TP rank 0 only), Engram tables on NVMe. Launch: `bash scripts/serve-hybrid.sh` (container `dsv41-kt`, model name `dsv41-flash-hybrid`), 300 W cap. Same harness as the scoreboard above; decode is 256 tokens, 3 runs, distinct prompts. Full logs in `plan/EXPERIMENTS.md` E19–E21 and `evidence/t36d-first-serve/`, `evidence/e20-*/`, `evidence/e21-kt-fixed-floor/`.
 
@@ -348,20 +365,24 @@ The first V4.1-Flash that runs on this box. Layout from E6-DESIGN: 208 experts p
 Decode is unchanged with the streamer resident (`decode-streamer-on.json`, 256 tokens × 3 runs): C1 38.41, C2 47.81, C4 144.97 tok/s aggregate vs E21 38.5 / 45.4 / 147. A 16,384 chunk does not fit: the KV pool is only ≈ 3.4 GB (MLA + sliding-window KV), so `MEM_FRACTION_STATIC` cannot free the ≈ 6 GB the activations would need; fewer GPU experts would. The E22c NaN (4-seq batch) was **not** the streamed path — the batch had 664 real tokens (< 1,024; the scheduler's `#new-token` is padded per sequence to 256) and ran the regular D=4 CPU path; it did not reproduce in 20 same-shape batches with a per-layer finite probe (`KT_NAN_PROBE_MIN_TOKENS`); tracked under E24.
 
 
-### E23 — speculative decoding rounds (planned; table filled as rounds land)
+### E23 — speculative decoding rounds (closed 2026-09-23: R0, R1 K=2/K=5 measured, R2 as a discriminator; speculation stays off)
+
+> **Erratum 2026-09-23:** the R0 C3/C4 cells (98.2 / 131.9 wall) were measured on the unpatched kt-kernel and are artifacts (Erratum section above); the qualified spec-off C3/C4 are 35.8 / 47.0 wall. The K=5 rows were re-measured with the bug C patch bind-mounted and are real. The K=2 row predates the patch: its C1 and C3 cells used graphs with permanent buffers (3- and 9-token verify shapes) and stand; its **C4 cell (12-token verify shape, the same pre-capture temp mechanism) is unverified** — the wide run spread (59–70 summed) and the acceptance drop to 0.36 at C4 fit corrupted verify rows, so treat 48.3 as an upper bound until re-run on the patched image. The verdict does not change — speculation still loses at C1 (parity or −16 %); against the corrected C3/C4 baseline (35.8 / 47.0 wall) K=2 is roughly at parity at C3/C4 rather than a 60 % loss, and K=5 still loses — but parity is not the ≥ 10 % go bar, and a verify step multiplies rows on a tier whose cost is per row.
 
 Protocol in EXPERIMENTS E23 / TASKS T3.9a–f. Reference row R0 is the E21 default (D=4, speculation off) re-measured with 512-token outputs. Every cell reports wall tok/s (per stream and aggregate), TTFT, ITL p50/p95, accepted tokens per verification, CPU-tier wait per accepted token, host DRAM GB/s, Engram ms/step, GPU W/util — from one JSON per cell under `evidence/e23-spec-decode/<round>/`.
 
 | Round | D | Spec | C1 wall | C3 wall (per stream) | C4 wall (per stream) | acc. tok/verify | CPU wait ms / accepted tok | DRAM GB/s | Engram ms/step | GPU W (per card) | NLL Δ | soak |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | R0 | 4 | off | **36.0** (stream 38.7) | 98.2 (37.2) | 131.9 (37.0) | 1.00 | E21: ≈ 40 waits/step, hidden by D=4 | — | — | — | 0 (E21 D=4: −0.0013) | E22 verify pass |
-| R1 | 4 | K=2 | | | | | | | | | | |
-| R1 | 4 | K=5 | | | | | | | | | | |
-| R2 | 0 | off / K=2 / K=5 | | | | | | | | | | |
+| R1 | 4 | K=2 | 36.1 (stream 38.9) — 1.00× | 41.9 (15.7) — 0.43× | 48.3 (17.4) — 0.37× | K=2: accept rate 0.67 / 0.58 / 0.36 (len 1.8–2.15 of 3) | not collected (verdict clear from wall) | — | — | max 129 / 148 (GPUs idle behind the CPU tier) | not gated (fails go bar) | 3 runs × 3 cells, zero faults |
+| R1 | 4 | K=5 | 30.1 (stream 32.1) — 0.84× | 30.9 (12.9) — 0.31× | 30.0 (9.3) — 0.23× | accept rate 0.38 / 0.38 / 0.35 (len 2.5–2.9 of 6) | not collected | — | — | med 101 / 123, max 112 / 131; GPU0 util 12 %, 67 °C | not gated | first pass crashed at C4 (bug C); rerun after the kt patch: 3 × 3 cells, zero faults, zero Xid |
+| R2 | 0 | K=5 (discriminator) | probes only: C1 26.8, C2 26.9, C3 32.3 summed (96–128 tok, debug-sync server) | | crashed identically (CE4 write fault) → deferral not the cause | | | | | | — | off / K=2 at D=0 not run (family already rejected) |
 
 R0 (2026-09-22, `r0-baseline-d4-specoff.json`, server in the E22 chunk-8192 config, TTFT 1.02 / 1.45 / 1.63 s, 512 tokens every stream, `finish_reason=length`): reproduces E21 within +0.5 % (C1 38.5 → 38.7, C4 147 → 148.3 summed). Wall tok/s is 7 % (C1) to 11 % (C4) below the summed stream rate because it includes TTFT and the ramp; that is the number speculation must beat by ≥ 10 % (C1 wall ≥ 39.6).
 
 Fit check first (T3.9a): DSpark's three MTP stages are 7.4 GiB (≈ 3.7 GiB per card at TP2); the E22c server finished capture with 7.1–7.4 GB free and dipped to 0.98 GiB free on TP1 during a streamed prefill, so speculation + streamed prefill + 208 GPU experts may not coexist at 32K. Which lever gives (streamed prefill off, 200 GPU experts, lower `MEM_FRACTION_STATIC`) is recorded with the round.
+
+Reading (2026-09-23): the fit check passed without moving an expert — the draft stages are 3.85 GB/rank and stay GPU-resident, `MEM_FRACTION_STATIC` 0.935 leaves a 258–280K-token KV pool and ≈ 5.6 GB free after capture — so memory was never the constraint; the CPU tier was. Both K rows are below R0 at every concurrency, and the GPU sampler says why: 101–148 W per card and GPU0 at 12 % utilisation while the CPU tier verifies `bs × (K+1)` tokens' worth of distinct experts per layer. Acceptance (0.67 at K=2 C1, 0.38 at K=5) is in the range E8 measured on the 4-GPU V4-Flash (51–63 %), so the drafts are fine; the *target* verify step is what the hybrid cannot afford. Three graph-mode bugs were fixed on the way (TROUBLESHOOTING: A multi-stream overlap, B page-split scratch freed under a graph, C kt temp pinned buffer freed under a graph); the kt fix is `config/kt-kernel-patches/0001-…patch` and is the reason K=5 C4 has a number at all. Files: `r0-baseline-d4-specoff.json`, `r1/k2-d4.json`, `r1/k5-d4.txt` (first pass, C4 crash), `r3/k5-d4-fix.json` (clean K=5), `crash/`, `r3/k5-d0-nofix-c4-segfault.txt`.
 
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 

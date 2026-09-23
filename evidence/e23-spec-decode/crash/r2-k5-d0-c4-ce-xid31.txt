@@ -1,0 +1,5 @@
+# E23 R2 — K=5, D=0 (KT_MAX_DEFERRED=0), SGLANG_BCG_DEBUG_SYNC=1 server. C1/C2/C3 probes (96–128 tokens, 1 run) passed: 26.8 / 26.9 / 32.3 tok/s summed. First C4 probe -> copy-engine MMU write fault at address 0, surfacing in the process as 'CUDA error: unspecified launch failure' in the Engram graph break.
+# Same bug as R1's host segfault (bug C, kt temp-buffer lifetime): the graph's D2H memcpy node targets freed pinned memory. Deferral ruled out as a factor.
+
+## kernel log (scrubbed: hostname, PCI BDF)
+Sep 23 01:03:21 HOST kernel: NVRM: Xid (PCI:BDF): 31, pid=153572, name=python3, intr 00000000. MMU Fault: ENGINE CE4 HUBCLIENT_CE1 faulted @ 0x0_00000000. Fault is of type FAULT_PDE ACCESS_TYPE_VIRT_WRITE

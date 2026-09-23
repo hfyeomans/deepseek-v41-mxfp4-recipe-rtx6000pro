@@ -74,6 +74,10 @@ EXTRA_SERVER_ARGS="${EXTRA_SERVER_ARGS:-}"          # appended verbatim (word-sp
 # EXTRA_DOCKER_ENV="CUDA_LAUNCH_BLOCKING=1" to make async CUDA faults report
 # at the kernel that raised them (much slower; diagnosis only).
 EXTRA_DOCKER_ENV="${EXTRA_DOCKER_ENV:-}"
+# Extra `docker run` flags, word-split. Diagnosis only: e.g. bind-mount an
+# instrumented copy of a kt-kernel module over the image's file (E23 R3) with
+# EXTRA_DOCKER_ARGS="-v /tmp/x/experts_base.py:/opt/sglang/lib/python3.12/site-packages/kt_kernel/experts_base.py:ro"
+EXTRA_DOCKER_ARGS="${EXTRA_DOCKER_ARGS:-}"
 
 snapshot_dir="/hfm/snapshots/${SNAPSHOT}"
 
@@ -112,6 +116,8 @@ extra_env_flags=()
 for kv in $EXTRA_DOCKER_ENV; do
   extra_env_flags+=(-e "$kv")
 done
+# shellcheck disable=SC2206  # intentional word splitting of the override string
+extra_docker_args=($EXTRA_DOCKER_ARGS)
 
 docker_cmd=(
   docker run -d --name "$CONTAINER_NAME"
@@ -135,6 +141,7 @@ docker_cmd=(
   -e "KT_GPU_PREFILL_LOG=${KT_GPU_PREFILL_LOG}"
   -e "KT_NAN_PROBE_MIN_TOKENS=${KT_NAN_PROBE_MIN_TOKENS}"
   "${extra_env_flags[@]}"
+  "${extra_docker_args[@]}"
   "$IMAGE"
   "${server_args[@]}"
 )

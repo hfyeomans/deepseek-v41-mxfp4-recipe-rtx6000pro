@@ -244,6 +244,8 @@ Architectural estimates anchored to E21/E22 measurements; **not benchmark result
 | 32K TTFT | ≈ 19–23 s (streamed prefill) | modest improvement, mainly via larger chunks | similar |
 | 262K TTFT | unqualified | minutes, not interactive | still minutes |
 
+**Erratum 2026-09-23:** the current C3/C4 figures and the projected C3/C4 ranges above rely on kt-kernel bug C: the unpatched bs=4 graph computed correct CPU-expert output only for row 0. The qualified patched measurements are C3 **38.3 summed / 35.8 wall tok/s (12.8 per stream)** and C4 **50.8 summed / 47.0 wall tok/s (12.7 per stream)**. The three-GPU C3/C4 projections multiplied the artifact and are **pending recomputation**; do not use those ranges. See `docs/BENCHMARKS.md` “Erratum” and `docs/TROUBLESHOOTING.md` bug C.
+
 Decode gains are bounded: the third card removes CPU-expert work but adds a GPU dispatch/reduce every layer, and the Engram graph breaks and a residual CPU tier remain. At 1.5–2K tok/s a 262K fill takes **2 min 55 s – 2 min 11 s** (projected) against ≈ 5 min at the measured 32K rate of 811 tok/s extrapolated linearly (an optimistic extrapolation, not a 262K measurement); none of it is comfortable interactively without prefix/KV caching.
 
 ### 2.6 Third card vs remote Metal
@@ -276,11 +278,17 @@ Distinct prompts, 512-token outputs, D=4, speculation off (`evidence/e23-spec-de
 
 "Four users each get ≈ 37–38 tok/s" holds for C1/C3/C4: the fixed per-step CPU-tier synchronisation cost is shared by three or four active streams (E19: distinct routing is free at bs=4). Wall aggregate is 7–11 % below the summed stream rate because it includes TTFT and ramp; wall is the number to quote for real use.
 
+**Erratum 2026-09-23:** the C3/C4 rows and the four-user conclusion are artifacts of kt-kernel bug C; the unpatched bs=4 graph computed CPU-expert output only for row 0, while bs=3 padded into that graph. With the patched image, distinct-prompt C4 is **50.8 summed / 47.0 wall tok/s (12.7 per stream)** and C3 is **38.3 / 35.8 (12.8 per stream)**. C4 buys only ≈ **+30% aggregate** over C1 while cutting per-stream speed by about 3×. Same-prompt C4 is 56.2 summed / 49.6 wall, only +11% over distinct, so decode is per-row CPU compute/latency-bound rather than free route sharing. See `docs/BENCHMARKS.md` “Erratum” and `docs/TROUBLESHOOTING.md` bug C.
+
 **C2 anomaly (measured, open):** per-stream 23.9 tok/s at C2 against 38.7 / 37.2 / 37.0 at C1 / C3 / C4 — present since E20 ("the bs=2 dip") and not explained. Do not extrapolate smooth scaling from it; it is a follow-up item (§5).
+
+**Erratum 2026-09-23:** C2 was correct on both builds; it is no longer the anomaly. Patched C3 is worse than C2 because bs=3 pads into the bs=4 graph; capturing bs=3 is an open follow-up.
 
 ### 3.3 Queue and concurrency policy (**inferred**, needs measurement before production use)
 
 The server runs **four** requests (`MAX_RUNNING_REQUESTS=4`, `CUDA_GRAPH_MAX_BS=4`); more queue. Start one local job immediately; when independent offline jobs are available, batch three or four; cap active local work at four; queue beyond that. With exactly two jobs active, briefly hold for a third, use dummy batching only if shown safe and worthwhile, or accept the lower per-stream rate.
+
+**Erratum 2026-09-23:** this queue advice relied on artifact near-linear C3/C4 scaling. Pending a new latency/throughput policy measurement, prefer C1 for interactive work and treat C4 as a throughput trade: ≈ +30% aggregate at 12.7 tok/s per stream, not four C1-speed agents.
 
 ### 3.4 Context and prefill caveats (**measured**, E22)
 
@@ -302,6 +310,8 @@ Protocol and status live in `plan/EXPERIMENTS.md` E23 and `docs/BENCHMARKS.md`; 
 
 **Status (2026-09-22):** R0 done; K=2 reached speculation for ≈ 500 tokens (attempt 5, **measured**): accept length 1.8–2.15 of 3, acceptance 0.41–0.57, ≈ 30–34 tok/s — *not* faster than the 36 tok/s wall baseline at that point — then a CUDA illegal memory access in target-verify graph replay. Three overlay fixes were needed to get that far (`6032dd44`/`3b1fedce` prefill-graph breaks gated on `is_extend_without_speculative()`, `71645529` per-field dataclass rows, `95f2fe3d` output cap = bs × captured_req_width); the IMA is open (**failed**, diagnosis in progress; eager repro launched). K=5 and D=0 rounds have no result. The reliable production number remains ≈ 37 tok/s per user at C3/C4 with speculation off.
 
+**Erratum 2026-09-23:** the final C3/C4 production claim is invalid because of bug C. The corrected speculation-off rates are 12.8 and 12.7 tok/s per stream respectively; the per-row CPU cost strengthens the conclusion that target verification, which multiplies rows, is unlikely to win.
+
 ---
 
 ## 5. Risks and follow-up experiments
@@ -316,3 +326,5 @@ Protocol and status live in `plan/EXPERIMENTS.md` E23 and `docs/BENCHMARKS.md`; 
 | Third-GPU prototype | projected only | §2 | Measure PCIe dispatch latency first |
 | Mac transport / Metal kernel microbench | pending, unregistered | §1.6 phases 1–2 | Only if a TB5-capable Linux controller is confirmed |
 | Reproducibility / push gap | open | Recipe repo and overlay are both local-only; container state is ephemeral | [OPEN-SOURCE-PLAN.md](OPEN-SOURCE-PLAN.md) |
+
+**Erratum 2026-09-23:** the bs=2 row's comparison baseline is an artifact; C2 is correct, while patched C3/C4 are 12.8/12.7 tok/s per stream. The third-GPU projection is pending recomputation from corrected batching measurements.

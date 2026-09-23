@@ -1,0 +1,101 @@
+--- a/kt_kernel/experts_base.py
++++ b/kt_kernel/experts_base.py
+@@ -236,8 +236,48 @@
+         if batch_size in cls.capture_buffers:
+             return cls.capture_buffers[batch_size]
+         if batch_size == cls.temp_bs:
++            if batch_size in cls.capture_bs:
++                # FIX 1 (E23 R3): this size was first requested before
++                # set_capture_batch_sizes() registered it (e.g. the pre-capture
++                # warmup at max_bs), so it lives in the single temp slot. A CUDA
++                # graph capturing it now would bake the temp addresses, and the
++                # next different-size eager call would free them (use-after-free:
++                # host segfault in cuGraphLaunch / CE MMU write fault). Promote
++                # the exact tuple into the permanent capture cache instead.
++                cls.capture_buffers[batch_size] = cls.temp_buffer
++                logger.warning(
++                    "KT_BUF promote temp buffer bs=%d into capture_buffers (capture_bs=%s)",
++                    batch_size,
++                    cls.capture_bs,
++                )
+             return cls.temp_buffer
+ 
++        # --- E23 R3 diagnostic (recipe repo, bind-mounted; not in the image) ---
++        # Log every temp-buffer (re)allocation. A capture-time hit here means a
++        # CUDA graph is baking the temp buffer's pinned/device addresses, which
++        # the next different-size eager call would free (use-after-free -> CE
++        # write fault / host segfault in cuGraphLaunch).
++        try:
++            capturing = torch.cuda.is_current_stream_capturing()
++        except Exception:
++            capturing = False
++        import traceback as _tb
++
++        frames = [
++            f"{f.name}:{f.lineno}"
++            for f in _tb.extract_stack(limit=12)[:-1]
++            if "experts_base" not in f.filename
++        ][-6:]
++        (logger.error if capturing else logger.debug)(
++            "KT_BUF %s temp buffer bs=%d (prev temp_bs=%d, capture_bs=%s, captured=%s) callers=%s",
++            "CAPTURE-BAKES" if capturing else "alloc",
++            batch_size,
++            cls.temp_bs,
++            cls.capture_bs,
++            sorted(cls.capture_buffers.keys()),
++            " <- ".join(reversed(frames)),
++        )
++
+         input_tensor_cpu = [
+             torch.zeros((batch_size, hidden_size), device="cpu", pin_memory=pin_memory, dtype=torch.bfloat16)
+             for _ in range(cls.buffer_depth)
+@@ -278,10 +318,49 @@
+         )
+         if batch_size in cls.capture_bs:
+             cls.capture_buffers[batch_size] = cur_buffer
++        cls._retire_temp_buffer(hidden_states.device)
+         cls.temp_bs = batch_size
+         cls.temp_buffer = cur_buffer
+         return cur_buffer
+ 
++    # FIX 2 (E23 R3): replaced temp buffers are retired behind a CUDA event
++    # recorded on the current stream, not freed on the spot. The eager path is
++    # fully stream-asynchronous (D2H copy -> host-callback CPU experts -> H2D
++    # copy) and the C++ tasks hold raw data_ptr()s that torch's caching host
++    # allocator cannot see, so a different-size eager call arriving before
++    # that work drains would otherwise free memory still in use.
++    _retired: List = list()
++    _retired_max: int = 16
++
++    @classmethod
++    def _retire_temp_buffer(cls, device) -> None:
++        old = cls.temp_buffer
++        if not old:
++            return
++        if cls.temp_bs in cls.capture_buffers:
++            return  # permanently owned by the capture cache
++        event = None
++        if device is not None and device.type == "cuda":
++            try:
++                if not torch.cuda.is_current_stream_capturing():
++                    event = torch.cuda.Event()
++                    event.record(torch.cuda.current_stream(device))
++            except Exception:
++                event = None
++        # event=None (capturing, or non-CUDA): keep for the process lifetime.
++        cls._retired.append((event, cls.temp_bs, old))
++        # Drop only entries whose stream work has provably completed; if too
++        # many are pending, wait for the oldest instead of freeing it.
++        still = []
++        for ev, bs, buf in cls._retired:
++            if ev is None or not ev.query():
++                still.append((ev, bs, buf))
++        while len(still) > cls._retired_max:
++            ev, _bs, _buf = still.pop(0)
++            if ev is not None:
++                ev.synchronize()
++        cls._retired = still
++
+ 
+ class _MoEBase:
+     """

@@ -1,0 +1,53 @@
+model=dsv41-flash-hybrid  runs=2 warmup=1 max_tokens=512
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+Traceback (most recent call last):
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-decode.py", line 169, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-decode.py", line 145, in main
+    one_run(args.url, model, c, args.max_tokens, args.seed, args.distinct_prompts, args.fixture_offset)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-decode.py", line 91, in one_run
+    results = [f.result() for f in futs]
+               ~~~~~~~~^^
+  File "<python3.14 stdlib>/concurrent/futures/_base.py", line 454, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "<python3.14 stdlib>/concurrent/futures/_base.py", line 396, in __get_result
+    raise self._exception
+  File "<python3.14 stdlib>/concurrent/futures/thread.py", line 86, in run
+    result = ctx.run(self.task)
+  File "<python3.14 stdlib>/concurrent/futures/thread.py", line 73, in run
+    return fn(*args, **kwargs)
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/openai_client.py", line 74, in chat_stream
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "<python3.14 stdlib>/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "<python3.14 stdlib>/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "<python3.14 stdlib>/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "<python3.14 stdlib>/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "<python3.14 stdlib>/urllib/request.py", line 1349, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<python3.14 stdlib>/urllib/request.py", line 1324, in do_open
+    r = h.getresponse()
+  File "<python3.14 stdlib>/http/client.py", line 1478, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "<python3.14 stdlib>/http/client.py", line 343, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "<python3.14 stdlib>/http/client.py", line 304, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "<python3.14 stdlib>/socket.py", line 729, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+done

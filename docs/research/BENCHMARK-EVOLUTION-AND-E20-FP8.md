@@ -16,6 +16,8 @@ Written 2026-09-22. §1 consolidates the hybrid's numbers in one place with the 
 
 At E23 R0 wall is 7 % (C1) to 11 % (C4) below the summed rate.
 
+**Erratum 2026-09-23:** the E23 R0 C4 comparison is an artifact of kt-kernel bug C. The qualified patched C4 is **50.8 summed / 47.0 wall tok/s (12.7 per stream)**; the old percentage is retained only as historical context.
+
 ### 1.2 Decode
 
 | Metric | E19 first serve | E20 tuned FP8 config | E21 deferral D=4 | E22 streamed prefill resident | E23 R0 (512-tok outputs) |
@@ -31,6 +33,8 @@ At E23 R0 wall is 7 % (C1) to 11 % (C4) below the summed rate.
 Improvements: E19 → E20 **2.26×** (dense FP8 GEMM configs, §2); E20 → E21 **+22 % C1, +22 % C4** (expert deferral D=4); E21 → E22 decode unchanged by design (prefill-only change); E22 → E23 R0 reproduces within +0.5 %. Overall C1: 13.98 → 38.7 tok/s, **2.77×**; C4 aggregate 86.7 → 148.3, **1.71×**.
 
 The C2 dip (per-stream ≈ 19–24 tok/s against ≈ 37 at C1/C3/C4) has been present since E20 and is unexplained. D=5 gives ≈ +4 % more but asserts at bs ≥ 4; D=6 also costs +0.23 nats (E21) — D=4 is the ceiling until E24 resolves the NaN.
+
+**Erratum 2026-09-23:** every C3/C4 decode figure in this table, and the improvement/scaling conclusions drawn from them, is an artifact of kt-kernel bug C: the unpatched bs=4 graph computed correct CPU-expert output only for row 0, and bs=3 padded into it. The patched-image references are C3 **38.3 summed / 35.8 wall tok/s (12.8 per stream)** and C4 **50.8 / 47.0 (12.7 per stream)**. C2 was correct on both builds. C4 now buys ≈ +30% aggregate over C1 at about 3× lower per-stream speed. See `docs/BENCHMARKS.md` “Erratum” and `docs/TROUBLESHOOTING.md` bug C.
 
 ### 1.3 Prefill and TTFT by context length
 
@@ -55,6 +59,8 @@ Streaming cost per chunk is nearly flat in tokens (4.7–5.1 s at 4K, 5.4–5.8 
 
 The hybrid's case on two GPUs is quality and privacy at 32K with four slots, not speed; the 3-GPU layout ([notes §2](HETEROGENEOUS-ROUTING-AND-OPTIMIZATION-NOTES.md#2-third-rtx-pro-6000--back-of-envelope)) is the projected route to 42–60 tok/s C1.
 
+**Erratum 2026-09-23:** the retained 131.9 C4 wall value is a bug-C artifact; the qualified value is **47.0 wall tok/s**. Four slots remain supported, but they do not preserve C1 per-stream speed.
+
 ### 1.5 Current qualified operating point (2026-09-22)
 
 `scripts/serve-hybrid.sh` defaults: `KT_NUM_GPU_EXPERTS=208`, `KT_MAX_DEFERRED=4`, `KT_GPU_PREFILL_MIN_TOKENS=1024`, `CHUNKED_PREFILL_SIZE=4096`, `MEM_FRACTION_STATIC=0.92`, `MAX_RUNNING_REQUESTS=4`, `CUDA_GRAPH_MAX_BS=4`, `DSPARK=0`, 32K context, 325 W. Qualified by `verify.py` 16K all-pass, ΔNLL within gate, and the E20 attempt-8 35-minute / 96-mixed-batch soak; the E22c NaN sighting (E24) means the ≥ 20K-token zero-Xid soak is still owed for the streamed-prefill default.
@@ -69,6 +75,8 @@ The hybrid's case on two GPUs is quality and privacy at 32K with four slots, not
 | R1 | K=2 | ≈ 500 tokens: accept length 1.8–2.15 of 3, acceptance 0.41–0.57, ≈ 30–34 tok/s summed (below baseline); then CUDA illegal memory access in target-verify replay | failed (in diagnosis) |
 | R1 | K=5 | — | pending |
 | R2 | D=0 × {off, K=2, K=5} | — | pending |
+
+**Erratum 2026-09-23:** the R0 C3/C4 values are artifacts of bug C. The corrected speculation-off wall rates are **35.8 (C3)** and **47.0 (C4)**. Because CPU decode cost scales per row (≈ 8 ms + 17.7 ms × rows), this strengthens the E23 verdict that verification loses when it multiplies target rows.
 
 ## 2. E20 — dense W8A8 block-FP8 GEMM tuning for SM120 (T3.6d4)
 

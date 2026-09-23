@@ -38,7 +38,7 @@ Measured so far on this host ([docs/BENCHMARKS.md](docs/BENCHMARKS.md)): CPU DRA
 
 | Path | Status | Expected result |
 |---|---|---|
-| **B. Three-tier hybrid on 2 GPUs** — port `deepseek_v41` into KTransformers' sglang-kt (validated for V4-Flash only), or run llama.cpp's `deepseek41` branch when CSA2 lands, or our own PCIe expert-streaming prototype | no engine runs it today; build track P3 | 56–89 tok/s decode at batch 1 (DRAM-bound), 2–3K tok/s prefill via layerwise GPU prefill; the first published 2-GPU V4.1-Flash number |
+| **B. Three-tier hybrid on 2 GPUs** — port `deepseek_v41` into KTransformers' sglang-kt (validated for V4-Flash only), or run llama.cpp's `deepseek41` branch when CSA2 lands, or our own PCIe expert-streaming prototype | **serving** (E19–E23, `scripts/serve-hybrid.sh`: SGLang overlay + kt-kernel, 208 GPU / 176 CPU experts, D=4 deferral, streamed prefill, spec off) | measured: C1 39.2 tok/s summed / 34.0 wall, C4 50.8 aggregate (12.7 per stream), prefill 0.8–1.4K tok/s at 16K, 3/3 needles, NLL-neutral ([BENCHMARKS](docs/BENCHMARKS.md)); every C3/C4 figure before 2026-09-23 is an artifact (BENCHMARKS "Erratum"). Pre-build projection was 56–89 tok/s at batch 1 |
 | **E. Three GPUs**, 91% of experts resident, EP3/PP | future comparison; no card | ~119–155 tok/s |
 | **A. Four RTX PRO 6000** + Engram tables in DRAM (SGLang `dev-dsv41` host-table path) | proven pattern on 4× SM120 by 0xSero; profile written, unqualified; **1,500 W PSU cannot carry four cards at 300 W** ([power](docs/HARDWARE.md#power-and-cooling-planning-inputs-for-option-a)) | ~200 tok/s C1, ~700 tok/s C8, ~7K tok/s prefill (0xSero, 275 W) |
 | **C/D. Sub-3-bit experts or 42% expert pruning** | no kernels / no evaluated artifact | research only; D gated on E7 routing skew |
@@ -82,6 +82,7 @@ Need a GPU window (stop the GLM container first):
 | `step-profile.py`, `gap-context.py` | E20/E21: per-step kernel timeline from a torch-profiler trace (`/start_profile`), and what surrounds each GPU idle gap |
 | `kt-cpu-per-step.sh`, `sched-wait-per-step.py` | E21: kt CPU-seconds per decode step, and per-thread run-queue wait / context switches (`/proc/<tid>/schedstat`) around one bench run |
 | `nll-score.py` | quality metric for approximations (expert deferral, kernels): teacher-forced mean NLL of `scripts/fixtures/nll-corpus.txt`, `--compare` a baseline JSON |
+| `verify-batch-consistency.py` | E23 R3b / E26 gate for any concurrency number: `--same-prompt` sends N identical greedy prompts in one batch and requires every row to agree (min pairwise prefix, per-slot prefix vs a bs=1 reference, gibberish ratio); the check that exposed the bug-C bs=4 graph behind the E19–E23 C4 figures |
 | `greedy-logprobs.py` | gross sanity only — greedy picks flip at near-ties run-to-run on the hybrid (E21 r7); use `nll-score.py` for numbers |
 | `kt-export-bench.py` | E22a: exports one layer's CPU experts from kt-kernel into pinned host buffers (`gpu_tp_count=2`), byte-compares the slices against the safetensors shards, times export / H2D / pipelined streaming, and checks the staged FlashInfer SM120 MoE output against the resident layout and an fp32 reference (`--check-tokens`, `--skip-timing`, `--json`); runs inside `dsv41-kt:recipe` without a server |
 

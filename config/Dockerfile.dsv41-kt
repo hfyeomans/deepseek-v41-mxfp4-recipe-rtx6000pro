@@ -26,6 +26,15 @@ RUN pip download --no-cache-dir --no-deps -d /tmp/ktw "kt-kernel==${KT_KERNEL_VE
  && pip install --no-cache-dir --no-deps /tmp/ktw/pruned/kt_kernel-*.whl \
  && rm -rf /tmp/ktw
 
+# kt-kernel source patches (E23 R3, T3.9g). 0001: KExpertsCPUBuffer temp-buffer
+# lifetime — promote a temp buffer into the capture cache when its size is in
+# capture_bs (else the bs=max verify graph bakes addresses the next eager call
+# frees -> host segfault in cuGraphLaunch / Xid 31 CE write fault), and retire
+# replaced temp buffers behind a CUDA event. Not upstream (kt issue #1815).
+COPY kt-kernel-patches /opt/recipe/kt-kernel-patches
+RUN cd /opt/sglang/lib/python3.12/site-packages \
+ && for p in /opt/recipe/kt-kernel-patches/*.patch; do patch -p1 --forward < "$p"; done
+
 COPY kt_smoke.py /opt/recipe/kt_smoke.py
 RUN python3 /opt/recipe/kt_smoke.py
 

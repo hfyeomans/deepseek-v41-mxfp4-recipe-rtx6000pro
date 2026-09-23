@@ -1,0 +1,60 @@
+{
+  "label": "pristine-same-c2",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 2,
+  "max_tokens": 64,
+  "seed": 0,
+  "pass": true,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red. Although violet light scatters even more than blue",
+      "completion_tokens": 64,
+      "ttft_s": 0.37332287700337474,
+      "total_s": 1.9907265420006297,
+      "wall_s": 1.9908455010008765,
+      "finish_reason": "length",
+      "gibberish": 0.03773584905660377
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 310,
+      "ref_chars": 362,
+      "conc_chars": 363,
+      "gibberish": 0.03773584905660377,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more",
+        "completion_tokens": 64,
+        "ttft_s": 0.7086225670027488,
+        "total_s": 3.174738834000891,
+        "wall_s": 3.1748885289998725,
+        "finish_reason": "length",
+        "gibberish": 0.03773584905660377
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": true,
+      "prefix_chars": 362,
+      "ref_chars": 362,
+      "conc_chars": 362,
+      "gibberish": 0.03773584905660377,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red. Although violet light scatters even more than blue",
+        "completion_tokens": 64,
+        "ttft_s": 0.6884122490009759,
+        "total_s": 3.174571002000448,
+        "wall_s": 3.1746185640004114,
+        "finish_reason": "length",
+        "gibberish": 0.03773584905660377
+      }
+    }
+  ]
+}

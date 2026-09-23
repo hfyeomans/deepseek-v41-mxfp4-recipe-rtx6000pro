@@ -1,0 +1,42 @@
+# E23 R3 — K=5 D=0, no kt fix, SGLANG_BCG_DEBUG_SYNC=1 + KT_BUF instrumentation. C4 probe -> host segfault in cuGraphLaunch at first target verify.
+
+## kt buffer allocations around capture (TP0)
+444:[2026-09-23 05:17:40 TP0] KT_BUF alloc temp buffer bs=24 (prev temp_bs=0, capture_bs=[], captured=[]) callers=submit:857 <- apply:918 <- run_moe_core:1615 <- forward_impl:1544 <- forward:1523 <- _call_impl:1789
+528:[2026-09-23 05:18:06 TP1] Capture target verify CUDA graph begin. backend=breakable, num_tokens_per_req=6, bs=[1, 2, 3, 4], avail mem=5.74 GB
+529:[2026-09-23 05:18:06 TP0] Capture target verify CUDA graph begin. backend=breakable, num_tokens_per_req=6, bs=[1, 2, 3, 4], avail mem=5.83 GB
+536:Capturing batches (bs=4 avail_mem=5.82 GB):  25%|       | 1/4 [00:00<00:02,  1.10it/s]Capturing batches (bs=3 avail_mem=5.65 GB):  25%|       | 1/4 [00:00<00:02,  1.10it/s][2026-09-23 05:18:07 TP0] KT_BUF alloc temp buffer bs=18 (prev temp_bs=24, capture
+537:Capturing batches (bs=3 avail_mem=5.65 GB):  50%|     | 2/4 [00:01<00:01,  1.37it/s]Capturing batches (bs=2 avail_mem=5.64 GB):  50%|     | 2/4 [00:01<00:01,  1.37it/s][2026-09-23 05:18:12 TP0] KT_BUF alloc temp buffer bs=12 (prev temp_bs=18, capture_bs=
+538:Capturing batches (bs=2 avail_mem=5.64 GB):  75%|  | 3/4 [00:06<00:02,  2.52s/it]Capturing batches (bs=1 avail_mem=5.63 GB):  75%|  | 3/4 [00:06<00:02,  2.52s/it][2026-09-23 05:18:13 TP0] KT_BUF alloc temp buffer bs=6 (prev temp_bs=12, capture_bs=[6, 12,
+541:[2026-09-23 05:18:14 TP0] Capture target verify CUDA graph end. elapsed=8.42 s, mem usage=0.18 GB, avail mem=5.65 GB.
+542:[2026-09-23 05:18:14 TP1] Capture target verify CUDA graph end. elapsed=8.42 s, mem usage=0.16 GB, avail mem=5.58 GB.
+546:[2026-09-23 05:18:14 TP0] Capture draft verify CUDA graph begin. backend=breakable, num_tokens_per_req=5, bs=[1, 2, 3, 4], avail mem=5.65 GB
+547:[2026-09-23 05:18:14 TP1] Capture draft verify CUDA graph begin. backend=breakable, num_tokens_per_req=5, bs=[1, 2, 3, 4], avail mem=5.58 GB
+570:[2026-09-23 05:18:20 TP0] Capture draft verify CUDA graph end. elapsed=5.88 s, mem usage=0.01 GB, avail mem=5.64 GB.
+574:[2026-09-23 05:18:20 TP1] Capture draft verify CUDA graph end. elapsed=5.90 s, mem usage=0.01 GB, avail mem=5.56 GB.
+583:[2026-09-23 05:18:24 TP0] KT_BUF alloc temp buffer bs=193 (prev temp_bs=6, capture_bs=[5, 10, 15, 20], captured=[6, 12, 18]) callers=submit:857 <- apply:918 <- run_moe_core:1615 <- forward_impl:1544 <- forward:1523 <- _call_impl:1789
+588:[2026-09-23 05:18:37 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 15.04
+599:[2026-09-23 05:19:16 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 6.66
+602:[2026-09-23 05:20:08 TP0] KT_BUF alloc temp buffer bs=42 (prev temp_bs=193, capture_bs=[5, 10, 15, 20], captured=[6, 12, 18]) callers=submit:857 <- apply:918 <- run_moe_core:1615 <- forward_impl:1544 <- forward:1523 <- _call_impl:1789
+605:[2026-09-23 05:20:22 TP0] KT_BUF alloc temp buffer bs=256 (prev temp_bs=42, capture_bs=[5, 10, 15, 20], captured=[6, 12, 18]) callers=submit:857 <- apply:918 <- run_moe_core:1615 <- forward_impl:1544 <- forward:1523 <- _call_impl:1789
+606:[2026-09-23 05:20:24 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.05, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 3.72
+608:Fatal Python error: Segmentation fault
+830:Current thread 0x00007d4eadeea300 (most recent call first):
+
+## crashing thread
+830:Current thread 0x00007d4eadeea300 (most recent call first):
+831-  File "/opt/sglang/lib/python3.12/site-packages/torch/cuda/graphs.py", line 186 in replay
+832-  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py", line 322 in replay
+833-  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py", line 332 in replay
+834-  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py", line 1536 in execute
+835-  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1777 in _forward_raw
+836-  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1645 in forward
+837-  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636 in forward_batch_generation
+838-  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 305 in _forward_prepared_verify
+839-  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 275 in run_non_compact
+840-  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 808 in _forward_decode
+841-  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 532 in forward_batch_generation
+842-  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181 in run_batch
+843-  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109 in wrapper
+844-  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937 in event_loop_overlap
+845-  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124 in decorate_context
+846-  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542 in dispatch_event_loop

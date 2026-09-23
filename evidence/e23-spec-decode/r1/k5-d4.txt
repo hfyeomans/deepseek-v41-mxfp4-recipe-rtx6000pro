@@ -1,0 +1,43 @@
+model=dsv41-flash-hybrid  runs=3 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         32.34     31.03     34.42       30.30       1.101     n/a
+  3         38.20     37.64     41.73       31.76       1.559     n/a
+Traceback (most recent call last):
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-decode.py", line 169, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-decode.py", line 145, in main
+    one_run(args.url, model, c, args.max_tokens, args.seed, args.distinct_prompts, args.fixture_offset)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-decode.py", line 91, in one_run
+    results = [f.result() for f in futs]
+               ~~~~~~~~^^
+  File "<python3.14 stdlib>/concurrent/futures/_base.py", line 447, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "<python3.14 stdlib>/concurrent/futures/_base.py", line 396, in __get_result
+    raise self._exception
+  File "<python3.14 stdlib>/concurrent/futures/thread.py", line 86, in run
+    result = ctx.run(self.task)
+  File "<python3.14 stdlib>/concurrent/futures/thread.py", line 73, in run
+    return fn(*args, **kwargs)
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/openai_client.py", line 74, in chat_stream
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "<python3.14 stdlib>/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "<python3.14 stdlib>/urllib/request.py", line 493, in open
+    response = meth(req, response)
+  File "<python3.14 stdlib>/urllib/request.py", line 602, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "<python3.14 stdlib>/urllib/request.py", line 531, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "<python3.14 stdlib>/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "<python3.14 stdlib>/urllib/request.py", line 611, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error
+done
