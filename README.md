@@ -27,6 +27,7 @@ The bytes are read from the shard headers of `deepseek-ai/DeepSeek-V4.1-Flash@db
 | Host needed / margin | | 200 / **+47 GiB** | 113 / +134 | 88 / +159 |
 | DRAM read per decoded token | | 1.75 GiB | 0.40 GiB | 0 |
 | **Decode ceiling**, CPU compute at 125 GB/s measured DRAM read / **B2 split** with PCIe streaming (E4b) | | **~50 / ~78 tok/s** | ~119 / ~155 | ~200 (GPU-bound) |
+| Same at the 131 GB/s the BIOS slot-3 profile reaches (E27, FCLK 2100; calculator default since 2026-09-23) | | ~52 / ~79 tok/s | ~121 / ~156 | ~200 |
 | Parallelism | | TP2 | **TP3 invalid** (64 heads) → EP3/PP | TP4 |
 | Power on the 1,500 W PSU | | fine | CPU PPT cap | **needs 2,000 W or 225 W/card** |
 

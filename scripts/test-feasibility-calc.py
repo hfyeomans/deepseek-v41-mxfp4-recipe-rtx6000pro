@@ -100,10 +100,15 @@ def test_split_ceiling_sums_bandwidths_not_times():
     assert abs(r["split_ms_per_token"] - bytes_per_token / 160e9 * 1e3) < 0.02
     assert r["decode_ceiling_split_tok_s"] > r["decode_ceiling_cpu_tok_s"] > r["decode_ceiling_pcie_stream_tok_s"]
     assert abs(r["decode_ceiling_split_tok_s"] - 1e3 / (5.0 + r["split_ms_per_token"])) < 0.1
-    # Default calculator values (measured E1b 125, E4 57 x 2) give the FEASIBILITY.md table's 78 tok/s.
-    d = calc.evaluate_hybrid(b, dram_gbps=calc.DEFAULT_DRAM_GBPS, pcie_gbps_per_gpu=calc.DEFAULT_PCIE_GBPS_PER_GPU, **common)
+    # The FCLK-2000 figures (E1b 125, E4 57 x 2) give the FEASIBILITY.md table's 50 / 78 tok/s.
+    d = calc.evaluate_hybrid(b, dram_gbps=125.0, pcie_gbps_per_gpu=calc.DEFAULT_PCIE_GBPS_PER_GPU, **common)
     assert 77 <= d["decode_ceiling_split_tok_s"] <= 79, d["decode_ceiling_split_tok_s"]
     assert 49 <= d["decode_ceiling_cpu_tok_s"] <= 51, d["decode_ceiling_cpu_tok_s"]
+    # The default is the BIOS slot-3 (FCLK 2100, E27) ceiling: 131 GB/s -> 52 / 79 tok/s.
+    assert calc.DEFAULT_DRAM_GBPS == 131.0
+    d = calc.evaluate_hybrid(b, dram_gbps=calc.DEFAULT_DRAM_GBPS, pcie_gbps_per_gpu=calc.DEFAULT_PCIE_GBPS_PER_GPU, **common)
+    assert 78 <= d["decode_ceiling_split_tok_s"] <= 80, d["decode_ceiling_split_tok_s"]
+    assert 51 <= d["decode_ceiling_cpu_tok_s"] <= 53, d["decode_ceiling_cpu_tok_s"]
 
 
 def test_bad_gpu_list_is_an_input_error():
