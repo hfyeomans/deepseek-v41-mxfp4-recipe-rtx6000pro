@@ -384,6 +384,26 @@ Fit check first (T3.9a): DSpark's three MTP stages are 7.4 GiB (≈ 3.7 GiB per 
 
 Reading (2026-09-23): the fit check passed without moving an expert — the draft stages are 3.85 GB/rank and stay GPU-resident, `MEM_FRACTION_STATIC` 0.935 leaves a 258–280K-token KV pool and ≈ 5.6 GB free after capture — so memory was never the constraint; the CPU tier was. Both K rows are below R0 at every concurrency, and the GPU sampler says why: 101–148 W per card and GPU0 at 12 % utilisation while the CPU tier verifies `bs × (K+1)` tokens' worth of distinct experts per layer. Acceptance (0.67 at K=2 C1, 0.38 at K=5) is in the range E8 measured on the 4-GPU V4-Flash (51–63 %), so the drafts are fine; the *target* verify step is what the hybrid cannot afford. Three graph-mode bugs were fixed on the way (TROUBLESHOOTING: A multi-stream overlap, B page-split scratch freed under a graph, C kt temp pinned buffer freed under a graph); the kt fix is `config/kt-kernel-patches/0001-…patch` and is the reason K=5 C4 has a number at all. Files: `r0-baseline-d4-specoff.json`, `r1/k2-d4.json`, `r1/k5-d4.txt` (first pass, C4 crash), `r3/k5-d4-fix.json` (clean K=5), `crash/`, `r3/k5-d0-nofix-c4-segfault.txt`.
 
+## E26 Part A — single-user levers on the patched image (2026-09-23)
+
+Protocol in EXPERIMENTS E26. Server `serve-hybrid.sh` (208 GPU / 176 CPU experts, 32K context, spec off, 325 W, patched `dsv41-kt:recipe`), one environment knob changed per launch; C1 = 3 runs after 1 warmup, 256 tokens, distinct prompts, seed 4242; prefill = 4 runs of a 4,015-token prompt, seed 777, after the server had already served the decode cells (warm). Evidence `evidence/e26-single-user/`.
+
+| Cell | `KT_CPUINFER` | `KT_MAX_DEFERRED` | C1 summed tok/s | **C1 wall tok/s** | C1 TTFT s | 4K prefill tok/s | 4K TTFT s | vs default |
+|---|---|---|---|---|---|---|---|---|
+| A1 | 14 | 4 | 38.99 | **33.34** | 1.14 | 797 | 5.04 | −1 % (plateau) |
+| A1 (default) | 16 | 4 | 38.97 | **33.79** | 1.03 | 862 | 4.65 | — |
+| A1 | 24 | 4 | 33.62 | **29.85** | 0.99 | 785 | 5.12 | −12 % |
+| A1 | 30 | 4 | 5.04 | **4.86** | 2.07 | 471 | 8.55 | **−86 %** (collapse) |
+| A2 | 16 | 0 | 31.51 | **27.96** | 1.07 | 822 | 4.89 | −17 % (D=4 is worth +21 % wall) |
+
+Longer prompts at the default (16 / D=4): 16K **18.9 s TTFT / 845 tok/s**, 32K **36.7 s / 870 tok/s** — flat prefill rate from 4K to 32K (streamed layerwise GPU prefill, E22). Cold-start caveat: the first two 4K prefills after a fresh launch took 9.0 s and 18.2 s before settling at 4.65 s.
+
+Step anatomy at the default (GPU-only profiler trace, 8 steps, categories only — the profiler inflates the span ≈ 1.8×, and a CPU+GPU trace inflates it 6×): **GPU busy 15.4 ms/step** — MoE GPU experts 3.95, dense W8A8 FP8 3.49, NCCL 2.01, BF16 GEMM 1.50, elementwise 1.48, attention indexer 1.29, Engram 0.014. The ten largest idle gaps (8.9–10.1 ms each) all sit between the GPU-expert kernel and the pinned HtoD copy of the CPU tier's result. Against the unprofiled 29.6 ms step this leaves ≈ 14–15 ms/token waiting on the kt tier: the C1 ceiling with 176 CPU experts is the CPU tier, and neither thread count nor the Engram breaks move it.
+
+VRAM at the default: 91,354 MiB/GPU after capture, 94,468 / 94,596 MiB after a 32K prefill (of 97,887) — ≈ 3.3 GiB free per rank worst case, with a KV pool sized for 1.93 M tokens where the served config (4 × 32K) needs 131K.
+
+Verdict: `KT_CPUINFER=16`, `KT_MAX_DEFERRED=4` stay; the +10 % Part A bar (C1 wall ≥ 37) is not reachable from environment knobs alone — placement (T3.6g), D=5 (T3.15) and FCLK (E27) each project ≈ +2–4 %.
+
 ## E12 kernel census: what the V4-Flash NVFP4 TP2 baseline actually runs
 
 Source: the sibling recipe's torch-profiler traces (`results/component-profiles/*.json`, 20 DSpark verify steps per case, rank 0), re-categorised by [`scripts/kernel-census.py`](../scripts/kernel-census.py) → `evidence/e12-kernel-census-v4-flash-tp2.json`. Sums include stream overlap; the union column is the wall-clock-relevant figure.

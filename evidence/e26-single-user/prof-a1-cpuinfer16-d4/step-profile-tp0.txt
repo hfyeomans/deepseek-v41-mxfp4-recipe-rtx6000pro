@@ -1,0 +1,47 @@
+# evidence/e26-single-user/prof-a1-cpuinfer16-d4/1790176275.3482723-TP-0.trace.json.gz  (25398 GPU events / 8 steps)
+segment                             ms/step
+span                                182.135
+gpu_busy                             15.572
+idle_total                          166.563
+idle_gaps_ge_100us                  158.143
+n_gaps_ge_100us                      96.000
+
+category                            ms/step
+moe_expert_gpu                        3.957
+dense_fp8_gemm                        3.490
+collective                            2.185
+other                                 2.014
+bf16_gemm                             1.503
+elementwise_index                     1.483
+attention_indexer                     1.290
+memcpy_memset                         0.351
+rope_norm_act                         0.343
+fp8_quant                             0.251
+engram                                0.014
+sampling                              0.001
+
+top kernels (this trace)                                                                     calls/st  ms/step   avg us
+sglang::cross_device_reduce_1stage<__nv_bfloat16, 2>                                             83.0    2.170     26.1
+_w8a8_block_fp8_matmul_hopper                                                                   161.2    2.052     12.7
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       10.0    1.707    170.7
+_w8a8_block_fp8_matmul                                                                           41.8    1.438     34.4
+std::enable_if<!                                                                                 35.0    0.873     24.9
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       35.0    0.851     24.3
+_hc_mix_stats_partial_kernel                                                                     80.0    0.773      9.7
+flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<                                     40.0    0.604     15.1
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       35.0    0.519     14.8
+_hc_mix_reduce_sinkhorn_kernel                                                                   80.0    0.494      6.2
+std::enable_if<!                                                                                  1.0    0.449    449.2
+sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bfloat16…      203.0    0.251      1.2
+_reduce_block_fp8_split_k                                                                       161.0    0.238      1.5
+_router_triton_kernel                                                                            40.0    0.215      5.4
+flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_merge_kernel<64, 512, 64, 8>                40.0    0.199      5.0
+tensorrt_llm::kernels::cutlass_kernels::doActivationKernel<__nv_fp8_e4m3, __nv_bfloat16, …       40.0    0.187      4.7
+_hc_combine_norm                                                                                 69.1    0.184      2.7
+at::native::sbtopk::gatherTopK<float, unsigned int, 1, false>                                    34.1    0.176      5.2
+tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel<__nv_fp8_e4m3, __nv_fp8_e4m…       40.0    0.170      4.3
+_page_split_kernel                                                                               40.0    0.165      4.1
+
+largest idle gaps (us): [142023.2, 135629.5, 132128.8, 129767.0, 110503.3, 38187.8, 35675.9, 35616.6, 35614.5, 34295.6]
+
+wrote evidence/e26-single-user/prof-a1-cpuinfer16-d4/step-profile-tp0.json

@@ -1,0 +1,45 @@
+440 gaps >= 100.0 us, total 376.10 ms
+
+kernel before -> kernel after (count, total ms):
+   213    65.08 ms  _ZN7cutlass13device_kernelINS_4gemm6kernel13…  ->  Memcpy HtoD (Pinned -> Device)
+    40   268.01 ms  void tensorrt_llm::kernels::cutlass_kernels:…  ->  Memcpy HtoD (Pinned -> Device)
+    16    14.91 ms  Memcpy DtoH (Device -> Pageable)  ->  Memcpy HtoD (Pageable -> Device)
+    16     2.76 ms  void sglang::per_token_group_quant_8bit_v2_k…  ->  _w8a8_block_fp8_matmul_hopper
+    14     2.16 ms  Memcpy DtoD (Device -> Device)  ->  void sglang::cross_device_reduce_1stage<__nv…
+    13     2.55 ms  Memcpy DtoH (Device -> Pinned)  ->  triton_poi_fused_ge_index_put_lift_fresh_0
+    13     3.62 ms  void tensorrt_llm::kernels::quantize_with_bl…  ->  void tensorrt_llm::kernels::cutlass_kernels:…
+    12     3.00 ms  _router_triton_kernel  ->  triton_poi_fused_full_like_ge_sub_where_0
+    12     1.49 ms  triton_poi_fused_ge_index_put_lift_fresh_0  ->  void tensorrt_llm::kernels::quantize_with_bl…
+    11     1.32 ms  kernel_cutlass_kernel_flashinfernormkernelsr…  ->  void sglang::per_token_group_quant_8bit_v2_k…
+    10     1.46 ms  void sglang::deepseek_rope_kernel<true, true…  ->  void cutlass::Kernel2<cutlass_80_wmma_tensor…
+     8     1.41 ms  Memcpy DtoD (Device -> Device)  ->  void at::native::vectorized_elementwise_kern…
+     7     1.25 ms  void at::native::vectorized_gather_kernel<16…  ->  void sglang::per_token_group_quant_8bit_v2_k…
+     6     0.72 ms  _page_split_kernel  ->  void flashinfer::sparse_mla_sm120::sparse_ml…
+
+host CUDA calls overlapping gaps (count, total gap ms):
+   218   258.40 ms  cudaMemcpyAsync
+    77   165.43 ms  cudaLaunchKernelExC
+    69   167.21 ms  cuLaunchKernelEx
+    66   182.10 ms  cudaStreamIsCapturing
+    61   169.55 ms  cudaLaunchKernel
+    61   147.63 ms  cuLaunchKernel
+    50   153.63 ms  cudaDeviceGetAttribute
+    41   143.14 ms  cudaFuncSetAttribute
+    38   142.07 ms  cudaStreamSynchronize
+    37    15.91 ms  cudaGraphLaunch
+    32   135.09 ms  cudaLaunchHostFunc
+    27    17.59 ms  cudaEventQuery
+    19   132.54 ms  cudaDriverGetVersion
+    19   132.54 ms  cudaGetDriverEntryPointByVersion
+
+shortest cpu_op/annotation covering the gap midpoint:
+
+largest gaps:
+     10149 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)
+      9685 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)
+      9500 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)
+      9226 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)
+      9207 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)
+      9180 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)
+      9075 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)
+      9072 us  void tensorrt_llm::kernels::cutlass_ker… -> Memcpy HtoD (Pinned -> Device)

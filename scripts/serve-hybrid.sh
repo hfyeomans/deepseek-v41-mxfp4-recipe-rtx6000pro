@@ -37,7 +37,16 @@ OVERLAY_DIR="${OVERLAY_DIR:-$HOME/dev/src/sglang-dsv41-overlay}"
 
 # Expert placement and CPU tier (E6-DESIGN, E17, E19).
 KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-208}"   # of 384 per layer; 224 does not fit at 32K
-KT_CPUINFER="${KT_CPUINFER:-16}"                   # one thread per core (E17)
+# One kt worker per physical core (E17; E26 A1 on the 16-core 9955WX: 14 and 16
+# threads are a plateau at C1 ≈ 33.5 wall tok/s, 24 costs −12 %, 30 collapses to
+# 5 tok/s). kt-kernel pins each worker to a distinct hwloc core and busy-spins
+# 50 ms before sleeping; workers beyond the core count float on SMT siblings and
+# starve the two TP-rank launch threads. Never set this above the physical cores.
+KT_CPUINFER="${KT_CPUINFER:-16}"
+PHYS_CORES="$(lscpu -p=CORE 2>/dev/null | grep -v '^#' | sort -u | wc -l || true)"
+if [[ "${PHYS_CORES:-0}" -gt 0 && "$KT_CPUINFER" -gt "$PHYS_CORES" ]]; then
+  echo "WARNING: KT_CPUINFER=$KT_CPUINFER exceeds the $PHYS_CORES physical cores; E26 A1 measured −12 % at 24 and a 7× collapse at 30 threads" >&2
+fi
 # Expert deferral (E21): each token's D lowest-scored routed experts are computed
 # during the next layer and added one layer late, hiding most of the CPU-tier wait.
 # D=4 keeps every token's top-2 on time: +22 % C1 / +17 % C2 / +22 % C4 over D=0,
