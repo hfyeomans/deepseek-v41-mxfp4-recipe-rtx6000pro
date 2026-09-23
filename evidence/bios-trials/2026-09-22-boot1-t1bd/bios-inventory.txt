@@ -1,0 +1,59 @@
+
+== firmware (sysfs DMI)
+sys_vendor                   ASUS
+product_name                 System Product Name
+product_family               To be filled by O.E.M.
+board_vendor                 ASUSTeK COMPUTER INC.
+board_name                   Pro WS WRX90E-SAGE SE
+board_version                Rev 1.xx
+bios_vendor                  American Megatrends Inc.
+bios_version                 1317
+bios_date                    02/03/2026
+bios_release                 13.17
+ec_firmware_release          (unreadable)
+
+== cpu
+model                        AMD Ryzen Threadripper PRO 9955WX 16-Cores
+microcode                    0xb008121
+cores/threads                32 threads, 16 cores
+L3 instances (=CCDs)         2 x 32768K
+NUMA nodes (NPS)             1
+SMT                          on
+cpufreq driver               amd-pstate-epp
+governor                     performance
+EPP preference               performance
+boost                        1
+amd_pstate status            active
+amd_pstate prefcore          enabled
+max freq kHz                 5452555
+cpuidle driver               acpi_idle
+C-states                     POLL(on) C1(on) C2(on) 
+kernel cmdline               root=UUID=<scrubbed> ro quiet splash crashkernel=2G-4G:320M,4G-32G:512M,32G-64G:1024M,64G-128G:2048M,128G-:4096M
+
+== memory
+MemTotal                  258790840 kB
+HugePages_Total                  0
+Hugepagesize                  2048 kB
+THP enabled                  always [madvise] never
+THP defrag                   always defer defer+madvise [madvise] never
+numactl -H                   available: 1 nodes (0);node 0 size: 252725 MB;
+DIMM speed/part numbers need 'sudo dmidecode -t memory' (owner-run); transcribed copy in evidence/hardware-inventory.json
+
+== ECC / EDAC / RAS
+mc0                          name=F1Ah_M08h size=262144 MiB ce=0 ue=0
+edac modules                 amd64_edac edac_mce_amd 
+mce log entries              42 sysfs attrs; use 'sudo journalctl -k | grep -iE "mce|edac|ecc"' (owner-run)
+
+== PCIe / IOMMU
+IOMMU groups                 51
+IOMMU devices                ivhd2 ivhd0 ivhd3 ivhd1 
+GPU0                         link 2.5 GT/s PCIe x16 (max 32.0 GT/s PCIe x16); BAR1 [size=128G]
+GPU1                         link 2.5 GT/s PCIe x16 (max 32.0 GT/s PCIe x16); BAR1 [size=128G]
+NVMe link                    32.0 GT/s PCIe x4; 32.0 GT/s PCIe x4; 
+ReBAR                        BAR1 >= 96G VRAM above means Resizable BAR and Above-4G decoding are enabled
+
+== power / thermal sensors
+amd_hsmp_hwmon               socket power 66697000 uW, cap 350000000 uW
+k10temp                      Tctl 35375 mC
+corsairpsu                   PSU in 106000000 uW
+GPU power limits             300.00 W, 325.00 W;300.00 W, 325.00 W;

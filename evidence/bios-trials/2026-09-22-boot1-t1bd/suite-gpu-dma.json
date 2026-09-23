@@ -1,0 +1,270 @@
+{
+ "experiment": "E25 host DRAM bandwidth revalidation",
+ "date": "2026-09-22",
+ "topology": {
+  "ccds": {
+   "0": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "1": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ]
+  },
+  "numa_nodes": 1
+ },
+ "size_gib": 8.0,
+ "iters": 6,
+ "units": "GB/s decimal; read counts S, copy 2S, triad 3S",
+ "results": [
+  {
+   "pattern": "read",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.068999,
+    0.068804,
+    0.068787,
+    0.069514,
+    0.069077,
+    0.068859
+   ],
+   "gbps": [
+    124.49,
+    124.85,
+    124.88,
+    123.57,
+    124.35,
+    124.75
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "read",
+   "gbps_min": 123.57,
+   "gbps_median": 124.75,
+   "gbps_max": 124.88,
+   "wall_s": 0.54,
+   "monitor": {
+    "core_mhz": {
+     "mean": 3967.3,
+     "max": 5212.4
+    },
+    "tctl_c": {
+     "mean": 55.1,
+     "max": 55.6
+    },
+    "socket_w": {
+     "mean": 124.0,
+     "max": 151.3
+    },
+    "samples": 3
+   },
+   "gpu_dma": {
+    "gpus": [
+     0
+    ],
+    "container_lines": [
+     "gpu0 h2d 57.0 GB/s over 40.1s"
+    ]
+   },
+   "section": "gpu-dma",
+   "label": "cpu read + DMA gpus 0"
+  },
+  {
+   "pattern": "read",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.068464,
+    0.068536,
+    0.06825,
+    0.068303,
+    0.068672,
+    0.068463
+   ],
+   "gbps": [
+    125.47,
+    125.33,
+    125.86,
+    125.76,
+    125.09,
+    125.47
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "read",
+   "gbps_min": 125.09,
+   "gbps_median": 125.47,
+   "gbps_max": 125.86,
+   "wall_s": 0.54,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4068.6,
+     "max": 5215.1
+    },
+    "tctl_c": {
+     "mean": 54.2,
+     "max": 54.9
+    },
+    "socket_w": {
+     "mean": 122.7,
+     "max": 150.8
+    },
+    "samples": 3
+   },
+   "gpu_dma": {
+    "gpus": [
+     1
+    ],
+    "container_lines": [
+     "gpu1 h2d 57.0 GB/s over 40.1s"
+    ]
+   },
+   "section": "gpu-dma",
+   "label": "cpu read + DMA gpus 1"
+  },
+  {
+   "pattern": "read",
+   "threads": 16,
+   "allowed_cpus": 1,
+   "size_bytes": 8589934592,
+   "bytes_per_iter": 8589934592,
+   "hugepage": true,
+   "anon_hugepages_kib": 8388608,
+   "nt": false,
+   "chunk_bytes": 0,
+   "active_chunks": 0,
+   "chunks_per_sync": 0,
+   "iters_seconds": [
+    0.068475,
+    0.068482,
+    0.068464,
+    0.068151,
+    0.068433,
+    0.068512
+   ],
+   "gbps": [
+    125.45,
+    125.43,
+    125.47,
+    126.04,
+    125.52,
+    125.38
+   ],
+   "sink": 28991029248,
+   "cpus": [
+    0,
+    8,
+    1,
+    9,
+    2,
+    10,
+    3,
+    11,
+    4,
+    12,
+    5,
+    13,
+    6,
+    14,
+    7,
+    15
+   ],
+   "pattern_label": "read",
+   "gbps_min": 125.38,
+   "gbps_median": 125.47,
+   "gbps_max": 126.04,
+   "wall_s": 0.54,
+   "monitor": {
+    "core_mhz": {
+     "mean": 4011.9,
+     "max": 5213.1
+    },
+    "tctl_c": {
+     "mean": 56.3,
+     "max": 56.8
+    },
+    "socket_w": {
+     "mean": 139.8,
+     "max": 166.4
+    },
+    "samples": 3
+   },
+   "gpu_dma": {
+    "gpus": [
+     0,
+     1
+    ],
+    "container_lines": [
+     "gpu1 h2d 57.0 GB/s over 40.1s",
+     "gpu0 h2d 57.0 GB/s over 40.1s"
+    ]
+   },
+   "section": "gpu-dma",
+   "label": "cpu read + DMA gpus 0,1"
+  }
+ ]
+}

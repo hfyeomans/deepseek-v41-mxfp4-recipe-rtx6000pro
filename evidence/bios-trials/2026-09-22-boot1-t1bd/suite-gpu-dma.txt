@@ -1,0 +1,9 @@
+topology: 2 CCDs [8, 8] cores, 1 NUMA node(s); size 8.0 GiB; iters 6 (first = warm-up); GB/s = min / median / max of steady iterations
+gpu-dma  cpu read + DMA gpus 0              read         thr=16  123.6 /  124.8 /  124.9 GB/s   3967 MHz  124 W  56 C
+    gpu0 h2d 57.0 GB/s over 40.1s
+gpu-dma  cpu read + DMA gpus 1              read         thr=16  125.1 /  125.5 /  125.9 GB/s   4069 MHz  123 W  55 C
+    gpu1 h2d 57.0 GB/s over 40.1s
+gpu-dma  cpu read + DMA gpus 0,1            read         thr=16  125.4 /  125.5 /  126.0 GB/s   4012 MHz  140 W  57 C
+    gpu1 h2d 57.0 GB/s over 40.1s
+    gpu0 h2d 57.0 GB/s over 40.1s
+wrote evidence/bios-trials/2026-09-22-boot1-t1bd/suite-gpu-dma.json

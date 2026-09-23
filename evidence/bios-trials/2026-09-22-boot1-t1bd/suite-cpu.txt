@@ -1,0 +1,37 @@
+topology: 2 CCDs [8, 8] cores, 1 NUMA node(s); size 8.0 GiB; iters 6 (first = warm-up); GB/s = min / median / max of steady iterations
+scaling  ccd0 x1                            read         thr= 1   54.5 /   55.0 /   56.7 GB/s   4814 MHz   73 W  41 C
+scaling  ccd0 x2                            read         thr= 2   63.0 /   63.1 /   63.3 GB/s   4710 MHz   80 W  42 C
+scaling  ccd0 x4                            read         thr= 4   62.9 /   63.2 /   63.3 GB/s   4707 MHz   84 W  42 C
+scaling  ccd0 x8                            read         thr= 8   63.1 /   63.1 /   63.2 GB/s   4769 MHz   96 W  43 C
+scaling  ccd1 x8                            read         thr= 8   63.2 /   63.3 /   63.3 GB/s   4393 MHz   90 W  43 C
+scaling  split x2                           read         thr= 2  103.9 /  104.7 /  105.5 GB/s   4225 MHz   78 W  42 C
+scaling  split x4                           read         thr= 4  123.9 /  124.0 /  124.6 GB/s   4433 MHz   85 W  42 C
+scaling  split x8                           read         thr= 8  124.9 /  125.0 /  125.6 GB/s   4034 MHz  101 W  42 C
+scaling  split x12                          read         thr=12  124.2 /  126.3 /  126.4 GB/s   3884 MHz  110 W  43 C
+scaling  split x16                          read         thr=16  126.0 /  126.3 /  126.8 GB/s   3924 MHz  119 W  43 C
+scaling  smt-ccd0 x16                       read         thr=16   61.6 /   61.8 /   61.8 GB/s   4776 MHz  102 W  44 C
+scaling  smt-all x32                        read         thr=32  120.6 /  122.6 /  123.8 GB/s   4022 MHz  111 W  44 C
+scaling  split x16 4KiB pages               read         thr=16  124.3 /  124.9 /  125.2 GB/s   4463 MHz  124 W  45 C
+scaling  split x16 repeat                   read         thr=16  125.5 /  125.5 /  125.6 GB/s   3944 MHz  113 W  48 C
+patterns split x16                          write        thr=16   78.3 /   78.4 /   78.4 GB/s   4387 MHz  119 W  48 C
+patterns ccd0 x8                            write        thr= 8   38.5 /   38.5 /   38.6 GB/s   5169 MHz  100 W  47 C
+patterns split x16                          write-nt     thr=16   97.0 /   97.0 /   97.2 GB/s   4537 MHz  113 W  46 C
+patterns ccd0 x8                            write-nt     thr= 8   48.5 /   48.5 /   48.5 GB/s   4805 MHz   89 W  46 C
+patterns split x16                          copy         thr=16  114.2 /  114.7 /  114.9 GB/s   4616 MHz  124 W  45 C
+patterns ccd0 x8                            copy         thr= 8   59.8 /   59.9 /   59.9 GB/s   4897 MHz  105 W  45 C
+patterns split x16                          copy-nt      thr=16  136.9 /  137.2 /  137.2 GB/s   4429 MHz  116 W  45 C
+patterns ccd0 x8                            copy-nt      thr= 8   70.0 /   70.0 /   70.0 GB/s   4983 MHz   96 W  44 C
+patterns split x16                          triad        thr=16  123.5 /  123.7 /  123.8 GB/s   4778 MHz  132 W  45 C
+patterns ccd0 x8                            triad        thr= 8   62.9 /   63.0 /   63.0 GB/s   5331 MHz  108 W  46 C
+patterns split x16 4KiB pages               copy         thr=16  114.5 /  114.9 /  115.1 GB/s   4299 MHz  122 W  51 C
+expert   split x16 2MiB                     expert-chunk thr=16  121.1 /  121.8 /  121.8 GB/s   4108 MHz  110 W  53 C
+expert   split x16 4KiB                     expert-chunk thr=16  120.9 /  121.1 /  121.2 GB/s   3334 MHz  104 W  54 C
+expert   split x16 2MiB --chunks-per-sync 3 expert-rows  thr=16  122.0 /  122.4 /  124.4 GB/s   3886 MHz  108 W  53 C
+expert   split x16 4KiB --chunks-per-sync 3 expert-rows  thr=16  116.5 /  121.0 /  122.2 GB/s   3493 MHz  104 W  54 C
+expert   split x16 2MiB --chunks-per-sync 100 expert-rows  thr=16  124.0 /  125.3 /  125.5 GB/s   3998 MHz  106 W  53 C
+expert   split x16 4KiB --chunks-per-sync 100 expert-rows  thr=16  121.8 /  124.8 /  125.0 GB/s   3393 MHz  104 W  54 C
+expert   split x16 2MiB --chunks-per-sync 1 expert-rows  thr=16  117.4 /  120.5 /  123.9 GB/s   3933 MHz  108 W  53 C
+expert   split x16 4KiB --chunks-per-sync 1 expert-rows  thr=16  118.7 /  119.6 /  122.7 GB/s   3383 MHz  104 W  54 C
+expert   smt-all x32 2MiB                   expert-rows  thr=32  104.5 /  115.5 /  118.4 GB/s   4441 MHz  111 W  53 C
+expert   ccd0 x8 2MiB                       expert-rows  thr= 8   62.8 /   63.3 /   63.3 GB/s   4904 MHz   92 W  52 C
+wrote evidence/bios-trials/2026-09-22-boot1-t1bd/suite-cpu.json
