@@ -42,7 +42,8 @@ OVERLAY_DIR="${OVERLAY_DIR:-$HOME/dev/src/sglang-dsv41-overlay}"
 # four slots at ~30K and decoding (scripts/stress-kv-full.py) - the ceiling for
 # 32K x 4 slots with CHUNKED_PREFILL_SIZE=4096; 228 is projected not to fit. C1 wall
 # 33.9 -> 36.1 tok/s, C4 47.5 -> 51.9, NLL neutral. 222 is the conservative fallback
-# (~2.9 GB free in the same worst case). Provisional until the E24 soak runs on it.
+# (~2.9 GB free in the same worst case). Qualified by the E27 served soak 2026-09-23
+# (141K decoded tokens at C1-C4 on 226/158 + capture list 1 2 3 4, 0 NaN, NLL identical).
 KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-226}"
 # One kt worker per physical core (E17; E26 A1 on the 16-core 9955WX: 14 and 16
 # threads are a plateau at C1 ≈ 33.5 wall tok/s, 24 costs −12 %, 30 collapses to
@@ -98,8 +99,8 @@ CUDA_GRAPH_MAX_BS="${CUDA_GRAPH_MAX_BS:-4}"
 # Explicit decode capture list. SGLang derives [1, 2, 4] from --cuda-graph-max-bs-decode 4 and
 # pads a 3-row batch to 4, which cost C3 22 % (38.3 vs 49.0 summed tok/s, E26 B1). Capturing
 # bs=3 too costs ~nothing (6.2 GB free before capture) and leaves bs=1 untouched (NLL gate
-# ΔNLL −0.001, same-prompt gate PASS at C2/C3/C4). Provisional default until the E24 soak
-# has run on it. Set CUDA_GRAPH_BS="" to fall back to the derived list.
+# ΔNLL −0.001, same-prompt gate PASS at C2/C3/C4). Qualified by the E27 served soak
+# 2026-09-23 (see KT_NUM_GPU_EXPERTS above). Set CUDA_GRAPH_BS="" to fall back to the derived list.
 CUDA_GRAPH_BS="${CUDA_GRAPH_BS-1 2 3 4}"
 ENGRAM_FILE_THREADS="${ENGRAM_FILE_THREADS:-16}"
 EXTRA_SERVER_ARGS="${EXTRA_SERVER_ARGS:-}"          # appended verbatim (word-split)

@@ -1,0 +1,1346 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:63: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+  Example: sglang serve --model-path <model> [options]
+  warnings.warn(
+[2026-09-23 21:48:07] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-09-23 21:48:07] Hybrid SWA model detected. architectures=['DeepseekV4ForCausalLM']
+[2026-09-23 21:48:07] Breakable CUDA graph is incompatible with DeepSeek-V4 (heavy capture-pool memory pressure); disabling prefill CUDA graph.
+[2026-09-23 21:48:07] Use dsv4 attention backend for DeepseekV4ForCausalLM, setting page_size to 256.
+[2026-09-23 21:48:07] Setting KV cache dtype to fp8_e4m3 for DeepseekV4ForCausalLM.
+[2026-09-23 21:48:09] server_args={'model_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': True, 'context_length': 32768, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'auto', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.96, 'max_running_requests': 4, 'max_queued_requests': None, 'max_total_tokens': 147456, 'chunked_prefill_size': 4096, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 256, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.8, 'swa_prefix_tails': None, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache': False, 'disable_overlap_schedule': False, 'num_continuous_decode_steps': 1, 'scheduler_recv_interval': 1, 'enable_mixed_chunk': False, 'nccl_port': None, 'dist_timeout': None, 'dist_init_addr': None, 'gated_launch_port': None, 'nnodes': 1, 'node_rank': 0, 'tp_size': 2, 'dcp_size': 1, 'pp_size': 1, 'pp_max_micro_batch_size': None, 'pp_async_batch_depth': 0, 'dp_size': 1, 'load_balance_method': 'round_robin', 'attn_cp_size': 1, 'moe_dp_size': 1, 'dwdp_size': 1, 'dcp_comm_backend': 'ag_rs', 'dcp_replicate_q_proj': None, 'enable_prefill_cp': False, 'cp_strategy': None, 'enable_dsa_cache_layer_split': False, 'enable_dsa_prefill_context_parallel': False, 'dsa_prefill_cp_mode': 'round-robin-split', 'enable_prefill_context_parallel': False, 'prefill_cp_mode': 'in-seq-split', 'enable_cp_decode_attn_tp': False, 'enable_dp_attention': False, 'enable_dp_attention_local_control_broadcast': False, 'enable_dp_lm_head': False, 'enable_tp_lm_head_all_to_all': False, 'enable_attn_tp_input_scattered': False, 'enable_shared_experts_attn_tp': False, 'enable_dense_mlp_attn_tp': False, 'enable_layernorm_sp': False, 'disable_attn_tp_gather': False, 'enable_p2p_check': False, 'device': 'cuda', 'base_gpu_id': 0, 'gpu_id_step': 1, 'random_seed': 118405681, 'mlx_enable_sampling': False, 'watchdog_timeout': 300, 'soft_watchdog_timeout': None, 'sleep_on_idle': False, 'use_ray': False, 'custom_sigquit_handler': None, 'numa_node': None, 'gc_threshold': None, 'host': '0.0.0.0', 'port': 30000, 'fastapi_root_path': '', 'smg_grpc_mode': False, 'grpc_mode': False, 'grpc_port': None, 'grpc_worker_threads': 4, 'sidecar': None, 'sidecar_args': None, 'skip_server_warmup': False, 'warmups': None, 'enable_http2': False, 'http2_max_concurrent_streams': 200, 'http2_initial_connection_window_size': 1048576, 'ssl_keyfile': None, 'ssl_certfile': None, 'ssl_ca_certs': None, 'ssl_keyfile_password': None, 'enable_ssl_refresh': False, 'api_key': None, 'admin_api_key': None, 'served_model_name': 'dsv41-flash-hybrid', 'weight_version': 'default', 'chat_template': None, 'hf_chat_template_name': None, 'completion_template': None, 'file_storage_path': 'sglang_storage', 'enable_cache_report': False, 'reasoning_parser': 'deepseek-v41', 'default_chat_template_kwargs': None, 'strip_thinking_cache': False, 'enable_strict_thinking': False, 'tool_call_parser': 'deepseekv41', 'tool_server': None, 'sampling_defaults': 'model', 'asr_max_buffer_seconds': 60, 'asr_max_concurrent_sessions': 32, 'preferred_sampling_params': None, 'allow_auto_truncate': False, 'stream_interval': 1, 'batch_notify_size': 16, 'stream_response_default_include_usage': False, 'incremental_streaming_output': False, 'enable_streaming_session': False, 'enable_session_radix_cache': False, 'log_level': 'info', 'log_level_http': None, 'log_requests': False, 'log_requests_level': 2, 'log_requests_format': 'text', 'log_requests_target': None, 'uvicorn_access_log_exclude_prefixes': [], 'crash_dump_folder': None, 'show_time_cost': False, 'enable_metrics': False, 'smg_http_sidecar_port': None, 'enable_mfu_metrics': False, 'enable_metrics_for_all_schedulers': False, 'load_snapshot_publish_interval': 15, 'tokenizer_metrics_custom_labels_header': 'x-custom-labels', 'tokenizer_metrics_allowed_custom_labels': None, 'extra_metric_labels': None, 'bucket_time_to_first_token': None, 'bucket_inter_token_latency': None, 'bucket_e2e_request_latency': None, 'prompt_tokens_buckets': None, 'generation_tokens_buckets': None, 'gc_warning_threshold_secs': 0.0, 'decode_log_interval': 40, 'enable_request_time_stats_logging': False, 'kv_events_config': None, 'load_publish_endpoint': None, 'enable_forward_pass_metrics': False, 'forward_pass_metrics_worker_id': '', 'forward_pass_metrics_ipc_name': None, 'enable_trace': False, 'trace_modules': 'request', 'otlp_traces_endpoint': 'localhost:4317', 'export_metrics_to_file': False, 'export_metrics_to_file_dir': None, 'stat_loggers': None, 'constrained_json_whitespace_pattern': None, 'constrained_json_disable_any_whitespace': False, 'attention_backend': 'dsv4', 'decode_attention_backend': None, 'enable_lean_attention': None, 'prefill_attention_backend': None, 'sampling_backend': 'flashinfer', 'grammar_backend': 'xgrammar', 'radix_cache_backend': None, 'mm_attention_backend': None, 'fp8_gemm_runner_backend': 'auto', 'fp4_gemm_runner_backend': 'auto', 'bf16_gemm_backend': 'auto', 'dsa_prefill_backend': None, 'dsv4_prefill_backend': 'auto', 'dsa_decode_backend': None, 'dsa_paged_mqa_logits_backend': 'auto', 'dsa_topk_backend': 'sgl-kernel', 'disable_flashinfer_autotune': False, 'flashinfer_autotune_skip_ops': None, 'mamba_backend': 'triton', 'cuda_graph_config': {'decode': {'backend': 'breakable', 'max_bs': 4, 'bs': [1, 2, 3, 4], 'tc_compiler': 'eager', 'full_prefill_max_req': None, 'full_prefill_prefix_chunk_tokens': None, 'max_seq_len': None}, 'prefill': {'backend': 'disabled', 'max_bs': 4096, 'bs': [4, 8, 12, 16, 20, 24, 28, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 288, 320, 352, 384, 416, 448, 480, 512, 576, 640, 704, 768, 832, 896, 960, 1024, 1280, 1536, 1792, 2048, 2304, 2560, 2816, 3072, 3328, 3584, 3840, 4096], 'tc_compiler': 'eager', 'full_prefill_max_req': None, 'full_prefill_prefix_chunk_tokens': None, 'max_seq_len': None}}, 'cuda_graph_backend_decode': 'breakable', 'cuda_graph_backend_prefill': None, 'cuda_graph_max_bs_decode': 4, 'cuda_graph_max_bs_prefill': None, 'cuda_graph_max_seq_len_prefill': None, 'cuda_graph_bs_decode': [1, 2, 3, 4], 'cuda_graph_bs_prefill': None, 'cuda_graph_tc_compiler': None, 'disable_prefill_cuda_graph': False, 'disable_decode_cuda_graph': False, 'disable_cuda_graph': False, 'disable_cuda_graph_padding': False, 'enable_profile_cuda_graph': False, 'enable_cudagraph_gc': False, 'debug_cuda_graph': False, 'enable_layerwise_nvtx_marker': False, 'enable_nccl_nvls': False, 'enable_symm_mem': False, 'triton_attention_reduce_in_fp32': False, 'triton_attention_num_kv_splits': 8, 'triton_attention_split_tile_size': None, 'flashinfer_mla_disable_ragged': False, 'enable_fused_qk_norm_rope': False, 'enable_precise_embedding_interpolation': False, 'enable_fused_moe_sum_all_reduce': False, 'enable_deepseek_v4_fp4_indexer': True, 'disable_custom_all_reduce': False, 'enable_mscclpp': False, 'enable_torch_symm_mem': False, 'enable_scattered_sconv': False, 'pre_warm_nccl': False, 'enable_quant_communications': False, 'enable_flashinfer_allreduce_fusion': False, 'enforce_disable_flashinfer_allreduce_fusion': False, 'flashinfer_allreduce_fusion_backend': None, 'enable_aiter_allreduce_fusion': False, 'enable_torch_compile': False, 'enable_torch_compile_debug_mode': False, 'torch_compile_max_bs': 32, 'speculative_algorithm': None, 'uno_lora_path': None, 'speculative_draft_model_path': None, 'speculative_draft_model_revision': None, 'speculative_draft_load_format': None, 'speculative_num_steps': None, 'speculative_eagle_topk': None, 'speculative_num_draft_tokens': None, 'speculative_dflash_block_size': None, 'speculative_dspark_block_size': None, 'speculative_dspark_sps_table_path': None, 'speculative_dspark_confidence_sts_path': None, 'speculative_dspark_align_verify_tokens_to_graph_tier': False, 'speculative_accept_threshold_single': 1.0, 'speculative_accept_threshold_acc': 1.0, 'speculative_use_rejection_sampling': False, 'speculative_token_map': None, 'speculative_attention_mode': 'prefill', 'speculative_draft_attention_backend': None, 'speculative_dsa_topk_backend': 'sgl-kernel', 'speculative_draft_kv_cache_dtype': None, 'speculative_draft_window_size': None, 'speculative_moe_runner_backend': 'flashinfer_mxfp4', 'speculative_moe_a2a_backend': None, 'speculative_draft_model_quantization': None, '_speculative_draft_quantization_explicitly_set': False, 'speculative_skip_dp_mlp_sync': False, 'enable_multi_layer_eagle': False, 'speculative_adaptive': False, 'speculative_adaptive_config': None, 'decoupled_spec_bind_endpoint': None, 'decoupled_spec_connect_endpoints': None, 'decoupled_spec_rank': None, 'decoupled_spec_role': 'null', 'spec_trace_dir': None, 'speculative_ngram_min_bfs_breadth': 1, 'speculative_ngram_max_bfs_breadth': 10, 'speculative_ngram_match_type': 'BFS', 'speculative_ngram_max_trie_depth': 18, 'speculative_ngram_capacity': 10000000, 'speculative_ngram_external_corpus_path': None, 'speculative_ngram_external_sam_budget': 0, 'speculative_ngram_external_corpus_max_tokens': 10000000, 'ep_size': 1, 'moe_a2a_backend': 'none', 'enable_w4a4_mxfp4_megamoe': False, 'deepep_v2_mode': 'direct', 'moe_runner_backend': 'flashinfer_mxfp4', 'flashinfer_mxfp4_moe_precision': 'default', 'deepep_mode': 'auto', 'fuseep_mode': 2, 'deepep_dispatcher_output_dtype': 'auto', 'ep_num_redundant_experts': 0, 'ep_dispatch_algorithm': None, 'init_expert_location': 'trivial', 'enable_eplb': False, 'eplb_algorithm': 'auto', 'eplb_rebalance_num_iterations': 1000, 'eplb_rebalance_layers_per_chunk': None, 'eplb_min_rebalancing_utilization_threshold': 1.0, 'expert_distribution_recorder_mode': None, 'expert_distribution_recorder_buffer_size': 1000, 'expert_balancedness_report_mode': 'off', 'deepep_config': None, 'moe_dense_tp_size': None, 'elastic_ep_backend': None, 'enable_elastic_expert_backup': False, 'mooncake_ib_device': None, 'enable_waterfill': False, 'ep_join_mode': None, 'ep_join_rank_offset': 0, 'elastic_ep_initial_size': None, 'max_ep_size': None, 'elastic_ep_scale_timeout': 600, 'elastic_ep_rejoin': False, 'disable_flashinfer_cutlass_moe_fp4_allgather': False, 'disable_shared_experts_fusion': False, 'enforce_shared_experts_fusion': False, 'max_mamba_cache_size': None, 'mamba_ssm_dtype': None, 'mamba_max_states_per_path': -1, 'enable_mamba_cache_stochastic_rounding': False, 'mamba_cache_philox_rounds': 0, 'mamba_full_memory_ratio': 0.9, 'mamba_radix_cache_strategy': 'auto', 'uses_mamba_radix_cache': False, 'mamba_track_interval': 256, 'enable_int8_mamba_checkpoint': False, 'int8_mamba_ckpt_size': None, 'linear_attn_backend': 'triton', 'linear_attn_decode_backend': None, 'linear_attn_prefill_backend': None, 'linear_attn_verify_backend': None, 'enable_linear_replayssm': False, 'linear_replayssm_cache_len': 16, 'enable_linear_replayssm_spec': False, 'enable_hierarchical_cache': False, 'hicache_host_memory_mode': 'cache', 'hicache_ratio': 2.0, 'hicache_size': 0, 'hicache_write_policy': 'write_through', 'hicache_io_backend': 'kernel', 'hicache_mem_layout': 'page_first', 'hicache_storage_backend': None, 'hicache_storage_prefetch_policy': 'timeout', 'hicache_storage_backend_extra_config': None, 'hicache_storage_prefetch_retry_poll_interval': 0, 'hicache_storage_prefetch_retry_max_attempts': 4, 'enable_unified_cache_external_linker': False, 'unified_cache_external_linker_backend': 'mooncake', 'enable_hisparse': False, 'hisparse_config': None, 'enable_broadcast_mm_inputs_process': False, 'enable_prefix_mm_cache': False, 'mm_enable_dp_encoder': False, 'mm_process_config': {}, 'mm_processor_worker_num': 0, 'mm_io_worker_num': 0, 'allowed_media_domains': [], 'media_url_max_file_size_mb': 64, 'mm_preprocess_cache_size_mb': None, 'trust_mm_content_hashes': False, 'limit_mm_data_per_request': None, 'enable_mm_global_cache': False, 'image_processor_backend': 'auto', 'mm_global_cache_backend': 'mooncake', 'disable_fast_image_processor': False, 'mm_feature_transport': 'cpu', 'keep_mm_feature_on_device': False, 'enable_lora': None, 'enable_lora_overlap_loading': None, 'max_lora_rank': None, 'lora_target_modules': None, 'lora_paths': None, 'max_loaded_loras': None, 'max_loras_per_batch': 8, 'lora_eviction_policy': 'lru', 'lora_backend': 'csgmv', 'max_lora_chunk_size': 16, 'experts_shared_outer_loras': None, 'lora_use_virtual_experts': False, 'lora_strict_loading': False, 'lora_drain_wait_threshold': 0.0, 'enable_two_batch_overlap': False, 'enable_single_batch_overlap': False, 'tbo_token_distribution_threshold': 0.48, 'cpu_offload_gb': 0, 'offload_group_size': -1, 'offload_num_in_group': 1, 'offload_prefetch_step': 1, 'offload_mode': 'cpu', 'enable_lmcache': False, 'lmcache_config_file': None, 'enable_flexkv': False, 'flexkv_config_file': None, 'kt_weight_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'kt_method': 'MXFP4', 'kt_cpuinfer': 16, 'kt_threadpool_count': 1, 'kt_num_gpu_experts': 226, 'kt_max_deferred_experts_per_token': 4, 'dllm_algorithm': None, 'dllm_algorithm_config': None, 'dllm_fdfo': True, 'disaggregation_mode': 'null', 'disaggregation_transfer_backend': 'mooncake', 'disaggregation_bootstrap_port': 8998, 'disaggregation_ib_device': None, 'disaggregation_decode_enable_radix_cache': False, 'disaggregation_decode_enable_offload_kvcache': False, 'disaggregation_decode_retraction_backup': None, 'num_reserved_decode_tokens': 512, 'disaggregation_decode_extra_slots': None, 'disaggregation_decode_polling_interval': 1, 'optimistic_prefill_attempts': 0, 'encoder_only': False, 'language_only': False, 'language_model_only': False, 'encoder_transfer_backend': 'zmq_to_scheduler', 'encoder_urls': [], 'encoder_bootstrap_port': 8997, 'encoder_register_urls': [], 'enable_adaptive_dispatch_to_encoder': False, 'enable_pdmux': False, 'pdmux_config_path': None, 'sm_group_num': 8, 'startup_weight_load_mode': 'serial', 'custom_weight_loader': [], 'weight_loader_disable_mmap': False, 'weight_loader_prefetch_checkpoints': False, 'weight_loader_prefetch_num_threads': 4, 'weight_loader_drop_cache_after_load': False, 'remote_instance_weight_loader_seed_instance_ip': None, 'remote_instance_weight_loader_seed_instance_service_port': None, 'remote_instance_weight_loader_send_weights_group_ports': None, 'remote_instance_weight_loader_backend': 'nccl', 'remote_instance_weight_loader_start_seed_via_transfer_engine': False, 'engine_info_bootstrap_port': 6789, 'modelexpress_config': None, 'download_dir': None, 'model_checksum': None, 'delete_ckpt_after_loading': False, 'decrypted_config_file': None, 'decrypted_draft_config_file': None, 'checkpoint_engine_wait_weights_before_ready': False, 'enable_prefill_delayer': False, 'prefill_delayer_max_delay_passes': 30, 'prefill_delayer_token_usage_low_watermark': None, 'prefill_delayer_forward_passes_buckets': None, 'prefill_delayer_wait_seconds_buckets': None, 'prefill_delayer_queue_min_ratio': None, 'prefill_delayer_max_delay_ms': None, 'min_free_slots_delay': None, 'enable_deterministic_inference': False, 'rl_on_policy_target': None, 'kv_canary': 'none', 'kv_canary_real_data': 'none', 'kv_canary_sweep_interval': 0, 'enable_dynamic_batch_tokenizer': False, 'dynamic_batch_tokenizer_batch_size': 32, 'dynamic_batch_tokenizer_batch_timeout': 0.002, 'enable_tokenizer_batch_encode': False, 'disable_tokenizer_batch_decode': False, 'debug_tensor_dump_output_folder': None, 'debug_tensor_dump_layers': None, 'debug_tensor_dump_input_file': None, 'enable_memory_saver': False, 'enable_weights_cpu_backup': False, 'enable_draft_weights_cpu_backup': False, 'enable_custom_logit_processor': False, 'enable_return_hidden_states': False, 'return_hidden_states_mode': None, 'enable_return_routed_experts': False, 'enable_return_indexer_topk': False, 'enable_encoder_swa_bounded_replay': False, 'enable_decoder_swa_bounded_replay': False, 'disable_outlines_disk_cache': False, 'enable_mis': False, 'weight_cache_mode': 'off', 'weight_cache_socket': None, 'weight_cache_timeout': 1800, 'forward_hooks': None, 'msprobe_dump_config': None}
+[2026-09-23 21:48:09] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-09-23 21:48:12] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-09-23 21:48:13] Multimodal processor concurrency enabled with 2 isolated worker threads (auto).
+[2026-09-23 21:48:13] No HuggingFace chat template found
+[2026-09-23 21:48:13] No chat template found, defaulting to 'string' content format
+[2026-09-23 21:48:15 TP0] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-09-23 21:48:15 TP1] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-09-23 21:48:15] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-09-23 21:48:16 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-09-23 21:48:16 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-09-23 21:48:18 TP1] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-09-23 21:48:18 TP0] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-09-23 21:48:18 TP1] Init torch distributed begin.
+[2026-09-23 21:48:18 TP0] Init torch distributed begin.
+[2026-09-23 21:48:19 TP0] sglang is using nccl==2.30.7
+[2026-09-23 21:48:19 TP0] Init torch distributed ends. elapsed=1.16 s, mem usage=0.49 GB
+[2026-09-23 21:48:19 TP1] Init torch distributed ends. elapsed=1.16 s, mem usage=0.49 GB
+[2026-09-23 21:48:22 TP0] Load weight begin. avail mem=93.94 GB
+[2026-09-23 21:48:22 TP0] Detected fp8 checkpoint.
+[2026-09-23 21:48:22 TP0] Config does not support fused shared expert(s). Shared experts fusion optimization is disabled.
+[2026-09-23 21:48:22 TP1] Load weight begin. avail mem=93.86 GB
+[2026-09-23 21:48:22 TP0] Multimodal attention backend not set. Use triton_attn.
+[2026-09-23 21:48:22 TP1] Multimodal attention backend not set. Use triton_attn.
+[2026-09-23 21:48:22 TP0] Using triton_attn as multimodal attention backend.
+[2026-09-23 21:48:22 TP1] Using triton_attn as multimodal attention backend.
+[2026-09-23 21:48:25 TP1] FlashInfer TRTLLM MoE deferred finalize is disabled (moe_runner_backend=flashinfer_mxfp4, quant_method=KTEPWrapperMethod).
+[2026-09-23 21:48:25 TP0] FlashInfer TRTLLM MoE deferred finalize is disabled (moe_runner_backend=flashinfer_mxfp4, quant_method=KTEPWrapperMethod).
+set_mempolicy: Operation not permitted
+/sgl-workspace/sglang/python/sglang/srt/layers/engram.py:721: UserWarning: The given buffer is not writable, and PyTorch does not support non-writable tensors. This means you can write to the underlying (supposedly non-writable) buffer using the tensor. You may want to copy the buffer to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:1556.)
+  raw = torch.frombuffer(self.mm, dtype=torch.uint8)
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+/sgl-workspace/sglang/python/sglang/srt/layers/engram.py:721: UserWarning: The given buffer is not writable, and PyTorch does not support non-writable tensors. This means you can write to the underlying (supposedly non-writable) buffer using the tensor. You may want to copy the buffer to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:1556.)
+  raw = torch.frombuffer(self.mm, dtype=torch.uint8)
+[2026-09-23 21:48:28 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-09-23 21:48:28 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+Multi-thread loading shards:   0% Completed | 0/48 [00:00<?, ?it/s]Multi-thread loading shards:   2% Completed | 1/48 [00:00<00:16,  2.87it/s]Multi-thread loading shards:   6% Completed | 3/48 [00:02<00:37,  1.19it/s]Multi-thread loading shards:   8% Completed | 4/48 [00:02<00:27,  1.62it/s]Multi-thread loading shards:  10% Completed | 5/48 [00:02<00:20,  2.09it/s]Multi-thread loading shards:  12% Completed | 6/48 [00:02<00:16,  2.55it/s]Multi-thread loading shards:  15% Completed | 7/48 [00:03<00:19,  2.15it/s]Multi-thread loading shards:  17% Completed | 8/48 [00:03<00:15,  2.59it/s]Multi-thread loading shards:  19% Completed | 9/48 [00:04<00:12,  3.02it/s]Multi-thread loading shards:  21% Completed | 10/48 [00:04<00:11,  3.40it/s]Multi-thread loading shards:  23% Completed | 11/48 [00:04<00:14,  2.61it/s]Multi-thread loading shards:  25% Completed | 12/48 [00:05<00:12,  2.88it/s]Multi-thread loading shards:  27% Completed | 13/48 [00:05<00:12,  2.69it/s]Multi-thread loading shards:  29% Completed | 14/48 [00:06<00:17,  1.95it/s]Multi-thread loading shards:  31% Completed | 15/48 [00:06<00:14,  2.21it/s]Multi-thread loading shards:  33% Completed | 16/48 [00:06<00:12,  2.55it/s]Multi-thread loading shards:  35% Completed | 17/48 [00:07<00:10,  2.93it/s]Multi-thread loading shards:  38% Completed | 18/48 [00:07<00:09,  3.32it/s]Multi-thread loading shards:  40% Completed | 19/48 [00:07<00:10,  2.68it/s]Multi-thread loading shards:  42% Completed | 20/48 [00:08<00:09,  2.98it/s]Multi-thread loading shards:  44% Completed | 21/48 [00:08<00:09,  2.70it/s]Multi-thread loading shards:  46% Completed | 22/48 [00:09<00:13,  1.99it/s]Multi-thread loading shards:  48% Completed | 23/48 [00:09<00:10,  2.27it/s]Multi-thread loading shards:  50% Completed | 24/48 [00:09<00:09,  2.66it/s]Multi-thread loading shards:  52% Completed | 25/48 [00:10<00:07,  3.10it/s]Multi-thread loading shards:  54% Completed | 26/48 [00:10<00:06,  3.46it/s]Multi-thread loading shards:  56% Completed | 27/48 [00:10<00:08,  2.59it/s]Multi-thread loading shards:  58% Completed | 28/48 [00:11<00:06,  2.93it/s]Multi-thread loading shards:  60% Completed | 29/48 [00:11<00:07,  2.45it/s]Multi-thread loading shards:  62% Completed | 30/48 [00:11<00:06,  2.79it/s]Multi-thread loading shards:  65% Completed | 31/48 [00:12<00:05,  2.94it/s]Multi-thread loading shards:  67% Completed | 32/48 [00:12<00:04,  3.28it/s]Multi-thread loading shards:  69% Completed | 33/48 [00:13<00:06,  2.23it/s]Multi-thread loading shards:  71% Completed | 34/48 [00:13<00:05,  2.63it/s]Multi-thread loading shards:  73% Completed | 35/48 [00:14<00:05,  2.22it/s]Multi-thread loading shards:  75% Completed | 36/48 [00:14<00:04,  2.63it/s]Multi-thread loading shards:  77% Completed | 37/48 [00:14<00:04,  2.31it/s]Multi-thread loading shards:  79% Completed | 38/48 [00:15<00:03,  2.75it/s]Multi-thread loading shards:  81% Completed | 39/48 [00:15<00:02,  3.07it/s]Multi-thread loading shards:  83% Completed | 40/48 [00:15<00:02,  3.50it/s]Multi-thread loading shards:  85% Completed | 41/48 [00:15<00:01,  3.93it/s]Multi-thread loading shards:  88% Completed | 42/48 [00:15<00:01,  4.29it/s]Multi-thread loading shards:  92% Completed | 44/48 [00:16<00:00,  6.44it/s]Multi-thread loading shards:  94% Completed | 45/48 [00:16<00:00,  6.73it/s][2026-09-23 21:48:45 TP1] Finished streaming dequant fp8 wo_a
+Multi-thread loading shards:  96% Completed | 46/48 [00:16<00:00,  6.99it/s]Multi-thread loading shards: 100% Completed | 48/48 [00:16<00:00,  2.95it/s]
+[2026-09-23 21:48:45 TP0] Finished streaming dequant fp8 wo_a
+[2026-09-23 21:49:05 TP1] engram host table layer 1: layout=file, model-00047-of-00048.safetensors rows [192003084, 384006168) of 384006168, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-09-23 21:49:05 TP0] engram host table layer 1: layout=file, model-00047-of-00048.safetensors rows [0, 192003084) of 384006168, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-09-23 21:49:05 TP1] engram host table layer 14: layout=file, model-00048-of-00048.safetensors rows [192008341, 384016682) of 384016682, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-09-23 21:49:05 TP0] engram host table layer 14: layout=file, model-00048-of-00048.safetensors rows [0, 192008341) of 384016682, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-09-23 21:49:05 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.0.mlp.experts)...
+[2026-09-23 21:49:09 TP0] [KT] Released NativeMoEWrapper loader after layer 0: safetensors mmap handles freed.
+[2026-09-23 21:49:10 TP0] [KT layerwise prefill] enabled: min_tokens=1024, 158 CPU experts/layer, host pinned 5.86 GiB (shared), GPU staging 2.03 GiB/rank, tp=2
+[2026-09-23 21:49:10 TP1] [KT layerwise prefill] enabled: min_tokens=1024, 158 CPU experts/layer, host pinned 5.86 GiB (shared), GPU staging 2.03 GiB/rank, tp=2
+[2026-09-23 21:49:10 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.1.mlp.experts)...
+[2026-09-23 21:49:10 TP1] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0. This may lead to less accurate results!
+[2026-09-23 21:49:10 TP1] Load weight end. elapsed=48.43 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=4.86 GB, mem usage=89.01 GB.
+[2026-09-23 21:49:10 TP0] [KT] Recreated NativeMoEWrapper loader for layer 1 (took 83.1ms)
+[2026-09-23 21:49:11 TP0] [KT] Released NativeMoEWrapper loader after layer 1: safetensors mmap handles freed.
+[2026-09-23 21:49:11 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.2.mlp.experts)...
+[2026-09-23 21:49:11 TP0] [KT] Recreated NativeMoEWrapper loader for layer 2 (took 72.1ms)
+[2026-09-23 21:49:12 TP0] [KT] Released NativeMoEWrapper loader after layer 2: safetensors mmap handles freed.
+[2026-09-23 21:49:12 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.3.mlp.experts)...
+[2026-09-23 21:49:12 TP0] [KT] Recreated NativeMoEWrapper loader for layer 3 (took 71.5ms)
+[2026-09-23 21:49:14 TP0] [KT] Released NativeMoEWrapper loader after layer 3: safetensors mmap handles freed.
+[2026-09-23 21:49:14 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.4.mlp.experts)...
+[2026-09-23 21:49:14 TP0] [KT] Recreated NativeMoEWrapper loader for layer 4 (took 64.3ms)
+[2026-09-23 21:49:15 TP0] [KT] Released NativeMoEWrapper loader after layer 4: safetensors mmap handles freed.
+[2026-09-23 21:49:15 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.5.mlp.experts)...
+[2026-09-23 21:49:15 TP0] [KT] Recreated NativeMoEWrapper loader for layer 5 (took 65.0ms)
+[2026-09-23 21:49:17 TP0] [KT] Released NativeMoEWrapper loader after layer 5: safetensors mmap handles freed.
+[2026-09-23 21:49:17 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.6.mlp.experts)...
+[2026-09-23 21:49:17 TP0] [KT] Recreated NativeMoEWrapper loader for layer 6 (took 69.9ms)
+[2026-09-23 21:49:18 TP0] [KT] Released NativeMoEWrapper loader after layer 6: safetensors mmap handles freed.
+[2026-09-23 21:49:18 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.7.mlp.experts)...
+[2026-09-23 21:49:18 TP0] [KT] Recreated NativeMoEWrapper loader for layer 7 (took 64.0ms)
+[2026-09-23 21:49:19 TP0] [KT] Released NativeMoEWrapper loader after layer 7: safetensors mmap handles freed.
+[2026-09-23 21:49:19 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.8.mlp.experts)...
+[2026-09-23 21:49:19 TP0] [KT] Recreated NativeMoEWrapper loader for layer 8 (took 69.0ms)
+[2026-09-23 21:49:20 TP0] [KT] Released NativeMoEWrapper loader after layer 8: safetensors mmap handles freed.
+[2026-09-23 21:49:20 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.9.mlp.experts)...
+[2026-09-23 21:49:20 TP0] [KT] Recreated NativeMoEWrapper loader for layer 9 (took 63.9ms)
+[2026-09-23 21:49:22 TP0] [KT] Released NativeMoEWrapper loader after layer 9: safetensors mmap handles freed.
+[2026-09-23 21:49:22 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.10.mlp.experts)...
+[2026-09-23 21:49:22 TP0] [KT] Recreated NativeMoEWrapper loader for layer 10 (took 65.7ms)
+[2026-09-23 21:49:23 TP0] [KT] Released NativeMoEWrapper loader after layer 10: safetensors mmap handles freed.
+[2026-09-23 21:49:23 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.11.mlp.experts)...
+[2026-09-23 21:49:23 TP0] [KT] Recreated NativeMoEWrapper loader for layer 11 (took 70.9ms)
+[2026-09-23 21:49:24 TP0] [KT] Released NativeMoEWrapper loader after layer 11: safetensors mmap handles freed.
+[2026-09-23 21:49:24 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.12.mlp.experts)...
+[2026-09-23 21:49:25 TP0] [KT] Recreated NativeMoEWrapper loader for layer 12 (took 67.1ms)
+[2026-09-23 21:49:26 TP0] [KT] Released NativeMoEWrapper loader after layer 12: safetensors mmap handles freed.
+[2026-09-23 21:49:26 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.13.mlp.experts)...
+[2026-09-23 21:49:26 TP0] [KT] Recreated NativeMoEWrapper loader for layer 13 (took 65.4ms)
+[2026-09-23 21:49:27 TP0] [KT] Released NativeMoEWrapper loader after layer 13: safetensors mmap handles freed.
+[2026-09-23 21:49:27 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.14.mlp.experts)...
+[2026-09-23 21:49:27 TP0] [KT] Recreated NativeMoEWrapper loader for layer 14 (took 69.2ms)
+[2026-09-23 21:49:28 TP0] [KT] Released NativeMoEWrapper loader after layer 14: safetensors mmap handles freed.
+[2026-09-23 21:49:28 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.15.mlp.experts)...
+[2026-09-23 21:49:28 TP0] [KT] Recreated NativeMoEWrapper loader for layer 15 (took 65.2ms)
+[2026-09-23 21:49:29 TP0] [KT] Released NativeMoEWrapper loader after layer 15: safetensors mmap handles freed.
+[2026-09-23 21:49:29 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.16.mlp.experts)...
+[2026-09-23 21:49:29 TP0] [KT] Recreated NativeMoEWrapper loader for layer 16 (took 66.6ms)
+[2026-09-23 21:49:30 TP0] [KT] Released NativeMoEWrapper loader after layer 16: safetensors mmap handles freed.
+[2026-09-23 21:49:30 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.17.mlp.experts)...
+[2026-09-23 21:49:30 TP0] [KT] Recreated NativeMoEWrapper loader for layer 17 (took 65.9ms)
+[2026-09-23 21:49:32 TP0] [KT] Released NativeMoEWrapper loader after layer 17: safetensors mmap handles freed.
+[2026-09-23 21:49:32 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.18.mlp.experts)...
+[2026-09-23 21:49:32 TP0] [KT] Recreated NativeMoEWrapper loader for layer 18 (took 66.1ms)
+[2026-09-23 21:49:33 TP0] [KT] Released NativeMoEWrapper loader after layer 18: safetensors mmap handles freed.
+[2026-09-23 21:49:33 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.19.mlp.experts)...
+[2026-09-23 21:49:33 TP0] [KT] Recreated NativeMoEWrapper loader for layer 19 (took 65.1ms)
+[2026-09-23 21:49:34 TP0] [KT] Released NativeMoEWrapper loader after layer 19: safetensors mmap handles freed.
+[2026-09-23 21:49:34 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.20.mlp.experts)...
+[2026-09-23 21:49:34 TP0] [KT] Recreated NativeMoEWrapper loader for layer 20 (took 65.3ms)
+[2026-09-23 21:49:35 TP0] [KT] Released NativeMoEWrapper loader after layer 20: safetensors mmap handles freed.
+[2026-09-23 21:49:35 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.21.mlp.experts)...
+[2026-09-23 21:49:35 TP0] [KT] Recreated NativeMoEWrapper loader for layer 21 (took 65.5ms)
+[2026-09-23 21:49:36 TP0] [KT] Released NativeMoEWrapper loader after layer 21: safetensors mmap handles freed.
+[2026-09-23 21:49:36 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.22.mlp.experts)...
+[2026-09-23 21:49:36 TP0] [KT] Recreated NativeMoEWrapper loader for layer 22 (took 66.6ms)
+CPUInfer[0x22807390]: Hello
+WorkerPool[0x35e91e40] 1 subpools, [numa:threads][0:16] 
+===========In NumaPool============
+In Numa Worker Pool at NUMA 0, 16 threads
+TP MOE layer 0, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 1, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 2, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 3, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 4, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 5, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 6, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 7, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 8, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 9, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 10, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 11, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 12, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 13, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 14, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 15, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 16, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 17, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 18, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 19, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 20, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 21, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 22, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+[2026-09-23 21:49:37 TP0] [KT] Released NativeMoEWrapper loader after layer 22: safetensors mmap handles freed.
+[2026-09-23 21:49:37 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.23.mlp.experts)...
+[2026-09-23 21:49:37 TP0] [KT] Recreated NativeMoEWrapper loader for layer 23 (took 66.1ms)
+[2026-09-23 21:49:38 TP0] [KT] Released NativeMoEWrapper loader after layer 23: safetensors mmap handles freed.
+[2026-09-23 21:49:39 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.24.mlp.experts)...
+[2026-09-23 21:49:39 TP0] [KT] Recreated NativeMoEWrapper loader for layer 24 (took 65.2ms)
+[2026-09-23 21:49:40 TP0] [KT] Released NativeMoEWrapper loader after layer 24: safetensors mmap handles freed.
+[2026-09-23 21:49:40 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.25.mlp.experts)...
+[2026-09-23 21:49:40 TP0] [KT] Recreated NativeMoEWrapper loader for layer 25 (took 66.6ms)
+[2026-09-23 21:49:41 TP0] [KT] Released NativeMoEWrapper loader after layer 25: safetensors mmap handles freed.
+[2026-09-23 21:49:41 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.26.mlp.experts)...
+[2026-09-23 21:49:41 TP0] [KT] Recreated NativeMoEWrapper loader for layer 26 (took 65.4ms)
+[2026-09-23 21:49:42 TP0] [KT] Released NativeMoEWrapper loader after layer 26: safetensors mmap handles freed.
+[2026-09-23 21:49:42 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.27.mlp.experts)...
+[2026-09-23 21:49:42 TP0] [KT] Recreated NativeMoEWrapper loader for layer 27 (took 65.0ms)
+[2026-09-23 21:49:43 TP0] [KT] Released NativeMoEWrapper loader after layer 27: safetensors mmap handles freed.
+TP 0 load w[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.0.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 0] load_experts: 1711.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.1ms, create_moe: 2.4ms, cpp_load_weights: 471.1ms, cleanup: 374.8ms, total: 2559.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.1.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 1] load_experts: 132.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 491.7ms, cleanup: 361.1ms, total: 986.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.2.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 2] load_experts: 142.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 485.3ms, cleanup: 372.5ms, total: 1001.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.3.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 3] load_experts: 143.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 554.7ms, cleanup: 378.5ms, total: 1078.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.4.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 4] load_experts: 135.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 1065.1ms, cleanup: 377.5ms, total: 1579.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.5.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 5] load_experts: 133.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.7ms, cpp_load_weights: 789.1ms, cleanup: 369.3ms, total: 1294.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.6.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 6] load_experts: 147.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.6ms, cpp_load_weights: 486.0ms, cleanup: 361.7ms, total: 996.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.7.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 7] load_experts: 148.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 478.5ms, cleanup: 363.0ms, total: 991.8ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.8.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 8] load_experts: 145.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 448.0ms, cleanup: 361.1ms, total: 956.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.9.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 9] load_experts: 147.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 1425.0ms, cleanup: 362.7ms, total: 1936.7ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.10.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 10] load_experts: 138.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 630.2ms, cleanup: 358.4ms, total: 1128.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.11.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 11] load_experts: 167.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.6ms, cpp_load_weights: 615.8ms, cleanup: 366.6ms, total: 1151.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.12.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 12] load_experts: 203.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 557.1ms, cleanup: 365.1ms, total: 1127.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.13.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 13] load_experts: 203.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 509.3ms, cleanup: 363.0ms, total: 1076.9ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.14.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 14] load_experts: 161.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 495.9ms, cleanup: 366.4ms, total: 1025.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.15.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 15] load_experts: 212.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.4ms, cpp_load_weights: 510.1ms, cleanup: 359.1ms, total: 1082.9ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.16.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 16] load_experts: 199.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 502.8ms, cleanup: 369.4ms, total: 1072.9ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.17.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 17] load_experts: 209.9ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 2.6ms, cpp_load_weights: 508.3ms, cleanup: 366.9ms, total: 1087.8ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.18.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 18] load_experts: 188.5ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 492.9ms, cleanup: 368.5ms, total: 1051.2ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.19.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 19] load_experts: 210.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.6ms, cpp_load_weights: 503.5ms, cleanup: 362.0ms, total: 1078.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.20.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 20] load_experts: 203.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 2.2ms, cpp_load_weights: 455.5ms, cleanup: 358.0ms, total: 1018.9ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.21.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 21] load_experts: 198.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 489.3ms, cleanup: 356.4ms, total: 1045.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.22.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 22] load_experts: 195.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.7ms, cpp_load_weights: 472.9ms, cleanup: 367.2ms, total: 1037.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.23.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 23] load_experts: 194.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 4.0ms, cpp_load_weights: 490.0ms, cleanup: 370.3ms, total: 1058.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.24.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 24] load_experts: 206.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 460.2ms, cleanup: 363.7ms, total: 1032.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.25.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 25] load_experts: 196.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 491.1ms, cleanup: 361.5ms, total: 1050.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.26.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 26] load_experts: 195.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 497.2ms, cleanup: 356.7ms, total: 1050.7ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.27.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[2026-09-23 21:49:43 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.28.mlp.experts)...
+[2026-09-23 21:49:43 TP0] [KT] Recreated NativeMoEWrapper loader for layer 28 (took 66.0ms)
+[2026-09-23 21:49:44 TP0] [KT] Released NativeMoEWrapper loader after layer 28: safetensors mmap handles freed.
+[2026-09-23 21:49:44 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.29.mlp.experts)...
+[2026-09-23 21:49:44 TP0] [KT] Recreated NativeMoEWrapper loader for layer 29 (took 67.4ms)
+[2026-09-23 21:49:45 TP0] [KT] Released NativeMoEWrapper loader after layer 29: safetensors mmap handles freed.
+[2026-09-23 21:49:45 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.30.mlp.experts)...
+[2026-09-23 21:49:45 TP0] [KT] Recreated NativeMoEWrapper loader for layer 30 (took 69.7ms)
+[2026-09-23 21:49:47 TP0] [KT] Released NativeMoEWrapper loader after layer 30: safetensors mmap handles freed.
+[2026-09-23 21:49:47 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.31.mlp.experts)...
+[2026-09-23 21:49:47 TP0] [KT] Recreated NativeMoEWrapper loader for layer 31 (took 75.4ms)
+[2026-09-23 21:49:48 TP0] [KT] Released NativeMoEWrapper loader after layer 31: safetensors mmap handles freed.
+[2026-09-23 21:49:48 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.32.mlp.experts)...
+[2026-09-23 21:49:48 TP0] [KT] Recreated NativeMoEWrapper loader for layer 32 (took 65.0ms)
+[2026-09-23 21:49:49 TP0] [KT] Released NativeMoEWrapper loader after layer 32: safetensors mmap handles freed.
+[2026-09-23 21:49:49 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.33.mlp.experts)...
+[2026-09-23 21:49:49 TP0] [KT] Recreated NativeMoEWrapper loader for layer 33 (took 65.6ms)
+[2026-09-23 21:49:51 TP0] [KT] Released NativeMoEWrapper loader after layer 33: safetensors mmap handles freed.
+[2026-09-23 21:49:51 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.34.mlp.experts)...
+[2026-09-23 21:49:51 TP0] [KT] Recreated NativeMoEWrapper loader for layer 34 (took 65.7ms)
+[2026-09-23 21:49:52 TP0] [KT] Released NativeMoEWrapper loader after layer 34: safetensors mmap handles freed.
+[2026-09-23 21:49:52 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.35.mlp.experts)...
+[2026-09-23 21:49:52 TP0] [KT] Recreated NativeMoEWrapper loader for layer 35 (took 66.1ms)
+[2026-09-23 21:49:53 TP0] [KT] Released NativeMoEWrapper loader after layer 35: safetensors mmap handles freed.
+[2026-09-23 21:49:53 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.36.mlp.experts)...
+[2026-09-23 21:49:53 TP0] [KT] Recreated NativeMoEWrapper loader for layer 36 (took 69.3ms)
+[2026-09-23 21:49:54 TP0] [KT] Released NativeMoEWrapper loader after layer 36: safetensors mmap handles freed.
+[2026-09-23 21:49:54 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.37.mlp.experts)...
+[2026-09-23 21:49:54 TP0] [KT] Recreated NativeMoEWrapper loader for layer 37 (took 66.8ms)
+[2026-09-23 21:49:56 TP0] [KT] Released NativeMoEWrapper loader after layer 37: safetensors mmap handles freed.
+[2026-09-23 21:49:56 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.38.mlp.experts)...
+[2026-09-23 21:49:56 TP0] [KT] Recreated NativeMoEWrapper loader for layer 38 (took 73.9ms)
+[2026-09-23 21:49:57 TP0] [KT] Released NativeMoEWrapper loader after layer 38: safetensors mmap handles freed.
+[2026-09-23 21:49:57 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.39.mlp.experts)...
+[2026-09-23 21:49:57 TP0] [KT] Recreated NativeMoEWrapper loader for layer 39 (took 65.5ms)
+[2026-09-23 21:49:58 TP0] [KT] Released NativeMoEWrapper loader after layer 39: safetensors mmap handles freed.
+[2026-09-23 21:49:58 TP0] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0. This may lead to less accurate results!
+[2026-09-23 21:49:58 TP0] Load weight end. elapsed=96.54 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=4.94 GB, mem usage=89.01 GB.
+[2026-09-23 21:50:00 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-09-23 21:50:00 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-09-23 21:50:02 TP1] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-09-23 21:50:02 TP0] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-09-23 21:50:02 TP0] DSV4 SWA sizing: mode=cap, swa_tokens=17664, request_cap+headroom=17664, prefix_tails=16
+[2026-09-23 21:50:02 TP1] DSV4 SWA sizing: mode=cap, swa_tokens=17664, request_cap+headroom=17664, prefix_tails=16
+[2026-09-23 21:50:02 TP1] DSV4 memory calculation: bytes_per_full_token=1630.00, available_bytes=1.00 GB, c128_state_fixed=0.00 GB, swa_fixed=0.38 GB, full_token=406784
+[2026-09-23 21:50:02 TP0] DSV4 memory calculation: bytes_per_full_token=1630.00, available_bytes=1.00 GB, c128_state_fixed=0.00 GB, swa_fixed=0.38 GB, full_token=406784
+[2026-09-23 21:50:02 TP1] DSV4 pool sizes: full=406784, swa=17664, c4=101696, c128=3178, c4_state=1104, c128_state=0
+[2026-09-23 21:50:02 TP0] DSV4 pool sizes: full=406784, swa=17664, c4=101696, c128=3178, c4_state=1104, c128_state=0
+[2026-09-23 21:50:02 TP1] DSV4 SWA sizing: mode=cap, swa_tokens=17664, request_cap+headroom=17664, prefix_tails=16
+[2026-09-23 21:50:02 TP1] DSV4 pool sizes: full=147456, swa=17664, c4=36864, c128=1152, c4_state=1104, c128_state=0
+[2026-09-23 21:50:02 TP0] DSV4 SWA sizing: mode=cap, swa_tokens=17664, request_cap+headroom=17664, prefix_tails=16
+[2026-09-23 21:50:02 TP0] DSV4 pool sizes: full=147456, swa=17664, c4=36864, c128=1152, c4_state=1104, c128_state=0
+[2026-09-23 21:50:02 TP0] Initialize DeepSeekV4TokenToKVPool with max_num_reqs=4 swa_size=17664 c4_size=36864 c4_logical_size=36864 c128_size=1152 c4_state_pool_size=1104 c128_state_pool_size=640
+[2026-09-23 21:50:02 TP1] Initialize DeepSeekV4TokenToKVPool with max_num_reqs=4 swa_size=17664 c4_size=36864 c4_logical_size=36864 c128_size=1152 c4_state_pool_size=1104 c128_state_pool_size=640
+[2026-09-23 21:50:02 TP0] DSV4 SWA storage: worker=target, storage=paged, paged_allocator=True
+[2026-09-23 21:50:02 TP1] DSV4 SWA storage: worker=target, storage=paged, paged_allocator=True
+[2026-09-23 21:50:02 TP0] Memory pool end. avail mem=4.34 GB
+[2026-09-23 21:50:02 TP1] Memory pool end. avail mem=4.26 GB
+[2026-09-23 21:50:07 TP0] Using DeepseekV4AttnBackend for dsv4 attention backend (CUDA).
+[2026-09-23 21:50:07 TP0] [sm120-split] page mask N=577 allocated: flash_mla_sm120_mask:cuda:0 ptr=0x7c6b71df8200 capturing=False
+[2026-09-23 21:50:07 TP0] [sm120-split] split buffer pages=280 allocated: flash_mla_sm120_split:cuda:0 ptr=0x7c69f6c00000 capturing=False
+[2026-09-23 21:50:07 TP0] [sm120-split] split buffer pages=2308 allocated: flash_mla_sm120_splitextra:cuda:0 ptr=0x7c69f8000000 capturing=False
+[2026-09-23 21:50:07 TP0] [sm120-split] reserved page-split buffers from pools (num_pages, page_size, tag): [(70, 256, ''), (577, 256, 'extra'), (577, 128, 'extra')]
+[2026-09-23 21:50:07 TP1] Using DeepseekV4AttnBackend for dsv4 attention backend (CUDA).
+[2026-09-23 21:50:07 TP1] [sm120-split] page mask N=577 allocated: flash_mla_sm120_mask:cuda:1 ptr=0x7241b1df8200 capturing=False
+[2026-09-23 21:50:07 TP1] [sm120-split] split buffer pages=280 allocated: flash_mla_sm120_split:cuda:1 ptr=0x724036c00000 capturing=False
+[2026-09-23 21:50:07 TP1] [sm120-split] split buffer pages=2308 allocated: flash_mla_sm120_splitextra:cuda:1 ptr=0x724038000000 capturing=False
+[2026-09-23 21:50:07 TP1] [sm120-split] reserved page-split buffers from pools (num_pages, page_size, tag): [(70, 256, ''), (577, 256, 'extra'), (577, 128, 'extra')]
+[2026-09-23 21:50:07 TP0] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.6.18/sm120/2855c2b3ca52ae93/rank_tp0_pp0_dp0.json
+[2026-09-23 21:50:07 TP1] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.6.18/sm120/2855c2b3ca52ae93/rank_tp1_pp0_dp0.json
+[2026-09-23 21:50:21 TP0] Disable CP decode attention TP
+[2026-09-23 21:50:21 TP1] Disable CP decode attention TP
+[2026-09-23 21:50:25 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-09-23 21:50:25 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[NativeMoEWrapper Layer 27] load_experts: 198.5ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 484.1ms, cleanup: 359.4ms, total: 1043.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.28.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 28] load_experts: 191.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 451.0ms, cleanup: 365.6ms, total: 1009.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.29.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 29] load_experts: 186.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 488.5ms, cleanup: 371.1ms, total: 1047.9ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.30.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 30] load_experts: 210.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 502.0ms, cleanup: 365.8ms, total: 1079.7ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.31.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 31] load_experts: 199.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 719.0ms, cleanup: 368.9ms, total: 1289.2ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.32.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 32] load_experts: 201.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 735.8ms, cleanup: 375.5ms, total: 1314.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.33.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 33] load_experts: 187.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.5ms, cpp_load_weights: 541.0ms, cleanup: 367.3ms, total: 1097.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.34.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 34] load_experts: 200.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 603.1ms, cleanup: 366.3ms, total: 1171.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.35.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 35] load_experts: 187.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.5ms, cpp_load_weights: 555.8ms, cleanup: 350.6ms, total: 1095.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.36.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 36] load_experts: 219.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 558.5ms, cleanup: 369.8ms, total: 1149.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.37.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 37] load_experts: 196.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.6ms, cpp_load_weights: 628.5ms, cleanup: 417.5ms, total: 1244.7ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.38.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 38] load_experts: 198.9ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 623.5ms, cleanup: 390.5ms, total: 1214.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.39.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 39] load_experts: 185.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 571.2ms, cleanup: 362.9ms, total: 1121.3ms
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:  17%|█▋        | 1/6 [00:00<00:01,  4.01profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:  17%|█▋        | 1/6 [00:00<00:01,  4.01profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 23.47profile/s]
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 23.47profile/s]
+[2026-09-23 21:50:32 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-09-23 21:50:32 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-09-23 21:50:35 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-09-23 21:50:39 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:50:39 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[TensorRT-LLM][INFO] Set logger level to INFO
+eight done.
+TP MOE layer 23, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 24, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 25, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 26, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 27, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 28, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 29, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 30, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 31, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 32, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 33, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 34, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 35, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 36, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 37, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 38, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 39, pool: 0x35e91e40, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+[TensorRT-LLM][INFO] Set logger level to INFO
+[AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1:  33%|███▎      | 1/3 [00:00<00:00,  6.44profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1:  33%|███▎      | 1/3 [00:00<00:00,  3.13profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 3/3 [00:00<00:00, 12.35profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 3/3 [00:00<00:00,  7.37profile/s]
+
+[AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2:  33%|███▎      | 1/3 [00:00<00:00,  6.40profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2:  33%|███▎      | 1/3 [00:00<00:00,  6.39profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00,  9.56profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00,  9.56profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00,  9.10profile/s]
+[AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00,  9.10profile/s]
+[2026-09-23 21:50:40 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-09-23 21:50:51 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 118.10profile/s]
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 104.24profile/s]
+[2026-09-23 21:51:07 TP1] FlashInfer autotune completed.
+[2026-09-23 21:51:07 TP1] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-09-23 21:51:07 TP0] FlashInfer autotune completed.
+[2026-09-23 21:51:07 TP0] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-09-23 21:51:07 TP1] Capture target decode CUDA graph begin. backend=breakable, num_tokens_per_req=1, bs=[1, 2, 3, 4], avail mem=3.92 GB
+[2026-09-23 21:51:07 TP1] Candidate indexer graph limits: [('candidate_all', 512), ('candidate_c2_all', 1024), ('candidate_unfiltered', 16384)]; use full filtering above 16384.
+[2026-09-23 21:51:07 TP0] Capture target decode CUDA graph begin. backend=breakable, num_tokens_per_req=1, bs=[1, 2, 3, 4], avail mem=4.00 GB
+[2026-09-23 21:51:07 TP0] Candidate indexer graph limits: [('candidate_all', 512), ('candidate_c2_all', 1024), ('candidate_unfiltered', 16384)]; use full filtering above 16384.
+  0%|          | 0/4 [00:00<?, ?it/s]Capturing batches (bs=4 avail_mem=4.00 GB):   0%|          | 0/4 [00:00<?, ?it/s][2026-09-23 21:51:07 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:07 TP0] KT_BUF promote temp buffer bs=4 into capture_buffers (capture_bs=[1, 2, 3, 4])
+[2026-09-23 21:51:07 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP0] multimem all-gather disabled (no multicast for world_size=2)
+[2026-09-23 21:51:08 TP1] multimem all-gather disabled (no multicast for world_size=2)
+[2026-09-23 21:51:08 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP0] [KT probe] TP0 forward: 4 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:08 TP1] [KT probe] TP1 forward: 4 MoE tokens, streamed=False, threshold=1024
+Capturing batches (bs=4 avail_mem=4.00 GB):  25%|██▌       | 1/4 [00:01<00:03,  1.23s/it]Capturing batches (bs=3 avail_mem=3.87 GB):  25%|██▌       | 1/4 [00:01<00:03,  1.23s/it][2026-09-23 21:51:09 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:09 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:09 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:09 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:09 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:09 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP0] [KT probe] TP0 forward: 3 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:10 TP1] [KT probe] TP1 forward: 3 MoE tokens, streamed=False, threshold=1024
+Capturing batches (bs=3 avail_mem=3.87 GB):  50%|█████     | 2/4 [00:03<00:03,  1.59s/it]Capturing batches (bs=2 avail_mem=3.84 GB):  50%|█████     | 2/4 [00:03<00:03,  1.59s/it][2026-09-23 21:51:11 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:11 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:12 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:12 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:12 TP0] [KT probe] TP0 forward: 2 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:12 TP1] [KT probe] TP1 forward: 2 MoE tokens, streamed=False, threshold=1024
+Capturing batches (bs=2 avail_mem=3.84 GB):  75%|███████▌  | 3/4 [00:04<00:01,  1.55s/it]Capturing batches (bs=1 avail_mem=3.79 GB):  75%|███████▌  | 3/4 [00:04<00:01,  1.55s/it][2026-09-23 21:51:25 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:25 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:25 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:25 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:25 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:25 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:26 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+Capturing batches (bs=1 avail_mem=3.79 GB): 100%|██████████| 4/4 [00:18<00:00,  6.58s/it]Capturing batches (bs=1 avail_mem=3.79 GB): 100%|██████████| 4/4 [00:18<00:00,  4.72s/it]
+[2026-09-23 21:51:26 TP0] Registering 1328 cuda graph addresses
+[2026-09-23 21:51:27 TP1] Capture target decode CUDA graph end. elapsed=19.70 s, mem usage=0.22 GB, avail mem=3.71 GB.
+[2026-09-23 21:51:27 TP0] Capture target decode CUDA graph end. elapsed=19.71 s, mem usage=0.24 GB, avail mem=3.76 GB.
+[2026-09-23 21:51:27 TP0] max_total_num_tokens=147456, chunked_prefill_size=4096, max_prefill_tokens=16384, max_running_requests=4, context_len=32768, available_gpu_mem=3.76 GB
+[2026-09-23 21:51:27 TP1] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: UnifiedTreeCore
+[2026-09-23 21:51:27 TP1] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False streaming_wrapped=False
+[2026-09-23 21:51:27 TP0] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: UnifiedTreeCore
+[2026-09-23 21:51:27 TP0] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False streaming_wrapped=False
+[2026-09-23 21:51:27] Engine startup timings (s): load_weight=96.54, kv_cache_allocation=2.00, scheduler_e2e=191.92, cuda_graph={prefill=0.00, decode=19.71, target_verify=0.00, draft_prefill=0.00, draft_decode=0.00, draft_extend=0.00}, tokenizer_e2e=198.33
+[2026-09-23 21:51:27] INFO:     Started server process [1]
+[2026-09-23 21:51:27] INFO:     Waiting for application startup.
+[2026-09-23 21:51:28] INFO:     Application startup complete.
+[2026-09-23 21:51:28] INFO:     Uvicorn running on http://0.0.0.0:30000 (Press CTRL+C to quit)
+/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py:454: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+  return await original_handler(ORJSONRequest(request.scope, request.receive))
+[2026-09-23 21:51:29] INFO:     <docker-bridge-ip>:46632 - "GET /v1/models HTTP/1.1" 200 OK
+[2026-09-23 21:51:29] INFO:     127.0.0.1:55662 - "GET /model_info HTTP/1.1" 200 OK
+[2026-09-23 21:51:30 TP1] [KT probe] TP1 forward: 12 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:30 TP0] [KT probe] TP0 forward: 12 MoE tokens, streamed=False, threshold=1024
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-09-23 21:51:46 TP1] [KT probe] TP1 forward: 193 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:46 TP0] [KT probe] TP0 forward: 193 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:51:47] INFO:     <docker-bridge-ip>:46642 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:51:50] INFO:     127.0.0.1:55674 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:51:51 TP0] Freezing GC in Scheduler process. gen0: 289->0, gen1: 355->0, gen2: 1187488->0
+[2026-09-23 21:51:51 TP1] Freezing GC in Scheduler process. gen0: 289->0, gen1: 1149->0, gen2: 1181496->0
+[2026-09-23 21:51:52] Freezing GC in Detokenizer Manager process. gen0: 358->0, gen1: 2->0, gen2: 902551->0
+[2026-09-23 21:51:52] Freezing GC in Tokenizer Manager process. gen0: 610->0, gen1: 1605->0, gen2: 1087437->0
+[2026-09-23 21:51:52] INFO:     127.0.0.1:41154 - "POST /freeze_gc HTTP/1.1" 200 OK
+[2026-09-23 21:51:52] The server is fired up and ready to roll!
+[2026-09-23 21:52:02 TP1] [KT probe] TP1 forward: 24 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:02 TP0] [KT probe] TP0 forward: 24 MoE tokens, streamed=False, threshold=1024
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-09-23 21:52:02] INFO:     <docker-bridge-ip>:46192 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:06 TP0] [KT probe] TP0 forward: 24 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:06 TP1] [KT probe] TP1 forward: 24 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:18 TP1] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 11.98 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[2026-09-23 21:52:19 TP0] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 12.06 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[2026-09-23 21:52:19 TP1] [KT probe] TP1 forward: 48 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:19 TP0] [KT probe] TP0 forward: 48 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:20] INFO:     <docker-bridge-ip>:46202 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:20] INFO:     <docker-bridge-ip>:46206 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:20] INFO:     <docker-bridge-ip>:46210 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:20 TP1] [KT probe] TP1 forward: 24 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:20 TP0] [KT probe] TP0 forward: 24 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:21] INFO:     <docker-bridge-ip>:46226 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:41] INFO:     <docker-bridge-ip>:34342 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:52:42 TP1] [KT probe] TP1 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:42 TP0] [KT probe] TP0 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:43 TP0] [KT probe] TP0 forward: 256 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:43 TP1] [KT probe] TP1 forward: 256 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:52:45] INFO:     <docker-bridge-ip>:34344 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:45] INFO:     <docker-bridge-ip>:34356 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:45] INFO:     <docker-bridge-ip>:34358 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:52:45] INFO:     <docker-bridge-ip>:34374 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:21] INFO:     <docker-bridge-ip>:55694 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:53:21] INFO:     <docker-bridge-ip>:55698 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:53:21 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:53:21 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:53:23] INFO:     <docker-bridge-ip>:55704 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:23] INFO:     <docker-bridge-ip>:55718 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:23] INFO:     <docker-bridge-ip>:55726 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:23] INFO:     <docker-bridge-ip>:55730 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:58] INFO:     <docker-bridge-ip>:42452 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:53:58] INFO:     <docker-bridge-ip>:42468 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:53:58 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:53:58 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:53:59] INFO:     <docker-bridge-ip>:42476 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:59] INFO:     <docker-bridge-ip>:42486 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:59] INFO:     <docker-bridge-ip>:42498 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:53:59] INFO:     <docker-bridge-ip>:42510 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:54:35] INFO:     <docker-bridge-ip>:53114 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:54:35] INFO:     <docker-bridge-ip>:53128 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:54:35 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:54:35 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:54:36] INFO:     <docker-bridge-ip>:53142 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:54:36] INFO:     <docker-bridge-ip>:53148 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:54:36] INFO:     <docker-bridge-ip>:53164 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:54:36] INFO:     <docker-bridge-ip>:53178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:11] INFO:     <docker-bridge-ip>:47344 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:55:11] INFO:     <docker-bridge-ip>:47352 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:55:11 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:55:11 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:55:13] INFO:     <docker-bridge-ip>:47364 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:13] INFO:     <docker-bridge-ip>:47376 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:13] INFO:     <docker-bridge-ip>:47392 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:13] INFO:     <docker-bridge-ip>:47394 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:48] INFO:     <docker-bridge-ip>:58928 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:55:48] INFO:     <docker-bridge-ip>:58936 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:55:48 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:55:48 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:55:50] INFO:     <docker-bridge-ip>:58940 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:50] INFO:     <docker-bridge-ip>:58950 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:50] INFO:     <docker-bridge-ip>:58962 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:55:50] INFO:     <docker-bridge-ip>:58970 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:56:25] INFO:     <docker-bridge-ip>:46518 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:56:25] INFO:     <docker-bridge-ip>:46526 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:56:25 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:56:25 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:56:26] INFO:     <docker-bridge-ip>:46530 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:56:26] INFO:     <docker-bridge-ip>:46532 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:56:26] INFO:     <docker-bridge-ip>:46546 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:56:26] INFO:     <docker-bridge-ip>:46552 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:01] INFO:     <docker-bridge-ip>:59958 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:57:01] INFO:     <docker-bridge-ip>:59968 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:57:01 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:57:01 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:57:03] INFO:     <docker-bridge-ip>:59972 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:03] INFO:     <docker-bridge-ip>:59986 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:03] INFO:     <docker-bridge-ip>:60002 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:03] INFO:     <docker-bridge-ip>:60008 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:38] INFO:     <docker-bridge-ip>:50890 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:57:38] INFO:     <docker-bridge-ip>:50894 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:57:38 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:57:38 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:57:39] INFO:     <docker-bridge-ip>:50906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:39] INFO:     <docker-bridge-ip>:50916 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:39] INFO:     <docker-bridge-ip>:50920 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:57:39] INFO:     <docker-bridge-ip>:50924 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:15] INFO:     <docker-bridge-ip>:34420 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:58:15] INFO:     <docker-bridge-ip>:34430 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:58:15 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:58:15 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:58:16] INFO:     <docker-bridge-ip>:34436 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:16] INFO:     <docker-bridge-ip>:34440 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:16] INFO:     <docker-bridge-ip>:34456 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:16] INFO:     <docker-bridge-ip>:34460 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:51] INFO:     <docker-bridge-ip>:59452 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:58:51] INFO:     <docker-bridge-ip>:59454 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:58:51 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:58:51 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:58:53] INFO:     <docker-bridge-ip>:59466 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:53] INFO:     <docker-bridge-ip>:59468 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:53] INFO:     <docker-bridge-ip>:59478 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:58:53] INFO:     <docker-bridge-ip>:59492 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:59:28] INFO:     <docker-bridge-ip>:33350 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:59:28] INFO:     <docker-bridge-ip>:33360 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 21:59:28 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:59:28 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 21:59:29] INFO:     <docker-bridge-ip>:33372 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:59:29] INFO:     <docker-bridge-ip>:33378 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:59:29] INFO:     <docker-bridge-ip>:33388 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 21:59:29] INFO:     <docker-bridge-ip>:33396 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:00:05] INFO:     <docker-bridge-ip>:37256 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:00:05 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:05 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:06] INFO:     <docker-bridge-ip>:37268 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:00:06] INFO:     <docker-bridge-ip>:37274 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:00:06 TP1] [KT probe] TP1 forward: 43 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:06 TP0] [KT probe] TP0 forward: 43 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:07 TP1] [KT probe] TP1 forward: 45 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:07 TP0] [KT probe] TP0 forward: 45 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:07] INFO:     <docker-bridge-ip>:37292 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:00:07] INFO:     <docker-bridge-ip>:37280 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:00:27] INFO:     <docker-bridge-ip>:49464 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:00:27] INFO:     <docker-bridge-ip>:49476 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:00:27 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:27 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:29] INFO:     <docker-bridge-ip>:49482 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:00:29] INFO:     <docker-bridge-ip>:49484 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:00:48] INFO:     <docker-bridge-ip>:58148 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:00:48] INFO:     <docker-bridge-ip>:58150 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:00:48 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:48 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:00:49] INFO:     <docker-bridge-ip>:58158 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:00:49] INFO:     <docker-bridge-ip>:58166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:01:09] INFO:     <docker-bridge-ip>:52988 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:01:09] INFO:     <docker-bridge-ip>:52990 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:01:09 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:01:09 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:01:10] INFO:     <docker-bridge-ip>:52994 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:01:10] INFO:     <docker-bridge-ip>:53006 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:01:30] INFO:     <docker-bridge-ip>:43838 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:01:30] INFO:     <docker-bridge-ip>:43840 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:01:30 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:01:30 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:01:31] INFO:     <docker-bridge-ip>:43844 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:01:31] INFO:     <docker-bridge-ip>:43856 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:01:50] INFO:     <docker-bridge-ip>:54546 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:01:50] INFO:     <docker-bridge-ip>:54548 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:01:50 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:01:50 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:01:51] INFO:     <docker-bridge-ip>:54558 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:01:51] INFO:     <docker-bridge-ip>:54560 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:02:11] INFO:     <docker-bridge-ip>:45810 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:02:11] INFO:     <docker-bridge-ip>:45820 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:02:11 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:02:11 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:02:12] INFO:     <docker-bridge-ip>:45828 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:02:12] INFO:     <docker-bridge-ip>:45834 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:02:31] INFO:     <docker-bridge-ip>:37744 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:02:31] INFO:     <docker-bridge-ip>:37748 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:02:31 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:02:31 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:02:32] INFO:     <docker-bridge-ip>:37766 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:02:32] INFO:     <docker-bridge-ip>:37764 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:02:52] INFO:     <docker-bridge-ip>:36170 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:02:52] INFO:     <docker-bridge-ip>:36174 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:02:52 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:02:52 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:02:53] INFO:     <docker-bridge-ip>:36184 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:02:53] INFO:     <docker-bridge-ip>:36190 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:03:12] INFO:     <docker-bridge-ip>:58956 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:03:12] INFO:     <docker-bridge-ip>:58966 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:03:12 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:03:12 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:03:13] INFO:     <docker-bridge-ip>:58976 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:03:13] INFO:     <docker-bridge-ip>:58986 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:03:33] INFO:     <docker-bridge-ip>:58430 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:03:33] INFO:     <docker-bridge-ip>:58432 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:03:33 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:03:33 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:03:34] INFO:     <docker-bridge-ip>:58442 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:03:34] INFO:     <docker-bridge-ip>:58446 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:03:54] INFO:     <docker-bridge-ip>:51732 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:03:54] INFO:     <docker-bridge-ip>:51746 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:03:54 TP1] [KT probe] TP1 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:03:54 TP0] [KT probe] TP0 forward: 88 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:03:54] INFO:     <docker-bridge-ip>:51758 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:03:54] INFO:     <docker-bridge-ip>:51760 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:04:14] INFO:     <docker-bridge-ip>:39814 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:04:14 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:14 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:15] INFO:     <docker-bridge-ip>:39818 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:04:15] INFO:     <docker-bridge-ip>:39826 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:04:15 TP0] [KT probe] TP0 forward: 41 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:15 TP1] [KT probe] TP1 forward: 41 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:16 TP1] [KT probe] TP1 forward: 94 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:16 TP0] [KT probe] TP0 forward: 94 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:17] INFO:     <docker-bridge-ip>:39832 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:04:17] INFO:     <docker-bridge-ip>:39858 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:04:17] INFO:     <docker-bridge-ip>:39846 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:04:44] INFO:     <docker-bridge-ip>:55548 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:04:44] INFO:     <docker-bridge-ip>:55560 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:04:44 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:44 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:04:45] INFO:     <docker-bridge-ip>:55576 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:04:45] INFO:     <docker-bridge-ip>:55586 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:04:45] INFO:     <docker-bridge-ip>:55598 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:05:13] INFO:     <docker-bridge-ip>:53286 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:05:13] INFO:     <docker-bridge-ip>:53296 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:05:13 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:05:13 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:05:14] INFO:     <docker-bridge-ip>:53312 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:05:14] INFO:     <docker-bridge-ip>:53314 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:05:14] INFO:     <docker-bridge-ip>:53326 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:05:41] INFO:     <docker-bridge-ip>:53490 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:05:41] INFO:     <docker-bridge-ip>:53496 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:05:41 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:05:41 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:05:42] INFO:     <docker-bridge-ip>:53498 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:05:42] INFO:     <docker-bridge-ip>:53512 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:05:42] INFO:     <docker-bridge-ip>:53528 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:06:09] INFO:     <docker-bridge-ip>:38976 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:06:09] INFO:     <docker-bridge-ip>:38986 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:06:09 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:06:09 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:06:10] INFO:     <docker-bridge-ip>:39002 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:06:10] INFO:     <docker-bridge-ip>:39006 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:06:10] INFO:     <docker-bridge-ip>:39020 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:06:37] INFO:     <docker-bridge-ip>:46412 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:06:37] INFO:     <docker-bridge-ip>:46414 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:06:37 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:06:37 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:06:38] INFO:     <docker-bridge-ip>:46422 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:06:38] INFO:     <docker-bridge-ip>:46428 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:06:38] INFO:     <docker-bridge-ip>:46438 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:07:05] INFO:     <docker-bridge-ip>:38470 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:07:05] INFO:     <docker-bridge-ip>:38484 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:07:05 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:07:05 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:07:06] INFO:     <docker-bridge-ip>:38490 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:07:06] INFO:     <docker-bridge-ip>:38502 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:07:06] INFO:     <docker-bridge-ip>:38510 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:07:34] INFO:     <docker-bridge-ip>:58794 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:07:34] INFO:     <docker-bridge-ip>:58802 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:07:34 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:07:34 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:07:34] INFO:     <docker-bridge-ip>:58818 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:07:34] INFO:     <docker-bridge-ip>:58822 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:07:34] INFO:     <docker-bridge-ip>:58834 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:02] INFO:     <docker-bridge-ip>:50146 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:08:02] INFO:     <docker-bridge-ip>:50160 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:08:02 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:08:02 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:08:03] INFO:     <docker-bridge-ip>:50176 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:03] INFO:     <docker-bridge-ip>:50182 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:03] INFO:     <docker-bridge-ip>:50188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:30] INFO:     <docker-bridge-ip>:44968 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:08:30] INFO:     <docker-bridge-ip>:44980 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:08:30 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:08:30 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:08:31] INFO:     <docker-bridge-ip>:44986 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:31] INFO:     <docker-bridge-ip>:45002 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:31] INFO:     <docker-bridge-ip>:45006 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:59] INFO:     <docker-bridge-ip>:56178 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:08:59] INFO:     <docker-bridge-ip>:56186 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:08:59 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:08:59 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:08:59] INFO:     <docker-bridge-ip>:56196 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:59] INFO:     <docker-bridge-ip>:56200 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:08:59] INFO:     <docker-bridge-ip>:56208 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:09:27] INFO:     <docker-bridge-ip>:47054 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:09:27] INFO:     <docker-bridge-ip>:47060 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:09:27 TP1] [KT probe] TP1 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:27 TP0] [KT probe] TP0 forward: 135 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:28] INFO:     <docker-bridge-ip>:47072 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:09:28] INFO:     <docker-bridge-ip>:47080 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:09:28] INFO:     <docker-bridge-ip>:47096 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:09:55] INFO:     <docker-bridge-ip>:59704 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:09:55 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:55 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:56] INFO:     <docker-bridge-ip>:59720 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:09:56] INFO:     <docker-bridge-ip>:59734 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:09:56 TP0] [KT probe] TP0 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:56 TP1] [KT probe] TP1 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:57 TP0] [KT probe] TP0 forward: 256 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:57 TP1] [KT probe] TP1 forward: 256 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:09:58] INFO:     <docker-bridge-ip>:59744 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:09:58] INFO:     <docker-bridge-ip>:59738 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:09:58] INFO:     <docker-bridge-ip>:59750 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:09:58] INFO:     <docker-bridge-ip>:59762 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:10:33] INFO:     <docker-bridge-ip>:34330 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:10:33] INFO:     <docker-bridge-ip>:34340 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:10:33 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:10:33 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:10:35] INFO:     <docker-bridge-ip>:34348 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:10:35] INFO:     <docker-bridge-ip>:34368 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:10:35] INFO:     <docker-bridge-ip>:34352 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:10:35] INFO:     <docker-bridge-ip>:34370 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:10] INFO:     <docker-bridge-ip>:47168 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:11:10] INFO:     <docker-bridge-ip>:47176 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:11:10 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:11:10 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:11:12] INFO:     <docker-bridge-ip>:47180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:12] INFO:     <docker-bridge-ip>:47186 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:12] INFO:     <docker-bridge-ip>:47198 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:12] INFO:     <docker-bridge-ip>:47214 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:47] INFO:     <docker-bridge-ip>:48808 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:11:47] INFO:     <docker-bridge-ip>:48822 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:11:47 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:11:47 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:11:48] INFO:     <docker-bridge-ip>:48830 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:48] INFO:     <docker-bridge-ip>:48844 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:48] INFO:     <docker-bridge-ip>:48852 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:11:48] INFO:     <docker-bridge-ip>:48864 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:12:23] INFO:     <docker-bridge-ip>:38746 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:12:23] INFO:     <docker-bridge-ip>:38754 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:12:23 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:12:23 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:12:25] INFO:     <docker-bridge-ip>:38764 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:12:25] INFO:     <docker-bridge-ip>:38766 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:12:25] INFO:     <docker-bridge-ip>:38774 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:12:25] INFO:     <docker-bridge-ip>:38790 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:00] INFO:     <docker-bridge-ip>:57430 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:13:00] INFO:     <docker-bridge-ip>:57440 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:13:00 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:13:00 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:13:01] INFO:     <docker-bridge-ip>:57442 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:01] INFO:     <docker-bridge-ip>:57452 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:01] INFO:     <docker-bridge-ip>:57470 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:01] INFO:     <docker-bridge-ip>:57458 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:37] INFO:     <docker-bridge-ip>:38972 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:13:37] INFO:     <docker-bridge-ip>:38988 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:13:37 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:13:37 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:13:38] INFO:     <docker-bridge-ip>:39004 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:38] INFO:     <docker-bridge-ip>:39006 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:38] INFO:     <docker-bridge-ip>:39022 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:13:38] INFO:     <docker-bridge-ip>:39010 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:13] INFO:     <docker-bridge-ip>:47048 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:14:13] INFO:     <docker-bridge-ip>:47062 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:14:13 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:14:13 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:14:15] INFO:     <docker-bridge-ip>:47076 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:15] INFO:     <docker-bridge-ip>:47086 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:15] INFO:     <docker-bridge-ip>:47080 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:15] INFO:     <docker-bridge-ip>:47098 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:50] INFO:     <docker-bridge-ip>:37624 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:14:50] INFO:     <docker-bridge-ip>:37626 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:14:50 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:14:50 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:14:52] INFO:     <docker-bridge-ip>:37656 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:52] INFO:     <docker-bridge-ip>:37642 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:52] INFO:     <docker-bridge-ip>:37660 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:14:52] INFO:     <docker-bridge-ip>:37674 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:15:27] INFO:     <docker-bridge-ip>:50390 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:15:27] INFO:     <docker-bridge-ip>:50392 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:15:27 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:15:27 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:15:29] INFO:     <docker-bridge-ip>:50400 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:15:29] INFO:     <docker-bridge-ip>:50408 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:15:29] INFO:     <docker-bridge-ip>:50422 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:15:29] INFO:     <docker-bridge-ip>:50414 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:04] INFO:     <docker-bridge-ip>:43634 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:16:04] INFO:     <docker-bridge-ip>:43642 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:16:04 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:16:04 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:16:05] INFO:     <docker-bridge-ip>:43644 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:05] INFO:     <docker-bridge-ip>:43656 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:05] INFO:     <docker-bridge-ip>:43668 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:05] INFO:     <docker-bridge-ip>:43680 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:40] INFO:     <docker-bridge-ip>:49044 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:16:40] INFO:     <docker-bridge-ip>:49054 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:16:40 TP1] [KT probe] TP1 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:16:40 TP0] [KT probe] TP0 forward: 298 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:16:42] INFO:     <docker-bridge-ip>:49060 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:42] INFO:     <docker-bridge-ip>:49058 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:42] INFO:     <docker-bridge-ip>:49076 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:16:42] INFO:     <docker-bridge-ip>:49086 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:17:17] INFO:     <docker-bridge-ip>:52088 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:17 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:17 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:18] INFO:     <docker-bridge-ip>:52098 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:17:18] INFO:     <docker-bridge-ip>:52108 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:18 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:18 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:19] INFO:     <docker-bridge-ip>:52118 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:17:31] INFO:     <docker-bridge-ip>:46652 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:31] INFO:     <docker-bridge-ip>:46654 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:31 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:31 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:32] INFO:     <docker-bridge-ip>:46666 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:17:44] INFO:     <docker-bridge-ip>:48292 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:44] INFO:     <docker-bridge-ip>:48298 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:44 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:44 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:45] INFO:     <docker-bridge-ip>:48310 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:17:57] INFO:     <docker-bridge-ip>:48408 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:57] INFO:     <docker-bridge-ip>:48414 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:17:57 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:57 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:17:57] INFO:     <docker-bridge-ip>:48428 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:18:09] INFO:     <docker-bridge-ip>:44262 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:09] INFO:     <docker-bridge-ip>:44268 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:09 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:09 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:10] INFO:     <docker-bridge-ip>:44278 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:18:22] INFO:     <docker-bridge-ip>:55094 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:22] INFO:     <docker-bridge-ip>:55100 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:22 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:22 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:23] INFO:     <docker-bridge-ip>:55102 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:18:35] INFO:     <docker-bridge-ip>:40298 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:35] INFO:     <docker-bridge-ip>:40300 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:35 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:35 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:36] INFO:     <docker-bridge-ip>:40306 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:18:48] INFO:     <docker-bridge-ip>:48166 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:48] INFO:     <docker-bridge-ip>:48168 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:18:48 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:48 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:18:48] INFO:     <docker-bridge-ip>:48180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:01] INFO:     <docker-bridge-ip>:34970 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:01] INFO:     <docker-bridge-ip>:34974 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:01 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:01 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:01] INFO:     <docker-bridge-ip>:34984 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:13] INFO:     <docker-bridge-ip>:59870 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:13] INFO:     <docker-bridge-ip>:59874 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:13 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:13 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:14] INFO:     <docker-bridge-ip>:59890 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:26] INFO:     <docker-bridge-ip>:51314 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:26] INFO:     <docker-bridge-ip>:51322 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:26 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:26 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:27] INFO:     <docker-bridge-ip>:51330 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:39] INFO:     <docker-bridge-ip>:48470 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:39] INFO:     <docker-bridge-ip>:48486 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:39 TP0] [KT probe] TP0 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:39 TP1] [KT probe] TP1 forward: 50 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:40] INFO:     <docker-bridge-ip>:48502 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:52] INFO:     <docker-bridge-ip>:49072 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:52 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:52 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:53] INFO:     <docker-bridge-ip>:49086 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:19:53] INFO:     <docker-bridge-ip>:49092 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:19:53 TP1] [KT probe] TP1 forward: 43 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:53 TP0] [KT probe] TP0 forward: 43 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:53 TP1] [KT probe] TP1 forward: 126 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:53 TP0] [KT probe] TP0 forward: 126 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:19:54] INFO:     <docker-bridge-ip>:49110 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:54] INFO:     <docker-bridge-ip>:49106 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:54] INFO:     <docker-bridge-ip>:49114 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:19:54] INFO:     <docker-bridge-ip>:49122 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:20:29] INFO:     <docker-bridge-ip>:34420 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:20:29] INFO:     <docker-bridge-ip>:34436 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:20:29 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:20:29 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:20:30] INFO:     <docker-bridge-ip>:34438 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:20:30] INFO:     <docker-bridge-ip>:34444 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:20:30] INFO:     <docker-bridge-ip>:34456 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:20:30] INFO:     <docker-bridge-ip>:34468 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:05] INFO:     <docker-bridge-ip>:52986 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:21:05] INFO:     <docker-bridge-ip>:52992 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:21:05 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:21:05 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:21:06] INFO:     <docker-bridge-ip>:53006 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:06] INFO:     <docker-bridge-ip>:53008 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:06] INFO:     <docker-bridge-ip>:53018 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:06] INFO:     <docker-bridge-ip>:53020 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:40] INFO:     <docker-bridge-ip>:33604 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:21:40] INFO:     <docker-bridge-ip>:33612 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:21:41 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:21:41 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:21:41] INFO:     <docker-bridge-ip>:33618 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:41] INFO:     <docker-bridge-ip>:33630 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:41] INFO:     <docker-bridge-ip>:33638 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:21:41] INFO:     <docker-bridge-ip>:33644 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:16] INFO:     <docker-bridge-ip>:44904 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:22:16] INFO:     <docker-bridge-ip>:44920 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:22:16 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:22:16 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:22:17] INFO:     <docker-bridge-ip>:44930 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:17] INFO:     <docker-bridge-ip>:44950 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:17] INFO:     <docker-bridge-ip>:44938 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:17] INFO:     <docker-bridge-ip>:44956 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:52] INFO:     <docker-bridge-ip>:39408 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:22:52] INFO:     <docker-bridge-ip>:39414 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:22:52 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:22:52 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:22:53] INFO:     <docker-bridge-ip>:39428 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:53] INFO:     <docker-bridge-ip>:39434 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:53] INFO:     <docker-bridge-ip>:39436 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:22:53] INFO:     <docker-bridge-ip>:39438 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:23:27] INFO:     <docker-bridge-ip>:45226 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:23:27] INFO:     <docker-bridge-ip>:45228 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:23:27 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:23:27 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:23:28] INFO:     <docker-bridge-ip>:45242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:23:28] INFO:     <docker-bridge-ip>:45232 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:23:28] INFO:     <docker-bridge-ip>:45244 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:23:28] INFO:     <docker-bridge-ip>:45254 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:03] INFO:     <docker-bridge-ip>:37060 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:24:03] INFO:     <docker-bridge-ip>:37072 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:24:03 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:24:03 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:24:04] INFO:     <docker-bridge-ip>:37078 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:04] INFO:     <docker-bridge-ip>:37090 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:04] INFO:     <docker-bridge-ip>:37106 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:04] INFO:     <docker-bridge-ip>:37114 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:39] INFO:     <docker-bridge-ip>:37950 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:24:39] INFO:     <docker-bridge-ip>:37954 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:24:39 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:24:39 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:24:40] INFO:     <docker-bridge-ip>:37958 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:40] INFO:     <docker-bridge-ip>:37964 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:40] INFO:     <docker-bridge-ip>:37976 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:24:40] INFO:     <docker-bridge-ip>:37992 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:14] INFO:     <docker-bridge-ip>:58934 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:25:14] INFO:     <docker-bridge-ip>:58936 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:25:14 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:25:14 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:25:15] INFO:     <docker-bridge-ip>:58964 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:15] INFO:     <docker-bridge-ip>:58940 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:15] INFO:     <docker-bridge-ip>:58948 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:15] INFO:     <docker-bridge-ip>:58968 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:50] INFO:     <docker-bridge-ip>:59098 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:25:50] INFO:     <docker-bridge-ip>:59110 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:25:50 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:25:50 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:25:51] INFO:     <docker-bridge-ip>:59116 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:51] INFO:     <docker-bridge-ip>:59126 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:51] INFO:     <docker-bridge-ip>:59134 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:25:51] INFO:     <docker-bridge-ip>:59142 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:26:26] INFO:     <docker-bridge-ip>:57842 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:26:26] INFO:     <docker-bridge-ip>:57844 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:26:26 TP0] [KT probe] TP0 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:26:26 TP1] [KT probe] TP1 forward: 169 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:26:27] INFO:     <docker-bridge-ip>:57848 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:26:27] INFO:     <docker-bridge-ip>:57852 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:26:27] INFO:     <docker-bridge-ip>:57866 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:26:27] INFO:     <docker-bridge-ip>:57874 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:27:01] INFO:     <docker-bridge-ip>:53820 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:27:02 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:02 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:02] INFO:     <docker-bridge-ip>:53836 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:27:03] INFO:     <docker-bridge-ip>:53846 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:27:03 TP0] [KT probe] TP0 forward: 166 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:03 TP1] [KT probe] TP1 forward: 166 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:04 TP0] [KT probe] TP0 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:04 TP1] [KT probe] TP1 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:04] INFO:     <docker-bridge-ip>:53858 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:27:04] INFO:     <docker-bridge-ip>:53868 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:27:24] INFO:     <docker-bridge-ip>:43100 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:27:24] INFO:     <docker-bridge-ip>:43116 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:27:24 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:24 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:25] INFO:     <docker-bridge-ip>:43126 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:27:25] INFO:     <docker-bridge-ip>:43130 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:27:46] INFO:     <docker-bridge-ip>:42728 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:27:46] INFO:     <docker-bridge-ip>:42740 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:27:46 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:46 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:27:47] INFO:     <docker-bridge-ip>:42742 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:27:47] INFO:     <docker-bridge-ip>:42750 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:28:07] INFO:     <docker-bridge-ip>:37858 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:28:07] INFO:     <docker-bridge-ip>:37860 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:28:07 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:28:07 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:28:08] INFO:     <docker-bridge-ip>:37866 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:28:08] INFO:     <docker-bridge-ip>:37874 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:28:29] INFO:     <docker-bridge-ip>:55118 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:28:29] INFO:     <docker-bridge-ip>:55134 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:28:29 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:28:29 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:28:30] INFO:     <docker-bridge-ip>:55138 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:28:30] INFO:     <docker-bridge-ip>:55142 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:28:51] INFO:     <docker-bridge-ip>:40386 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:28:51] INFO:     <docker-bridge-ip>:40396 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:28:51 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:28:51 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:28:52] INFO:     <docker-bridge-ip>:40398 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:28:52] INFO:     <docker-bridge-ip>:40402 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:29:12] INFO:     <docker-bridge-ip>:46178 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:29:12] INFO:     <docker-bridge-ip>:46190 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:29:12 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:29:12 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:29:13] INFO:     <docker-bridge-ip>:46194 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:29:13] INFO:     <docker-bridge-ip>:46210 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:29:33] INFO:     <docker-bridge-ip>:52654 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:29:33] INFO:     <docker-bridge-ip>:52662 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:29:33 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:29:33 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:29:35] INFO:     <docker-bridge-ip>:52674 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:29:35] INFO:     <docker-bridge-ip>:52684 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:29:55] INFO:     <docker-bridge-ip>:55646 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:29:55] INFO:     <docker-bridge-ip>:55656 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:29:55 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:29:55 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:29:56] INFO:     <docker-bridge-ip>:55668 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:29:56] INFO:     <docker-bridge-ip>:55680 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:30:16] INFO:     <docker-bridge-ip>:38664 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:30:16] INFO:     <docker-bridge-ip>:38670 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:30:16 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:30:16 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:30:17] INFO:     <docker-bridge-ip>:38686 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:30:17] INFO:     <docker-bridge-ip>:38692 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:30:38] INFO:     <docker-bridge-ip>:40762 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:30:38] INFO:     <docker-bridge-ip>:40764 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:30:38 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:30:38 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:30:39] INFO:     <docker-bridge-ip>:40768 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:30:39] INFO:     <docker-bridge-ip>:40782 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:30:59] INFO:     <docker-bridge-ip>:34460 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:30:59] INFO:     <docker-bridge-ip>:34468 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:30:59 TP0] [KT probe] TP0 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:30:59 TP1] [KT probe] TP1 forward: 208 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:00] INFO:     <docker-bridge-ip>:34478 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:31:00] INFO:     <docker-bridge-ip>:34492 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:31:20] INFO:     <docker-bridge-ip>:37464 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:31:20 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:20 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:21] INFO:     <docker-bridge-ip>:37476 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:31:21] INFO:     <docker-bridge-ip>:37492 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:31:21 TP0] [KT probe] TP0 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:21 TP1] [KT probe] TP1 forward: 42 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:22 TP0] [KT probe] TP0 forward: 90 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:22 TP1] [KT probe] TP1 forward: 90 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:23] INFO:     <docker-bridge-ip>:37504 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:31:23] INFO:     <docker-bridge-ip>:37514 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:31:23] INFO:     <docker-bridge-ip>:37516 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:31:51] INFO:     <docker-bridge-ip>:56492 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:31:51] INFO:     <docker-bridge-ip>:56506 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:31:51 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:51 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:31:52] INFO:     <docker-bridge-ip>:56514 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:31:52] INFO:     <docker-bridge-ip>:56532 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:31:52] INFO:     <docker-bridge-ip>:56530 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:32:19] INFO:     <docker-bridge-ip>:41628 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:32:19] INFO:     <docker-bridge-ip>:41644 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:32:19 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:32:19 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:32:20] INFO:     <docker-bridge-ip>:41650 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:32:20] INFO:     <docker-bridge-ip>:41656 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:32:20] INFO:     <docker-bridge-ip>:41670 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:32:48] INFO:     <docker-bridge-ip>:41686 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:32:48] INFO:     <docker-bridge-ip>:41692 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:32:48 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:32:48 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:32:49] INFO:     <docker-bridge-ip>:41702 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:32:49] INFO:     <docker-bridge-ip>:41716 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:32:49] INFO:     <docker-bridge-ip>:41724 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:33:16] INFO:     <docker-bridge-ip>:42346 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:33:16] INFO:     <docker-bridge-ip>:42350 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:33:16 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:33:16 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:33:17] INFO:     <docker-bridge-ip>:42366 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:33:17] INFO:     <docker-bridge-ip>:42376 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:33:17] INFO:     <docker-bridge-ip>:42380 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:33:45] INFO:     <docker-bridge-ip>:51640 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:33:45] INFO:     <docker-bridge-ip>:51656 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:33:45 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:33:45 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:33:45] INFO:     <docker-bridge-ip>:51658 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:33:45] INFO:     <docker-bridge-ip>:51668 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:33:45] INFO:     <docker-bridge-ip>:51674 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:34:13] INFO:     <docker-bridge-ip>:47608 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:34:13] INFO:     <docker-bridge-ip>:47610 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:34:13 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:34:13 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:34:14] INFO:     <docker-bridge-ip>:47614 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:34:14] INFO:     <docker-bridge-ip>:47622 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:34:14] INFO:     <docker-bridge-ip>:47636 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:34:41] INFO:     <docker-bridge-ip>:60390 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:34:41] INFO:     <docker-bridge-ip>:60392 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:34:41 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:34:41 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:34:42] INFO:     <docker-bridge-ip>:60400 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:34:42] INFO:     <docker-bridge-ip>:60410 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:34:42] INFO:     <docker-bridge-ip>:60412 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:35:09] INFO:     <docker-bridge-ip>:56810 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:35:09] INFO:     <docker-bridge-ip>:56822 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:35:09 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:35:09 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:35:10] INFO:     <docker-bridge-ip>:56838 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:35:10] INFO:     <docker-bridge-ip>:56854 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:35:10] INFO:     <docker-bridge-ip>:56866 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:35:38] INFO:     <docker-bridge-ip>:55950 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:35:38] INFO:     <docker-bridge-ip>:55952 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:35:38 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:35:38 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:35:39] INFO:     <docker-bridge-ip>:55966 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:35:39] INFO:     <docker-bridge-ip>:55980 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:35:39] INFO:     <docker-bridge-ip>:55996 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:36:06] INFO:     <docker-bridge-ip>:56966 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:36:06] INFO:     <docker-bridge-ip>:56970 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:36:06 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:36:06 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:36:07] INFO:     <docker-bridge-ip>:56976 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:36:07] INFO:     <docker-bridge-ip>:56996 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:36:07] INFO:     <docker-bridge-ip>:56982 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:36:34] INFO:     <docker-bridge-ip>:45162 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:36:34] INFO:     <docker-bridge-ip>:45166 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:36:35 TP0] [KT probe] TP0 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:36:35 TP1] [KT probe] TP1 forward: 132 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:36:35] INFO:     <docker-bridge-ip>:45172 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:36:35] INFO:     <docker-bridge-ip>:45186 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:36:35] INFO:     <docker-bridge-ip>:45194 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-23 22:37:03] INFO:     <docker-bridge-ip>:44384 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-09-23 22:37:03 TP0] [KT probe] TP0 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:37:03 TP1] [KT probe] TP1 forward: 1 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:37:04] INFO:     <docker-bridge-ip>:44400 - "GET /health HTTP/1.1" 200 OK
+[2026-09-23 22:38:14 TP0] [KT probe] TP0 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:14 TP1] [KT probe] TP1 forward: 4096 MoE tokens, streamed=True, threshold=1024
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[rank0]:[W923 22:38:19.974886999 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 1059061760 bytes (free: 795869184, total: 102069305344).
+[rank1]:[W923 22:38:19.974910694 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 1059061760 bytes (free: 735903744, total: 102066159616).
+[2026-09-23 22:38:19 TP0] Triton kernel '_row_logsumexp_kernel' device-loaded after serving started (free device mem: 0.63 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:19 TP1] Triton kernel '_row_logsumexp_kernel' device-loaded after serving started (free device mem: 0.57 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:20 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.57 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:20 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.51 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:20 TP0] [KT probe] TP0 forward: 700 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:38:20 TP1] [KT probe] TP1 forward: 700 MoE tokens, streamed=False, threshold=1024
+[2026-09-23 22:38:20 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.51 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:20 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.57 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:23] INFO:     <docker-bridge-ip>:38896 - "POST /generate HTTP/1.1" 200 OK
+[2026-09-23 22:38:32 TP0] [KT probe] TP0 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:32 TP1] [KT probe] TP1 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:36 TP1] [KT probe] TP1 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:36 TP0] [KT probe] TP0 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:41 TP0] [KT probe] TP0 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:41 TP1] [KT probe] TP1 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:45 TP0] Triton kernel '_hc_mix_stats_partial_kernel' device-loaded after serving started (free device mem: 0.56 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:45 TP1] Triton kernel '_hc_mix_stats_partial_kernel' device-loaded after serving started (free device mem: 0.50 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:46 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.56 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:46 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.50 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:46 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.50 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:46 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.56 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:46 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.56 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:46 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.50 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-09-23 22:38:46 TP0] [KT probe] TP0 forward: 3690 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:46 TP1] [KT probe] TP1 forward: 3690 MoE tokens, streamed=True, threshold=1024
+[2026-09-23 22:38:50] INFO:     <docker-bridge-ip>:58658 - "POST /v1/chat/completions HTTP/1.1" 200 OK
