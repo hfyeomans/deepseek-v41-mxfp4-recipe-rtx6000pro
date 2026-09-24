@@ -48,6 +48,8 @@ Base: upstream `sgl-project/sglang` commit `da64c5cb` ("[DSV4.1] Support raw-ind
 - `6032dd44`, `3b1fedce` prefill-graph breaks gated on `is_extend_without_speculative()` (E23).
 - `71645529` breakable-graph dataclass outputs keep per-field row counts (E23).
 - `95f2fe3d` breakable-graph output cap = batch size × `captured_req_width` (E23).
+- `b457c4e6`, `4685955e`, `07f4aef0` breakable-graph fault attribution diagnostics (`SGLANG_BCG_DEBUG_SYNC`, `SGLANG_BCG_DEBUG_EAGER`) (E23 R1/R3); `838490a6` SM120 page-split never frees graph-captured buffers (E23 R3); `cad73914` NaN probe skips itself under capture (T3.16a). T3.16f owes these their review-section links.
+- `8ad514ed` kt capture sizes registered before the eager autotune forward; post-capture captured ⊆ registered ⊆ cached assertion (T3.16c).
 
 ## Qualification status
 
