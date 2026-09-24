@@ -597,7 +597,7 @@ Concentration of risk (update): hotspot 16 adds a fourth instance of the §2 "im
 | 5 boundary shape/topology assertions | Done (T3.16d, overlay `b93cb915`: `kt_contract.py`, 14 CPU tests, serve gate bit-identical NLL) |
 | 6 E23 wording | Done |
 | 7 provenance SHAs | Done |
-| 8 deterministic non-server tests | Partly: 8 kt-buffer tests exist; deferred-adjacency and graph/eager parity → T3.16e |
+| 8 deterministic non-server tests | Mostly done: 8 kt-buffer tests (T3.16a) + 9 deferral-adjacency tests (T3.16e, `test_kt_deferral_adjacency.py`, mutation-checked) + 14 boundary/topology tests (T3.16d); graph/eager parity on a recorded layer needs a GPU dump → T3.19a |
 | 9 E24 close | Open (T3.13) |
 
 ### Pass 1 bottom line

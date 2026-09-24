@@ -19,6 +19,10 @@ fi
 if bash "$ROOT/scripts/tests/run-kt-contract-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt contract tests (exit $rc)"; exit 1; fi
 fi
+# kt expert-deferral adjacency tests (T3.16e): slot/incremental/sync decisions across adjacent layers.
+if bash "$ROOT/scripts/tests/run-kt-deferral-tests.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt deferral tests (exit $rc)"; exit 1; fi
+fi
 # The verdict in README must match the calculator: 2 GPUs must not fit GPU-resident, but must fit the hybrid with NVMe Engram.
 if python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout engram-host >/dev/null; then
   echo 'FAIL calculator says 2 GPUs fit; README verdict is stale'; exit 1
