@@ -602,8 +602,8 @@ Rules that make the sequence non-skippable:
 - [x] T3.18 verdict recorded (B2 rejected as decode lever, E30)
 - [x] C4 closed (code gate for multi-stream overlap; overlay `5b531732`, 2026-09-24)
 - [x] C5 closed (post-capture growth rejected; overlay `9ecd54a6`, 2026-09-24)
-- [ ] Baseline snapshot pinned for the whole stage: `c1-off6-t316c.json` (C1) and the E29 control C4 file, plus `nll-t316c.json`; re-taken only if the image or BIOS slot changes
-- [ ] No GPU experiment mid-flight (owner-announced window; GPUs idle at entry)
+- [x] Baseline snapshot pinned for the whole stage (2026-09-24): `evidence/t319/baseline-pin.json` records sha256 of `c1-off6-t316c.json` (C1 41.92 / 39.86 / 0.609), Boot 12 `c4-off0.json` (C4 58.09 / 55.79), `nll-t316c.json` and `verify-c4-t316c.json`, plus the per-step gate numbers; re-taken only if the image or BIOS slot changes
+- [x] No GPU experiment mid-flight (GPUs idle after the C5 serve gate teardown, 2026-09-24)
 
 **Deliverables, acceptance tests, per-step gate.** Each row is one overlay commit (plus recipe evidence commit). Per-step gate for every row: `ci.sh` green (all CPU test suites), one serve on the qualified profile, `verify-batch-consistency --same-prompt` PASS at concurrency 1..4, NLL **bit-identical** to `nll-t316c.json` (0 tokens moved; T3.16d showed this is achievable for behaviour-preserving changes), C1 wall **≥ 39.0 tok/s** (−2 % band around 39.86; E29/T3.16d run-to-run spread was < 1 %), C4 per-stream **≥ 13.6** (−2 %), TTFT ≤ 0.65 s, 0 NaN/Xid/`KTContractError`, EDAC 0/0. Evidence in `evidence/t319/<letter>/` with the launch log redacted.
 
@@ -707,7 +707,7 @@ Until then the repository is an engineering recipe with an experimental overlay,
 | Gate | Task rows | Owner | Status | Evidence |
 |---|---|---|---|---|
 | G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | open (C4 and C5 done 2026-09-24; C3-rest and T3.16e(3) ride on T3.19a/b; C10 before G4) | review §10a, §10f |
-| G1 | T3.19 a..f | agent | open — entry 7 of 8 ticked (baseline pin next) | `evidence/t319/` (to be created) |
+| G1 | T3.19 a..f | agent | **entered 2026-09-24** (8/8); T3.19a in progress | `evidence/t319/` (to be created) |
 | G2 | T3.16j | agent | waits for T3.19c | review §10c |
 | G3 | T3.20, T3.21 | agent | waits for G1 exit | E26 A3, E20 |
 | G4 | T3.22 | **owner approval** + agent | waits for G1 exit, G2, C10, design record | `evidence/t322/` (to be created) |
