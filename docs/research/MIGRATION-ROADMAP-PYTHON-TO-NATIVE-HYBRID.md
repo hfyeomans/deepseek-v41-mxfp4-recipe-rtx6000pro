@@ -588,7 +588,7 @@ Rules that make the sequence non-skippable:
 |---|---|---|---|---|
 | **T3.16e (3)** graph-vs-eager parity on one recorded layer | One serve dumps `hidden_states`/`topk_ids`/`topk_weights`/kt output for MoE layer 14 (the Engram layer) and layer 20 at bs 1..4 in eager and in graph replay; a CPU test replays the recorded inputs through the overlay's Python path against the dump; parity = bit-equal kt output (kt is deterministic per E29), documented tolerance only if a measured source of nondeterminism is named | inside **T3.19a** (the same recorded-tensor dump is the timeline's input) | agent | open |
 | **C3 remainder** (review 7.5, 7.6): forward-boundary emptiness, adjacent-layer identity | `kt_contract.py` gains `check_forward_boundary` (no deferred slot outstanding when the forward ends; every deferred slot written at layer L is consumed at L+1 and nowhere else), metadata-only, graph-safe like `check_moe_boundary`; `test_kt_deferral_adjacency.py` gains the two negative tests; one serve with consistency PASS bs 1..4 | inside **T3.19b** (the asserts move into the `CpuExpertProvider` adapter as they are written) | agent | open |
-| **C4** `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0` launcher workaround, no forward-mode gate | The overlay refuses (or forces off, with one log line) multi-stream overlap whenever a DSpark verify graph is captured, in code, independent of the launcher env; the launcher line becomes redundant and is deleted; one CPU test asserts the refusal; TROUBLESHOOTING Bug A entry points at the code gate | **before G1 entry** (one overlay commit, no serve needed beyond the CPU test; spec is off by default so no GPU regression risk) | agent | open |
+| **C4** `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0` launcher workaround, no forward-mode gate | The overlay refuses (or forces off, with one log line) multi-stream overlap whenever a DSpark verify graph is captured, in code, independent of the launcher env; the launcher line becomes redundant and is deleted; one CPU test asserts the refusal; TROUBLESHOOTING Bug A entry points at the code gate | **before G1 entry** (one overlay commit, no serve needed beyond the CPU test; spec is off by default so no GPU regression risk) | agent | **done 2026-09-24** overlay `5b531732`; `test_dspark_overlap_gate.py` 7/7; both branches seen live (`evidence/t316-review-intake/c4-overlap-gate/`) |
 | **C5** post-capture growth survived, not rejected | kt patch 0002 / SM120 persistent buffers raise `KTContractError` on any request larger than the captured/registered size instead of growing; `run-kt-buffer-tests.sh` gains the negative test (currently 8/8); one serve confirms capture list 1 2 3 4 still passes consistency | **before G1 entry** | agent | open |
 | **C10 / T3.13** E24 per-request NaN rejection unproven | Injected-NaN test (one request's logits forced non-finite under the breakable decode graph) shows that request fails with an error while the other three streams of a C4 batch complete; E22c 1,024-token-batch assert bisected to a cause or a pinned reproducer; recorded in `evidence/e24-nan/` and TROUBLESHOOTING | **before G4 entry** (T3.22 failure-propagation semantics presuppose per-request rejection) and the Stage 4/6 release gate; does **not** block G1 (owner decision 2026-09-24: E24 no longer gates the Python seams) | agent | open (E22c bisect is the current item) |
 
@@ -600,7 +600,7 @@ Rules that make the sequence non-skippable:
 - [x] T3.16e parts 1 and 2 in `ci.sh` (8 buffer tests, 9 deferral tests; `96e15b6`)
 - [x] T3.16i pass 1 recorded (review §10, `77398b1`)
 - [x] T3.18 verdict recorded (B2 rejected as decode lever, E30)
-- [ ] C4 closed (code gate for multi-stream overlap)
+- [x] C4 closed (code gate for multi-stream overlap; overlay `5b531732`, 2026-09-24)
 - [ ] C5 closed (post-capture growth rejected)
 - [ ] Baseline snapshot pinned for the whole stage: `c1-off6-t316c.json` (C1) and the E29 control C4 file, plus `nll-t316c.json`; re-taken only if the image or BIOS slot changes
 - [ ] No GPU experiment mid-flight (owner-announced window; GPUs idle at entry)
@@ -706,8 +706,8 @@ Until then the repository is an engineering recipe with an experimental overlay,
 
 | Gate | Task rows | Owner | Status | Evidence |
 |---|---|---|---|---|
-| G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | open (C4, C5 next; C3-rest and T3.16e(3) ride on T3.19a/b; C10 before G4) | review §10a, §10f |
-| G1 | T3.19 a..f | agent | open — entry 5 of 8 ticked | `evidence/t319/` (to be created) |
+| G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | open (C4 done 2026-09-24; C5 next; C3-rest and T3.16e(3) ride on T3.19a/b; C10 before G4) | review §10a, §10f |
+| G1 | T3.19 a..f | agent | open — entry 6 of 8 ticked | `evidence/t319/` (to be created) |
 | G2 | T3.16j | agent | waits for T3.19c | review §10c |
 | G3 | T3.20, T3.21 | agent | waits for G1 exit | E26 A3, E20 |
 | G4 | T3.22 | **owner approval** + agent | waits for G1 exit, G2, C10, design record | `evidence/t322/` (to be created) |

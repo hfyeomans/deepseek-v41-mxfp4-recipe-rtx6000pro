@@ -553,7 +553,7 @@ Standing task T3.16i: refresh the hotspot map and debt register after each stage
 | C1 | **Closed (reclassified)** | Erratum 2026-09-23: the C4 drop was the correction of silent row corruption, not a regression. Qualified C4 55–58 summed after E28/E29 tiers. |
 | C2 | **Closed** | T3.16b: `serve-hybrid.sh` refuses `KT_MAX_DEFERRED ≥ 5` unless `KT_ALLOW_UNSAFE_DEFERRAL=1`. D=5 no longer crashes (T3.15) but fails the NLL gate, so the guard now protects the quality gates. |
 | C3 | **Half closed** | kt patch 0002 asserts no allocation during capture and cached-tuple shape on every hit (§7.3, §7.2). Forward-boundary emptiness and adjacent-layer identity (§7.5, §7.6) are still unasserted — carried into T3.19. |
-| C4 | Open | `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0` remains the launcher workaround; no forward-mode gate in code. Speculation is off by default (E23 closed), which lowers the exposure but not the debt. |
+| C4 | ~~Open~~ **Closed 2026-09-24 (overlay `5b531732`)** | `dspark_overlap_gate.decide_multi_stream_overlap` in `model_hook.py`'s SM120 block: DSpark ⇒ overlap forced off with one log line; explicit `=1` ⇒ `OverlapGateError`; spec off ⇒ untouched. 7 CPU tests (`test_dspark_overlap_gate.py`, in `ci.sh`); both branches seen on a DSpark launch (`evidence/t316-review-intake/c4-overlap-gate/`). Original text: `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0` remains the launcher workaround; no forward-mode gate in code. Speculation is off by default (E23 closed), which lowers the exposure but not the debt. |
 | C5 | **Half closed** | `838490a6` never frees captured SM120 buffers and pre-sizes from pool geometry. Post-capture growth is still survived, not rejected. |
 | C6 | **Closed for known-bad combinations** | T3.16b: fit refusals (experts/chunk/DSpark), `DSPARK_K` range, B2 constraints, one `resolved:` line per launch. `EXTRA_*` word splitting is unchanged by design (escape hatch). |
 | C7 | **Closed** | E23 records amended; erratum rows in BENCHMARKS, EXPERIMENTS, this review. |
@@ -607,7 +607,7 @@ Every open item in §10a now has one closing task and one closure criterion in t
 | Debt | Closes in | Criterion (short form; full text in the ledger) | Blocks |
 |---|---|---|---|
 | C3 remainder (§7.5 forward-boundary emptiness, §7.6 adjacent-layer identity) | T3.19b (ledger G0 → G1) | `check_forward_boundary` in `kt_contract.py`, two negative tests in `test_kt_deferral_adjacency.py`, one serve consistency PASS | T3.19 exit |
-| C4 multi-stream-overlap launcher workaround | pre-T3.19 commit (ledger G0) | code gate refuses/forces off overlap when a DSpark verify graph is captured; launcher line deleted; CPU test | **T3.19 entry** |
+| C4 multi-stream-overlap launcher workaround | ~~pre-T3.19 commit (ledger G0)~~ **done 2026-09-24, overlay `5b531732`** | code gate refuses/forces off overlap when a DSpark verify graph is captured; launcher line deleted; CPU test | ~~**T3.19 entry**~~ cleared |
 | C5 post-capture growth survived | pre-T3.19 commit (ledger G0) | `KTContractError` on any request above the captured size; negative test in `run-kt-buffer-tests.sh` | **T3.19 entry** |
 | C10 E24 per-request NaN rejection | T3.13 (ledger G0) | injected-NaN test fails one request, server survives; E22c bisected or pinned | **T3.22 entry**, release gate |
 | T3.16e (3) graph-vs-eager parity | T3.19a (ledger G0 → G1) | CPU replay of recorded layer-14/20 tensors bit-equal to the dumped kt output | T3.19 exit |

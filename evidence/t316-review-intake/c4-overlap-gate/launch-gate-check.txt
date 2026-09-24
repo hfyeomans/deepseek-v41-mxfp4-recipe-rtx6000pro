@@ -1,0 +1,18 @@
+# C4 (Bug A) code-gate check, 2026-09-24. Overlay dspark_overlap_gate.py wired into
+# arg_groups/model_hook.py (SM120 block). Two DSpark launches on the idle GPUs, each killed
+# (docker rm -f) before weight load; lines below copied from `docker logs dsv41-kt`.
+
+## Launch 1: DSPARK=1 KT_NUM_GPU_EXPERTS=208, no overlap env (the old workaround NOT passed)
+resolved: experts gpu=208 cpu=176 deferral D=4 cpuinfer=16 chunk=4096 mem_fraction=0.96 context=32768 slots=4 max_total_tokens=147456 capture_bs=[1 2 3 4] dspark=1 dspark_k=5 gpu_prefill_min=1024 ...
+[2026-09-24 17:18:26] DSpark on SM120: multi-stream overlap forced off in code (Bug A, recipe TROUBLESHOOTING); SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0 in the launch env is no longer required
+-> gate fired (log line 9 of the container log, before model load).
+
+## Launch 2: same + EXTRA_DOCKER_ENV="SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=1"
+    raise OverlapGateError(
+sglang.srt.arg_groups.dspark_overlap_gate.OverlapGateError: SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=1 with --speculative-algorithm DSPARK on SM120 reproduces Bug A (side-stream work unordered at verify-graph replay: wrong tokens, acceptance 0.26-0.57). Unset the variable; the overlay forces it off for DSpark launches.
+-> refused; container exited during server_args resolution. `docker ps` showed no running dsv41-kt.
+
+## Plain decode (DSPARK=0) is untouched by design: gate returns force_off=False when
+## speculative_algorithm is None (test_plain_decode_untouched). Not re-served: the qualified
+## profile's env is unchanged by this commit.
+CPU tests: scripts/tests/test_dspark_overlap_gate.py 7/7 (in ci.sh).

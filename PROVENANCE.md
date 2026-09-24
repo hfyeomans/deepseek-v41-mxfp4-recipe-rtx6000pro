@@ -52,6 +52,7 @@ Base: upstream `sgl-project/sglang` commit `da64c5cb` ("[DSV4.1] Support raw-ind
 - `8ad514ed` kt capture sizes registered before the eager autotune forward; post-capture captured ⊆ registered ⊆ cached assertion (T3.16c).
 - `7e41317e` B2 direct-UVA experts in `kt_ep_wrapper` (`KT_B2_UVA_EXPERTS`, `KT_B2_MAX_TOKENS`, side-stream fork/join); off by default after E30 measured +2 % (T3.18).
 - `b93cb915` `kt_contract.py`: executable SGLang→kt boundary contract (`check_moe_boundary`, every `apply`) and rank-topology contract (`check_moe_topology`, once per layer after weight load); `KTContractError`; metadata-only, graph-capture safe (T3.16d).
+- `5b531732` `arg_groups/dspark_overlap_gate.py` + `model_hook.py`: multi-stream overlap forced off in code for DSpark on SM120 (Bug A), explicit `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=1` refused with `OverlapGateError`; the `EXTRA_DOCKER_ENV` workaround is no longer needed (review C4; `scripts/tests/test_dspark_overlap_gate.py` 7/7; `evidence/t316-review-intake/c4-overlap-gate/`).
 
 ## Qualification status
 

@@ -23,6 +23,10 @@ fi
 if bash "$ROOT/scripts/tests/run-kt-deferral-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt deferral tests (exit $rc)"; exit 1; fi
 fi
+# DSpark multi-stream-overlap gate (review C4 / Bug A): pure Python against the overlay checkout; skipped without it.
+if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi
+fi
 # The verdict in README must match the calculator: 2 GPUs must not fit GPU-resident, but must fit the hybrid with NVMe Engram.
 if python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout engram-host >/dev/null; then
   echo 'FAIL calculator says 2 GPUs fit; README verdict is stale'; exit 1
