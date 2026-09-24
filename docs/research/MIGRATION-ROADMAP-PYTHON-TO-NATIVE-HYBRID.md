@@ -2,6 +2,8 @@
 
 Written 2026-09-23. This is a staged engineering roadmap, not an experiment result. It starts from the qualified Python/SGLang + C++/CUDA hybrid and answers one sequencing question: **which native work should precede multi-rank CPU-expert/Engram ownership, which should follow it, and which should wait for a stable architecture?** Sources are the repository evidence listed in [Evidence base](#evidence-base).
 
+**Gate ledger (2026-09-24):** the stage prose below is bound to task rows, closure criteria, exit checklists, owners and a completion definition in the [Gate ledger](#gate-ledger-added-2026-09-24-the-enforced-sequence) at the end of this file. When the ledger and the prose disagree, the ledger wins; the prose is kept as written for provenance.
+
 ## Labels and decision rule
 
 | Label | Meaning |
@@ -554,3 +556,160 @@ Rollback is selected at launch. Persistent model files and Engram shards remain 
 11. Package the overlay/fork and submit focused upstream changes after the architecture has a qualified reference (**projected work**).
 
 The durable conclusion is simple: **native kernels and fixed dataflow first; multi-rank semantics in Python second; native coordination third; optional topology and broad production integration last.**
+
+## Gate ledger (added 2026-09-24; the enforced sequence)
+
+This section is the single place where the stage prose above is bound to task rows in [`plan/TASKS.md`](../../plan/TASKS.md) and to debt items in [`MAINTAINABILITY-REVIEW-2026-09.md`](MAINTAINABILITY-REVIEW-2026-09.md). A task in the ledger is *done* only when its exit checklist is fully ticked here; the T3.16i review pass that closes each stage is what flips the checkbox. Numbers quoted as "current reference" are the 2026-09-24 qualified baseline (T3.16d serve gate: C1 41.92 summed / 39.86 wall tok/s, TTFT 0.609 s, `evidence/t316-review-intake/c1-off6-t316c.json`; C4 E29 control 58.09 summed / 55.79 wall = 13.9 per stream). Everything in the "gate" columns is **projected policy** until the row's evidence link is filled.
+
+Owners: **owner** = hyeomans (approvals, BIOS, reboots, sudo, GPU windows); **agent** = the Amp session executing the row. Status values: `open`, `in progress`, `done <date> <sha>`, `closed-by-decision <date>` (Stage 4 only, see the decision record).
+
+### Enforced order
+
+```diagram
+G0 correctness closure ─▶ G1 T3.19 Stage 1 seams ─▶ G2 T3.16j B2 retirement ─▶ G3 T3.20 / T3.21 Stage 2 ─▶ G4 T3.22 Stage 3 (owner approval) ─▶ G5 T3.23 Stage 4 or decision record ─▶ G6 T3.24 Stage 6 packaging
+  (C4, C5 before;            (a..f, each step          (trigger: T3.19c            (stop/go per lever;             (Python prototype;               (only loops T3.22               (completion definition;
+   C3-rest, T3.16e(3)         bit-identical NLL,        commit; keep only what      independent of each             rollback mode `rank0`             traces prove hot)              unsafe flags retired)
+   inside T3.19a/b;           consistency PASS,         T3.20 has adopted)          other; may run in                stays launchable)
+   C10 before G4)             C1 wall in band)                                      parallel)
+                                    │
+                                    └── T3.16i review pass 2 closes G1; pass 3 closes G4; a pass is a stage's exit condition, not an afterthought
+```
+
+Rules that make the sequence non-skippable:
+
+1. **No Stage 2 productionisation, no T3.22 design approval request, and no native code** is committed to the overlay while any G1 checkbox is open. `ci.sh` cannot enforce this; the T3.16i pass and this ledger do, and `plan/TASKS.md` rows T3.20 to T3.23 carry the dependency in their status column.
+2. Each G1 deliverable lands as **one behaviour-preserving overlay commit** with the per-step gate below recorded in `evidence/t319/<step>/`. A deliverable without its evidence directory is not done.
+3. **Rollback stays launchable at every gate**: `scripts/serve-hybrid.sh` on the previous overlay commit must still serve the qualified profile (226/158, D=4, spec off, capture 1 2 3 4). If a step makes the previous commit un-launchable (image change, kt patch), the step is split.
+4. A stage's **exit is the review pass**, not the last commit: T3.16i pass N refreshes the hotspot map and debt register, updates this ledger, and only then is the next stage's entry gate evaluated.
+
+### G0 — correctness closure feeding T3.19
+
+| Debt | Closure criterion (what makes it `done`) | Where it closes | Owner | Status |
+|---|---|---|---|---|
+| **T3.16e (3)** graph-vs-eager parity on one recorded layer | One serve dumps `hidden_states`/`topk_ids`/`topk_weights`/kt output for MoE layer 14 (the Engram layer) and layer 20 at bs 1..4 in eager and in graph replay; a CPU test replays the recorded inputs through the overlay's Python path against the dump; parity = bit-equal kt output (kt is deterministic per E29), documented tolerance only if a measured source of nondeterminism is named | inside **T3.19a** (the same recorded-tensor dump is the timeline's input) | agent | open |
+| **C3 remainder** (review 7.5, 7.6): forward-boundary emptiness, adjacent-layer identity | `kt_contract.py` gains `check_forward_boundary` (no deferred slot outstanding when the forward ends; every deferred slot written at layer L is consumed at L+1 and nowhere else), metadata-only, graph-safe like `check_moe_boundary`; `test_kt_deferral_adjacency.py` gains the two negative tests; one serve with consistency PASS bs 1..4 | inside **T3.19b** (the asserts move into the `CpuExpertProvider` adapter as they are written) | agent | open |
+| **C4** `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0` launcher workaround, no forward-mode gate | The overlay refuses (or forces off, with one log line) multi-stream overlap whenever a DSpark verify graph is captured, in code, independent of the launcher env; the launcher line becomes redundant and is deleted; one CPU test asserts the refusal; TROUBLESHOOTING Bug A entry points at the code gate | **before G1 entry** (one overlay commit, no serve needed beyond the CPU test; spec is off by default so no GPU regression risk) | agent | open |
+| **C5** post-capture growth survived, not rejected | kt patch 0002 / SM120 persistent buffers raise `KTContractError` on any request larger than the captured/registered size instead of growing; `run-kt-buffer-tests.sh` gains the negative test (currently 8/8); one serve confirms capture list 1 2 3 4 still passes consistency | **before G1 entry** | agent | open |
+| **C10 / T3.13** E24 per-request NaN rejection unproven | Injected-NaN test (one request's logits forced non-finite under the breakable decode graph) shows that request fails with an error while the other three streams of a C4 batch complete; E22c 1,024-token-batch assert bisected to a cause or a pinned reproducer; recorded in `evidence/e24-nan/` and TROUBLESHOOTING | **before G4 entry** (T3.22 failure-propagation semantics presuppose per-request rejection) and the Stage 4/6 release gate; does **not** block G1 (owner decision 2026-09-24: E24 no longer gates the Python seams) | agent | open (E22c bisect is the current item) |
+
+### G1 — T3.19 Stage 1: profile, contract, Python seams
+
+**Entry gate** (all required):
+
+- [x] T3.16d contract asserts and 14 CPU tests in `ci.sh` (`26a52d5`, overlay `b93cb915`)
+- [x] T3.16e parts 1 and 2 in `ci.sh` (8 buffer tests, 9 deferral tests; `96e15b6`)
+- [x] T3.16i pass 1 recorded (review §10, `77398b1`)
+- [x] T3.18 verdict recorded (B2 rejected as decode lever, E30)
+- [ ] C4 closed (code gate for multi-stream overlap)
+- [ ] C5 closed (post-capture growth rejected)
+- [ ] Baseline snapshot pinned for the whole stage: `c1-off6-t316c.json` (C1) and the E29 control C4 file, plus `nll-t316c.json`; re-taken only if the image or BIOS slot changes
+- [ ] No GPU experiment mid-flight (owner-announced window; GPUs idle at entry)
+
+**Deliverables, acceptance tests, per-step gate.** Each row is one overlay commit (plus recipe evidence commit). Per-step gate for every row: `ci.sh` green (all CPU test suites), one serve on the qualified profile, `verify-batch-consistency --same-prompt` PASS at concurrency 1..4, NLL **bit-identical** to `nll-t316c.json` (0 tokens moved; T3.16d showed this is achievable for behaviour-preserving changes), C1 wall **≥ 39.0 tok/s** (−2 % band around 39.86; E29/T3.16d run-to-run spread was < 1 %), C4 per-stream **≥ 13.6** (−2 %), TTFT ≤ 0.65 s, 0 NaN/Xid/`KTContractError`, EDAC 0/0. Evidence in `evidence/t319/<letter>/` with the launch log redacted.
+
+| Step | Deliverable | Acceptance test (beyond the per-step gate) | Status |
+|---|---|---|---|
+| T3.19a | Per-layer decode timeline: CPU expert compute / kt export / `sync` barrier / H2D / Engram break / Python launch, per layer and per step, at bs 1 and 4; recorded-tensor dump for T3.16e(3) | Timeline JSON with the six buckets summing to the measured step time within 5 %; parity test from T3.16e(3) passes; the two Engram breaks and the ~40 per-layer waits are visible as separate rows | open |
+| T3.19b | `CpuExpertProvider` (what rank 0 asks kt for: `submit(layer, hidden, topk_ids, topk_weights) -> handle`, `sync(handle)`, `topology()`) and `BufferLease` (captured buffer identity + lifetime, replacing ad-hoc static tuples) as adapters around today's code; `kt_contract.py` asserts and the C3 remainder move inside | Existing 14 + 9 + 8 tests pass unchanged against the adapters; a fake provider passes a conformance test; C3 remainder negative tests pass | open |
+| T3.19c | Runner-owned state: no module/class globals in `kt_ep_wrapper.py` or the deferral path; loader monkey-patching replaced by explicit loader arguments; `_b2_stream`/fork/join and `_uva_view` live here if kept | Two runner instances in one process share no state (CPU test); graph capture asserts unchanged (T3.16a tests) | open |
+| T3.19d | Prefill coordinator: streamed prefill (`KT_GPU_PREFILL_MIN_TOKENS`, POSIX shared buffer, two barriers per layer) under one object with explicit buffer states and begin/end-forward lifecycle | State-machine unit test (every legal transition, every illegal one raises); 16K verify pass and E22a-style prefill tok/s within 5 % of the qualified curve | open |
+| T3.19e | Typed config registry: every `KT_*`, `SGLANG_*`, `DSPARK_*`, `MEM_FRACTION_STATIC`, capture list and `EXTRA_*` knob declared once (type, default, aliases, `unsafe` flag, evidence link); `serve-hybrid.sh`'s `resolved:` line and `fail_config` checks generated from it | Unknown knob rejected; every current env alias still accepted; `fail_config` refusals from T3.16b reproduced by tests; the `resolved:` line is byte-identical for the qualified profile | open |
+| T3.19f | Immutable evidence manifests: each serve writes `manifest.json` (recipe SHA, overlay SHA, image digest, resolved config, BIOS slot, GPU power cap, kernel) and a content hash; `bench-decode.py`, `nll-score.py`, `verify-batch-consistency.py` embed the manifest hash; `ci.sh` refuses evidence JSON without one after the cut-over date | Manifest round-trips; a benchmark file from before the cut-over is still accepted (dated exemption) | open |
+
+**Exit gate** (all required, then T3.16i pass 2):
+
+- [ ] a..f done with evidence directories
+- [ ] Review R1 (`KTEPWrapperMethod` size) and R5 (single-source config) re-measured and updated; hotspot map refreshed
+- [ ] One C1..C4 soak block (E27 style, ≥ 20K decoded tokens, 0 NaN/Xid) on the final Stage 1 overlay commit
+- [ ] T3.16i **pass 2** recorded in review §11; this ledger's G1 status set to `done`
+- [ ] ROADMAP change-log entry; LEARNING §11 Surprise row
+
+Performance non-regression across the stage: final C1 wall and C4 per-stream within the −2 % band of the pinned baseline; TTFT within 0.05 s. Stage 1 promises **no** performance gain; a measured gain is recorded but is not a pass criterion.
+
+### G2 — T3.16j B2 residue retirement
+
+- **Trigger:** the T3.19c commit (runner-owned stream state) is merged into `dsv41-kt-hybrid`. Not earlier (the stream/UVA primitives would have nowhere to live), not later than the T3.19 exit (the exit review must not count B2 residue as hotspot 16 again).
+- **Remove:** `_B2HostPool`, `_B2UvaExperts.run`, `remap_topk_ids_for_b2`, the `use_b2` branch, `submit(num_kt_experts)`, launcher knobs `KT_B2_UVA_EXPERTS` / `KT_B2_MAX_TOKENS` and their `fail_config` checks and the `resolved:` fields.
+- **Keep only if measured-reusable:** `_b2_stream` + fork/join and `_uva_view`, and only if the T3.20 design note (written at G3 entry) names them. If T3.20 does not adopt them within its first commit, they go too. E30's evidence (bit-equal UVA grouped GEMM, graph-replayed) is the record; the code is not.
+- **Gate:** `run-kt-buffer-tests.sh` green, one serve, consistency PASS bs 1..4, C1 wall in band. One overlay commit.
+
+### G3 — T3.20 / T3.21 Stage 2 low-coupling native wins
+
+Both may start after G1 exit; they are independent of each other and may run in parallel GPU windows. Neither touches ownership.
+
+| Task | Depends on | Go (continue / promote) | Stop (record and park) |
+|---|---|---|---|
+| **T3.20** Engram fixed-buffer prefetch, graph-compatible staging | T3.19c (runner-owned state), T3.19a (measured break time per step; E26 A3 reference **measured 2.43 ms/step** = roughly 10 % of a 25 ms C1 step), T3.16j (stream primitives placed) | Measured Engram break time per step drops by ≥ 50 % **and** C1 wall improves ≥ +3 % with NLL bit-identical and consistency PASS; then promote to the qualified profile | After one tuning round: < +1 % C1 wall, or the graph-break count cannot drop below 2, or fixed staging forces a worse expert/KV placement (fewer than 226 GPU experts) — park with the measured numbers |
+| **T3.21** large-M block-scaled FP8 prefill GEMM (CUTLASS / DeepGEMM) behind the matmul contract | T3.19b (contract), E20 tuned-Triton reference (**measured** ≈ 15 % of FP8 peak at M=4096); bounded spike of two GPU windows to prove an SM120 block-scaled FP8 kernel exists and links in the image | 16K prefill tok/s ≥ +20 % over the qualified E22a curve **and** TTFT at 16K/32K improves, decode untouched (C1 wall in band), NLL bit-identical on the frozen corpus | No SM120 kernel after the two-window spike; or the kernel changes prefill numerics beyond the NLL gate; or the gain is < +10 % at 16K — park |
+
+Neither task may add an env knob outside the T3.19e registry, and neither may change rank ownership; if either needs to, it is T3.22 work and waits.
+
+### G4 — T3.22 Stage 3 multi-rank ownership, Python prototype (owner approval required)
+
+**Entry gate:** G1 exit; G2 done; C10 closed; a written design record (`docs/research/T322-DESIGN.md`, projected name) covering partition, reduction order, failure semantics, NUMA ownership and rollback, **approved by the owner** before the first overlay commit. This is the largest architecture change in the project and the only one that is approval-gated by name.
+
+**Python-prototype gates** (all measured before any native work):
+
+| Gate | Criterion |
+|---|---|
+| Correctness | Layer/logit equivalence against `rank0` mode on recorded tensors (T3.19a dump) at bs 1..4; NLL on the frozen corpus within the T3.6g3-calibrated threshold (bit-identity is *not* required because the combine order changes; any difference must be explained by the reduction order and be **run-to-run bit-identical**) |
+| Deterministic reductions | Fixed-order combine of per-rank CPU partials; 100 repeated decodes of the same prompt bit-identical; `verify-batch-consistency` PASS at every captured width |
+| Failure propagation | Injected per-rank timeout and injected NaN each fail the affected request(s) only; the server keeps serving the other streams; process-level fault falls back to a clean exit with a named cause |
+| NUMA / CCD ownership | Per-rank kt thread pool pinned to one CCD; HSMP DRAM counters show both CCDs drawing; CPU wait per token recorded per rank and balanced within 20 % |
+| Graph capture / replay | Capture list 1 2 3 4 captured and replayed with per-rank fixed buffers; T3.16a/c asserts extended per rank; no allocation during capture |
+| Rollback | `--mode rank0` (the current architecture) stays launchable from the same overlay commit and passes the same gate; switching modes is a launch-time choice only |
+| Performance (promotion, not entry) | C1 wall ≥ baseline; C4 wall ≥ baseline with per-stream no regression; p99 ITL recorded; the second GPU's sampled utilisation rises from the observed 7–20 % (owner observation, nvtop) — measured with `nvidia-smi --query-gpu=utilization.gpu` at 1 Hz over a C1 block |
+| Soak | 20K-token mixed C1..C4 soak, 0 NaN/Xid, EDAC 0/0 |
+
+Exit = T3.16i **pass 3** recorded, with a per-layer timeline (T3.19a tooling) of the `static-split-python` mode that names every Python coordination loop and its share of the step.
+
+### G5 — T3.23 Stage 4 native consolidation, or a decision record
+
+T3.23 is **mandatory only for loops the G4 timeline proves hot**: a Python-side dispatch/reduction/synchronisation loop costing ≥ 5 % of the C1 step wall, or ≥ 1 ms/step, sustained across bs 1..4. Each such loop moves to C++/CUDA as one unit with a retention bar (the unit must keep ≥ 80 % of the Python-measured saving after re-profiling) and the ABI is frozen only after two units land or the decision record closes the stage.
+
+If the G4 timeline shows **no** loop over the threshold, Stage 4 is closed by decision, not skipped silently. The record goes in this file under the ledger and in `plan/TASKS.md` row T3.23 as `closed-by-decision <date>`:
+
+```
+Decision record — no native migration justified (template)
+Date / recipe SHA / overlay SHA:
+Timeline evidence: evidence/t322/<run>/timeline.json (bs 1..4)
+Hottest Python coordination loop: <name>, <ms/step>, <% of step>
+Threshold: 5 % of step wall or 1 ms/step
+Verdict: below threshold; native consolidation not justified at this topology
+What would reopen it: <a measured change: e.g. third-card EP (T4.1b) adds a dispatch owner; DSpark verify changes CPU work shape>
+Reviewer: owner
+```
+
+### G6 — T3.24 Stage 6 packaging, upstream cleanup, completion definition
+
+Entry: G4 exit and G5 done or closed-by-decision. Work items, each with a checkbox in the TASKS row:
+
+- Stable interfaces frozen and documented: `CpuExpertProvider`, `BufferLease`, prefill coordinator, config registry (typed profiles as files, e.g. `config/profiles/qualified-226-158-d4.toml`, replacing the env-var launch)
+- Patch/fork organisation: overlay rebased into a reviewable series (SM120 W8A8 config/gate; block-32 tuner; FP8 scratch-buffer fix; kt capture asserts; contracts; seams; multi-rank) per [OPEN-SOURCE-PLAN.md](OPEN-SOURCE-PLAN.md); base SHA, branch, and build/run instructions reproducible from a clean clone
+- Tests/CI: every CPU suite in `ci.sh`; one GPU smoke (`verify-batch-consistency` on the qualified profile) documented as the pre-release step
+- Provenance: `PROVENANCE.md` and evidence manifests (T3.19f) cover every artefact the release claims
+- **Deprecation and removal of unsafe flags and workarounds:** `KT_ALLOW_UNSAFE_DEFERRAL` (D ≥ 5 fails the NLL gate; remove the escape hatch once T3.6g3 fixes the threshold), `ALLOW_UNTESTED_FIT` (replaced by registry-declared fit rules), `EXTRA_SERVER_ARGS` / `EXTRA_DOCKER_ENV` / `EXTRA_DOCKER_ARGS` (kept only as a documented developer profile, never in a release profile), the `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP` launcher line (gone at C4), the B2 knobs (gone at G2), `KT_NAN_PROBE_MIN_TOKENS` as a launch knob (becomes a registry field once C10's rejection path exists)
+- Release artefacts: image digest, overlay tag, profile file, manifest, BENCHMARKS table regenerated from manifests, TROUBLESHOOTING entries for every retired workaround
+
+**Completion definition — the project has left experimental-overlay form when all of the following are true:**
+
+1. Every G0..G5 row in this ledger is `done` or `closed-by-decision` with an evidence link, and T3.16i has a recorded pass after G1, G4, and G6.
+2. The qualified profile launches from a typed profile file with zero ad-hoc env vars, and every remaining knob is registry-declared with an evidence link.
+3. No unsafe flag or launcher workaround from the list above remains in a release profile.
+4. `rank0` and the promoted mode both launch from the same overlay commit and pass the same gate (rollback is a launch flag).
+5. The overlay is a reviewable patch series on a pinned upstream SHA, reproducible from a clean clone, with licences and provenance recorded.
+6. A release manifest exists whose C1/C4/prefill/TTFT/NLL/needle/soak rows were all produced by scripts that embed the manifest hash.
+
+Until then the repository is an engineering recipe with an experimental overlay, and README/BENCHMARKS say so.
+
+### Ledger status table
+
+| Gate | Task rows | Owner | Status | Evidence |
+|---|---|---|---|---|
+| G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | open (C4, C5 next; C3-rest and T3.16e(3) ride on T3.19a/b; C10 before G4) | review §10a, §10f |
+| G1 | T3.19 a..f | agent | open — entry 5 of 8 ticked | `evidence/t319/` (to be created) |
+| G2 | T3.16j | agent | waits for T3.19c | review §10c |
+| G3 | T3.20, T3.21 | agent | waits for G1 exit | E26 A3, E20 |
+| G4 | T3.22 | **owner approval** + agent | waits for G1 exit, G2, C10, design record | `evidence/t322/` (to be created) |
+| G5 | T3.23 | agent | waits for G4 timeline | decision record or units |
+| G6 | T3.24 | owner + agent | waits for G4 exit and G5 | OPEN-SOURCE-PLAN |

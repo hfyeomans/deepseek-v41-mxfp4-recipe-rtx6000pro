@@ -600,6 +600,25 @@ Concentration of risk (update): hotspot 16 adds a fourth instance of the §2 "im
 | 8 deterministic non-server tests | Mostly done: 8 kt-buffer tests (T3.16a) + 9 deferral-adjacency tests (T3.16e, `test_kt_deferral_adjacency.py`, mutation-checked) + 14 boundary/topology tests (T3.16d); graph/eager parity on a recorded layer needs a GPU dump → T3.19a |
 | 9 E24 close | Open (T3.13) |
 
+### 10f. Debt → closing task (gate ledger binding, 2026-09-24)
+
+Every open item in §10a now has one closing task and one closure criterion in the migration roadmap's [Gate ledger](MIGRATION-ROADMAP-PYTHON-TO-NATIVE-HYBRID.md#gate-ledger-added-2026-09-24-the-enforced-sequence); nothing open is "carried" without a row that closes it.
+
+| Debt | Closes in | Criterion (short form; full text in the ledger) | Blocks |
+|---|---|---|---|
+| C3 remainder (§7.5 forward-boundary emptiness, §7.6 adjacent-layer identity) | T3.19b (ledger G0 → G1) | `check_forward_boundary` in `kt_contract.py`, two negative tests in `test_kt_deferral_adjacency.py`, one serve consistency PASS | T3.19 exit |
+| C4 multi-stream-overlap launcher workaround | pre-T3.19 commit (ledger G0) | code gate refuses/forces off overlap when a DSpark verify graph is captured; launcher line deleted; CPU test | **T3.19 entry** |
+| C5 post-capture growth survived | pre-T3.19 commit (ledger G0) | `KTContractError` on any request above the captured size; negative test in `run-kt-buffer-tests.sh` | **T3.19 entry** |
+| C10 E24 per-request NaN rejection | T3.13 (ledger G0) | injected-NaN test fails one request, server survives; E22c bisected or pinned | **T3.22 entry**, release gate |
+| T3.16e (3) graph-vs-eager parity | T3.19a (ledger G0 → G1) | CPU replay of recorded layer-14/20 tensors bit-equal to the dumped kt output | T3.19 exit |
+| R1 `KTEPWrapperMethod` growth, R9 B2 residue | T3.16j (ledger G2) | removal list executed at the T3.19c commit; only T3.20-named primitives survive | T3.19 exit (pass 2 must not re-count hotspot 16) |
+| R2–R4, R6–R8 (globals, monkey-patching, prefill coupling, flag soup, evidence metadata, BCG recursion) | T3.19c/d/e/f (ledger G1) | one deliverable each; per-step gate bit-identical NLL + consistency PASS + C1 wall in band | T3.20/T3.21 start, T3.22 design approval |
+| R5 single-source config | T3.19e (ledger G1) | typed registry generates the `resolved:` line byte-identically | T3.24 profile files |
+| Rank-0 assumptions (§8 ownership diagram) | T3.22 (ledger G4, owner-approved) | Python prototype gates; `--mode rank0` rollback from the same commit | T3.23, T4.1b |
+| Unsafe flags / escape hatches (`KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNTESTED_FIT`, `EXTRA_*`) | T3.24 (ledger G6) | removed from release profiles; developer profile only | completion definition |
+
+Review passes are the stage exits: **pass 2** closes T3.19, **pass 3** closes T3.22, and a final pass at T3.24 checks the completion definition. A pass that finds an open item without a closing row adds the row here first.
+
 ### Pass 1 bottom line
 
 - **Measured:** 7 of 11 immediate-correctness items are closed or reclassified; the open ones (C4, C9, C10 and the C3/C5 halves) are all "assert or gate a boundary" items, and C9 is the direct prerequisite for T3.19b/T3.22. *(Update 2026-09-24: C9 closed by T3.16d; remaining open: C4, C10, halves of C3/C5.)*
