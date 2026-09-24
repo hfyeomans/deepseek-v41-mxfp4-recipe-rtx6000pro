@@ -379,6 +379,25 @@ What the numbers say:
 
 Verdict: **rejected** — defaults stay `CHUNKED_PREFILL_SIZE=4096`, `KT_NUM_GPU_EXPERTS=226`, `MEM_FRACTION_STATIC=0.96`. Adopted from this round: `SGLANG_LOGPROB_CHUNK_SIZE=512` as a launcher default (bit-identical output, ≈ 0.8 GB of worst-case margin for any logprob caller). Evidence [`evidence/t36g2-placement-r2/`](../evidence/t36g2-placement-r2/).
 
+## T3.19a — where the decode step goes: per-layer timeline inside the graph (2026-09-24)
+
+Stage 1 deliverable (a) of the migration roadmap; full tables and method in [`evidence/t319/a/README.md`](../evidence/t319/a/README.md). Overlay `e66d44fb` records six external CUDA events per MoE layer inside each captured graph (`KT_TIMELINE=1`, off by default, byte-identical when off); `scripts/kt-timeline-report.py` buckets them against the *unsampled* replay period. Qualified profile (D=4, spec off, 226/158, slot 3 BIOS), standard C1/C4 recipes with the instrumentation on.
+
+| rank 0 bucket (median) | bs 1 ms | share | bs 4 ms | share |
+|---|---:|---:|---:|---:|
+| export (D2H + kt submit) | 2.482 | 10.5 % | 2.890 | 4.2 % |
+| gpu_experts (resident GEMM) | 2.517 | 10.7 % | 5.111 | 7.4 % |
+| cpu_wait (exposed kt wait) | 7.879 | 33.4 % | 48.588 | 70.8 % |
+| h2d + combine | 0.459 | 2.0 % | 0.494 | 0.7 % |
+| engram_break (2 gaps) | 1.822 | 7.7 % | 2.915 | 4.2 % |
+| other_gpu (attention, dense, all-reduce, lm head) | 8.073 | 34.2 % | 8.336 | 12.1 % |
+| between_replays | 0.269 | 1.1 % | 0.209 | 0.3 % |
+| **step (replay period)** | **23.589** | | **68.659** | |
+| buckets / period | | 98.9 % | | 99.7 % |
+| bench-decode wall tok/s, same serve | 39.15 (TTFT 0.622) | | 55.56 = 13.9/stream | |
+
+Gate with timeline on: C1 41.37 median / 39.15 wall vs pin 41.92 / 39.86 (≥ 39.0 pass), C4 13.9/stream (≥ 13.6 pass), NLL 0/4795 tokens moved, consistency PASS 519/519, 0 NaN/Xid, EDAC 0/0. Instrumentation cost ≈ 1.8 % C1 wall. Rank 1: `other_gpu` 18.9 of 23.3 ms at bs 1 = all-reduce wait for rank 0. Python launch is not exposed (host 10.1 ms ahead of the GPU at bs 1, 41 ms at bs 4).
+
 ## E30 / T3.18 — Option B2: GPUs compute a slice of the CPU experts straight out of host RAM (2026-09-24) — rejected
 
 Protocol in EXPERIMENTS E30, design and full tables in [`evidence/t318-b2-prototype/README.md`](../evidence/t318-b2-prototype/README.md). Launcher defaults (slot 3 BIOS, patched image, spec off, D=4, 226/158 placement, chunk 4096, 300 W — never binds) plus `KT_B2_UVA_EXPERTS=S`: the last *S* CPU experts of every layer are also held pinned in host RAM in FlashInfer layout and computed by each rank's stock SM120 CUTLASS MXFP4 grouped GEMM over UVA, forked on a side stream beside kt's `submit()`, joined after `sync()`; `KT_B2_MAX_TOKENS=1` hands them back to kt for any forward wider than one token. 512 tokens, distinct prompts, seed 4242, 6 runs, C1 fixture offset 6 / C4 offset 0. Control is the T3.16 review-intake baseline on the same image.
