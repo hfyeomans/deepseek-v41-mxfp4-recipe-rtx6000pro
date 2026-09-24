@@ -124,6 +124,14 @@ Seen 2026-09-22 on the first `dsv41-kt` launch after a reboot (BIOS Boot 1): `PO
 
 Seen 2026-09-23 (E26 A3). A C1 trace captured with `"activities": ["CPU","GPU"]` showed a 182 ms/step span with five 110–142 ms gaps, and the 48-token reply took 11.1 s instead of ≈ 1.4 s — the profiler's CPU-side tracing instruments the kt host callbacks and the Python launch path inside the breakable graph and slows the very step it measures 6×. Fix: request `"activities": ["GPU"]` only; that trace ran the same reply in 2.5 s (still ≈ 1.8× overhead), span 69 ms/step, `gpu_busy` 15.4 ms/step, and its gap structure is meaningful (the ten largest gaps, 8.9–10.1 ms, all sit between the GPU-expert kernel and the pinned HtoD of the CPU tier's result — `scripts/gap-context.py`). Rule: from a profiler trace take per-category GPU time and gap *pattern*; take the step time from the unprofiled bench (`bench-decode.py` wall) and derive idle as step − gpu_busy. Evidence `evidence/e26-single-user/prof-a1-cpuinfer16-d4{,-gpuonly}/`.
 
+## `/start_profile … "num_steps": 8` produces a step time that is 2× the bench, or `step-profile.py` counts 79 all-reduces where 80 layers were expected
+
+Seen 2026-09-24 (E30). `num_steps` counts scheduler iterations, and the first one after `/start_profile` is usually the prefill of the request you send to trigger the trace, so an 8-step window straddles prefill + 7 decode steps and the per-step average is inflated. Fix: split the trace at the last gap > 3 ms (prefill ends there), then divide the decode region by its all-reduce count / 80 (two `allreduce` kernels per layer at TP2) instead of by `num_steps`. Also: `scripts/step-profile.py` sums kernel durations per category, so work that runs on two streams at once (E30's side-stream B2 GEMM beside kt's HtoD) is double-counted in the total — take the *union* busy time from the timeline when streams overlap (the E30 README shows the arithmetic; folding this into the script is T3.19a).
+
+## `/v1/completions` with a short prompt returns an empty string and `finish_reason: "stop"` instantly
+
+Seen 2026-09-24 while triggering profiler windows. The raw completions endpoint gets no chat template, so a bare 5–10 token prompt often makes the model emit EOS as the first token; the server is healthy and `bench-decode.py` is unaffected (it uses chat completions with the fixture prompts). Use `/v1/chat/completions` for one-off trigger requests, or a completions prompt long enough to be mid-sentence.
+
 ## C3 decode is slower than C2 (three concurrent streams get ≈ 38 summed tok/s, two get ≈ 45)
 
 **Cause.** `--cuda-graph-max-bs-decode 4` makes SGLang derive the capture list `[1, 2, 4]`; a 3-row decode batch is padded into the bs=4 graph and the CPU tier streams four rows' worth of expert weights for three tokens (E26 B1: 38.3 vs 49.0 summed tok/s once bs=3 is captured).

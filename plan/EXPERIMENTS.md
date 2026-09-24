@@ -594,3 +594,81 @@ every launch log except the two logprob OOMs; EDAC 0/0 throughout.
 - Chunk 2048 is still a legitimate knob for a deployment whose prompts are
   all short (< 1K tokens) and whose VRAM is under pressure — documented in
   the launcher comment, not enabled.
+
+## E30 — Option B2 in a real forward: can the GPUs read DRAM-resident experts beside the CPU tier and turn E4b's additive bandwidth into decode throughput? (GPU; T3.18)
+
+**Status:** done 2026-09-24 (measured). **Stop criterion met — B2 rejected as a
+lever; code kept off by default.** Evidence `evidence/t318-b2-prototype/`
+(README has the tables), overlay `7e41317e`. All runs at the qualified
+defaults (226 / 158, D=4, spec off, chunk 4096, capture 1 2 3 4).
+
+**Question.** E4b measured CPU DRAM reads and GPU DMA reads of the same DIMMs
+as additive (234 GB/s); FEASIBILITY turned that into a "78 tok/s B2 ceiling"
+and the migration roadmap made a rank-0 B2 prototype Stage 2 item 0. Does a
+subset *S* of the CPU-resident experts computed by the GPUs *out of host
+memory*, in parallel with kt-kernel computing the rest, shorten the decode
+step?
+
+**Hypotheses (before running).**
+- H1 — the SM120 CUTLASS MXFP4 grouped GEMM runs correctly on weights whose
+  storage is pinned host memory (UVA pointers) and reaches ≥ 70 % of the
+  memcpy PCIe rate; no custom kernel or staging copy needed.
+- H2 — it can be captured in the decode CUDA graph and replayed bit-equal.
+- H3 — with |S| ≈ 40 (25 % of CPU bytes off the fabric) C1 wall improves
+  ≥ +10 % (the go bar), following E28's "gain = CPU byte reduction".
+- H4 — host DRAM contention from kt's own reads does not slow the UVA GEMM
+  (the links, not the DIMMs, are the limit).
+
+**Protocol.** (1) `scripts/bench-b2-uva-moe.py` on an idle GPU: raw PCIe
+(memcpy, UVA copy kernel, UVA `index_select`), grouped GEMM on device vs UVA
+weights at M = 1 / 4 with 0–6 valid B2 slots, graph replay, the same under a
+130 GB/s host-read hog, and B2 on a side stream beside a 226-expert device
+tier. (2) Overlay: pinned-host copy of the last |S| CPU experts per layer per
+rank (built once from the E22 export path), `remap_topk_ids_for_b2`, the
+GEMM via `gm.runner.run`, kt handed −1 for S. (3) Serve |S| = 40 with the GEMM
+on the main stream; `verify-batch-consistency --same-prompt -c 4`, C1 (6 × 512
+tokens, distinct prompts, seed 4242, offset 6), HSMP DRAM counter, GPU-only
+`/start_profile`. (4) One change at a time: fork the GEMM onto a side stream
+after `submit()`, join after `sync()`, gate to bs ≤ 1; re-serve 40, then 60.
+
+**Result.**
+1. H1 holds: UVA GEMM bit-equal to device weights; 6 hits at M=1 in 1.35 ms =
+   39 GiB/s effective (memcpy 51–53 GiB/s) → **≈ 0.09 ms floor + 0.21 ms per
+   expert hit** (8.96 MiB TP slice per rank). torch `index_select` over UVA is
+   6–13 GiB/s — never gather through it.
+2. H2 holds: graph replay 1.28 ms, bit-equal; forked beside the device tier
+   the graphed time is max(tier, B2) (0.349 serial → 0.241 forked at h=1).
+3. H4 holds: under the 130 GB/s host hog eager launches slow to ≈ 1 ms (host
+   launch latency) but graph replay is unchanged (1.30 vs 1.28 ms).
+4. **H3 fails.** Main stream, no token gate, |S| = 40: C1 **33.1 / 28.5 wall,
+   TTFT 2.5 s** (baseline 41.9 / 39.9 / 0.61). Profile: M=1 GPU busy 25–30 of
+   31–36 ms per step (baseline 15.4), 4 grouped GEMMs per layer, B2 ≈ 10–13
+   ms/step serial on the critical path; short-prefill layers (M = 9–13) hit
+   most of the 40 experts. Forked + gated to bs = 1: |S| = 40 → **42.71 /
+   40.71 (+2 %)**, TTFT 0.617; C4 57.2 / 55.0 (unchanged, B2 off at bs=4);
+   |S| = 60 → **40.65 / 38.73 (−3 %)**. Union GPU busy 17.3 → 19.8 ms/step;
+   B2 GEMMs 4.9 → 7.3 ms/step, ≈ 70 % hidden at 40, the longest pole at 60.
+   Same-prompt bs=1 (B2) vs bs=4 (no B2) agree at both sizes; 0 NaN, EDAC 0/0.
+5. RAM: 14.8 GiB/rank pinned at 40 (available 62 GiB), 21.0 at 60
+   (available 31); kt keeps its own copy of S, so ≥ 80 does not fit.
+
+**Reading.** Per expert B2 is 1.4× slower than the path it replaces (0.21 vs
+kt's 0.146 ms for a full 17.9 MiB expert at 125 GB/s; two 8.96 MiB slices over
+two links = 85 GB/s, 106 GiB/s raw would still be 0.165 ms). A balanced split
+(|S| ≈ 45–50 by the per-layer model, matching the measured peak between 40 and
+60) saves at most ≈ 0.11 ms/layer ≈ 4 ms/step of *CPU-path* time — and D=4
+(E21) already hides most of that path, while B2's own GEMM added ≈ 2 ms/step
+of *un-hidden* GPU time. E28's "gain = byte reduction" held because moving an
+expert to VRAM removes CPU bytes at ≈ zero added cost; B2 removes them at 1.4×
+their cost. **Additive DRAM bandwidth (E4b) is real; additive throughput
+needs the second reader to be at least as fast per unit of work as the first,
+and one x16 link per rank is not.** The FEASIBILITY 78 tok/s ceiling is struck.
+What remains un-hidden in the CPU path is its fixed per-layer part (E21's
+≈ 0.45 ms, 40 submit/sync boundaries) — T3.19(a)'s per-layer timeline is the
+instrument for that, and the third GPU (T4.1b) removes bytes the E28 way.
+
+**Kept.** `KT_B2_UVA_EXPERTS` / `KT_B2_MAX_TOKENS` (default 0 / 1) as a
+documented experiment; `_B2HostPool` + direct-UVA compute as a proven way to
+run a grouped GEMM on pinned host weights on SM120 without a custom kernel;
+the side-stream `fork`/`join` pattern for T3.20's Engram staging. T3.16i's
+review pass decides whether the ≈ 300 overlay lines stay.

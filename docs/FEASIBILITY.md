@@ -63,7 +63,7 @@ The same calculator applied to the only proven consumer-GPU deployment (0xSero: 
 
 | GPUs | Routed experts in VRAM | Experts in DRAM (CPU) | DRAM read per decoded token | Decode ceiling, CPU compute @125 GB/s | Same experts streamed over PCIe @114 GB/s | **Split** (both paths, E4b) | Host needed / margin (Engram NVMe) | Verdict |
 |---:|---:|---:|---:|---:|---:|---:|---|
-| **2** | 8,958 of 15,360 (**58%**), 156.9 GiB | 6,402 (42%), **112.1 GiB** | 1.75 GiB | **~50 tok/s** (40 @94) | ~46 tok/s | **~78 tok/s** (71 @94+114) | 200.1 / **+46.7** GiB | **fits** |
+| **2** | 8,958 of 15,360 (**58%**), 156.9 GiB | 6,402 (42%), **112.1 GiB** | 1.75 GiB | **~50 tok/s** (40 @94) | ~46 tok/s | ~~**~78 tok/s** (71 @94+114)~~ measured +2 % (E30) | 200.1 / **+46.7** GiB | **fits** |
 | 3 | 13,916 (91%) | 1,444 (9%), 25.3 GiB | 0.40 GiB | ~126 tok/s | ~128 tok/s | 113.3 / +133.5 GiB | fits; **TP3 invalid** (64 heads) → EP3 or PP |
 | 4 | 15,360 (100%) | 0 | 0 | ~200 tok/s (GPU-bound) | — | 88.0 / +158.8 GiB | fits (= Option A) |
 
@@ -89,7 +89,9 @@ Keep 157 GiB of routed experts on the GPUs (8,958 of 15,360), leave the other 11
 - **Software.** vLLM `--cpu-offload-gb` and SGLang's generic CPU offload are parameter-level and stream *all* offloaded parameters every step; they do not know which experts a token selected. The only engine with routed-expert CPU compute plus GPU-resident hot experts (`--kt-num-gpu-experts N`, `--kt-expert-placement-strategy frequency`, `--kt-enable-dynamic-expert-update`) is **KTransformers' sglang-kt hybrid**, validated for DeepSeek-**V4**-Flash only. Porting `deepseek_v41` (CSA2 attention, Engram host table, hyper-connections, DSpark) into sglang-kt is the build. Second route: **llama.cpp's `deepseek41` branch** (vcruz305/llama.cpp `runtime/deepseek41`; conversion PR ggml-org/llama.cpp#28696) — loader, Engram and hyper-connections work, CSA2 sparse attention pending; `-ot` regex expert offload and CPU MXFP4/Q4 kernels come for free once it runs, but at lower GPU efficiency than SGLang. Third route: a PCIe weight-streaming prototype of our own (the ~42 tok/s column) as the fallback if neither port lands.
 - **Speculative decoding** interacts badly with a CPU-bound MoE: a DSpark block of 5 activates up to 5× the distinct CPU experts per step. Whether acceptance outruns the extra traffic is E10.
 
-Verdict: **fits the memory of this host; decode ceiling 40–50 tok/s with CPU compute alone (measured DRAM read limits), 71–78 tok/s with the B2 split that also streams experts over PCIe; 0.2–0.4× the V4-Flash baseline's 200 tok/s, for a model with 2× the parameters.** Feasible as a build with measurable milestones (E6), not as a download-and-run recipe.
+Verdict: **fits the memory of this host; decode ceiling 40–50 tok/s with CPU compute alone (measured DRAM read limits), ~~71–78 tok/s with the B2 split that also streams experts over PCIe~~; 0.2–0.4× the V4-Flash baseline's 200 tok/s, for a model with 2× the parameters.** Feasible as a build with measurable milestones (E6), not as a download-and-run recipe.
+
+> **B2 measured (E30, 2026-09-24):** the split was built (stock SM120 grouped GEMM on pinned-host expert weights over UVA, forked on a side stream beside kt) and served: **+2 % C1 wall at 40 streamed experts/layer (39.9 → 40.7 tok/s), −3 % at 60.** The 71–78 tok/s column assumed the two DRAM readers were additive in *time*; they are additive in *bandwidth* (E4b) but the PCIe reader costs 0.21 ms per expert against kt's 0.146 ms, and D=4 deferral already hides most of the CPU path, so removing bytes from it buys little. Struck; see [`evidence/t318-b2-prototype/README.md`](../evidence/t318-b2-prototype/README.md).
 
 ### Option C — Smaller expert weights. No kernels.
 - 3.0 bpw effective experts → ~190 GiB. Still 26 GiB over.

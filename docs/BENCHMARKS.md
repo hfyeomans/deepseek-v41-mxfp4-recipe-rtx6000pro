@@ -379,6 +379,28 @@ What the numbers say:
 
 Verdict: **rejected** — defaults stay `CHUNKED_PREFILL_SIZE=4096`, `KT_NUM_GPU_EXPERTS=226`, `MEM_FRACTION_STATIC=0.96`. Adopted from this round: `SGLANG_LOGPROB_CHUNK_SIZE=512` as a launcher default (bit-identical output, ≈ 0.8 GB of worst-case margin for any logprob caller). Evidence [`evidence/t36g2-placement-r2/`](../evidence/t36g2-placement-r2/).
 
+## E30 / T3.18 — Option B2: GPUs compute a slice of the CPU experts straight out of host RAM (2026-09-24) — rejected
+
+Protocol in EXPERIMENTS E30, design and full tables in [`evidence/t318-b2-prototype/README.md`](../evidence/t318-b2-prototype/README.md). Launcher defaults (slot 3 BIOS, patched image, spec off, D=4, 226/158 placement, chunk 4096, 300 W — never binds) plus `KT_B2_UVA_EXPERTS=S`: the last *S* CPU experts of every layer are also held pinned in host RAM in FlashInfer layout and computed by each rank's stock SM120 CUTLASS MXFP4 grouped GEMM over UVA, forked on a side stream beside kt's `submit()`, joined after `sync()`; `KT_B2_MAX_TOKENS=1` hands them back to kt for any forward wider than one token. 512 tokens, distinct prompts, seed 4242, 6 runs, C1 fixture offset 6 / C4 offset 0. Control is the T3.16 review-intake baseline on the same image.
+
+| Config | C1 summed / **wall** / TTFT | C4 summed / wall / TTFT | union GPU busy per step (GPU-only trace) | B2 GEMM time per step | pinned RAM per rank / avail after load | verify-batch-consistency |
+|---|---|---|---|---|---|---|
+| **B2 off (control, `evidence/t316-review-intake/c1-off6-t316c.json`)** | 41.92 / **39.86** / 0.609 s | E27/E28/E29 reference 56.2–59.0 summed (E29 control 58.09 / 55.79) | 15.4 ms (E26 A3) | — | — / — | PASS |
+| S = 40, main stream, no token gate | 33.12 / **28.54** / **2.525 s** | — | — | — | 14.8 GiB / 62 GiB | PASS |
+| S = 40, side stream + gate | **42.71 / 40.71 / 0.617 (+2.1 % wall)** | 57.22 / 55.02 / 1.50 (within the reference band; B2 off at bs=4 by the gate) | 17.3 ms | 4.9 ms | 14.8 GiB / 62 GiB | PASS |
+| S = 60, side stream + gate | 40.65 / **38.73** / 0.639 (**−2.8 %**) | — | 19.8 ms | 7.3 ms | 21.0 GiB / 31 GiB | PASS |
+
+Microbench (`scripts/bench-b2-uva-moe.py`, `uva-moe-*.json`): UVA grouped GEMM is bit-equal to the VRAM run, graph-replayable, ≈ 0.09 ms floor + 0.21 ms per expert hit at TP2 (39–41 GiB/s effective per x16 link; plain memcpy 51–53), and unchanged under a concurrent 130 GB/s host-read hog once graphed; forked with the kt tier the step costs max(tier, B2), not the sum. kt's own read of one full expert costs ≈ 0.146 ms, so the PCIe reader is 1.4× slower per expert than the path it relieves.
+
+What the numbers say:
+
+- **Additive bandwidth is not additive throughput.** E4b's 98 % additivity (CCD reads + PCIe DMA) held — the HSMP DRAM counter rose as expected — but the step got no shorter because (a) each streamed expert costs more link time than kt's fabric time for it, and (b) D=4 deferral already hides most of the CPU tier's wall time behind the next layer (E21), so bytes taken off the CPU path were mostly bytes that were not on the critical path. E28 gained the full byte reduction because VRAM is free per expert; B2 pays 1.4×.
+- **S = 60 makes B2 the longest pole**: 7.3 ms of link-bound GEMM per step on the side stream exceeds what it overlaps and C1 loses 3 %.
+- **The token gate is not optional**: without it a 13-token prefill layer hits most of the 40 streamed experts and TTFT goes 0.61 → 2.5 s.
+- 0 NaN / Xid / Traceback in all three servers; EDAC 0/0; GPU peak 148–171 W.
+
+Verdict: **rejected as a decode lever; FEASIBILITY's 71–78 tok/s B2 column struck.** Code kept off by default (overlay `7e41317e`); the per-device fork/join stream pattern is reused for T3.20 Engram staging.
+
 ## Erratum (2026-09-23): every V4.1-hybrid C3 and C4 decode figure from E19 to E23 R0 is an artifact of kt-kernel bug C
 
 **What was wrong.** The unpatched kt-kernel bs=4 decode CUDA graph was baked to a pinned host buffer that the first prefill freed ([TROUBLESHOOTING, bug C and the entry after it](TROUBLESHOOTING.md#c4-decode-drops-from--148-to--50-toks-after-the-bug-c-patch--and-four-identical-greedy-prompts-in-one-batch-return-four-different-answers-on-the-old-build)). It never crashed; it computed CPU experts for effectively one row of the batch and copied stale bytes for rows 1–3. Two consequences: (1) the bs=4 step took as long as a bs=1 step, so C4 looked like 4 × C1 ("near-linear batching") and C3 (padded into the bs=4 graph) like 3 × C1; (2) rows 1–3 of every C3/C4 request since E19 were **wrong** — four identical greedy prompts in one batch returned four different answers on the old build, one of them having lost the prompt. bs=1 and bs=2 were always correct, so every C1 and C2 figure stands, as do prefill, TTFT, NLL (bs=1) and needle results.

@@ -1,0 +1,168 @@
+{
+ "gpu": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+ "torch": "2.13.0+cu130",
+ "experts_S": 40,
+ "topk": 6,
+ "tp_size": 2,
+ "hidden": 5120,
+ "inter_tp": 1152,
+ "bytes_per_expert_slice": 9400320,
+ "mib_per_expert_slice": 8.96484375,
+ "iters": 50,
+ "note": "random FP4 nibbles, unit E8M0 scales; timing + bit-equality only, not model numerics",
+ "raw_pcie": {
+  "memcpy_async_k1": {
+   "median_ms": 0.1703519970178604,
+   "min_ms": 0.17004799842834473,
+   "p90_ms": 0.17049600183963776,
+   "iters": 50,
+   "gib_s": 51.39200231208027,
+   "bytes": 9400320
+  },
+  "copy_kernel_uva_k1": {
+   "median_ms": 0.17027199268341064,
+   "min_ms": 0.16991999745368958,
+   "p90_ms": 0.17043200135231018,
+   "iters": 50,
+   "gib_s": 51.41614945968936,
+   "bytes": 9400320
+  },
+  "index_select_uva_k1": {
+   "median_ms": 1.3192319869995117,
+   "min_ms": 1.258239984512329,
+   "p90_ms": 1.3668479919433594,
+   "iters": 50,
+   "gib_s": 6.636232528382906,
+   "bytes": 9400320
+  },
+  "index_select_device_k1": {
+   "median_ms": 0.0213600005954504,
+   "min_ms": 0.02022399939596653,
+   "p90_ms": 0.021503999829292297,
+   "iters": 50,
+   "gib_s": 409.8656357937602,
+   "bytes": 9400320
+  },
+  "memcpy_async_k6": {
+   "median_ms": 0.9950079917907715,
+   "min_ms": 0.994592010974884,
+   "p90_ms": 0.9960319995880127,
+   "iters": 50,
+   "gib_s": 52.7919190408893,
+   "bytes": 56401920
+  },
+  "copy_kernel_uva_k6": {
+   "median_ms": 0.9948480129241943,
+   "min_ms": 0.9945600032806396,
+   "p90_ms": 0.9950399994850159,
+   "iters": 50,
+   "gib_s": 52.800408369171485,
+   "bytes": 56401920
+  },
+  "index_select_uva_k6": {
+   "median_ms": 3.9974719285964966,
+   "min_ms": 3.803040027618408,
+   "p90_ms": 4.103583812713623,
+   "iters": 50,
+   "gib_s": 13.140400304474145,
+   "bytes": 56401920
+  },
+  "index_select_device_k6": {
+   "median_ms": 0.08700799942016602,
+   "min_ms": 0.08671999722719193,
+   "p90_ms": 0.08806400001049042,
+   "iters": 50,
+   "gib_s": 603.7189878828733,
+   "bytes": 56401920
+  }
+ },
+ "moe": {
+  "M1": {
+   "M": 1,
+   "routes": 6,
+   "distinct_hits": 6,
+   "device_ref": {
+    "median_ms": 0.1717280000448227,
+    "min_ms": 0.16710400581359863,
+    "p90_ms": 0.18137599527835846,
+    "iters": 50
+   },
+   "v0_direct_uva": {
+    "median_ms": 1.3461599946022034,
+    "min_ms": 1.3410240411758423,
+    "p90_ms": 1.3544000387191772,
+    "iters": 50
+   },
+   "v1_gather_uva": {
+    "median_ms": 3.9224159717559814,
+    "min_ms": 3.7282559871673584,
+    "p90_ms": 3.996799945831299,
+    "iters": 50
+   },
+   "v0_bit_equal": true,
+   "v1_bit_equal": true,
+   "v1_max_abs_diff": 0.0,
+   "ref_finite": true,
+   "v0_effective_gib_s": 39.02090506201578,
+   "v1_effective_gib_s": 13.391843630531726,
+   "v0_graph_replay": {
+    "median_ms": 1.2766560316085815,
+    "min_ms": 1.2753920555114746,
+    "p90_ms": 1.277343988418579,
+    "iters": 50,
+    "bit_equal_after_replay": true
+   },
+   "v1_graph_replay": {
+    "median_ms": 3.878175973892212,
+    "min_ms": 3.686944007873535,
+    "p90_ms": 3.9850239753723145,
+    "iters": 50,
+    "bit_equal_after_replay": true
+   }
+  },
+  "M4": {
+   "M": 4,
+   "routes": 24,
+   "distinct_hits": 21,
+   "device_ref": {
+    "median_ms": 0.34465599060058594,
+    "min_ms": 0.34035199880599976,
+    "p90_ms": 0.34966400265693665,
+    "iters": 50
+   },
+   "v0_direct_uva": {
+    "median_ms": 4.469856023788452,
+    "min_ms": 4.4651198387146,
+    "p90_ms": 4.475071907043457,
+    "iters": 50
+   },
+   "v1_gather_uva": {
+    "median_ms": 4.895071983337402,
+    "min_ms": 4.841760158538818,
+    "p90_ms": 4.922463893890381,
+    "iters": 50
+   },
+   "v0_bit_equal": true,
+   "v1_bit_equal": true,
+   "v1_max_abs_diff": 0.0,
+   "ref_finite": true,
+   "v0_effective_gib_s": 41.13092988641149,
+   "v1_effective_gib_s": 42.92348020740894,
+   "v0_graph_replay": {
+    "median_ms": 4.399168014526367,
+    "min_ms": 4.397024154663086,
+    "p90_ms": 4.400032043457031,
+    "iters": 50,
+    "bit_equal_after_replay": true
+   },
+   "v1_graph_replay": {
+    "median_ms": 4.874144077301025,
+    "min_ms": 4.825183868408203,
+    "p90_ms": 4.894336223602295,
+    "iters": 50,
+    "bit_equal_after_replay": true
+   }
+  }
+ },
+ "wall_s": 1790255272.4309542
+}
