@@ -541,3 +541,67 @@ class EngramProvider(Protocol):
 - **Measured:** The overlay has 16 commits; 13 have direct SHA-linked recipe evidence and 3 have only behavior-level evidence.
 - **Measured:** This review identified 24 invariants requiring stronger assertions or boundary documentation.
 - **Inferred:** Maintainability will improve most from explicit ownership, dimensioned shape types, startup compatibility validation, and deterministic boundary tests—not from immediately moving more Python into native code.
+
+## 10. Review pass 1 — after the T3.18 / E30 verdict (2026-09-24)
+
+Standing task T3.16i: refresh the hotspot map and debt register after each stage. Scope of this pass: overlay commits since the review (`cad73914`, `8ad514ed`, `7e41317e`), kt patch `0002-experts-base-capture-assertions.patch`, `scripts/serve-hybrid.sh` validation, and the B2 prototype's residue. Method as §1 (read the diffs, `git log da64c5cb..HEAD`, `scripts/tests/run-kt-buffer-tests.sh`, the launcher's `fail_config` block). Labels as §1.
+
+### 10a. Debt register status
+
+| ID | Status | Evidence |
+|---|---|---|
+| C1 | **Closed (reclassified)** | Erratum 2026-09-23: the C4 drop was the correction of silent row corruption, not a regression. Qualified C4 55–58 summed after E28/E29 tiers. |
+| C2 | **Closed** | T3.16b: `serve-hybrid.sh` refuses `KT_MAX_DEFERRED ≥ 5` unless `KT_ALLOW_UNSAFE_DEFERRAL=1`. D=5 no longer crashes (T3.15) but fails the NLL gate, so the guard now protects the quality gates. |
+| C3 | **Half closed** | kt patch 0002 asserts no allocation during capture and cached-tuple shape on every hit (§7.3, §7.2). Forward-boundary emptiness and adjacent-layer identity (§7.5, §7.6) are still unasserted — carried into T3.19. |
+| C4 | Open | `SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0` remains the launcher workaround; no forward-mode gate in code. Speculation is off by default (E23 closed), which lowers the exposure but not the debt. |
+| C5 | **Half closed** | `838490a6` never frees captured SM120 buffers and pre-sizes from pool geometry. Post-capture growth is still survived, not rejected. |
+| C6 | **Closed for known-bad combinations** | T3.16b: fit refusals (experts/chunk/DSpark), `DSPARK_K` range, B2 constraints, one `resolved:` line per launch. `EXTRA_*` word splitting is unchanged by design (escape hatch). |
+| C7 | **Closed** | E23 records amended; erratum rows in BENCHMARKS, EXPERIMENTS, this review. |
+| C8 | **Closed** | T3.16c (`8ad514ed`): capture sizes registered before the autotune forward; captured ⊆ registered ⊆ cached asserted after decode capture; 8/8 `scripts/tests/` pass. |
+| C9 | Open — **now the gating item for T3.19b** | Rank-0 zeros path still unasserted. B2 (`7e41317e`) added a *second* per-rank contract (every rank computes its own B2 slice, only rank 0 runs kt), so the topology assertion must now name both. |
+| C10 | Open | E24 per-request NaN rejection not proven; T3.13. |
+| C11 | **Closed** | `verify-batch-consistency.py --same-prompt` runs at every captured width in every serve since 2026-09-23 (E28, E29, E30 all PASS). |
+| R1 | **Worse** | `KTEPWrapperMethod` grew by ≈ 300 lines (B2: `_B2HostPool`, `_B2UvaExperts`, `_uva_view`, `remap_topk_ids_for_b2`, `_b2_stream`, `submit(num_kt_experts)`). See R9. |
+| R2–R4, R6–R8 | Open, unchanged | — |
+| R5 | **Partly addressed** | The launcher's `resolved:` line is the first single-source view of every knob; the typed registry is still T3.19d. |
+
+### 10b. Hotspot map additions
+
+| # | Claim | Area and location | Why accidental complexity is high | Blast radius | Baseline load-bearing? |
+|---:|---|---|---|---|---|
+| 16 | **Measured** | B2 direct-UVA experts: `[overlay] kt_ep_wrapper.py` (`7e41317e`, +304/−10) | A third stream per device held in a process-global dict (`_B2_STREAMS`), a host pool sized by `kt_config.num_layers`, a UVA device-pointer view built through a private `__cuda_array_interface__` class, a token-count gate (`KT_B2_MAX_TOKENS`) that changes *which* engine computes an expert per forward, and a `submit()` signature that now carries `num_kt_experts`. Correctness was proven only at bs = 1 decode and bs = 4 with B2 gated off. | Off by default → zero blast radius when `KT_B2_UVA_EXPERTS=0`; when on, expert-ID remapping, the combine point, the streamed-prefill export path (which it reuses), and graph capture of a forked stream. | **No.** Rejected as a lever (E30). |
+
+Concentration of risk (update): hotspot 16 adds a fourth instance of the §2 "implicit ownership" pattern (a stream owned by a module dict, not the runner) and a second instance of "which engine owns this expert is decided per forward" (after D=4's per-layer deferral). Neither is load-bearing today; both are exactly the kind of state T3.19c (runner-owned graph/stream state) is meant to absorb.
+
+### 10c. Decision — B2 code: debt or template?
+
+**Decision (this pass): template-then-retire, not keep-as-feature.**
+
+- Keep in the tree until T3.19 lands: `_b2_stream` / `fork` / `join` (the per-device side-stream pattern, proven graph-replayable in E30 and needed by T3.20 Engram staging) and `_uva_view` (stock grouped GEMM on pinned host memory — the shortest path to a staging-free Engram gather experiment).
+- Retire in the T3.19 close-out unless T3.20 has adopted them by then: `_B2HostPool`, `_B2UvaExperts.run`, `remap_topk_ids_for_b2`, the `use_b2` branch in `apply`, the `num_kt_experts` parameter on `submit()`, and the launcher knobs `KT_B2_UVA_EXPERTS` / `KT_B2_MAX_TOKENS` with their three `fail_config` checks. Git history (`7e41317e`) and `evidence/t318-b2-prototype/` remain the durable record; a rejected lever does not need a live code path.
+- Rationale: R1 is already the highest-severity refactoring debt; carrying 300 off-by-default lines through the T3.19 extraction of `CpuExpertProvider` means writing an adapter for a path no configuration uses. The reusable parts are ≈ 60 lines and belong in the runner-owned stream state T3.19c introduces, not in the wrapper.
+- New register entry **R9 (Medium):** B2 residue as above; smallest safe fix = the retire list, executed as one overlay commit after T3.19c, with `run-kt-buffer-tests.sh` and one serve + `verify-batch-consistency` run.
+
+### 10d. Overlay commit traceability (update)
+
+`git log --reverse --oneline da64c5cb..HEAD` now contains 19 commits. The three previously unlinked SHAs (`b457c4e6`, `4685955e`, `07f4aef0`) are named in `PROVENANCE.md` with their E23 R1/R3 roles (closes "Do now" 7 / T3.16f). New since the review, all linked: `cad73914` (T3.16a, TROUBLESHOOTING "operation not permitted when stream is capturing"), `8ad514ed` (T3.16c, `scripts/tests/`), `7e41317e` (T3.18, `evidence/t318-b2-prototype/`, BENCHMARKS E30). **19 of 19 linked.**
+
+### 10e. "Do now" scorecard
+
+| § 9 item | Status |
+|---|---|
+| 1 freeze until C4 isolated | Closed by erratum (reclassified) |
+| 2 D ≥ 5 startup gate | Done (T3.16b) |
+| 3 capture-time assertions | Done (kt patch 0002; §7.2–7.4); §7.5/7.6 → T3.19 |
+| 4 capture-size reservation before autotune | Done (`8ad514ed`) |
+| 5 boundary shape/topology assertions | **Open → T3.16d, next** |
+| 6 E23 wording | Done |
+| 7 provenance SHAs | Done |
+| 8 deterministic non-server tests | Partly: 8 kt-buffer tests exist; deferred-adjacency and graph/eager parity → T3.16e |
+| 9 E24 close | Open (T3.13) |
+
+### Pass 1 bottom line
+
+- **Measured:** 7 of 11 immediate-correctness items are closed or reclassified; the open ones (C4, C9, C10 and the C3/C5 halves) are all "assert or gate a boundary" items, and C9 is the direct prerequisite for T3.19b/T3.22.
+- **Measured:** the only new complexity since the review is the B2 prototype, and it is off by default. It goes out with T3.19 except for two reusable pieces.
+- **Inferred:** the sequencing rule from §9 still holds — contracts (T3.16d) → seams (T3.19) → ownership (T3.22). Nothing measured since the review argues for moving native work earlier.
