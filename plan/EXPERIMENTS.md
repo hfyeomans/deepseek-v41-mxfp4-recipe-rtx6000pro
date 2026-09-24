@@ -444,6 +444,153 @@ Legend: **GPU-free** experiments do not touch the cards but still need a quiet h
   - **G2, 226 / 158:** weights 89.01 GB/rank; avail before capture 4.00 GB; after capture 93,668 / 93,727 MiB. Gate PASS (310). **C1 41.23 / 36.08 (+5.5 % / +6.3 %), TTFT 0.91 s; C3 53.04 / 48.72 (+8.2 % / +8.3 %); C4 56.18 / 51.91 (+9.4 % / +9.2 %).** Per stream 41.2 / 17.7 / 14.0. DRAM 90 GB/s at C1 (37–106), 108 at C4 (85–112). 32K 845 tok/s / 38.1 s, then 96,286 / 96,345 MiB (≈ 1.5 GB free). **Worst case 4 × 30K: min free 779 MiB on GPU0 / 1,226 on GPU1**, all four finished (finish=length, 146 s wall, TTFTs 39 / 70 / 100 / 128 s — chunked prefill serialises the prompts), zero OOM; TP1 logged three Triton `device-loaded after serving started (free device mem: 0.97 GiB)` warnings (none at 222). NLL 1.48795: vs E22 stream **+0.0018 (z −0.48; 143 / 148)**.
   - Health across three launches: zero Xid, EDAC 0/0, no NaN in any log.
 - Reading: H1 confirmed (pool 3.33 → 0.60 GB, no behavioural change). H2 confirmed exactly (+4.3 % wall at 222). H3 confirmed (C4 +9.2 % for −10.2 % bytes). H4: 226 is the ceiling — the four experts from 222 to 226 cost 1.28 GB of weights but 2.16 GB of worst-case peak on GPU0 (fragmentation + late Triton loads with less slack), so 228 would leave ≈ 0.1 GB and is not attempted. The ≈ 3.4 GB between after-capture and worst-case peak is prefill-chunk activations at 30K context plus bs=4 decode workspaces; that is the next placement budget and its price is prefill chunk size (T3.6g2), not KV. The quality readings at 222 and 226 (+0.0055 and +0.0018 against the same baseline) bracket the noise floor of the 4,795-token corpus for a tier swap: the per-token |Δlogp| ≈ 0.128 is the E22 offset (CPU kt numerics → GPU MXFP8-activation numerics) and is symmetric in both cases.
-- Consequences: `serve-hybrid.sh` defaults `KT_NUM_GPU_EXPERTS=226`, `MEM_FRACTION_STATIC=0.96`, new `MAX_TOTAL_TOKENS` derived as `MAX_RUNNING_REQUESTS × CONTEXT_LENGTH + 16384` (`MAX_TOTAL_TOKENS=""` restores fraction-sized pools — needed before any 262K qualification); `CHUNKED_PREFILL_SIZE=8192` documented as incompatible with 226; `scripts/stress-kv-full.py` is the fit gate for any future VRAM spend (placement, chunk, drafts). `verify-batch-consistency` + NLL + 32K + worst case pass; **E24 soak on the new defaults pending** (same status as the capture list). Third-GPU and router projections (HETEROGENEOUS-ROUTING) start from 226 / 158 and C1 36.1 wall.
-- Not done / open: C2 at 226 (E26's 45.6 / 40.8 stands as the 208 figure); the E24 soak; T3.6g2 (chunk 2048 → 4–8 more experts, projected +1.5–3 % C1 wall at a slower prefill — decide by C1 wall and TTFT together).
+- Consequences: `serve-hybrid.sh` defaults `KT_NUM_GPU_EXPERTS=226`, `MEM_FRACTION_STATIC=0.96`, new `MAX_TOTAL_TOKENS` derived as `MAX_RUNNING_REQUESTS × CONTEXT_LENGTH + 16384` (`MAX_TOTAL_TOKENS=""` restores fraction-sized pools — needed before any 262K qualification); `CHUNKED_PREFILL_SIZE=8192` documented as incompatible with 226; `scripts/stress-kv-full.py` **followed by `nll-score.py` on the same server (E29 amendment: the `return_logprob` transient is the largest single allocation; a config that survives the stress run but dies on the logprob request has not passed)** is the fit gate for any future VRAM spend (placement, chunk, drafts). `verify-batch-consistency` + NLL + 32K + worst case pass; **E24 soak on the new defaults pending** (same status as the capture list). Third-GPU and router projections (HETEROGENEOUS-ROUTING) start from 226 / 158 and C1 36.1 wall.
+- Not done / open: C2 at 226 (E26's 45.6 / 40.8 stands as the 208 figure); ~~the E24 soak~~ (E27 Boot 12 soak); ~~T3.6g2 (chunk 2048 → 4–8 more experts, projected +1.5–3 % C1 wall at a slower prefill — decide by C1 wall and TTFT together)~~ **run as E29 (2026-09-24): +1.6 % C1 wall for −39 % prefill and a failed NLL gate — rejected.**
 - Learning pointers: LEARNING.md §10 E28 surprise row, §11 rows "placement pays what the byte model says" and "a 32K prefill at C1 is not the worst case".
+
+## E29 — Placement round 2: prefill chunk 2048 → 230 GPU experts (T3.6g2)
+
+**Status:** done 2026-09-24 (measured). **Rejected as default.** Evidence
+`evidence/t36g2-placement-r2/`. Follow-up to E28; all runs with the user's
+340 GB `hf download` writing to the separate `/mnt/data` NVMe (E28 measured
+that at ≈ 0.6 % C1, so it does not change any reading below).
+
+**Question.** E28 kept 226 GPU experts because the fit gate said the next
+tier (230) has no VRAM headroom at `CHUNKED_PREFILL_SIZE=4096`. The largest
+prefill transient scales with the chunk; does halving it to 2048 buy the
+≈ 1.4 GB/rank that 230 needs, and is +4 experts worth whatever the smaller
+chunk costs in prefill throughput?
+
+**Hypotheses (before running).**
+- H1 — chunk 2048 frees ≥ 1.5 GB/rank of worst-case headroom at 226
+  (the 4×30K `stress-kv-full` peak drops by about that).
+- H2 — 230 experts then fits the same worst case with ≥ 0.75 GB/rank free.
+- H3 — decode gains follow the byte model: −2.5 % CPU expert bytes ⇒
+  ≈ +1.5–2.5 % C1 wall, more at C3/C4.
+- H4 — chunk 2048 costs prefill ≈ 10–20 % (smaller GEMMs, twice the
+  per-chunk fixed cost: Engram gather + expert dispatch + CPU sync).
+- H5 — NLL stays inside the ±0.002 gate (E28: the 226-tier swap read
+  +0.0018).
+
+**Protocol.** Eight launches (A–G below; two failed by design), D=4, spec
+off, capture `1 2 3 4`, `KT_NAN_PROBE_MIN_TOKENS=1`, 300 W (never binds).
+Fit gate per config = `stress-kv-full --concurrency 4 --prompt-tokens 30000
+--max-tokens 256` **followed by** `nll-score.py` on the same server (the
+E28 protocol ran NLL first; see "Reading" for why the order matters).
+Decode: `bench-decode.py --max-tokens 512 --runs 12 --distinct-prompts
+--seed 4242`, offsets C1 6 / C3 2 / C4 0. Prefill: `bench-prefill.py
+--tokens 16384|32768 --runs 2 --seed 777`. Controls are the E27 soak / E28
+D=4 readings at 226 / 4096 / 0.96.
+
+| Launch | Config | Purpose |
+|---|---|---|
+| A | chunk 2048 / 226 / 0.96 | H1, H4, chunk-only decode + NLL effect |
+| B | chunk 2048 / 230 / 0.96 → **0.975** | H2, H3 (0.96 refused: "minimum viable 0.9633") |
+| C | chunk 4096 / 226 / 0.96 (current default) | re-measure default worst case + NLL-after-stress |
+| D | B + `SGLANG_LOGPROB_CHUNK_SIZE=512` | make the NLL request survive at 230 |
+| E | A, fresh server | NLL of chunk 2048 alone, plus repeat on same server |
+| F | B, fresh server, default logprob chunk | is the B OOM allocator-history dependent? |
+| G | C + `SGLANG_LOGPROB_CHUNK_SIZE=512`, fresh | is the logprob chunk numerically neutral? |
+
+**Results.**
+
+VRAM (MiB used per rank; 97,887 total) and fit gate:
+
+| Launch | After capture | Worst-case peak (4×30K) | Min free | Stress wall / TTFTs (s) |
+|---|---|---|---|---|
+| A 2048/226 | 93,646 / 93,703 | 94,964 / 95,425 | **2,923 / 2,462** | 269; 86/142/198/252 |
+| B 2048/230 (0.975) | 95,106 / 95,165 | 96,634 / 96,819 | 1,253 / 1,068 | 258; 82/135/189/241 |
+| C 4096/226 (default) | 93,646 / 93,703 | 96,538 / 96,597 | 1,349 / 1,290 | 165; 58/88/119/147 |
+| D 2048/230 + lp512 | 95,106 / 95,165 | 96,862 / 97,049 | 1,025 / 838 | 259 |
+
+H1 confirmed: chunk 2048 at 226 frees ≈ 1.6 / 1.2 GB versus the same-night
+default run C. Note C's own minimum (1,349 MiB) is ≈ 0.5 GB better than the
+E28 reading (779 MiB) for the identical config — run-to-run allocator
+variance is of that order, so the fit gate should be read with a ±0.5 GB
+error bar. B at 230 needed `MEM_FRACTION_STATIC=0.975` (weights 90.41
+GB/rank; +1.40 GB for the 4 experts; KV pool shrinks to 0.60 GB) and then
+passed the stress run with ≥ 1.0 GB free (H2 confirmed, barely).
+
+Decode (median summed / wall tok/s, TTFT s):
+
+| Config | C1 | C3 | C4 |
+|---|---|---|---|
+| control 226 / 4096 (E28 D=4 / E27 soak) | 41.76 / 39.83 / 0.617 | 56.00 / 54.38 | 58.09 / 55.79 |
+| A 226 / 2048 | 42.10 / 40.16 / 0.609 | — | — |
+| B 230 / 2048 | **42.84 / 40.81 / 0.599** | 57.56 / 55.94 / 0.82 | 60.00 / 57.64 / 1.45 |
+
+Chunk size is neutral on decode (A vs control +0.8 % wall, noise). The 4
+extra experts give +1.6 % C1 wall vs A, +2.9 % C3, +3.3 % C4 — H3 confirmed,
+the byte model still predicts tier swaps to within a point.
+`verify-batch-consistency --same-prompt --concurrency 4` PASS at 230.
+
+Prefill (tok/s, TTFT s):
+
+| Config | 16K | 32K |
+|---|---|---|
+| control 226 / 4096 (E27 soak 16K; E28 32K) | 860 / 18.6 | 845 / 38.1 |
+| A 226 / 2048 | 513.9 / 31.2 | 518.3 / 61.8 |
+| D 230 / 2048 | 530.9 / 30.2 | — |
+
+**H4 badly under-predicted: chunk 2048 costs −39 % prefill throughput**, not
+10–20 %. The per-chunk fixed cost (rank-0 CPU expert sync, Engram gather,
+Python launch) is larger than modelled; smaller GEMMs are the minor term.
+
+NLL (`nll-score.py` vs E22 `nll-stream.json`, 4,795 tokens, gate |Δ| ≤ 0.002):
+
+| Launch | When | mean NLL | Δ vs E22 | z (paired) | better/worse tokens |
+|---|---|---|---|---|---|
+| E 2048/226 | fresh | 1.48647 | +0.00033 | −0.09 | 121/149 |
+| E repeat | same server | 1.48647 | **bit-identical to E** | | |
+| C 4096/226 | after stress | 1.48795 | +0.00182 | −0.48 | 143/148 |
+| G 4096/226 + lp512 | fresh | 1.48795 | **Δ 0.0 vs C on every token** | | |
+| D 2048/230 + lp512 | after stress | **1.49491** | **+0.00877 — FAIL** | −2.23 | 141/125 |
+| B 2048/230, default logprob chunk | after stress | **server killed: CUDA OOM** in `input_logprob_processor._forward_by_chunk` (2048 × 129,280 × fp32 = 1.06 GB + 0.53 GB; 0.28–0.76 GB free) | | | |
+| F 2048/230, default logprob chunk | fresh | **same OOM** → not allocator-history dependent | | | |
+
+Attribution: chunk 2048 alone = +0.0003; logprob chunk 512 = exactly 0.0;
+so the +0.0088 is experts 226–229 changing tier. C's reading is bit-identical
+to the E28 G2 reading for the same config, and E's repeat is bit-identical
+to E: **NLL is deterministic per config**, so the tier-swap deltas seen so
+far (222: +0.0055; 226: +0.0018; 230: +0.0088; all vs the E22 reference
+placement) are real distribution shifts, not measurement noise. H5 refuted
+for 230.
+
+GPU: peaks 167 / 179 W and 74 / 71 °C during the 2048-chunk runs (A, B);
+141–146 W / 69 °C at the default chunk (C). 0 NaN / Xid / Traceback in
+every launch log except the two logprob OOMs; EDAC 0/0 throughout.
+
+**Reading.**
+- Break-even (derivation, not measured): the decode gain of B over A is
+  1/40.16 − 1/40.81 ≈ 0.0004 s per output token. A 16K prompt pays
+  +12.6 s of TTFT ⇒ ≈ 31K output tokens to break even; a 2K prompt pays
+  +1.5 s ⇒ ≈ 3.8K tokens. Only prompts under ≈ 1K tokens come out ahead,
+  and C1 wall on a 300-token prompt is what the +2.5 % measures.
+- The largest single VRAM transient the server produces is not the 4×30K
+  decode; it is a `return_logprob` request materialising
+  `logprob_chunk × vocab` fp32 logits (2048 × 129,280 × 4 B = 1.06 GB, plus
+  a bf16 copy). E28's assumption that a CUDA OOM fails the request and not
+  the server was wrong: the scheduler exception calls `kill_process_tree`.
+- `SGLANG_LOGPROB_CHUNK_SIZE=512` (overlay `environ.py`, used by
+  `layers/logprob_processor.py`) is numerically bit-identical and does not
+  materially change NLL end-to-end latency (fresh 25.3 s vs 28.9 s; warm
+  10.6 s vs 7.3 s). It cuts the transient 4×.
+
+**Consequences.**
+- **Reject `CHUNKED_PREFILL_SIZE=2048` + 230 as the default:** −39 %
+  prefill and a failed NLL gate for +1.6 % C1 wall, and it needs a fourth
+  knob (`0.975` + `lp512`) just to keep a logprob request from killing the
+  server. Defaults stay **226 / 4096 / 0.96** (`serve-hybrid.sh`).
+- **Launcher default `SGLANG_LOGPROB_CHUNK_SIZE=512`** (this commit):
+  bit-identical output, free ≈ 0.8 GB of worst-case margin for any
+  `return_logprob` caller, no measured latency cost. Overridable by env.
+- E28 protocol amendment: the fit gate is `stress-kv-full` **then**
+  `nll-score.py` on the same server; a config that passes the stress run
+  but dies on the logprob request has not passed.
+- The NLL gate's ±0.002 threshold was calibrated against measurement noise
+  that turns out to be zero; a tier swap of 4 experts moves it by 0.0003–
+  0.0088. TASKS gets a low-priority row to re-derive the threshold from a
+  held-out corpus rather than from repeat variance (T3.6h).
+- Chunk 2048 is still a legitimate knob for a deployment whose prompts are
+  all short (< 1K tokens) and whose VRAM is under pressure — documented in
+  the launcher comment, not enabled.

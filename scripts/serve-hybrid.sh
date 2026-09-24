@@ -44,6 +44,9 @@ OVERLAY_DIR="${OVERLAY_DIR:-$HOME/dev/src/sglang-dsv41-overlay}"
 # 33.9 -> 36.1 tok/s, C4 47.5 -> 51.9, NLL neutral. 222 is the conservative fallback
 # (~2.9 GB free in the same worst case). Qualified by the E27 served soak 2026-09-23
 # (141K decoded tokens at C1-C4 on 226/158 + capture list 1 2 3 4, 0 NaN, NLL identical).
+# 230 was tried (E29, 2026-09-24): needs CHUNKED_PREFILL_SIZE=2048 + MEM_FRACTION_STATIC=0.975
+# + SGLANG_LOGPROB_CHUNK_SIZE=512 to fit, gives +1.6 % C1 wall for -40 % prefill and
+# fails the NLL gate (+0.0088) - rejected. 226 is the ceiling at this VRAM.
 KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-226}"
 # One kt worker per physical core (E17; E26 A1 on the 16-core 9955WX: 14 and 16
 # threads are a plateau at C1 ≈ 33.5 wall tok/s, 24 costs −12 %, 30 collapses to
@@ -88,9 +91,13 @@ CONTEXT_LENGTH="${CONTEXT_LENGTH:-32768}"
 # 4096 kept ~3.3 GiB VRAM free after a 32K prefill at 208 experts (E26 A4); that
 # headroom is now spent on experts. 8192 (1.4K tok/s prefill) needed ~2.2 GB more
 # and does not fit beside 226 experts (projected from E22's 1.2 GiB at 208); use it
-# only with KT_NUM_GPU_EXPERTS=208. 16384 never fit.
+# only with KT_NUM_GPU_EXPERTS=208. 16384 never fit. 2048 frees ~1.6 / 1.2 GB per
+# rank of worst-case headroom (E29) but costs 40 % of prefill throughput (16K: 860 ->
+# 514 tok/s; the per-chunk CPU sync + Engram gather dominates) and is neutral on
+# decode - only worth it for a deployment whose prompts are all under ~1K tokens.
 CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-4096}"
 MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-4}"
+SGLANG_LOGPROB_CHUNK_SIZE="${SGLANG_LOGPROB_CHUNK_SIZE:-512}"
 # KV pool cap (T3.6g). Left to the fraction, SGLang sized the pool at 1,933,056 tokens
 # (~3.3 GB/rank) for a server that admits MAX_RUNNING_REQUESTS x CONTEXT_LENGTH =
 # 131,072 - 15x oversized (E26 A4). Derived here as slots x context + one 16K chunk
@@ -181,6 +188,11 @@ docker_cmd=(
   # SM120 indexer defaults pick paths V4.1 cannot take (TROUBLESHOOTING).
   -e SGLANG_OPT_USE_TILELANG_INDEXER=0
   -e SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0
+  # A return_logprob request materialises chunk x 129,280-vocab fp32 logits: 1.06 GB at
+  # SGLang's default 2048, the largest single allocation the server makes, and a CUDA
+  # OOM there kills the server, not the request (E29). 512 is bit-identical (NLL delta 0.0
+  # on every token) and no slower end to end.
+  -e "SGLANG_LOGPROB_CHUNK_SIZE=${SGLANG_LOGPROB_CHUNK_SIZE}"
   -e "KT_GPU_PREFILL_MIN_TOKENS=${KT_GPU_PREFILL_MIN_TOKENS}"
   -e "KT_GPU_PREFILL_LOG=${KT_GPU_PREFILL_LOG}"
   -e "KT_NAN_PROBE_MIN_TOKENS=${KT_NAN_PROBE_MIN_TOKENS}"

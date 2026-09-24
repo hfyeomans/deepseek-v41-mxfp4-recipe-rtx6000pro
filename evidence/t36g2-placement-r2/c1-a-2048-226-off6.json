@@ -1,0 +1,240 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 512,
+  "runs": 12,
+  "warmup": 0,
+  "distinct_prompts": true,
+  "fixture_offset": 6,
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 42.103568371338625,
+      "min_tps": 41.1178595015277,
+      "max_tps": 42.725873591200134,
+      "median_wall_tps": 40.164654759101296,
+      "median_ttft_s": 0.6086374809992776,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 41.1178595015277,
+          "wall_tps": 37.31484619109392,
+          "wall_s": 13.721080274000997,
+          "per_seq_tps": [
+            41.1178595015277
+          ],
+          "ttft_s": [
+            1.292287774000215
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 41.90514831560708,
+          "wall_tps": 39.9887114835379,
+          "wall_s": 12.803613345000485,
+          "per_seq_tps": [
+            41.90514831560708
+          ],
+          "ttft_s": [
+            0.6087853329991049
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 42.15213068320004,
+          "wall_tps": 40.211934566427196,
+          "wall_s": 12.732538374999422,
+          "per_seq_tps": [
+            42.15213068320004
+          ],
+          "ttft_s": [
+            0.6092947180004558
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 42.725873591200134,
+          "wall_tps": 40.75736659722557,
+          "wall_s": 12.56214625100074,
+          "per_seq_tps": [
+            42.725873591200134
+          ],
+          "ttft_s": [
+            0.6017903899992234
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 42.40984771211127,
+          "wall_tps": 40.467967273828755,
+          "wall_s": 12.651982160001353,
+          "per_seq_tps": [
+            42.40984771211127
+          ],
+          "ttft_s": [
+            0.6023296200000914
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 41.97159060782067,
+          "wall_tps": 40.05404851061576,
+          "wall_s": 12.782727814999816,
+          "per_seq_tps": [
+            41.97159060782067
+          ],
+          "ttft_s": [
+            0.6072929820002173
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 42.0550060594772,
+          "wall_tps": 40.11737495177539,
+          "wall_s": 12.762549908000437,
+          "per_seq_tps": [
+            42.0550060594772
+          ],
+          "ttft_s": [
+            0.6112725879993377
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 42.179287687010955,
+          "wall_tps": 40.24838735697595,
+          "wall_s": 12.7210065700001,
+          "per_seq_tps": [
+            42.179287687010955
+          ],
+          "ttft_s": [
+            0.6056046969988529
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 41.5815167053711,
+          "wall_tps": 39.69569594879984,
+          "wall_s": 12.89812378300121,
+          "per_seq_tps": [
+            41.5815167053711
+          ],
+          "ttft_s": [
+            0.6084896289994504
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 42.196478288446855,
+          "wall_tps": 40.21730648317661,
+          "wall_s": 12.730837660999896,
+          "per_seq_tps": [
+            42.196478288446855
+          ],
+          "ttft_s": [
+            0.6202398019995599
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 42.43042508142559,
+          "wall_tps": 40.46220772052852,
+          "wall_s": 12.653783094001483,
+          "per_seq_tps": [
+            42.43042508142559
+          ],
+          "ttft_s": [
+            0.6100297419998242
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 41.90470699370106,
+          "wall_tps": 39.98996335336654,
+          "wall_s": 12.803212532999169,
+          "per_seq_tps": [
+            41.90470699370106
+          ],
+          "ttft_s": [
+            0.608160133999263
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-09-23T20:05:01-0400"
+}
