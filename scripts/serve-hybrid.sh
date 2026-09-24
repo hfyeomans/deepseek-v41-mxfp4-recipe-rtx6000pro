@@ -160,6 +160,42 @@ fi
 if [[ -n "$MAX_TOTAL_TOKENS" ]]; then
   server_args+=(--max-total-tokens "$MAX_TOTAL_TOKENS")
 fi
+
+# --- startup validation (T3.16b; maintainability review section 7.7-7.8) ----------
+# Refuse combinations the evidence already condemned; each has an explicit override so
+# an experiment can still run them on purpose. The check runs before any docker call.
+fail_config() { echo "FAIL config: $*" >&2; exit 2; }
+if (( KT_MAX_DEFERRED >= 5 )) && [[ "${KT_ALLOW_UNSAFE_DEFERRAL:-0}" != "1" ]]; then
+  fail_config "KT_MAX_DEFERRED=$KT_MAX_DEFERRED: D>=5 fails the NLL gate (+0.00287, T3.15) and the greedy" \
+    "consistency gate; D=6 loses 0.23 nats/token (E21). Set KT_ALLOW_UNSAFE_DEFERRAL=1 to run it anyway."
+fi
+if [[ "${ALLOW_UNTESTED_FIT:-0}" != "1" ]]; then
+  if (( KT_NUM_GPU_EXPERTS > 226 )) && (( CHUNKED_PREFILL_SIZE >= 4096 )); then
+    fail_config "KT_NUM_GPU_EXPERTS=$KT_NUM_GPU_EXPERTS with CHUNKED_PREFILL_SIZE=$CHUNKED_PREFILL_SIZE:" \
+      "226 is the fit ceiling for 4 x 32K slots (E28; 230 needed chunk 2048 + fraction 0.975 and failed" \
+      "the NLL gate, E29). Set ALLOW_UNTESTED_FIT=1 to try, then run stress-kv-full.py followed by nll-score.py."
+  fi
+  if (( CHUNKED_PREFILL_SIZE >= 8192 )) && (( KT_NUM_GPU_EXPERTS > 208 )); then
+    fail_config "CHUNKED_PREFILL_SIZE=$CHUNKED_PREFILL_SIZE needs ~2.2 GB more than 4096 and only fits" \
+      "beside KT_NUM_GPU_EXPERTS<=208 (E22/E28). Set ALLOW_UNTESTED_FIT=1 to try."
+  fi
+  if [[ "$DSPARK" == "1" ]] && (( KT_NUM_GPU_EXPERTS > 208 )); then
+    fail_config "DSPARK=1 adds 3.85 GB/rank of draft stages; it was only ever fitted at KT_NUM_GPU_EXPERTS=208" \
+      "with MEM_FRACTION_STATIC=0.935 (E23). Set KT_NUM_GPU_EXPERTS=208 or ALLOW_UNTESTED_FIT=1."
+  fi
+fi
+if [[ "$DSPARK" == "1" ]] && (( DSPARK_K > 5 || DSPARK_K < 1 )); then
+  fail_config "DSPARK_K=$DSPARK_K outside the tested 1..5 (E23 R0-R3)."
+fi
+
+# Resolved configuration, one line, so a launch log names every knob that decides the
+# result (the container log prints SGLang's own server_args; kt logs its capture sizes
+# as 'KT_BUF capture sizes registered').
+echo "resolved: experts gpu=${KT_NUM_GPU_EXPERTS} cpu=$((384 - KT_NUM_GPU_EXPERTS)) deferral D=${KT_MAX_DEFERRED}" \
+  "cpuinfer=${KT_CPUINFER} chunk=${CHUNKED_PREFILL_SIZE} mem_fraction=${MEM_FRACTION_STATIC} context=${CONTEXT_LENGTH}" \
+  "slots=${MAX_RUNNING_REQUESTS} max_total_tokens=${MAX_TOTAL_TOKENS:-fraction-sized} capture_bs=[${CUDA_GRAPH_BS:-derived<=${CUDA_GRAPH_MAX_BS}}]" \
+  "dspark=${DSPARK} dspark_k=${DSPARK_K} gpu_prefill_min=${KT_GPU_PREFILL_MIN_TOKENS} logprob_chunk=${SGLANG_LOGPROB_CHUNK_SIZE}" \
+  "nan_probe_min=${KT_NAN_PROBE_MIN_TOKENS} image=${IMAGE}"
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 server_args+=($EXTRA_SERVER_ARGS)
 

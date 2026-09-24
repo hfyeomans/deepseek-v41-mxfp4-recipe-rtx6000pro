@@ -1,0 +1,103 @@
+--- a/kt_kernel/experts_base.py
++++ b/kt_kernel/experts_base.py
+@@ -233,8 +233,28 @@
+ 
+         pin_memory = True
+ 
++        # T3.16a (recipe review section 7.2-7.3): every buffer decision made while a
++        # CUDA graph is capturing must be one the graph can safely bake. Fail here,
++        # at capture, rather than corrupt memory at replay (kt-kernel bug C, E23).
++        try:
++            capturing = torch.cuda.is_current_stream_capturing()
++        except Exception:
++            capturing = False
++        if capturing:
++            assert batch_size in cls.capture_bs, (
++                f"KT_BUF capturing unregistered kt buffer size bs={batch_size}; "
++                f"registered capture_bs={sorted(cls.capture_bs)}, "
++                f"cached={sorted(cls.capture_buffers)}. Register every decode and "
++                f"speculative-verify size with set_capture_batch_sizes() before capture."
++            )
++
+         if batch_size in cls.capture_buffers:
+-            return cls.capture_buffers[batch_size]
++            cached = cls.capture_buffers[batch_size]
++            assert cached[0][0].shape == (batch_size, hidden_size), (
++                f"KT_BUF cached tuple for bs={batch_size} has shape "
++                f"{tuple(cached[0][0].shape)}, request wants ({batch_size}, {hidden_size})"
++            )
++            return cached
+         if batch_size == cls.temp_bs:
+             if batch_size in cls.capture_bs:
+                 # FIX 1 (E23 R3): this size was first requested before
+@@ -252,15 +272,22 @@
+                 )
+             return cls.temp_buffer
+ 
++        # T3.16a (review 7.3): reaching an allocation while capturing means the
++        # graph would bake pinned/device addresses that no permanent owner holds
++        # (the size is registered - asserted above - but was never warmed up, or
++        # the warmup ran at a different size). SGLang warms every capture size
++        # before capturing it, so this never fires on a healthy launch.
++        assert not capturing, (
++            f"KT_BUF temporary allocation during CUDA graph capture: bs={batch_size}, "
++            f"capture_bs={sorted(cls.capture_bs)}, cached={sorted(cls.capture_buffers)}, "
++            f"temp_bs={cls.temp_bs}. Warm this size up eagerly before capturing it."
++        )
++
+         # --- E23 R3 diagnostic (recipe repo, bind-mounted; not in the image) ---
+         # Log every temp-buffer (re)allocation. A capture-time hit here means a
+         # CUDA graph is baking the temp buffer's pinned/device addresses, which
+         # the next different-size eager call would free (use-after-free -> CE
+         # write fault / host segfault in cuGraphLaunch).
+-        try:
+-            capturing = torch.cuda.is_current_stream_capturing()
+-        except Exception:
+-            capturing = False
+         import traceback as _tb
+ 
+         frames = [
+@@ -337,7 +364,20 @@
+         old = cls.temp_buffer
+         if not old:
+             return
++        # T3.16a (review 7.4): a tuple a graph holds is never retired. If the temp
++        # tuple is owned by the capture cache it must be owned under its own size;
++        # any other identity match means two sizes share one tuple, which is the
++        # bug-C shape of failure.
++        captured_under = [bs for bs, buf in cls.capture_buffers.items() if buf is old]
++        assert captured_under in ([], [cls.temp_bs]), (
++            f"KT_BUF temp tuple (temp_bs={cls.temp_bs}) is owned by the capture cache "
++            f"under sizes {captured_under}; refusing to retire or alias it"
++        )
+         if cls.temp_bs in cls.capture_buffers:
++            assert cls.capture_buffers[cls.temp_bs] is old, (
++                f"KT_BUF capture cache holds a different tuple for bs={cls.temp_bs} "
++                f"than the temp slot; the temp slot would be freed while registered"
++            )
+             return  # permanently owned by the capture cache
+         event = None
+         if device is not None and device.type == "cuda":
+@@ -993,7 +1033,21 @@
+         Example:
+             >>> BaseMoEWrapper.set_capture_batch_sizes([1, 2, 4, 8, 16])
+         """
+-        KExpertsCPUBuffer.capture_bs = capture_bs
++        # T3.16a (recipe review 7.9): registration accumulates. SGLang builds one
++        # graph runner per forward mode (decode, target-verify, draft) and each
++        # registers its own token counts; replacing the list would deregister the
++        # sizes an earlier runner already captured, and a later capture at one of
++        # those sizes would then fail the capture-time assertion in get_buffer
++        # (or, unasserted, bake a temp tuple - bug C).
++        merged = sorted(set(KExpertsCPUBuffer.capture_bs) | set(int(b) for b in capture_bs))
++        logger.info(
++            "KT_BUF capture sizes registered: requested=%s previously=%s now=%s cached=%s",
++            sorted(int(b) for b in capture_bs),
++            sorted(KExpertsCPUBuffer.capture_bs),
++            merged,
++            sorted(KExpertsCPUBuffer.capture_buffers),
++        )
++        KExpertsCPUBuffer.capture_bs = merged
+ 
+     @staticmethod
+     def get_capture_batch_sizes() -> List[int]:

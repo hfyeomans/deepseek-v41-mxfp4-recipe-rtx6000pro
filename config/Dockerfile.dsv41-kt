@@ -31,6 +31,10 @@ RUN pip download --no-cache-dir --no-deps -d /tmp/ktw "kt-kernel==${KT_KERNEL_VE
 # capture_bs (else the bs=max verify graph bakes addresses the next eager call
 # frees -> host segfault in cuGraphLaunch / Xid 31 CE write fault), and retire
 # replaced temp buffers behind a CUDA event. Not upstream (kt issue #1815).
+# 0002 (T3.16a, 2026-09-24): capture-time assertions - a size captured must be
+# registered and already warmed (no allocation while capturing), a tuple a graph
+# holds is never retired, set_capture_batch_sizes merges across graph runners
+# instead of replacing. Tested by scripts/tests/run-kt-buffer-tests.sh.
 COPY kt-kernel-patches /opt/recipe/kt-kernel-patches
 RUN cd /opt/sglang/lib/python3.12/site-packages \
  && for p in /opt/recipe/kt-kernel-patches/*.patch; do patch -p1 --forward < "$p"; done
