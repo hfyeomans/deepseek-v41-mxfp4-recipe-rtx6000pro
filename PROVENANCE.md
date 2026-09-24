@@ -51,6 +51,7 @@ Base: upstream `sgl-project/sglang` commit `da64c5cb` ("[DSV4.1] Support raw-ind
 - `b457c4e6`, `4685955e`, `07f4aef0` breakable-graph fault attribution diagnostics (`SGLANG_BCG_DEBUG_SYNC`, `SGLANG_BCG_DEBUG_EAGER`) (E23 R1/R3); `838490a6` SM120 page-split never frees graph-captured buffers (E23 R3); `cad73914` NaN probe skips itself under capture (T3.16a). T3.16f owes these their review-section links.
 - `8ad514ed` kt capture sizes registered before the eager autotune forward; post-capture captured ⊆ registered ⊆ cached assertion (T3.16c).
 - `7e41317e` B2 direct-UVA experts in `kt_ep_wrapper` (`KT_B2_UVA_EXPERTS`, `KT_B2_MAX_TOKENS`, side-stream fork/join); off by default after E30 measured +2 % (T3.18).
+- `b93cb915` `kt_contract.py`: executable SGLang→kt boundary contract (`check_moe_boundary`, every `apply`) and rank-topology contract (`check_moe_topology`, once per layer after weight load); `KTContractError`; metadata-only, graph-capture safe (T3.16d).
 
 ## Qualification status
 

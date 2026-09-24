@@ -183,6 +183,26 @@ Why: SGLang scores input logprobs (what `scripts/nll-score.py` and any `logprob`
 
 Fix: `serve-hybrid.sh` now sets `SGLANG_LOGPROB_CHUNK_SIZE=512` by default (overlay `srt/environ.py`, used by `srt/layers/logprob_processor.py`). E29 G measured it bit-identical to 2048 on all 4,795 NLL tokens (Δ 0.0) with no material end-to-end change (fresh 25.3 s vs 28.9 s; warm 10.6 s vs 7.3 s). If it still fires, the config has no headroom: lower `KT_NUM_GPU_EXPERTS` (226 → 222) rather than the chunk. The fit gate for any placement/chunk change is `stress-kv-full.py` **then** `nll-score.py` on the same server, in that order.
 
+## `KTContractError: layer N: …` at weight load, graph capture, or the first forward
+
+**Since** 2026-09-24 (T3.16d, overlay `b93cb915`). `sglang/srt/layers/moe/kt_contract.py` is the written-down SGLang→kt-kernel contract; it raises instead of letting kt's pinned staging buffers cast silently or letting a mis-sized TP group return zeros for the CPU tier. Two entry points, both metadata-only (no device sync, so they run under CUDA-graph capture):
+
+- `check_moe_topology` — once per MoE layer at the end of `process_weights_after_loading`. Messages and what they mean:
+  - `moe_ep_size=N: the contiguous GPU/CPU expert split …` — expert parallelism was enabled (`--ep-size > 1`). The hybrid assumes every rank sees every expert index; run TP only.
+  - `MoE TP group (rank a/b) differs from the model TP group (rank c/d)` — `--moe-tp-size`/dense-TP overrides split the MoE differently from attention. Ranks ≠ 0 return zeros for the CPU tier and rely on the TP all-reduce to fill them in; that only holds when the two groups coincide.
+  - `kt wrapper present=… on tp_rank=…; exactly rank 0 …` — the CPU tier was built on a rank other than 0, or not built on rank 0. This is the rank-0 ownership invariant (review C9); until T3.22 lands a rank-balanced design, any other topology is unsupported.
+  - `num_gpu_experts=N must be in [0, 384)` — `KT_NUM_GPU_EXPERTS` ≥ the model's expert count (no CPU tier left) or negative. Use `serve-hybrid.sh`, which already caps it at the qualified 226.
+  - `max_deferred_experts_per_token=D must be in [0, top_k=6)` — `KT_MAX_DEFERRED ≥ 6` would defer every routed expert. `serve-hybrid.sh` refuses ≥ 5 first; this is the backstop if it is bypassed.
+  - `KT_B2_UVA_EXPERTS=n must be in (0, num_cpu)` / `… needs the streamed-prefill export path` — B2 (off by default, rejected in E30) was enabled with a subset larger than the CPU tier, or without the streamer it aliases. Set `KT_B2_UVA_EXPERTS=0`.
+- `check_moe_boundary` — at the top of every `apply`, every rank. Messages:
+  - `hidden_states (…) must be [tokens, 5120]` / `empty forward (0 tokens)` — a caller flattened or batched the hidden states differently from the fused-MoE convention, or an empty batch reached the MoE. Neither has happened on the recipe launch; if it does, the traceback names the forward mode (decode graph, verify graph, streamed prefill) that produced it.
+  - `topk_ids (…) must be [tokens, 6]` / `topk_weights (…)` — router output width ≠ `top_k`, usually a speculative-verify batch whose row count was not rescaled (E23 R1 territory).
+  - `topk_ids dtype … must be int32 or int64` / `topk_weights dtype … must be floating point` / `hidden_states dtype … must be bfloat16` — kt-kernel's `input_tensor_cpu` is hardcoded bf16, ids long, weights fp32; anything else would be converted per step by `copy_` with no log line. If you changed `--dtype`, the hybrid does not support it.
+  - `… is not contiguous` — a sliced or transposed view reached the boundary; the non-blocking pinned copy would read the wrong bytes. Call `.contiguous()` at the producer, not here.
+  - `… on cuda:1 but hidden_states on cuda:0` — mixed devices in one rank's forward; a TP-placement bug upstream of the MoE.
+
+Verify the contract itself without a GPU: `bash scripts/tests/run-kt-contract-tests.sh` (14 tests, each flips one value from the qualified config). Served on the recipe defaults the contract has never fired; the T3.16d gate showed C1 39.63 wall vs 39.86 control and a bit-identical NLL, so it costs nothing to leave on.
+
 ## GPU0 reads 100 % utilisation, P0, ~94 W with no model loaded (and it keeps coming back)
 
 Seen after every server crash that ends in a device-side assert (the NaN entries above). `journalctl -k | grep Xid` shows one `NVRM: Xid (PCI:0000:01:00): 43` (GPU0) and one for `c1:00` (GPU1) per crash — 43 is "GPU stopped processing, user-level fault". GPU1 recovers to P8; GPU0 is left with a faulted channel the driver still samples as busy: `nvidia-smi` shows 100 % utilisation, 2 MiB used, P0, SM clock 2,325 MHz, ~94 W, and `--query-compute-apps` lists nothing. It is a phantom for throughput — a fresh context on GPU0 measured 305 TFLOP/s bf16 GEMM and 1,365 GiB/s D2D against 308 / 1,367 on GPU1 — but the clocks stay pinned (≈ 68 W wasted at idle) and nvtop/nvidia-smi are useless until it clears. It "happens more often" exactly as often as the server asserts.

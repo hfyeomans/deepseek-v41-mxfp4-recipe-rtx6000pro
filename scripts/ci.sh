@@ -15,6 +15,10 @@ bash -n "$ROOT"/scripts/tests/*.sh
 if bash "$ROOT/scripts/tests/run-kt-buffer-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt buffer-lifetime tests (exit $rc)"; exit 1; fi
 fi
+# SGLang->kt boundary/topology contract tests (T3.16d) run the same way against the overlay checkout.
+if bash "$ROOT/scripts/tests/run-kt-contract-tests.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt contract tests (exit $rc)"; exit 1; fi
+fi
 # The verdict in README must match the calculator: 2 GPUs must not fit GPU-resident, but must fit the hybrid with NVMe Engram.
 if python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout engram-host >/dev/null; then
   echo 'FAIL calculator says 2 GPUs fit; README verdict is stale'; exit 1

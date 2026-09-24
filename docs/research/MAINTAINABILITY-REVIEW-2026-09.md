@@ -558,7 +558,7 @@ Standing task T3.16i: refresh the hotspot map and debt register after each stage
 | C6 | **Closed for known-bad combinations** | T3.16b: fit refusals (experts/chunk/DSpark), `DSPARK_K` range, B2 constraints, one `resolved:` line per launch. `EXTRA_*` word splitting is unchanged by design (escape hatch). |
 | C7 | **Closed** | E23 records amended; erratum rows in BENCHMARKS, EXPERIMENTS, this review. |
 | C8 | **Closed** | T3.16c (`8ad514ed`): capture sizes registered before the autotune forward; captured ⊆ registered ⊆ cached asserted after decode capture; 8/8 `scripts/tests/` pass. |
-| C9 | Open — **now the gating item for T3.19b** | Rank-0 zeros path still unasserted. B2 (`7e41317e`) added a *second* per-rank contract (every rank computes its own B2 slice, only rank 0 runs kt), so the topology assertion must now name both. |
+| C9 | ~~Open — **now the gating item for T3.19b**~~ **Closed 2026-09-24 (T3.16d)** — `check_moe_topology` asserts kt wrapper present iff `tp_rank == 0`, MoE-TP == model-TP, `moe_ep == 1`, and the B2 subset bounds, once per layer after weight load; the zeros path is derived from that (no wrapper off rank 0) rather than checked per step. T3.19b no longer blocked. Original text: Rank-0 zeros path still unasserted. B2 (`7e41317e`) added a *second* per-rank contract (every rank computes its own B2 slice, only rank 0 runs kt), so the topology assertion must now name both. |
 | C10 | Open | E24 per-request NaN rejection not proven; T3.13. |
 | C11 | **Closed** | `verify-batch-consistency.py --same-prompt` runs at every captured width in every serve since 2026-09-23 (E28, E29, E30 all PASS). |
 | R1 | **Worse** | `KTEPWrapperMethod` grew by ≈ 300 lines (B2: `_B2HostPool`, `_B2UvaExperts`, `_uva_view`, `remap_topk_ids_for_b2`, `_b2_stream`, `submit(num_kt_experts)`). See R9. |
@@ -594,7 +594,7 @@ Concentration of risk (update): hotspot 16 adds a fourth instance of the §2 "im
 | 2 D ≥ 5 startup gate | Done (T3.16b) |
 | 3 capture-time assertions | Done (kt patch 0002; §7.2–7.4); §7.5/7.6 → T3.19 |
 | 4 capture-size reservation before autotune | Done (`8ad514ed`) |
-| 5 boundary shape/topology assertions | **Open → T3.16d, next** |
+| 5 boundary shape/topology assertions | Done (T3.16d, overlay `b93cb915`: `kt_contract.py`, 14 CPU tests, serve gate bit-identical NLL) |
 | 6 E23 wording | Done |
 | 7 provenance SHAs | Done |
 | 8 deterministic non-server tests | Partly: 8 kt-buffer tests exist; deferred-adjacency and graph/eager parity → T3.16e |
@@ -602,6 +602,6 @@ Concentration of risk (update): hotspot 16 adds a fourth instance of the §2 "im
 
 ### Pass 1 bottom line
 
-- **Measured:** 7 of 11 immediate-correctness items are closed or reclassified; the open ones (C4, C9, C10 and the C3/C5 halves) are all "assert or gate a boundary" items, and C9 is the direct prerequisite for T3.19b/T3.22.
+- **Measured:** 7 of 11 immediate-correctness items are closed or reclassified; the open ones (C4, C9, C10 and the C3/C5 halves) are all "assert or gate a boundary" items, and C9 is the direct prerequisite for T3.19b/T3.22. *(Update 2026-09-24: C9 closed by T3.16d; remaining open: C4, C10, halves of C3/C5.)*
 - **Measured:** the only new complexity since the review is the B2 prototype, and it is off by default. It goes out with T3.19 except for two reusable pieces.
-- **Inferred:** the sequencing rule from §9 still holds — contracts (T3.16d) → seams (T3.19) → ownership (T3.22). Nothing measured since the review argues for moving native work earlier.
+- **Inferred:** the sequencing rule from §9 still holds — contracts (T3.16d, done 2026-09-24) → seams (T3.19) → ownership (T3.22). Nothing measured since the review argues for moving native work earlier.
