@@ -32,6 +32,8 @@ This order avoids implementing rank-0 assumptions twice. Low-coupling kernel/dat
 
 ## Executive sequencing answer
 
+> **Sequencing amendment (2026-09-24, owner decision):** the Stage 1 Python-level refactor (adapters, runner-owned state, prefill coordinator, typed flags — `plan/TASKS.md` T3.19) runs *before* Stage 3, immediately after the B2 prototype's verdict (T3.18), not after the architecture stabilises. The original "do not refactor what multi-rank may invalidate" argument applies to *native* code (Stage 4, T3.23), which stays deferred; Python seams are what Stage 3 consumes. The E24 precondition on refactoring is dropped. Stage rows: T3.19 (1), T3.20/T3.21 (2), T3.22 (3), T3.23 (4), T4.1b (5).
+
 **Do before changing ownership across TP ranks:**
 
 - **Projected work:** replace the large-M block-scaled FP8 prefill path with a CUTLASS/DeepGEMM implementation behind the existing matmul contract. E20 measured only about **15% of FP8 peak** at `M=4096`; ownership does not change the GEMM mathematics.
