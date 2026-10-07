@@ -804,8 +804,8 @@ prefill and decode cost, and does the fix also give the 32K / 4-slot deployment 
 copy, so it recovers ≈ 0.75 GB and is enough for 64K / 4 slots and probably 128K / 1 slot, but
 cannot reach 262K (the 4 GiB logits remain). (b) Tiling the scoring over key blocks with a running
 top-k makes the transient O(chunk × block) and removes the context dependence entirely; cost is a
-second pass over the scores, expected ≤ 5 % of prefill at 32K. (c) Fewer GPU experts (≈ 150 MB per
-expert across 40 layers; 262K needs ≈ 27 fewer, 1M ≈ 105 fewer) pays the E28 byte model in C1/C4
+second pass over the scores, expected ≤ 5 % of prefill at 32K. (c) Fewer GPU experts (0.34 GB per
+expert per rank, E28; 262K needs ≈ 12 fewer, 1M ≈ 47 fewer) pays the E28 byte model in C1/C4
 and is the fallback only.
 
 **Protocol.** Part a: overlay one-line change, serve at 64K / 4 slots then 128K / 1 slot, E33

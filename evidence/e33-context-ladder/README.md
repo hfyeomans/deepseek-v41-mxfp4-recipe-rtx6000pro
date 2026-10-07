@@ -56,8 +56,9 @@ separate experiment"):
 - **E34b (real fix, upstream-PR candidate):** tile the dense indexer scoring over key blocks
   with a running top-k so the transient is O(chunk × block) instead of O(chunk × prefix).
   Removes the context dependence; cost is a second pass over the scores.
-- **E34c (placement trade, derived):** ≈ 150 MB per GPU expert across 40 layers; 262K needs
-  ≈ +4 GB (≈ 27 fewer GPU experts, ≈ −8 % C4 by the E28 byte model); 1M ≈ +16 GB. Chunk 2048
+- **E34c (placement trade, derived):** 0.34 GB per GPU expert per rank (E28); 262K needs
+  ≈ +4 GB (≈ 12 fewer GPU experts, ≈ −7 % C4 / −4 % C1 by the E28 byte model); 1M ≈ +16 GB
+  (≈ 47 fewer, ≈ −30 % C4). Chunk 2048
   halves the logits at −40 % prefill (E29). Neither is attractive next to E34b.
 
 ## Side observation
