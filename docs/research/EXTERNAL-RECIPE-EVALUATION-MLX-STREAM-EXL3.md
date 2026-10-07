@@ -171,6 +171,13 @@ Yes, with two qualifications.
 Nothing here moves T3.19b. E31 and E32 are low-coupling, opt-in and cheap; they ride on G1 gate
 serves or on T3.20's window and do not change the G1 → G6 sequence.
 
+## 7a. Addendum (2026-10-07): the TensorFold GLM-5.3-Flash recipe on the same two cards
+
+The owner's other local recipe, `~/dev/src/GLM-5.3-Flash-EXL3-2x-RTX-PRO-6000-TensorFold` (Aevonix Research with Mia's AI Lab, Apache-2.0; TensorFold v0.6.5), serves GLM-5.3-Flash EXL3 4 bpw resident on 2× RTX PRO 6000 with a 1,062,912-token FP8 KV pool, 524,288 tokens per request, 4 slots and a drafter. Two things it settles for us:
+
+- **Engine switch: no.** GLM-5.3-Flash at 4 bpw fits two cards, so TensorFold's work is a resident model with launch tables and a drafter. V4.1-Flash does not fit two cards at any 4-bit format; the kt-kernel CPU tier, file-backed Engram, streamed prefill and D=4 deferral are SGLang-overlay work with no counterpart in TensorFold, which has no DeepSeek family and no host-RAM expert tier. Its 524K context is a model that leaves ≈ 40 GB free per card; our 64K limit (E33) is a model that leaves 4 GB and an upstream indexer scorer that grows with prefix — fix the scorer (E34), not the engine.
+- **Autotune method: borrow it (T3.27).** `scripts/glm_autotune.py` tunes per kernel × weight shape × M-row bucket and only times candidates whose outputs are bit-identical to the default (raw bits, sentinel-filled outputs, both ends of each bucket, several seeds), L2 flushed, winner must beat the default by > 2 % and by more than the run spread, written as a per-GPU launch table. On this box its `q4_prefill` sweep read e.g. `4096x4096 rows 2049-4096: 36/36 exact, 604.4 us -> 518.5 us (+14.2 %)` and `160x4096 rows 1-256: 90.3 us -> 20.8 us (+77.0 %)`. That is E20 done properly: our seven-shape FP8 table was hand-picked and validated after the fact; a sweep with exactness-first is the test it lacked. Ceiling here is bounded by the T3.19a timeline (GEMM slices ≈ 10–20 % of the bs=1 step → 2–8 % C1) and by E29 (prefill is per-chunk fixed cost, not GEMM efficiency), which is why it sits after T3.21 in G2 rather than now.
+
 ## 8. Registered follow-ups
 
 | ID | What | Where |
