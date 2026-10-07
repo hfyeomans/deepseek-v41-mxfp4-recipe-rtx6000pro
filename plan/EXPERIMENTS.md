@@ -790,8 +790,18 @@ the measured limit), and the TTFT / prefill rows the mlx-stream comparison (T3.2
 
 ## E34 — Indexer score memory: make the DSV4 sparse-attention prefill transient independent of prefix length (GPU; T3.26)
 
-**Status:** registered 2026-10-07 from the E33 failure; not run. Three parts, each its own serve,
-in order a → b → c; stop after the first part that qualifies the target rung.
+**Status:** registered 2026-10-07 from the E33 failure. **Part a done 2026-10-07** (overlay
+`1953a92e`, budget 256 MiB, two serves): **64K / 4 slots passes every gate** (4 × 62K stress all
+finished, needles 6/6, NLL 0 moved, C1 42.20 / 40.26 wall, min free 641 / 582 MiB, health 0) and
+**128K / 1 slot still fails gate (b)**, now at ≈ 110K prefix instead of ≈ 65K, on the `[4096, lc]`
+bool mask of `scores.masked_fill_(j >= lens)` (448 MiB) over the 1.75 GiB logits. The pad copy is
+no longer the binder; the logits and their mask are — exactly what part b removes. Hypothesis (a)
+half held (64K / 4 slots yes, 128K / 1 slot no; margin arithmetic was ≈ 1 GB optimistic because
+the broadcast mask and the other slots' working set were not counted). 256 MiB stays as the
+overlay default (no measured cost); 64K / 4 slots is a qualified rung, not the deployment default.
+Evidence [`evidence/e34-indexer-memory/a/`](../evidence/e34-indexer-memory/a/README.md).
+**Part b next.** Three parts, each its own serve, in order a → b → c; stop after the first part
+that qualifies the target rung.
 
 **Question.** E33 stops at 128K / 1 slot and 64K / 4 slots because the DSV4 indexer scores each
 4096-token prefill chunk against the whole prefix in fp32 (`[chunk, lc]`, 64 MiB per 4K of prefix)

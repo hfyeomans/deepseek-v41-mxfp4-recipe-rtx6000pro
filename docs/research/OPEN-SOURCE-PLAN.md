@@ -91,6 +91,7 @@ Do not submit the hybrid runtime as one PR. Each unit below lists the change, th
 - **Tests**: CPU test that the tiled top-k block masks are bit-equal to the dense path on random `[chunk, lc]` inputs and on the E33 prefix shapes; a serve-level check that the 4K NLL corpus is bit-identical (0 tokens moved); the E33 ladder resumed from 128K.
 - **Scope limits**: the scorer only; no change to the KV layout, candidate block size or top-k semantics. E34a (lowering the budget constant) is a probe, not the PR.
 - **Related upstream state**: not yet checked; do so before writing the PR (the constant's comment "transients run ~3x this" suggests upstream knows the bound and sized it for 141–192 GB cards).
+- **E34a (measured, overlay `1953a92e`)**: the 256 MiB budget qualifies 64K × 4 slots and moves the 128K OOM from ≈ 65K to ≈ 110K prefix; the residual is the `[4096, lc]` fp32 logits plus the `[4096, lc]` bool from `masked_fill_(j >= lens)`. A rider PR for the budget alone is defensible (one constant, no semantics); the tiled scorer is the real one.
 
 ### Diagnostics worth offering as opt-in flags (from the same bisect)
 

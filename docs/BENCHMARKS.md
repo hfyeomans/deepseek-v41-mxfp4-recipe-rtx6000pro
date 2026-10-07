@@ -439,7 +439,14 @@ What the numbers say:
 - **The deployment profile sits on the same edge.** E28's worst case (4 × 30K, min free 779 MiB) and E29's chunk-2048 reading (min free 2,923 MiB, ≈ 1.5 GB more, at −40 % prefill) are this transient at 32K; chunk size halves the logits, which is why chunk 2048 bought margin.
 - **The ladder stops here, not at a placement**: 262K / 512K / 1M were not launched. At 226 / 158 the fix is in the scorer, not in the expert split (E34c's trade of ≈ 12 experts for 262K (0.34 GB per expert per rank, E28) costs ≈ −7 % C4 / −4 % C1 by the E28 byte model and still leaves 1M out of reach).
 
-Verdict: **qualified limit 64K single-slot; deployment stays 32K / 4 slots.** The 262K target of T3.6e–g closes as "limit measured" and resumes from 128K when T3.26 / E34 lands (E34a budget constant 256 MiB as the one-liner probe; E34b tiled key-block scoring with running top-k as the real fix and upstream-PR candidate). GPU0 showed the documented 100 % / P0 phantom with no model loaded between the 128K and 64K / 4-slot serves and cleared on its own (0 % / 15.8 W after teardown, 0 Xid).
+**E34a addendum (2026-10-07, overlay `1953a92e`, budget 256 MiB):**
+
+| Rung | Slots | Free after capture | Stress-kv | Needles | NLL | C1 summed / **wall** / TTFT | Min free during stress | Result |
+|---|---|---|---|---|---|---|---|---|
+| 64K | 4 | 3.48 / 3.42 GB | 4 × 62K all finished; TTFT 90.7 / 153 / 215 / 276 s; peak 97,246 / 97,305 MiB | 6/6 at 55.2K, TTFT 54.5 s | 0 moved | 42.20 / **40.26** / 0.592 s | 641 / 582 MiB | **pass — qualified rung** |
+| 128K | 1 | 4.05 / 3.97 GB | **CUDA OOM at ≈ 110K prefix** (448 MiB `[4096, lc]` bool mask, 196 MiB free; logits 1.75 GiB) | not reached | — | — | — | **fail (b)**, further than E33's ≈ 65K |
+
+Verdict: **qualified limit 64K single-slot (E33) and, with E34a, 64K × 4 slots; deployment stays 32K / 4 slots.** The 262K target of T3.6e–g closes as "limit measured" and resumes from 128K when T3.26 / E34 lands (E34a budget constant 256 MiB as the one-liner probe; E34b tiled key-block scoring with running top-k as the real fix and upstream-PR candidate). GPU0 showed the documented 100 % / P0 phantom with no model loaded between the 128K and 64K / 4-slot serves and cleared on its own (0 % / 15.8 W after teardown, 0 Xid).
 
 ## Erratum (2026-09-23): every V4.1-hybrid C3 and C4 decode figure from E19 to E23 R0 is an artifact of kt-kernel bug C
 
