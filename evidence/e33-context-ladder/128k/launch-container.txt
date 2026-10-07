@@ -1,0 +1,987 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:63: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+  Example: sglang serve --model-path <model> [options]
+  warnings.warn(
+[2026-10-07 22:14:23] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-07 22:14:23] Hybrid SWA model detected. architectures=['DeepseekV4ForCausalLM']
+[2026-10-07 22:14:23] Breakable CUDA graph is incompatible with DeepSeek-V4 (heavy capture-pool memory pressure); disabling prefill CUDA graph.
+[2026-10-07 22:14:23] Use dsv4 attention backend for DeepseekV4ForCausalLM, setting page_size to 256.
+[2026-10-07 22:14:23] Setting KV cache dtype to fp8_e4m3 for DeepseekV4ForCausalLM.
+[2026-10-07 22:14:25] server_args={'model_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': True, 'context_length': 131072, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'auto', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.96, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': 147456, 'chunked_prefill_size': 4096, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 256, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.8, 'swa_prefix_tails': None, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache': False, 'disable_overlap_schedule': False, 'num_continuous_decode_steps': 1, 'scheduler_recv_interval': 1, 'enable_mixed_chunk': False, 'nccl_port': None, 'dist_timeout': None, 'dist_init_addr': None, 'gated_launch_port': None, 'nnodes': 1, 'node_rank': 0, 'tp_size': 2, 'dcp_size': 1, 'pp_size': 1, 'pp_max_micro_batch_size': None, 'pp_async_batch_depth': 0, 'dp_size': 1, 'load_balance_method': 'round_robin', 'attn_cp_size': 1, 'moe_dp_size': 1, 'dwdp_size': 1, 'dcp_comm_backend': 'ag_rs', 'dcp_replicate_q_proj': None, 'enable_prefill_cp': False, 'cp_strategy': None, 'enable_dsa_cache_layer_split': False, 'enable_dsa_prefill_context_parallel': False, 'dsa_prefill_cp_mode': 'round-robin-split', 'enable_prefill_context_parallel': False, 'prefill_cp_mode': 'in-seq-split', 'enable_cp_decode_attn_tp': False, 'enable_dp_attention': False, 'enable_dp_attention_local_control_broadcast': False, 'enable_dp_lm_head': False, 'enable_tp_lm_head_all_to_all': False, 'enable_attn_tp_input_scattered': False, 'enable_shared_experts_attn_tp': False, 'enable_dense_mlp_attn_tp': False, 'enable_layernorm_sp': False, 'disable_attn_tp_gather': False, 'enable_p2p_check': False, 'device': 'cuda', 'base_gpu_id': 0, 'gpu_id_step': 1, 'random_seed': 595149985, 'mlx_enable_sampling': False, 'watchdog_timeout': 300, 'soft_watchdog_timeout': None, 'sleep_on_idle': False, 'use_ray': False, 'custom_sigquit_handler': None, 'numa_node': None, 'gc_threshold': None, 'host': '0.0.0.0', 'port': 30000, 'fastapi_root_path': '', 'smg_grpc_mode': False, 'grpc_mode': False, 'grpc_port': None, 'grpc_worker_threads': 4, 'sidecar': None, 'sidecar_args': None, 'skip_server_warmup': False, 'warmups': None, 'enable_http2': False, 'http2_max_concurrent_streams': 200, 'http2_initial_connection_window_size': 1048576, 'ssl_keyfile': None, 'ssl_certfile': None, 'ssl_ca_certs': None, 'ssl_keyfile_password': None, 'enable_ssl_refresh': False, 'api_key': None, 'admin_api_key': None, 'served_model_name': 'dsv41-flash-hybrid', 'weight_version': 'default', 'chat_template': None, 'hf_chat_template_name': None, 'completion_template': None, 'file_storage_path': 'sglang_storage', 'enable_cache_report': False, 'reasoning_parser': 'deepseek-v41', 'default_chat_template_kwargs': None, 'strip_thinking_cache': False, 'enable_strict_thinking': False, 'tool_call_parser': 'deepseekv41', 'tool_server': None, 'sampling_defaults': 'model', 'asr_max_buffer_seconds': 60, 'asr_max_concurrent_sessions': 32, 'preferred_sampling_params': None, 'allow_auto_truncate': False, 'stream_interval': 1, 'batch_notify_size': 16, 'stream_response_default_include_usage': False, 'incremental_streaming_output': False, 'enable_streaming_session': False, 'enable_session_radix_cache': False, 'log_level': 'info', 'log_level_http': None, 'log_requests': False, 'log_requests_level': 2, 'log_requests_format': 'text', 'log_requests_target': None, 'uvicorn_access_log_exclude_prefixes': [], 'crash_dump_folder': None, 'show_time_cost': False, 'enable_metrics': False, 'smg_http_sidecar_port': None, 'enable_mfu_metrics': False, 'enable_metrics_for_all_schedulers': False, 'load_snapshot_publish_interval': 15, 'tokenizer_metrics_custom_labels_header': 'x-custom-labels', 'tokenizer_metrics_allowed_custom_labels': None, 'extra_metric_labels': None, 'bucket_time_to_first_token': None, 'bucket_inter_token_latency': None, 'bucket_e2e_request_latency': None, 'prompt_tokens_buckets': None, 'generation_tokens_buckets': None, 'gc_warning_threshold_secs': 0.0, 'decode_log_interval': 40, 'enable_request_time_stats_logging': False, 'kv_events_config': None, 'load_publish_endpoint': None, 'enable_forward_pass_metrics': False, 'forward_pass_metrics_worker_id': '', 'forward_pass_metrics_ipc_name': None, 'enable_trace': False, 'trace_modules': 'request', 'otlp_traces_endpoint': 'localhost:4317', 'export_metrics_to_file': False, 'export_metrics_to_file_dir': None, 'stat_loggers': None, 'constrained_json_whitespace_pattern': None, 'constrained_json_disable_any_whitespace': False, 'attention_backend': 'dsv4', 'decode_attention_backend': None, 'enable_lean_attention': None, 'prefill_attention_backend': None, 'sampling_backend': 'flashinfer', 'grammar_backend': 'xgrammar', 'radix_cache_backend': None, 'mm_attention_backend': None, 'fp8_gemm_runner_backend': 'auto', 'fp4_gemm_runner_backend': 'auto', 'bf16_gemm_backend': 'auto', 'dsa_prefill_backend': None, 'dsv4_prefill_backend': 'auto', 'dsa_decode_backend': None, 'dsa_paged_mqa_logits_backend': 'auto', 'dsa_topk_backend': 'sgl-kernel', 'disable_flashinfer_autotune': False, 'flashinfer_autotune_skip_ops': None, 'mamba_backend': 'triton', 'cuda_graph_config': {'decode': {'backend': 'breakable', 'max_bs': 4, 'bs': [1, 2, 3, 4], 'tc_compiler': 'eager', 'full_prefill_max_req': None, 'full_prefill_prefix_chunk_tokens': None, 'max_seq_len': None}, 'prefill': {'backend': 'disabled', 'max_bs': 4096, 'bs': [4, 8, 12, 16, 20, 24, 28, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 288, 320, 352, 384, 416, 448, 480, 512, 576, 640, 704, 768, 832, 896, 960, 1024, 1280, 1536, 1792, 2048, 2304, 2560, 2816, 3072, 3328, 3584, 3840, 4096], 'tc_compiler': 'eager', 'full_prefill_max_req': None, 'full_prefill_prefix_chunk_tokens': None, 'max_seq_len': None}}, 'cuda_graph_backend_decode': 'breakable', 'cuda_graph_backend_prefill': None, 'cuda_graph_max_bs_decode': 4, 'cuda_graph_max_bs_prefill': None, 'cuda_graph_max_seq_len_prefill': None, 'cuda_graph_bs_decode': [1, 2, 3, 4], 'cuda_graph_bs_prefill': None, 'cuda_graph_tc_compiler': None, 'disable_prefill_cuda_graph': False, 'disable_decode_cuda_graph': False, 'disable_cuda_graph': False, 'disable_cuda_graph_padding': False, 'enable_profile_cuda_graph': False, 'enable_cudagraph_gc': False, 'debug_cuda_graph': False, 'enable_layerwise_nvtx_marker': False, 'enable_nccl_nvls': False, 'enable_symm_mem': False, 'triton_attention_reduce_in_fp32': False, 'triton_attention_num_kv_splits': 8, 'triton_attention_split_tile_size': None, 'flashinfer_mla_disable_ragged': False, 'enable_fused_qk_norm_rope': False, 'enable_precise_embedding_interpolation': False, 'enable_fused_moe_sum_all_reduce': False, 'enable_deepseek_v4_fp4_indexer': True, 'disable_custom_all_reduce': False, 'enable_mscclpp': False, 'enable_torch_symm_mem': False, 'enable_scattered_sconv': False, 'pre_warm_nccl': False, 'enable_quant_communications': False, 'enable_flashinfer_allreduce_fusion': False, 'enforce_disable_flashinfer_allreduce_fusion': False, 'flashinfer_allreduce_fusion_backend': None, 'enable_aiter_allreduce_fusion': False, 'enable_torch_compile': False, 'enable_torch_compile_debug_mode': False, 'torch_compile_max_bs': 32, 'speculative_algorithm': None, 'uno_lora_path': None, 'speculative_draft_model_path': None, 'speculative_draft_model_revision': None, 'speculative_draft_load_format': None, 'speculative_num_steps': None, 'speculative_eagle_topk': None, 'speculative_num_draft_tokens': None, 'speculative_dflash_block_size': None, 'speculative_dspark_block_size': None, 'speculative_dspark_sps_table_path': None, 'speculative_dspark_confidence_sts_path': None, 'speculative_dspark_align_verify_tokens_to_graph_tier': False, 'speculative_accept_threshold_single': 1.0, 'speculative_accept_threshold_acc': 1.0, 'speculative_use_rejection_sampling': False, 'speculative_token_map': None, 'speculative_attention_mode': 'prefill', 'speculative_draft_attention_backend': None, 'speculative_dsa_topk_backend': 'sgl-kernel', 'speculative_draft_kv_cache_dtype': None, 'speculative_draft_window_size': None, 'speculative_moe_runner_backend': 'flashinfer_mxfp4', 'speculative_moe_a2a_backend': None, 'speculative_draft_model_quantization': None, '_speculative_draft_quantization_explicitly_set': False, 'speculative_skip_dp_mlp_sync': False, 'enable_multi_layer_eagle': False, 'speculative_adaptive': False, 'speculative_adaptive_config': None, 'decoupled_spec_bind_endpoint': None, 'decoupled_spec_connect_endpoints': None, 'decoupled_spec_rank': None, 'decoupled_spec_role': 'null', 'spec_trace_dir': None, 'speculative_ngram_min_bfs_breadth': 1, 'speculative_ngram_max_bfs_breadth': 10, 'speculative_ngram_match_type': 'BFS', 'speculative_ngram_max_trie_depth': 18, 'speculative_ngram_capacity': 10000000, 'speculative_ngram_external_corpus_path': None, 'speculative_ngram_external_sam_budget': 0, 'speculative_ngram_external_corpus_max_tokens': 10000000, 'ep_size': 1, 'moe_a2a_backend': 'none', 'enable_w4a4_mxfp4_megamoe': False, 'deepep_v2_mode': 'direct', 'moe_runner_backend': 'flashinfer_mxfp4', 'flashinfer_mxfp4_moe_precision': 'default', 'deepep_mode': 'auto', 'fuseep_mode': 2, 'deepep_dispatcher_output_dtype': 'auto', 'ep_num_redundant_experts': 0, 'ep_dispatch_algorithm': None, 'init_expert_location': 'trivial', 'enable_eplb': False, 'eplb_algorithm': 'auto', 'eplb_rebalance_num_iterations': 1000, 'eplb_rebalance_layers_per_chunk': None, 'eplb_min_rebalancing_utilization_threshold': 1.0, 'expert_distribution_recorder_mode': None, 'expert_distribution_recorder_buffer_size': 1000, 'expert_balancedness_report_mode': 'off', 'deepep_config': None, 'moe_dense_tp_size': None, 'elastic_ep_backend': None, 'enable_elastic_expert_backup': False, 'mooncake_ib_device': None, 'enable_waterfill': False, 'ep_join_mode': None, 'ep_join_rank_offset': 0, 'elastic_ep_initial_size': None, 'max_ep_size': None, 'elastic_ep_scale_timeout': 600, 'elastic_ep_rejoin': False, 'disable_flashinfer_cutlass_moe_fp4_allgather': False, 'disable_shared_experts_fusion': False, 'enforce_shared_experts_fusion': False, 'max_mamba_cache_size': None, 'mamba_ssm_dtype': None, 'mamba_max_states_per_path': -1, 'enable_mamba_cache_stochastic_rounding': False, 'mamba_cache_philox_rounds': 0, 'mamba_full_memory_ratio': 0.9, 'mamba_radix_cache_strategy': 'auto', 'uses_mamba_radix_cache': False, 'mamba_track_interval': 256, 'enable_int8_mamba_checkpoint': False, 'int8_mamba_ckpt_size': None, 'linear_attn_backend': 'triton', 'linear_attn_decode_backend': None, 'linear_attn_prefill_backend': None, 'linear_attn_verify_backend': None, 'enable_linear_replayssm': False, 'linear_replayssm_cache_len': 16, 'enable_linear_replayssm_spec': False, 'enable_hierarchical_cache': False, 'hicache_host_memory_mode': 'cache', 'hicache_ratio': 2.0, 'hicache_size': 0, 'hicache_write_policy': 'write_through', 'hicache_io_backend': 'kernel', 'hicache_mem_layout': 'page_first', 'hicache_storage_backend': None, 'hicache_storage_prefetch_policy': 'timeout', 'hicache_storage_backend_extra_config': None, 'hicache_storage_prefetch_retry_poll_interval': 0, 'hicache_storage_prefetch_retry_max_attempts': 4, 'enable_unified_cache_external_linker': False, 'unified_cache_external_linker_backend': 'mooncake', 'enable_hisparse': False, 'hisparse_config': None, 'enable_broadcast_mm_inputs_process': False, 'enable_prefix_mm_cache': False, 'mm_enable_dp_encoder': False, 'mm_process_config': {}, 'mm_processor_worker_num': 0, 'mm_io_worker_num': 0, 'allowed_media_domains': [], 'media_url_max_file_size_mb': 64, 'mm_preprocess_cache_size_mb': None, 'trust_mm_content_hashes': False, 'limit_mm_data_per_request': None, 'enable_mm_global_cache': False, 'image_processor_backend': 'auto', 'mm_global_cache_backend': 'mooncake', 'disable_fast_image_processor': False, 'mm_feature_transport': 'cpu', 'keep_mm_feature_on_device': False, 'enable_lora': None, 'enable_lora_overlap_loading': None, 'max_lora_rank': None, 'lora_target_modules': None, 'lora_paths': None, 'max_loaded_loras': None, 'max_loras_per_batch': 8, 'lora_eviction_policy': 'lru', 'lora_backend': 'csgmv', 'max_lora_chunk_size': 16, 'experts_shared_outer_loras': None, 'lora_use_virtual_experts': False, 'lora_strict_loading': False, 'lora_drain_wait_threshold': 0.0, 'enable_two_batch_overlap': False, 'enable_single_batch_overlap': False, 'tbo_token_distribution_threshold': 0.48, 'cpu_offload_gb': 0, 'offload_group_size': -1, 'offload_num_in_group': 1, 'offload_prefetch_step': 1, 'offload_mode': 'cpu', 'enable_lmcache': False, 'lmcache_config_file': None, 'enable_flexkv': False, 'flexkv_config_file': None, 'kt_weight_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'kt_method': 'MXFP4', 'kt_cpuinfer': 16, 'kt_threadpool_count': 1, 'kt_num_gpu_experts': 226, 'kt_max_deferred_experts_per_token': 4, 'dllm_algorithm': None, 'dllm_algorithm_config': None, 'dllm_fdfo': True, 'disaggregation_mode': 'null', 'disaggregation_transfer_backend': 'mooncake', 'disaggregation_bootstrap_port': 8998, 'disaggregation_ib_device': None, 'disaggregation_decode_enable_radix_cache': False, 'disaggregation_decode_enable_offload_kvcache': False, 'disaggregation_decode_retraction_backup': None, 'num_reserved_decode_tokens': 512, 'disaggregation_decode_extra_slots': None, 'disaggregation_decode_polling_interval': 1, 'optimistic_prefill_attempts': 0, 'encoder_only': False, 'language_only': False, 'language_model_only': False, 'encoder_transfer_backend': 'zmq_to_scheduler', 'encoder_urls': [], 'encoder_bootstrap_port': 8997, 'encoder_register_urls': [], 'enable_adaptive_dispatch_to_encoder': False, 'enable_pdmux': False, 'pdmux_config_path': None, 'sm_group_num': 8, 'startup_weight_load_mode': 'serial', 'custom_weight_loader': [], 'weight_loader_disable_mmap': False, 'weight_loader_prefetch_checkpoints': False, 'weight_loader_prefetch_num_threads': 4, 'weight_loader_drop_cache_after_load': False, 'remote_instance_weight_loader_seed_instance_ip': None, 'remote_instance_weight_loader_seed_instance_service_port': None, 'remote_instance_weight_loader_send_weights_group_ports': None, 'remote_instance_weight_loader_backend': 'nccl', 'remote_instance_weight_loader_start_seed_via_transfer_engine': False, 'engine_info_bootstrap_port': 6789, 'modelexpress_config': None, 'download_dir': None, 'model_checksum': None, 'delete_ckpt_after_loading': False, 'decrypted_config_file': None, 'decrypted_draft_config_file': None, 'checkpoint_engine_wait_weights_before_ready': False, 'enable_prefill_delayer': False, 'prefill_delayer_max_delay_passes': 30, 'prefill_delayer_token_usage_low_watermark': None, 'prefill_delayer_forward_passes_buckets': None, 'prefill_delayer_wait_seconds_buckets': None, 'prefill_delayer_queue_min_ratio': None, 'prefill_delayer_max_delay_ms': None, 'min_free_slots_delay': None, 'enable_deterministic_inference': False, 'rl_on_policy_target': None, 'kv_canary': 'none', 'kv_canary_real_data': 'none', 'kv_canary_sweep_interval': 0, 'enable_dynamic_batch_tokenizer': False, 'dynamic_batch_tokenizer_batch_size': 32, 'dynamic_batch_tokenizer_batch_timeout': 0.002, 'enable_tokenizer_batch_encode': False, 'disable_tokenizer_batch_decode': False, 'debug_tensor_dump_output_folder': None, 'debug_tensor_dump_layers': None, 'debug_tensor_dump_input_file': None, 'enable_memory_saver': False, 'enable_weights_cpu_backup': False, 'enable_draft_weights_cpu_backup': False, 'enable_custom_logit_processor': False, 'enable_return_hidden_states': False, 'return_hidden_states_mode': None, 'enable_return_routed_experts': False, 'enable_return_indexer_topk': False, 'enable_encoder_swa_bounded_replay': False, 'enable_decoder_swa_bounded_replay': False, 'disable_outlines_disk_cache': False, 'enable_mis': False, 'weight_cache_mode': 'off', 'weight_cache_socket': None, 'weight_cache_timeout': 1800, 'forward_hooks': None, 'msprobe_dump_config': None}
+[2026-10-07 22:14:25] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-07 22:14:28] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-07 22:14:29] Multimodal processor concurrency enabled with 2 isolated worker threads (auto).
+[2026-10-07 22:14:29] No HuggingFace chat template found
+[2026-10-07 22:14:29] No chat template found, defaulting to 'string' content format
+[2026-10-07 22:14:31 TP1] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-07 22:14:31 TP0] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-07 22:14:31] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-07 22:14:32 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-07 22:14:32 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-07 22:14:34 TP1] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-07 22:14:34 TP0] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-07 22:14:34 TP1] Init torch distributed begin.
+[2026-10-07 22:14:34 TP0] Init torch distributed begin.
+[2026-10-07 22:14:34 TP0] sglang is using nccl==2.30.7
+[2026-10-07 22:14:35 TP0] Init torch distributed ends. elapsed=0.99 s, mem usage=0.49 GB
+[2026-10-07 22:14:35 TP1] Init torch distributed ends. elapsed=1.01 s, mem usage=0.49 GB
+[2026-10-07 22:14:38 TP0] Load weight begin. avail mem=93.94 GB
+[2026-10-07 22:14:38 TP0] Detected fp8 checkpoint.
+[2026-10-07 22:14:38 TP0] Config does not support fused shared expert(s). Shared experts fusion optimization is disabled.
+[2026-10-07 22:14:38 TP1] Load weight begin. avail mem=93.86 GB
+[2026-10-07 22:14:38 TP0] Multimodal attention backend not set. Use triton_attn.
+[2026-10-07 22:14:38 TP0] Using triton_attn as multimodal attention backend.
+[2026-10-07 22:14:38 TP1] Multimodal attention backend not set. Use triton_attn.
+[2026-10-07 22:14:38 TP1] Using triton_attn as multimodal attention backend.
+[2026-10-07 22:14:41 TP1] FlashInfer TRTLLM MoE deferred finalize is disabled (moe_runner_backend=flashinfer_mxfp4, quant_method=KTEPWrapperMethod).
+[2026-10-07 22:14:41 TP0] FlashInfer TRTLLM MoE deferred finalize is disabled (moe_runner_backend=flashinfer_mxfp4, quant_method=KTEPWrapperMethod).
+set_mempolicy: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+/sgl-workspace/sglang/python/sglang/srt/layers/engram.py:721: UserWarning: The given buffer is not writable, and PyTorch does not support non-writable tensors. This means you can write to the underlying (supposedly non-writable) buffer using the tensor. You may want to copy the buffer to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:1556.)
+  raw = torch.frombuffer(self.mm, dtype=torch.uint8)
+hwloc_set_membind_nodeset: Operation not permitted
+/sgl-workspace/sglang/python/sglang/srt/layers/engram.py:721: UserWarning: The given buffer is not writable, and PyTorch does not support non-writable tensors. This means you can write to the underlying (supposedly non-writable) buffer using the tensor. You may want to copy the buffer to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:1556.)
+  raw = torch.frombuffer(self.mm, dtype=torch.uint8)
+[2026-10-07 22:14:44 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-07 22:14:44 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+Multi-thread loading shards:   0% Completed | 0/48 [00:00<?, ?it/s]Multi-thread loading shards:   2% Completed | 1/48 [00:00<00:15,  3.06it/s]Multi-thread loading shards:   6% Completed | 3/48 [00:01<00:21,  2.12it/s]Multi-thread loading shards:   8% Completed | 4/48 [00:01<00:16,  2.62it/s]Multi-thread loading shards:  10% Completed | 5/48 [00:01<00:14,  3.05it/s]Multi-thread loading shards:  12% Completed | 6/48 [00:02<00:17,  2.37it/s]Multi-thread loading shards:  15% Completed | 7/48 [00:02<00:14,  2.81it/s]Multi-thread loading shards:  17% Completed | 8/48 [00:02<00:12,  3.15it/s]Multi-thread loading shards:  19% Completed | 9/48 [00:03<00:11,  3.52it/s]Multi-thread loading shards:  21% Completed | 10/48 [00:03<00:09,  3.81it/s]Multi-thread loading shards:  23% Completed | 11/48 [00:03<00:09,  4.04it/s]Multi-thread loading shards:  25% Completed | 12/48 [00:03<00:08,  4.20it/s]Multi-thread loading shards:  27% Completed | 13/48 [00:04<00:12,  2.69it/s]Multi-thread loading shards:  29% Completed | 14/48 [00:04<00:11,  3.09it/s]Multi-thread loading shards:  31% Completed | 15/48 [00:04<00:09,  3.45it/s]Multi-thread loading shards:  33% Completed | 16/48 [00:05<00:09,  3.43it/s]Multi-thread loading shards:  35% Completed | 17/48 [00:05<00:09,  3.22it/s]Multi-thread loading shards:  38% Completed | 18/48 [00:05<00:08,  3.56it/s]Multi-thread loading shards:  40% Completed | 19/48 [00:05<00:08,  3.45it/s]Multi-thread loading shards:  42% Completed | 20/48 [00:06<00:07,  3.77it/s]Multi-thread loading shards:  44% Completed | 21/48 [00:06<00:06,  4.04it/s]Multi-thread loading shards:  46% Completed | 22/48 [00:07<00:10,  2.57it/s]Multi-thread loading shards:  48% Completed | 23/48 [00:07<00:08,  2.98it/s]Multi-thread loading shards:  50% Completed | 24/48 [00:08<00:10,  2.18it/s]Multi-thread loading shards:  52% Completed | 25/48 [00:08<00:08,  2.61it/s]Multi-thread loading shards:  54% Completed | 26/48 [00:08<00:07,  3.01it/s]Multi-thread loading shards:  56% Completed | 27/48 [00:08<00:06,  3.41it/s]Multi-thread loading shards:  58% Completed | 28/48 [00:08<00:05,  3.73it/s]Multi-thread loading shards:  60% Completed | 29/48 [00:09<00:04,  4.01it/s]Multi-thread loading shards:  62% Completed | 30/48 [00:09<00:04,  4.27it/s]Multi-thread loading shards:  65% Completed | 31/48 [00:09<00:03,  4.42it/s]Multi-thread loading shards:  67% Completed | 32/48 [00:10<00:06,  2.53it/s]Multi-thread loading shards:  69% Completed | 33/48 [00:10<00:05,  2.98it/s]Multi-thread loading shards:  71% Completed | 34/48 [00:10<00:04,  3.40it/s]Multi-thread loading shards:  73% Completed | 35/48 [00:10<00:03,  3.77it/s]Multi-thread loading shards:  75% Completed | 36/48 [00:11<00:02,  4.09it/s]Multi-thread loading shards:  77% Completed | 37/48 [00:11<00:02,  4.31it/s]Multi-thread loading shards:  79% Completed | 38/48 [00:11<00:02,  4.53it/s]Multi-thread loading shards:  81% Completed | 39/48 [00:11<00:01,  4.74it/s]Multi-thread loading shards:  83% Completed | 40/48 [00:11<00:01,  4.88it/s]Multi-thread loading shards:  85% Completed | 41/48 [00:12<00:01,  5.02it/s]Multi-thread loading shards:  88% Completed | 42/48 [00:12<00:01,  5.11it/s]Multi-thread loading shards:  92% Completed | 44/48 [00:12<00:00,  7.37it/s]Multi-thread loading shards:  94% Completed | 45/48 [00:12<00:00,  7.44it/s]Multi-thread loading shards:  96% Completed | 46/48 [00:12<00:00,  7.50it/s]Multi-thread loading shards: 100% Completed | 48/48 [00:12<00:00,  3.80it/s]
+[2026-10-07 22:14:57 TP0] Finished streaming dequant fp8 wo_a
+[2026-10-07 22:14:57 TP1] Finished streaming dequant fp8 wo_a
+[2026-10-07 22:15:37 TP1] engram host table layer 1: layout=file, model-00047-of-00048.safetensors rows [192003084, 384006168) of 384006168, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-10-07 22:15:37 TP1] engram host table layer 14: layout=file, model-00048-of-00048.safetensors rows [192008341, 384016682) of 384016682, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-10-07 22:15:37 TP0] engram host table layer 1: layout=file, model-00047-of-00048.safetensors rows [0, 192003084) of 384006168, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-10-07 22:15:37 TP0] engram host table layer 14: layout=file, model-00048-of-00048.safetensors rows [0, 192008341) of 384016682, 47.2 GiB mapped read-only, 16 prefetch threads, page cache is the row cache
+[2026-10-07 22:15:37 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.0.mlp.experts)...
+[2026-10-07 22:15:41 TP0] [KT] Released NativeMoEWrapper loader after layer 0: safetensors mmap handles freed.
+[2026-10-07 22:15:42 TP0] [KT layerwise prefill] enabled: min_tokens=1024, 158 CPU experts/layer, host pinned 5.86 GiB (shared), GPU staging 2.03 GiB/rank, tp=2
+[2026-10-07 22:15:42 TP1] [KT layerwise prefill] enabled: min_tokens=1024, 158 CPU experts/layer, host pinned 5.86 GiB (shared), GPU staging 2.03 GiB/rank, tp=2
+[2026-10-07 22:15:42 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.1.mlp.experts)...
+[2026-10-07 22:15:42 TP1] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0. This may lead to less accurate results!
+[2026-10-07 22:15:42 TP1] Load weight end. elapsed=64.52 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=4.86 GB, mem usage=89.01 GB.
+[2026-10-07 22:15:42 TP0] [KT] Recreated NativeMoEWrapper loader for layer 1 (took 67.7ms)
+[2026-10-07 22:15:43 TP0] [KT] Released NativeMoEWrapper loader after layer 1: safetensors mmap handles freed.
+[2026-10-07 22:15:43 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.2.mlp.experts)...
+[2026-10-07 22:15:43 TP0] [KT] Recreated NativeMoEWrapper loader for layer 2 (took 65.6ms)
+[2026-10-07 22:15:44 TP0] [KT] Released NativeMoEWrapper loader after layer 2: safetensors mmap handles freed.
+[2026-10-07 22:15:44 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.3.mlp.experts)...
+[2026-10-07 22:15:44 TP0] [KT] Recreated NativeMoEWrapper loader for layer 3 (took 66.1ms)
+[2026-10-07 22:15:45 TP0] [KT] Released NativeMoEWrapper loader after layer 3: safetensors mmap handles freed.
+[2026-10-07 22:15:45 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.4.mlp.experts)...
+[2026-10-07 22:15:45 TP0] [KT] Recreated NativeMoEWrapper loader for layer 4 (took 65.4ms)
+[2026-10-07 22:15:46 TP0] [KT] Released NativeMoEWrapper loader after layer 4: safetensors mmap handles freed.
+[2026-10-07 22:15:46 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.5.mlp.experts)...
+[2026-10-07 22:15:47 TP0] [KT] Recreated NativeMoEWrapper loader for layer 5 (took 64.9ms)
+[2026-10-07 22:15:48 TP0] [KT] Released NativeMoEWrapper loader after layer 5: safetensors mmap handles freed.
+[2026-10-07 22:15:48 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.6.mlp.experts)...
+[2026-10-07 22:15:48 TP0] [KT] Recreated NativeMoEWrapper loader for layer 6 (took 63.9ms)
+[2026-10-07 22:15:49 TP0] [KT] Released NativeMoEWrapper loader after layer 6: safetensors mmap handles freed.
+[2026-10-07 22:15:49 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.7.mlp.experts)...
+[2026-10-07 22:15:49 TP0] [KT] Recreated NativeMoEWrapper loader for layer 7 (took 63.5ms)
+[2026-10-07 22:15:50 TP0] [KT] Released NativeMoEWrapper loader after layer 7: safetensors mmap handles freed.
+[2026-10-07 22:15:50 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.8.mlp.experts)...
+[2026-10-07 22:15:50 TP0] [KT] Recreated NativeMoEWrapper loader for layer 8 (took 65.8ms)
+[2026-10-07 22:15:51 TP0] [KT] Released NativeMoEWrapper loader after layer 8: safetensors mmap handles freed.
+[2026-10-07 22:15:51 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.9.mlp.experts)...
+[2026-10-07 22:15:51 TP0] [KT] Recreated NativeMoEWrapper loader for layer 9 (took 64.3ms)
+[2026-10-07 22:15:52 TP0] [KT] Released NativeMoEWrapper loader after layer 9: safetensors mmap handles freed.
+[2026-10-07 22:15:52 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.10.mlp.experts)...
+[2026-10-07 22:15:52 TP0] [KT] Recreated NativeMoEWrapper loader for layer 10 (took 64.4ms)
+[2026-10-07 22:15:53 TP0] [KT] Released NativeMoEWrapper loader after layer 10: safetensors mmap handles freed.
+[2026-10-07 22:15:53 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.11.mlp.experts)...
+[2026-10-07 22:15:54 TP0] [KT] Recreated NativeMoEWrapper loader for layer 11 (took 63.5ms)
+[2026-10-07 22:15:55 TP0] [KT] Released NativeMoEWrapper loader after layer 11: safetensors mmap handles freed.
+[2026-10-07 22:15:55 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.12.mlp.experts)...
+[2026-10-07 22:15:55 TP0] [KT] Recreated NativeMoEWrapper loader for layer 12 (took 71.0ms)
+[2026-10-07 22:15:56 TP0] [KT] Released NativeMoEWrapper loader after layer 12: safetensors mmap handles freed.
+[2026-10-07 22:15:56 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.13.mlp.experts)...
+[2026-10-07 22:15:57 TP0] [KT] Recreated NativeMoEWrapper loader for layer 13 (took 65.1ms)
+[2026-10-07 22:15:58 TP0] [KT] Released NativeMoEWrapper loader after layer 13: safetensors mmap handles freed.
+[2026-10-07 22:15:58 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.14.mlp.experts)...
+[2026-10-07 22:15:58 TP0] [KT] Recreated NativeMoEWrapper loader for layer 14 (took 65.3ms)
+[2026-10-07 22:16:01 TP0] [KT] Released NativeMoEWrapper loader after layer 14: safetensors mmap handles freed.
+[2026-10-07 22:16:01 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.15.mlp.experts)...
+[2026-10-07 22:16:01 TP0] [KT] Recreated NativeMoEWrapper loader for layer 15 (took 64.0ms)
+[2026-10-07 22:16:04 TP0] [KT] Released NativeMoEWrapper loader after layer 15: safetensors mmap handles freed.
+[2026-10-07 22:16:04 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.16.mlp.experts)...
+[2026-10-07 22:16:04 TP0] [KT] Recreated NativeMoEWrapper loader for layer 16 (took 64.9ms)
+[2026-10-07 22:16:05 TP0] [KT] Released NativeMoEWrapper loader after layer 16: safetensors mmap handles freed.
+[2026-10-07 22:16:05 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.17.mlp.experts)...
+[2026-10-07 22:16:06 TP0] [KT] Recreated NativeMoEWrapper loader for layer 17 (took 68.3ms)
+[2026-10-07 22:16:07 TP0] [KT] Released NativeMoEWrapper loader after layer 17: safetensors mmap handles freed.
+[2026-10-07 22:16:07 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.18.mlp.experts)...
+[2026-10-07 22:16:07 TP0] [KT] Recreated NativeMoEWrapper loader for layer 18 (took 65.6ms)
+[2026-10-07 22:16:08 TP0] [KT] Released NativeMoEWrapper loader after layer 18: safetensors mmap handles freed.
+[2026-10-07 22:16:08 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.19.mlp.experts)...
+[2026-10-07 22:16:08 TP0] [KT] Recreated NativeMoEWrapper loader for layer 19 (took 65.8ms)
+[2026-10-07 22:16:09 TP0] [KT] Released NativeMoEWrapper loader after layer 19: safetensors mmap handles freed.
+[2026-10-07 22:16:10 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.20.mlp.experts)...
+[2026-10-07 22:16:10 TP0] [KT] Recreated NativeMoEWrapper loader for layer 20 (took 65.2ms)
+[2026-10-07 22:16:11 TP0] [KT] Released NativeMoEWrapper loader after layer 20: safetensors mmap handles freed.
+[2026-10-07 22:16:11 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.21.mlp.experts)...
+[2026-10-07 22:16:11 TP0] [KT] Recreated NativeMoEWrapper loader for layer 21 (took 64.9ms)
+[2026-10-07 22:16:12 TP0] [KT] Released NativeMoEWrapper loader after layer 21: safetensors mmap handles freed.
+[2026-10-07 22:16:12 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.22.mlp.experts)...
+[2026-10-07 22:16:12 TP0] [KT] Recreated NativeMoEWrapper loader for layer 22 (took 67.7ms)
+CPUInfer[0x192ab130]: Hello
+WorkerPool[0x338af2b0] 1 subpools, [numa:threads][0:16] 
+===========In NumaPool============
+In Numa Worker Pool at NUMA 0, 16 threads
+TP MOE layer 0, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 1, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 2, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 3, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 4, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 5, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 6, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 7, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 8, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 9, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 10, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 11, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 12, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 13, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 14, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 15, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 16, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 17, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 18, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 19, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 20, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 21, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 22, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+[2026-10-07 22:16:13 TP0] [KT] Released NativeMoEWrapper loader after layer 22: safetensors mmap handles freed.
+[2026-10-07 22:16:13 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.23.mlp.experts)...
+[2026-10-07 22:16:13 TP0] [KT] Recreated NativeMoEWrapper loader for layer 23 (took 65.6ms)
+[2026-10-07 22:16:15 TP0] [KT] Released NativeMoEWrapper loader after layer 23: safetensors mmap handles freed.
+[2026-10-07 22:16:15 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.24.mlp.experts)...
+[2026-10-07 22:16:15 TP0] [KT] Recreated NativeMoEWrapper loader for layer 24 (took 64.6ms)
+[2026-10-07 22:16:16 TP0] [KT] Released NativeMoEWrapper loader after layer 24: safetensors mmap handles freed.
+[2026-10-07 22:16:16 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.25.mlp.experts)...
+[2026-10-07 22:16:16 TP0] [KT] Recreated NativeMoEWrapper loader for layer 25 (took 65.1ms)
+[2026-10-07 22:16:17 TP0] [KT] Released NativeMoEWrapper loader after layer 25: safetensors mmap handles freed.
+[2026-10-07 22:16:17 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.26.mlp.experts)...
+[2026-10-07 22:16:17 TP0] [KT] Recreated NativeMoEWrapper loader for layer 26 (took 73.8ms)
+[2026-10-07 22:16:18 TP0] [KT] Released NativeMoEWrapper loader after layer 26: safetensors mmap handles freed.
+[2026-10-07 22:16:18 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.27.mlp.experts)...
+[2026-10-07 22:16:18 TP0] [KT] Recreated NativeMoEWrapper loader for layer 27 (took 67.0ms)
+[2026-10-07 22:16:19 TP0] [KT] Released NativeMoEWrapper loader after layer 27: safetensors mmap handles freed.
+TP 0 load w[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.0.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 0] load_experts: 1728.9ms, prepare_tensors: 0.0ms, build_ptrs: 0.1ms, create_moe: 1.3ms, cpp_load_weights: 464.9ms, cleanup: 371.5ms, total: 2566.7ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.1.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 1] load_experts: 145.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 471.6ms, cleanup: 374.5ms, total: 992.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.2.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 2] load_experts: 158.9ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 467.3ms, cleanup: 373.5ms, total: 1001.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.3.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 3] load_experts: 149.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 489.6ms, cleanup: 370.6ms, total: 1011.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.4.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 4] load_experts: 154.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 494.0ms, cleanup: 359.3ms, total: 1009.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.5.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 5] load_experts: 154.9ms, prepare_tensors: 0.1ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 526.6ms, cleanup: 366.2ms, total: 1049.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.6.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 6] load_experts: 153.9ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 504.2ms, cleanup: 363.2ms, total: 1022.7ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.7.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 7] load_experts: 227.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 482.1ms, cleanup: 357.3ms, total: 1068.7ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.8.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 8] load_experts: 211.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 489.5ms, cleanup: 372.1ms, total: 1074.9ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.9.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 9] load_experts: 209.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 3.6ms, cpp_load_weights: 518.9ms, cleanup: 367.9ms, total: 1100.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.10.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 10] load_experts: 210.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 524.1ms, cleanup: 367.7ms, total: 1103.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.11.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 11] load_experts: 206.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 770.8ms, cleanup: 360.8ms, total: 1339.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.12.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 12] load_experts: 200.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 841.2ms, cleanup: 365.1ms, total: 1407.9ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.13.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 13] load_experts: 201.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 700.0ms, cleanup: 361.6ms, total: 1264.8ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.14.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 14] load_experts: 127.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 2199.9ms, cleanup: 369.5ms, total: 2698.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.15.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 15] load_experts: 209.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 2421.0ms, cleanup: 374.2ms, total: 3006.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.16.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 16] load_experts: 215.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.5ms, cpp_load_weights: 942.5ms, cleanup: 370.2ms, total: 1529.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.17.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 17] load_experts: 191.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.5ms, cpp_load_weights: 865.9ms, cleanup: 368.6ms, total: 1427.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.18.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 18] load_experts: 192.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.6ms, cpp_load_weights: 606.6ms, cleanup: 377.2ms, total: 1177.8ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.19.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 19] load_experts: 123.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 611.5ms, cleanup: 376.1ms, total: 1112.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.20.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 20] load_experts: 213.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.7ms, cpp_load_weights: 496.8ms, cleanup: 364.1ms, total: 1075.8ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.21.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 21] load_experts: 200.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 588.0ms, cleanup: 356.6ms, total: 1146.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.22.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 22] load_experts: 201.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.7ms, cpp_load_weights: 714.7ms, cleanup: 372.3ms, total: 1290.8ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.23.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 23] load_experts: 189.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 542.2ms, cleanup: 362.3ms, total: 1095.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.24.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 24] load_experts: 196.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.3ms, cpp_load_weights: 472.6ms, cleanup: 361.7ms, total: 1032.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.25.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 25] load_experts: 191.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.2ms, cpp_load_weights: 592.2ms, cleanup: 362.8ms, total: 1147.6ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.26.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 26] load_experts: 206.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.5ms, cpp_load_weights: 517.0ms, cleanup: 373.5ms, total: 1098.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.27.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[2026-10-07 22:16:19 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.28.mlp.experts)...
+[2026-10-07 22:16:20 TP0] [KT] Recreated NativeMoEWrapper loader for layer 28 (took 77.9ms)
+[2026-10-07 22:16:21 TP0] [KT] Released NativeMoEWrapper loader after layer 28: safetensors mmap handles freed.
+[2026-10-07 22:16:21 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.29.mlp.experts)...
+[2026-10-07 22:16:21 TP0] [KT] Recreated NativeMoEWrapper loader for layer 29 (took 71.3ms)
+[2026-10-07 22:16:22 TP0] [KT] Released NativeMoEWrapper loader after layer 29: safetensors mmap handles freed.
+[2026-10-07 22:16:22 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.30.mlp.experts)...
+[2026-10-07 22:16:23 TP0] [KT] Recreated NativeMoEWrapper loader for layer 30 (took 65.1ms)
+[2026-10-07 22:16:24 TP0] [KT] Released NativeMoEWrapper loader after layer 30: safetensors mmap handles freed.
+[2026-10-07 22:16:24 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.31.mlp.experts)...
+[2026-10-07 22:16:24 TP0] [KT] Recreated NativeMoEWrapper loader for layer 31 (took 65.1ms)
+[2026-10-07 22:16:25 TP0] [KT] Released NativeMoEWrapper loader after layer 31: safetensors mmap handles freed.
+[2026-10-07 22:16:25 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.32.mlp.experts)...
+[2026-10-07 22:16:25 TP0] [KT] Recreated NativeMoEWrapper loader for layer 32 (took 75.5ms)
+[2026-10-07 22:16:26 TP0] [KT] Released NativeMoEWrapper loader after layer 32: safetensors mmap handles freed.
+[2026-10-07 22:16:26 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.33.mlp.experts)...
+[2026-10-07 22:16:27 TP0] [KT] Recreated NativeMoEWrapper loader for layer 33 (took 66.5ms)
+[2026-10-07 22:16:28 TP0] [KT] Released NativeMoEWrapper loader after layer 33: safetensors mmap handles freed.
+[2026-10-07 22:16:28 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.34.mlp.experts)...
+[2026-10-07 22:16:28 TP0] [KT] Recreated NativeMoEWrapper loader for layer 34 (took 64.5ms)
+[2026-10-07 22:16:29 TP0] [KT] Released NativeMoEWrapper loader after layer 34: safetensors mmap handles freed.
+[2026-10-07 22:16:29 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.35.mlp.experts)...
+[2026-10-07 22:16:29 TP0] [KT] Recreated NativeMoEWrapper loader for layer 35 (took 75.6ms)
+[2026-10-07 22:16:30 TP0] [KT] Released NativeMoEWrapper loader after layer 35: safetensors mmap handles freed.
+[2026-10-07 22:16:30 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.36.mlp.experts)...
+[2026-10-07 22:16:30 TP0] [KT] Recreated NativeMoEWrapper loader for layer 36 (took 77.5ms)
+[2026-10-07 22:16:31 TP0] [KT] Released NativeMoEWrapper loader after layer 36: safetensors mmap handles freed.
+[2026-10-07 22:16:31 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.37.mlp.experts)...
+[2026-10-07 22:16:31 TP0] [KT] Recreated NativeMoEWrapper loader for layer 37 (took 66.6ms)
+[2026-10-07 22:16:32 TP0] [KT] Released NativeMoEWrapper loader after layer 37: safetensors mmap handles freed.
+[2026-10-07 22:16:32 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.38.mlp.experts)...
+[2026-10-07 22:16:32 TP0] [KT] Recreated NativeMoEWrapper loader for layer 38 (took 66.3ms)
+[2026-10-07 22:16:34 TP0] [KT] Released NativeMoEWrapper loader after layer 38: safetensors mmap handles freed.
+[2026-10-07 22:16:34 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.39.mlp.experts)...
+[2026-10-07 22:16:34 TP0] [KT] Recreated NativeMoEWrapper loader for layer 39 (took 65.0ms)
+[2026-10-07 22:16:35 TP0] [KT] Released NativeMoEWrapper loader after layer 39: safetensors mmap handles freed.
+[2026-10-07 22:16:35 TP0] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0. This may lead to less accurate results!
+[2026-10-07 22:16:35 TP0] Load weight end. elapsed=117.41 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=4.94 GB, mem usage=89.01 GB.
+[2026-10-07 22:16:36 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-07 22:16:37 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-07 22:16:39 TP1] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-10-07 22:16:39 TP0] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-10-07 22:16:39 TP0] DSV4 SWA sizing: mode=cap, swa_tokens=10752, request_cap+headroom=10752, prefix_tails=4
+[2026-10-07 22:16:39 TP1] DSV4 SWA sizing: mode=cap, swa_tokens=10752, request_cap+headroom=10752, prefix_tails=4
+[2026-10-07 22:16:39 TP0] DSV4 memory calculation: bytes_per_full_token=1630.00, available_bytes=1.00 GB, c128_state_fixed=0.00 GB, swa_fixed=0.23 GB, full_token=505856
+[2026-10-07 22:16:39 TP0] DSV4 pool sizes: full=505856, swa=10752, c4=126464, c128=3952, c4_state=672, c128_state=0
+[2026-10-07 22:16:39 TP1] DSV4 memory calculation: bytes_per_full_token=1630.00, available_bytes=1.00 GB, c128_state_fixed=0.00 GB, swa_fixed=0.23 GB, full_token=505856
+[2026-10-07 22:16:39 TP1] DSV4 pool sizes: full=505856, swa=10752, c4=126464, c128=3952, c4_state=672, c128_state=0
+[2026-10-07 22:16:39 TP1] DSV4 SWA sizing: mode=cap, swa_tokens=10752, request_cap+headroom=10752, prefix_tails=4
+[2026-10-07 22:16:39 TP1] DSV4 pool sizes: full=147456, swa=10752, c4=36864, c128=1152, c4_state=672, c128_state=0
+[2026-10-07 22:16:39 TP0] DSV4 SWA sizing: mode=cap, swa_tokens=10752, request_cap+headroom=10752, prefix_tails=4
+[2026-10-07 22:16:39 TP0] DSV4 pool sizes: full=147456, swa=10752, c4=36864, c128=1152, c4_state=672, c128_state=0
+[2026-10-07 22:16:39 TP0] Initialize DeepSeekV4TokenToKVPool with max_num_reqs=1 swa_size=10752 c4_size=36864 c4_logical_size=36864 c128_size=1152 c4_state_pool_size=672 c128_state_pool_size=256
+[2026-10-07 22:16:39 TP1] Initialize DeepSeekV4TokenToKVPool with max_num_reqs=1 swa_size=10752 c4_size=36864 c4_logical_size=36864 c128_size=1152 c4_state_pool_size=672 c128_state_pool_size=256
+[2026-10-07 22:16:39 TP0] DSV4 SWA storage: worker=target, storage=paged, paged_allocator=True
+[2026-10-07 22:16:39 TP1] DSV4 SWA storage: worker=target, storage=paged, paged_allocator=True
+[2026-10-07 22:16:39 TP0] Memory pool end. avail mem=4.48 GB
+[2026-10-07 22:16:39 TP1] Memory pool end. avail mem=4.40 GB
+[2026-10-07 22:16:44 TP0] Using DeepseekV4AttnBackend for dsv4 attention backend (CUDA).
+[2026-10-07 22:16:44 TP0] [sm120-split] page mask N=577 allocated: flash_mla_sm120_mask:cuda:0 ptr=0x78c311de6200 capturing=False
+[2026-10-07 22:16:44 TP0] [sm120-split] split buffer pages=172 allocated: flash_mla_sm120_split:cuda:0 ptr=0x78c13e400000 capturing=False
+[2026-10-07 22:16:44 TP0] [sm120-split] split buffer pages=2308 allocated: flash_mla_sm120_splitextra:cuda:0 ptr=0x78c18f800000 capturing=False
+[2026-10-07 22:16:44 TP0] [sm120-split] sealed page-split buffers: mask N=577, split pages={'': 172, 'extra': 2308} (any later grow raises SM120SplitBufferSealedError)
+[2026-10-07 22:16:44 TP0] [sm120-split] reserved page-split buffers from pools (num_pages, page_size, tag): [(43, 256, ''), (577, 256, 'extra'), (577, 128, 'extra')]
+[2026-10-07 22:16:44 TP0] KT_BUF capture sizes registered: requested=[1] previously=[] now=[1] cached=[]
+[2026-10-07 22:16:44 TP1] Using DeepseekV4AttnBackend for dsv4 attention backend (CUDA).
+[2026-10-07 22:16:44 TP1] [sm120-split] page mask N=577 allocated: flash_mla_sm120_mask:cuda:1 ptr=0x754e31de6200 capturing=False
+[2026-10-07 22:16:44 TP1] [sm120-split] split buffer pages=172 allocated: flash_mla_sm120_split:cuda:1 ptr=0x754c5e400000 capturing=False
+[2026-10-07 22:16:44 TP1] [sm120-split] split buffer pages=2308 allocated: flash_mla_sm120_splitextra:cuda:1 ptr=0x754caf800000 capturing=False
+[2026-10-07 22:16:44 TP1] [sm120-split] sealed page-split buffers: mask N=577, split pages={'': 172, 'extra': 2308} (any later grow raises SM120SplitBufferSealedError)
+[2026-10-07 22:16:44 TP1] [sm120-split] reserved page-split buffers from pools (num_pages, page_size, tag): [(43, 256, ''), (577, 256, 'extra'), (577, 128, 'extra')]
+[2026-10-07 22:16:44 TP1] KT_BUF capture sizes registered: requested=[1] previously=[] now=[1] cached=[]
+[2026-10-07 22:16:44 TP1] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.6.18/sm120/2855c2b3ca52ae93/rank_tp1_pp0_dp0.json
+[2026-10-07 22:16:44 TP0] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.6.18/sm120/2855c2b3ca52ae93/rank_tp0_pp0_dp0.json
+[2026-10-07 22:16:57 TP1] Disable CP decode attention TP
+[2026-10-07 22:16:57 TP0] Disable CP decode attention TP
+[2026-10-07 22:17:01 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-07 22:17:01 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[NativeMoEWrapper Layer 27] load_experts: 202.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.6ms, cpp_load_weights: 526.0ms, cleanup: 364.4ms, total: 1094.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.28.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 28] load_experts: 220.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 481.1ms, cleanup: 366.1ms, total: 1069.5ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.29.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 29] load_experts: 202.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.5ms, cpp_load_weights: 1130.2ms, cleanup: 373.3ms, total: 1707.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.30.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 30] load_experts: 216.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.4ms, cpp_load_weights: 652.5ms, cleanup: 359.6ms, total: 1230.2ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.31.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 31] load_experts: 208.6ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.5ms, cpp_load_weights: 735.9ms, cleanup: 370.4ms, total: 1316.8ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.32.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 32] load_experts: 216.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.4ms, cpp_load_weights: 515.8ms, cleanup: 371.7ms, total: 1105.2ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.33.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 33] load_experts: 155.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 548.0ms, cleanup: 366.1ms, total: 1071.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.34.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 34] load_experts: 152.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 526.7ms, cleanup: 357.7ms, total: 1038.3ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.35.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 35] load_experts: 224.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.5ms, cpp_load_weights: 517.6ms, cleanup: 361.5ms, total: 1105.0ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.36.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 36] load_experts: 177.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.3ms, cpp_load_weights: 501.3ms, cleanup: 374.3ms, total: 1054.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.37.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 37] load_experts: 179.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.4ms, cpp_load_weights: 526.2ms, cleanup: 374.6ms, total: 1081.4ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.38.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 38] load_experts: 190.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 1.4ms, cpp_load_weights: 579.9ms, cleanup: 379.3ms, total: 1151.1ms
+[MXFP4SafeTensorLoader] Loaded 158 CPU experts from layers.39.ffn.experts as compact ids 0..157 (226 GPU experts not loaded)
+[NativeMoEWrapper Layer 39] load_experts: 181.5ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 1.6ms, cpp_load_weights: 555.6ms, cleanup: 362.7ms, total: 1101.6ms
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:  17%|█▋        | 1/6 [00:00<00:01,  3.90profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:  17%|█▋        | 1/6 [00:00<00:01,  3.90profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 22.84profile/s]
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 22.84profile/s]
+[2026-10-07 22:17:08 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-07 22:17:08 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-07 22:17:11 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[TensorRT-LLM][INFO] Set logger level to INFO
+eight done.
+TP MOE layer 23, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 24, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 25, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 26, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 27, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 28, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 29, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 30, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 31, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 32, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 33, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 34, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 35, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 36, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 37, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 38, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 39, pool: 0x338af2b0, expert num: 158, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+[TensorRT-LLM][INFO] Set logger level to INFO
+[AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/1 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/1 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 1/1 [00:00<00:00,  6.36profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 1/1 [00:00<00:00,  6.35profile/s]
+[AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 1/1 [00:00<00:00,  3.16profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 1/1 [00:00<00:00,  3.16profile/s]
+[AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/1 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/1 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 1/1 [00:00<00:00,  6.36profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 1/1 [00:00<00:00,  6.36profile/s]
+[AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 1/1 [00:00<00:00,  6.36profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 1/1 [00:00<00:00,  6.36profile/s]
+[2026-10-07 22:17:16 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-07 22:17:27 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 105.26profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 110.59profile/s]
+
+[2026-10-07 22:17:43 TP0] FlashInfer autotune completed.
+[2026-10-07 22:17:43 TP0] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-10-07 22:17:43 TP0] Capture target decode CUDA graph begin. backend=breakable, num_tokens_per_req=1, bs=[1], avail mem=4.14 GB
+[2026-10-07 22:17:43 TP0] Candidate indexer graph limits: [('candidate_all', 512), ('candidate_c2_all', 1024), ('candidate_unfiltered', 16384)]; use full filtering above 16384.
+[2026-10-07 22:17:43 TP0] KT_BUF capture sizes registered: requested=[1] previously=[1] now=[1] cached=[1]
+[2026-10-07 22:17:43 TP1] FlashInfer autotune completed.
+[2026-10-07 22:17:43 TP1] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-10-07 22:17:43 TP1] Capture target decode CUDA graph begin. backend=breakable, num_tokens_per_req=1, bs=[1], avail mem=4.06 GB
+[2026-10-07 22:17:43 TP1] Candidate indexer graph limits: [('candidate_all', 512), ('candidate_c2_all', 1024), ('candidate_unfiltered', 16384)]; use full filtering above 16384.
+[2026-10-07 22:17:43 TP1] KT_BUF capture sizes registered: requested=[1] previously=[1] now=[1] cached=[]
+  0%|          | 0/1 [00:00<?, ?it/s]Capturing batches (bs=1 avail_mem=4.14 GB):   0%|          | 0/1 [00:00<?, ?it/s][2026-10-07 22:17:44 TP1] multimem all-gather disabled (no multicast for world_size=2)
+[2026-10-07 22:17:44 TP0] multimem all-gather disabled (no multicast for world_size=2)
+[2026-10-07 22:17:45 TP1] KT_BUF post-capture: captured=[1] registered=[1] cached=[] temp_bs=0
+Capturing batches (bs=1 avail_mem=4.14 GB): 100%|██████████| 1/1 [00:01<00:00,  1.12s/it]Capturing batches (bs=1 avail_mem=4.14 GB): 100%|██████████| 1/1 [00:01<00:00,  1.12s/it]
+[2026-10-07 22:17:45 TP0] KT_BUF post-capture: captured=[1] registered=[1] cached=[1] temp_bs=1
+[2026-10-07 22:17:45 TP0] Registering 332 cuda graph addresses
+[2026-10-07 22:17:45 TP1] Capture target decode CUDA graph end. elapsed=1.94 s, mem usage=0.09 GB, avail mem=3.97 GB.
+[2026-10-07 22:17:45 TP1] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: UnifiedTreeCore
+[2026-10-07 22:17:45 TP1] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False streaming_wrapped=False
+[2026-10-07 22:17:45 TP0] Capture target decode CUDA graph end. elapsed=1.95 s, mem usage=0.10 GB, avail mem=4.05 GB.
+[2026-10-07 22:17:45 TP0] max_total_num_tokens=147456, chunked_prefill_size=4096, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=4.05 GB
+[2026-10-07 22:17:45 TP0] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: UnifiedTreeCore
+[2026-10-07 22:17:45 TP0] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False streaming_wrapped=False
+[2026-10-07 22:17:46] Engine startup timings (s): load_weight=117.41, kv_cache_allocation=2.02, scheduler_e2e=194.72, cuda_graph={prefill=0.00, decode=1.95, target_verify=0.00, draft_prefill=0.00, draft_decode=0.00, draft_extend=0.00}, tokenizer_e2e=201.11
+[2026-10-07 22:17:46] INFO:     Started server process [1]
+[2026-10-07 22:17:46] INFO:     Waiting for application startup.
+[2026-10-07 22:17:46] INFO:     Application startup complete.
+[2026-10-07 22:17:46] INFO:     Uvicorn running on http://0.0.0.0:30000 (Press CTRL+C to quit)
+[2026-10-07 22:17:48] INFO:     127.0.0.1:41280 - "GET /model_info HTTP/1.1" 200 OK
+/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py:454: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+  return await original_handler(ORJSONRequest(request.scope, request.receive))
+[2026-10-07 22:17:51] INFO:     <docker-bridge-ip>:33530 - "GET /v1/models HTTP/1.1" 200 OK
+[2026-10-07 22:18:00 TP1] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 11.86 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[2026-10-07 22:18:01 TP0] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 11.93 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-10-07 22:18:20 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.02, #running-req: 0, #queue-req: 1, #pending-token: 0, cuda graph: False, input throughput (token/s): 7.36
+[2026-10-07 22:18:21] INFO:     127.0.0.1:41284 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-10-07 22:18:22 TP1] Freezing GC in Scheduler process. gen0: 21->0, gen1: 2345->0, gen2: 1178706->0
+[2026-10-07 22:18:22 TP0] Freezing GC in Scheduler process. gen0: 23->0, gen1: 2690->0, gen2: 1184007->0
+[2026-10-07 22:18:22 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.02, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 164.45
+[2026-10-07 22:18:22] Freezing GC in Tokenizer Manager process. gen0: 748->0, gen1: 2243->0, gen2: 1087181->0
+[2026-10-07 22:18:22] INFO:     127.0.0.1:40506 - "POST /freeze_gc HTTP/1.1" 200 OK
+[2026-10-07 22:18:22] The server is fired up and ready to roll!
+[2026-10-07 22:18:23] Freezing GC in Detokenizer Manager process. gen0: 358->0, gen1: 2->0, gen2: 902555->0
+[2026-10-07 22:18:23] INFO:     <docker-bridge-ip>:33536 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-07 22:18:52 TP1] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 11.90 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[2026-10-07 22:18:52 TP0] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 12.26 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-10-07 22:19:05 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.06, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 121677, cuda graph: False, input throughput (token/s): 95.17
+[2026-10-07 22:19:09 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.08, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 243354, cuda graph: False, input throughput (token/s): 919.65
+[2026-10-07 22:19:14 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.11, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 239258, cuda graph: False, input throughput (token/s): 931.50
+[2026-10-07 22:19:18 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.14, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 235162, cuda graph: False, input throughput (token/s): 938.82
+[2026-10-07 22:19:22 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.17, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 231066, cuda graph: False, input throughput (token/s): 937.03
+[2026-10-07 22:19:27 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.19, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 226970, cuda graph: False, input throughput (token/s): 958.13
+[2026-10-07 22:19:31 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.22, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 222874, cuda graph: False, input throughput (token/s): 948.41
+[rank0]:[W1007 22:19:34.383043200 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 603979776 bytes (free: 435159040, total: 102069305344).
+[rank1]:[W1007 22:19:34.383078352 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 603979776 bytes (free: 356253696, total: 102066159616).
+[2026-10-07 22:19:35 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.25, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 218778, cuda graph: False, input throughput (token/s): 944.63
+[2026-10-07 22:19:40 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.28, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 214682, cuda graph: False, input throughput (token/s): 953.80
+[rank1]:[W1007 22:19:42.926888990 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 738197504 bytes (free: 352059392, total: 102066159616).
+[rank0]:[W1007 22:19:42.927011183 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 738197504 bytes (free: 430964736, total: 102069305344).
+[2026-10-07 22:19:44 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.31, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 210586, cuda graph: False, input throughput (token/s): 968.68
+[rank0]:[W1007 22:19:46.205575177 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 805306368 bytes (free: 632291328, total: 102069305344).
+[rank1]:[W1007 22:19:46.205770590 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 805306368 bytes (free: 553385984, total: 102066159616).
+[2026-10-07 22:19:48 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.33, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 206490, cuda graph: False, input throughput (token/s): 952.11
+[rank1]:[W1007 22:19:51.444549682 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 872415232 bytes (free: 385613824, total: 102066159616).
+[rank0]:[W1007 22:19:51.444693097 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 872415232 bytes (free: 464519168, total: 102069305344).
+[2026-10-07 22:19:52 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.36, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 202394, cuda graph: False, input throughput (token/s): 973.98
+[rank1]:[W1007 22:19:55.670546403 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 939524096 bytes (free: 316407808, total: 102066159616).
+[rank0]:[W1007 22:19:55.680055973 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 939524096 bytes (free: 395313152, total: 102069305344).
+[2026-10-07 22:19:57 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.39, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 198298, cuda graph: False, input throughput (token/s): 960.74
+[rank1]:[W1007 22:19:59.904184430 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 1006632960 bytes (free: 182190080, total: 102066159616).
+[rank0]:[W1007 22:19:59.904346944 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 1006632960 bytes (free: 258998272, total: 102069305344).
+[2026-10-07 22:20:01 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.42, swa token usage: 0.40, #running-req: 0, #queue-req: 1, #pending-token: 194202, cuda graph: False, input throughput (token/s): 975.83
+[rank1]:[W1007 22:20:03.102110347 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 1073741824 bytes (free: 47972352, total: 102066159616).
+[rank0]:[W1007 22:20:03.102154333 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 1073741824 bytes (free: 124780544, total: 102069305344).
+[rank1]:[W1007 22:20:03.110440267 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 1073741824 bytes (free: 1052508160, total: 102066159616).
+[rank1]:[W1007 22:20:03.111427699 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 1073741824 bytes (free: 1052508160, total: 102066159616).
+[2026-10-07 22:20:03 TP1] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5696, in run_scheduler_process
+    scheduler.run_event_loop()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1839, in run_event_loop
+    dispatch_event_loop(self)
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542, in dispatch_event_loop
+    scheduler.event_loop_overlap()
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937, in event_loop_overlap
+    batch_result = self.run_batch(batch)
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181, in run_batch
+    batch_result = self.model_worker.forward_batch_generation(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636, in forward_batch_generation
+    out = self.model_runner.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1645, in forward
+    output = self._forward_raw(
+             ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1832, in _forward_raw
+    ret = self.eager_runner.execute(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 227, in execute
+    return self._execute_extend(forward_batch, pp_proxy_tensors)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 371, in _execute_extend
+    ret = model_runner.model.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4572, in forward
+    hidden_states = self.model.forward(
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4218, in forward
+    hidden_states, last_pre, tail = self._forward_layers_hc_pre_from_prev(
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3901, in _forward_layers_hc_pre_from_prev
+    hidden_states, prev_pre = self.layers[i].forward_hc_pre_from_prev(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3028, in forward_hc_pre_from_prev
+    x = self.self_attn(
+        ^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 2124, in forward
+    q, kv = self._forward_prepare(
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 1988, in _forward_prepare
+    attn_backend.forward_low_ratio_sources(
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/attention/deepseek_v4_backend.py", line 2831, in forward_low_ratio_sources
+    self._low_ratio_index_topk(layer, x, q_lora, req, pos, forward_batch)
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/attention/deepseek_v4_backend.py", line 3170, in _low_ratio_index_topk
+    self._low_ratio_index_topk_extend(layer, x, q_lora, pos, forward_batch)
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/attention/deepseek_v4_backend.py", line 3196, in _low_ratio_index_topk_extend
+    self._low_ratio_index_topk_dense(
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/attention/deepseek_v4_backend.py", line 3267, in _low_ratio_index_topk_dense
+    self._publish_or_consume_candidates(
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/attention/deepseek_v4_backend.py", line 3313, in _publish_or_consume_candidates
+    select_candidate_blocks(
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/attention/dsv4/indexer.py", line 1143, in select_candidate_blocks
+    scores = F.pad(logits, (0, -width % block_size), value=-torch.inf)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/functional.py", line 5823, in pad
+    return torch._C._nn.pad(input, pad, mode, value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1024.00 MiB. GPU 1 has a total capacity of 95.06 GiB of which 1003.75 MiB is free. Including non-PyTorch memory, this process has 93.98 GiB memory in use. Of the allocated memory 91.84 GiB is allocated by PyTorch, with 28.00 MiB allocated in private pools (e.g., CUDA Graphs), and 1.03 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+
+[2026-10-07 22:20:03] SIGQUIT received. signum=None, frame=None. It usually means one child failed.
+[2026-10-07 22:20:03] Sleeping 5 seconds before crash diagnostics to let GPU activity settle.
+[2026-10-07 22:20:05 TP0] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5696, in run_scheduler_process
+    scheduler.run_event_loop()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1839, in run_event_loop
+    dispatch_event_loop(self)
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542, in dispatch_event_loop
+    scheduler.event_loop_overlap()
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937, in event_loop_overlap
+    batch_result = self.run_batch(batch)
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181, in run_batch
+    batch_result = self.model_worker.forward_batch_generation(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636, in forward_batch_generation
+    out = self.model_runner.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1645, in forward
+    output = self._forward_raw(
+             ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1832, in _forward_raw
+    ret = self.eager_runner.execute(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 227, in execute
+    return self._execute_extend(forward_batch, pp_proxy_tensors)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 371, in _execute_extend
+    ret = model_runner.model.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4572, in forward
+    hidden_states = self.model.forward(
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4218, in forward
+    hidden_states, last_pre, tail = self._forward_layers_hc_pre_from_prev(
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3901, in _forward_layers_hc_pre_from_prev
+    hidden_states, prev_pre = self.layers[i].forward_hc_pre_from_prev(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3045, in forward_hc_pre_from_prev
+    x = self._run_moe_ffn_dp_sync(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3166, in _run_moe_ffn_dp_sync
+    hidden_states = self.mlp(
+                    ^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 969, in forward
+    return self.forward_normal(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 1275, in forward_normal
+    final_hidden_states = self.experts(
+                          ^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1523, in forward
+    return self.forward_impl(
+           ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1544, in forward_impl
+    combine_input = self.run_moe_core(
+                    ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1615, in run_moe_core
+    return self.quant_method.apply(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_ep_wrapper.py", line 1349, in apply
+    output = output + self.streamer.run_layer(self, layer, dispatch_output, streamed_ids)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_ep_wrapper.py", line 363, in run_layer
+    self._barrier()
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_ep_wrapper.py", line 319, in _barrier
+    torch.distributed.barrier(group=self.cpu_group)
+  File "/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 5356, in barrier
+    work.wait()
+RuntimeError: [/__w/pytorch/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:553] Connection closed by peer [<docker-bridge-ip>]:52655. This is typically caused by a remote worker crashing. Check the logs of the remote worker before reporting an error. GLHF! 🏖️
+
+[rank0]:[W1007 22:20:05.266973867 ProcessGroupNCCL.cpp:1624] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[2026-10-07 22:20:08] Pyspy failed (py-spy dump --native --pid 134). Error: Error: Failed to copy Py_Version symbol
+
+Caused by:
+    0: Permission denied (os error 13)
+    1: Permission denied (os error 13)
+
+[2026-10-07 22:20:08] Pyspy failed (py-spy dump  --pid 134). Error: Error: Failed to copy Py_Version symbol
+
+Caused by:
+    0: Permission denied (os error 13)
+    1: Permission denied (os error 13)
+
+[2026-10-07 22:20:08] All pyspy dump attempts failed for PID 134.
+[2026-10-07 22:20:08] CUDA user-triggered coredump is not enabled. Set CUDA_ENABLE_USER_TRIGGERED_COREDUMP=1 before CUDA initialization.
+[2026-10-07 22:20:08] CUDA coredump pipe not found for PID 134: /sgl-workspace/sglang/corepipe.cuda.37e9c318b3b1.134. Ensure CUDA_ENABLE_USER_TRIGGERED_COREDUMP=1 was set before this process initialized CUDA.
+[2026-10-07 22:20:08] Waiting 60.0 seconds for CUDA coredumps before exiting.
+[2026-10-07 22:21:08] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-10-07 22:21:08] SIGQUIT received. signum=None, frame=None. It usually means one child failed.
+[2026-10-07 22:21:08] SIGTERM/SIGQUIT/Exception triggered, but crash dump already performed, skipping.
+[2026-10-07 22:21:08] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-10-07 22:21:08] ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "uvloop/loop.pyx", line 1512, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1505, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1379, in uvloop.loop.Loop.run_forever
+  File "uvloop/loop.pyx", line 557, in uvloop.loop.Loop._run
+  File "uvloop/loop.pyx", line 476, in uvloop.loop.Loop._on_idle
+  File "uvloop/cbhandles.pyx", line 83, in uvloop.loop.Handle._run
+  File "uvloop/cbhandles.pyx", line 61, in uvloop.loop.Handle._run
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_manager.py", line 3715, in running_phase_sigquit_handler
+    kill_process_tree(os.getpid())
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/common.py", line 2318, in kill_process_tree
+    sys.exit(0)
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/routing.py", line 655, in lifespan
+    await receive()
+  File "/opt/sglang/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+[2026-10-07 22:21:08] ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_manager.py", line 1755, in _stream_one_response
+    await asyncio.wait_for(
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/sglang/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 454, in custom_handler
+    return await original_handler(ORJSONRequest(request.scope, request.receive))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 1742, in openai_v1_chat_completions
+[2026-10-07 22:21:08] INFO:     <docker-bridge-ip>:32898 - "POST /v1/chat/completions HTTP/1.1" 500 Internal Server Error
+    return await raw_request.app.state.openai_serving_chat.handle_request(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/serving_base.py", line 103, in handle_request
+    return await self._handle_streaming_request(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/serving_chat.py", line 1698, in _handle_streaming_request
+    first_chunk = await generator.__anext__()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/serving_chat.py", line 1751, in _generate_chat_stream
+    async for content in self.tokenizer_manager.generate_request(
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_manager.py", line 826, in generate_request
+    async for response in self._wait_one_response(obj, request):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_manager.py", line 1762, in _stream_one_response
+    and await request.is_disconnected()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/requests.py", line 335, in is_disconnected
+    message = await self._receive()
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 537, in receive
+    await self.message_event.wait()
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+[2026-10-07 22:21:08] ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_manager.py", line 1755, in _stream_one_response
+    await asyncio.wait_for(
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/sglang/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+[2026-10-07 22:21:08] INFO:     <docker-bridge-ip>:32892 - "POST /v1/chat/completions HTTP/1.1" 500 Internal Server Error
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 454, in custom_handler
+    return await original_handler(ORJSONRequest(request.scope, request.receive))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 1742, in openai_v1_chat_completions
+    return await raw_request.app.state.openai_serving_chat.handle_request(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/serving_base.py", line 103, in handle_request
+    return await self._handle_streaming_request(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/serving_chat.py", line 1698, in _handle_streaming_request
+    first_chunk = await generator.__anext__()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/openai/serving_chat.py", line 1751, in _generate_chat_stream
+    async for content in self.tokenizer_manager.generate_request(
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_manager.py", line 826, in generate_request
+    async for response in self._wait_one_response(obj, request):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_manager.py", line 1762, in _stream_one_response
+    and await request.is_disconnected()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/starlette/requests.py", line 335, in is_disconnected
+    message = await self._receive()
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 537, in receive
+    await self.message_event.wait()
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+[2026-10-07 22:21:08] kill_process_tree called: parent_pid=1, include_parent=False, pid=1

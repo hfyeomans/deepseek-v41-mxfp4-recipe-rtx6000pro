@@ -730,9 +730,23 @@ correctness investigation before anything else.
 
 ## E33 — Context ladder 32K → 64K → 128K → 262K → 512K → 1M: qualify rung by rung, stop at the first failure (GPU; T3.6e–g)
 
-**Status:** registered 2026-10-07 (owner's framing), **32K rung done** (the T3.19b gate serve,
-[`evidence/t319/b/`](../evidence/t319/b/README.md)); 64K next. Runs on the qualified hybrid
-profile (226 / 158, D=4, spec off, capture 1 2 3 4, chunk 4096) after T3.19b and before T3.19c.
+**Status:** registered 2026-10-07 (owner's framing), **done 2026-10-07 — stopped at 128K.**
+32K / 4 slots = the T3.19b gate serve ([`evidence/t319/b/`](../evidence/t319/b/README.md));
+**64K / 1 slot passes every gate** (stress 61.9K prompt TTFT 84.3 s, needles 6/6 at 55.2K,
+NLL 0 of 4,795 moved, C1 42.25 / 40.35 wall / 0.592 s, min free 807 / 732 MiB, 0 NaN / Xid,
+EDAC 0/0); **128K / 1 slot and 64K / 4 slots fail gate (b)** with the same `torch.OutOfMemoryError`
+in the DSV4 indexer's dense scoring (`_low_ratio_index_topk_dense` → `select_candidate_blocks`
+→ `F.pad`): the indexer builds fp32 `[4096, prefix]` logits per prefill chunk (64 MiB per 4K of
+prefix; 1 GiB at 64K, 2 GiB at 128K) plus a ≤ 1 GiB padded copy bounded by the upstream
+`_TORCH_INDEXER_SCORE_BUDGET_BYTES = 1 << 30`, and the 226 / 158 placement leaves ≈ 4.0 GB after
+capture. The KV pool itself is not the binder (≈ 0.1–0.2 GB per 65K tokens). Hypothesis (2) held
+("indexer workspace that grows with context"); hypothesis (1) held (KV bytes do not bind).
+262K / 512K / 1M were not launched: they fail the same gate before KV bytes matter. **Qualified
+limit: 64K single slot; deployment profile stays 32K / 4 slots**, which itself runs ≈ 1 GB from
+the same edge (E28 worst case 779 MiB). Candidate fixes are E34. Evidence
+[`evidence/e33-context-ladder/`](../evidence/e33-context-ladder/README.md). Ran on the
+qualified hybrid profile (226 / 158, D=4, spec off, capture 1 2 3 4, chunk 4096) after T3.19b
+and before T3.19c; no overlay change (HEAD `9fc14817`).
 
 **Question.** The hybrid is qualified at 32K with 4 slots. Where is its real context limit on
 two cards, and what does each rung cost in prefill tok/s, TTFT and C1 decode? The published
@@ -742,7 +756,7 @@ at which it stops and why (T3.25).
 **Hypotheses (projected, unverified).** (1) KV bytes alone do not bind: the T3.6g pool of
 147,456 tokens (32K × 4 slots + 16K) is ≈ 0.6 GB/rank, so 1M × 1 slot is ≈ 4.1 GB/rank, under
 the ≈ 6.2 GB the 226-expert placement leaves free before capture. (2) The first binder is more
-likely one of: the token-pool / slot arithmetic (`MAX_TOTAL_TOKENS` must be cleared per rung),
+likely one of: the token-pool / slot arithmetic (the pool is re-derived per rung from slots × R),
 FlashInfer / indexer workspace that grows with context, chunked-prefill time at 4096 per chunk
 (1M = 245 chunks, each paying the streamed-prefill CPU tier), or a placement trade (fewer GPU
 experts to hold the pool, which costs C1). (3) At the largest passing rung, 4 slots will not fit
@@ -750,7 +764,9 @@ without reducing GPU experts; the single-slot rung is the honest "limit", the 4-
 honest "deployment".
 
 **Protocol.** Per rung R ∈ {64K, 128K, 262K, 512K, 1M}, one serve with `CONTEXT_LENGTH=R
-MAX_TOTAL_TOKENS="" MAX_RUNNING_REQUESTS=1` (then, for the max passing rung only,
+MAX_RUNNING_REQUESTS=1` (the launcher derives the pool as slots × R + 16K; do **not** clear
+`MAX_TOTAL_TOKENS`, which hands the pool back to the memory fraction and re-creates the T3.6g
+15× oversizing) (then, for the max passing rung only,
 `MAX_RUNNING_REQUESTS=4`). Gates in order, same server: (a) launch and capture succeed on the
 same expert placement (226 / 158) — if the pool does not fit, record the placement SGLang
 demands and treat that as a cost, not a failure; (b) `stress-kv-full.py --concurrency <slots>
@@ -771,3 +787,41 @@ the ladder; a candidate fix for a failed rung is a separate experiment.
 **Go / stop for the roadmap.** The ladder is informational for G1 (no code change rides on it);
 its outputs are the `BENCHMARKS.md` context ladder table, the T3.6e–g closure (262K qualified or
 the measured limit), and the TTFT / prefill rows the mlx-stream comparison (T3.25) is missing.
+
+## E34 — Indexer score memory: make the DSV4 sparse-attention prefill transient independent of prefix length (GPU; T3.26)
+
+**Status:** registered 2026-10-07 from the E33 failure; not run. Three parts, each its own serve,
+in order a → b → c; stop after the first part that qualifies the target rung.
+
+**Question.** E33 stops at 128K / 1 slot and 64K / 4 slots because the DSV4 indexer scores each
+4096-token prefill chunk against the whole prefix in fp32 (`[chunk, lc]`, 64 MiB per 4K of prefix)
+and then pads a copy of it (≤ 1 GiB, `_TORCH_INDEXER_SCORE_BUDGET_BYTES`). Which of a budget
+constant, a tiled scorer, or a placement trade buys 128K / 1 slot and 64K / 4 slots at the least
+prefill and decode cost, and does the fix also give the 32K / 4-slot deployment profile back the
+≈ 1 GB of margin it is missing?
+
+**Hypotheses (projected).** (a) Lowering the budget constant to 256 MiB bounds only the padded
+copy, so it recovers ≈ 0.75 GB and is enough for 64K / 4 slots and probably 128K / 1 slot, but
+cannot reach 262K (the 4 GiB logits remain). (b) Tiling the scoring over key blocks with a running
+top-k makes the transient O(chunk × block) and removes the context dependence entirely; cost is a
+second pass over the scores, expected ≤ 5 % of prefill at 32K. (c) Fewer GPU experts (≈ 150 MB per
+expert across 40 layers; 262K needs ≈ 27 fewer, 1M ≈ 105 fewer) pays the E28 byte model in C1/C4
+and is the fallback only.
+
+**Protocol.** Part a: overlay one-line change, serve at 64K / 4 slots then 128K / 1 slot, E33
+gates (a)–(f), plus the 32K / 4-slot worst case (4 × 30K `stress-kv-full.py`) for the margin
+reading. Part b: overlay change to `_low_ratio_index_topk_dense` / `select_candidate_blocks` with a
+CPU-side test that the tiled top-k equals the dense top-k on random `[chunk, lc]` inputs and on
+the E33 64K prefix shapes (bit-equal block masks), then the same serves; also the ladder from
+128K upward (262K / 1 slot, then 4 slots, then 512K) until a new gate binds. Part c only if a and
+b fail or regress prefill > 10 %. Evidence `evidence/e34-indexer-memory/<part>/<rung>/`.
+
+**Stop rules.** Any gate (c)–(e) failure stops the part (a mask mismatch in the tiled top-k is a
+correctness bug, not a tuning question). A > 10 % prefill regression at 32K rejects that part.
+NLL must stay 0 moved on the 4K corpus for every part (the indexer change must not touch
+short-prompt arithmetic; at 4K the dense and tiled paths must select the same blocks).
+
+**Go / stop for the roadmap.** Part b is the upstream-PR candidate (OPEN-SOURCE-PLAN §3): the
+dense scorer is upstream code and the memory bound is a model-independent transient at any
+context ≥ 64K on a 96 GB card. Rides as T3.26 after T3.19c (runner-owned state), because the
+scorer lives in the attention backend, not the CPU-expert seam, and does not depend on it.

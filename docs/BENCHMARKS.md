@@ -420,6 +420,27 @@ What the numbers say:
 
 Verdict: **rejected as a decode lever; FEASIBILITY's 71–78 tok/s B2 column struck.** Code kept off by default (overlay `7e41317e`); the per-device fork/join stream pattern is reused for T3.20 Engram staging.
 
+## E33 — context ladder: 32K → 64K → 128K, stopped at 128K (2026-10-07)
+
+Protocol in EXPERIMENTS E33 (task T3.6e–g). One serve per rung on the launcher defaults (226 / 158, D=4, spec off, chunk 4096, `MEM_FRACTION_STATIC=0.96`, pool = slots × context + 16K; slot 3 BIOS, 325 W never binds), gates (a) launch and capture, (b) `stress-kv-full.py` at context − 2K, (c) `verify.py` needles, (d) `nll-score.py` 4K corpus vs T3.16c, (e) 0 NaN / Xid / Traceback, EDAC 0/0, (f) prefill tok/s / TTFT and C1 512 tokens × 6 runs. Stop at the first failing gate. Evidence [`evidence/e33-context-ladder/`](../evidence/e33-context-ladder/README.md).
+
+| Rung | Slots | Pool (tokens) | Free after capture (GPU0 / GPU1) | Stress-kv | Needles | NLL vs T3.16c | Prefill tok/s / TTFT | C1 summed / **wall** / TTFT | Min free during stress | Result |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 32K | 4 | 147,456 | 4.24 / 4.18 GB | 4 × 30K, all finished (E28, E29) | 6/6 (T3.19b) | 0 moved | 845 / 38.1 s at 32K (E28); 860 / 18.6 s at 16K (E29) | 42.04 / **40.15** / 0.594 s (T3.19b) | 779–1,349 / 1,226–1,290 MiB (E28, E29) | **pass — deployment profile** |
+| 64K | 1 | 81,920 | 4.19 / 4.11 GB | 61,927-token prompt, TTFT 84.33 s, peak 97,080 / 97,155 MiB | 6/6 at 55,206 tokens, TTFT 57.05 s | 0 of 4,795 moved (bit-identical) | ≈ 734 at 61.9K, ≈ 968 at 55.2K (derived from TTFT) | 42.25 / **40.35** / 0.592 s | 807 / 732 MiB | **pass — qualified limit** |
+| 128K | 1 | 147,456 | 4.05 / 3.97 GB | **CUDA OOM at ≈ 65K prefix** (1,024 MiB requested, 1,004 MiB free, GPU1) | not reached | — | — | — | — | **fail (b)** |
+| 64K | 4 | 278,528 | 3.48 / 3.42 GB | **CUDA OOM at ≈ 60K prefix, both ranks** (960 MiB requested, 903 / 842 MiB free) | not reached | — | — | — | — | **fail (b)** |
+
+What the numbers say:
+
+- **KV is not the binder.** "Memory pool end" reads 4.58 → 4.48 → 4.15 GB free for pools of 81,920 → 147,456 → 278,528 tokens: DSV4's compressed KV costs ≈ 0.1–0.2 GB per 65K tokens per rank. Hypothesis (1) of E33 held; a 1M single-slot pool would fit in the ≈ 4 GB left after capture.
+- **The binder is the DSV4 sparse-attention indexer's dense prefill scoring** (verified in the overlay source, upstream code): `_low_ratio_index_topk_dense` builds fp32 logits `[chunk_tokens, lc]` with `lc` = prefix length (compress ratio 1), i.e. 64 MiB per 4K of prefix per 4096-token chunk — 1 GiB at 64K, 2 GiB at 128K, 4 GiB at 262K, 16 GiB at 1M — and `select_candidate_blocks` pads a copy of it in slices bounded by `_TORCH_INDEXER_SCORE_BUDGET_BYTES = 1 << 30` (`deepseek_v4_backend.py:336`). The allocator-retry sizes (604, 738, 805, 872, 939, 1,007, 1,074 MiB) are exactly 4096 × prefix × 4 B at each chunk. Both OOMs are the `F.pad` inside `select_candidate_blocks`, Python-level, no Xid.
+- **64K prefill is slower than 32K for the same reason**: ≈ 734–968 tok/s derived from TTFT at 55–62K against 845 measured at 32K; the dense score and the sparse-attention cost both grow with the prefix.
+- **The deployment profile sits on the same edge.** E28's worst case (4 × 30K, min free 779 MiB) and E29's chunk-2048 reading (min free 2,923 MiB, ≈ 1.5 GB more, at −40 % prefill) are this transient at 32K; chunk size halves the logits, which is why chunk 2048 bought margin.
+- **The ladder stops here, not at a placement**: 262K / 512K / 1M were not launched. At 226 / 158 the fix is in the scorer, not in the expert split (E34c's trade of ≈ 27 experts for 262K costs ≈ −8 % C4 by the E28 byte model and still leaves 1M out of reach).
+
+Verdict: **qualified limit 64K single-slot; deployment stays 32K / 4 slots.** The 262K target of T3.6e–g closes as "limit measured" and resumes from 128K when T3.26 / E34 lands (E34a budget constant 256 MiB as the one-liner probe; E34b tiled key-block scoring with running top-k as the real fix and upstream-PR candidate). GPU0 showed the documented 100 % / P0 phantom with no model loaded between the 128K and 64K / 4-slot serves and cleared on its own (0 % / 15.8 W after teardown, 0 Xid).
+
 ## Erratum (2026-09-23): every V4.1-hybrid C3 and C4 decode figure from E19 to E23 R0 is an artifact of kt-kernel bug C
 
 **What was wrong.** The unpatched kt-kernel bs=4 decode CUDA graph was baked to a pinned host buffer that the first prefill freed ([TROUBLESHOOTING, bug C and the entry after it](TROUBLESHOOTING.md#c4-decode-drops-from--148-to--50-toks-after-the-bug-c-patch--and-four-identical-greedy-prompts-in-one-batch-return-four-different-answers-on-the-old-build)). It never crashed; it computed CPU experts for effectively one row of the batch and copied stale bytes for rows 1–3. Two consequences: (1) the bs=4 step took as long as a bs=1 step, so C4 looked like 4 × C1 ("near-linear batching") and C3 (padded into the bs=4 graph) like 3 × C1; (2) rows 1–3 of every C3/C4 request since E19 were **wrong** — four identical greedy prompts in one batch returned four different answers on the old build, one of them having lost the prompt. bs=1 and bs=2 were always correct, so every C1 and C2 figure stands, as do prefill, TTFT, NLL (bs=1) and needle results.
