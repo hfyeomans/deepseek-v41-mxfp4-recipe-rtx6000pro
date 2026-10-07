@@ -18,7 +18,8 @@ What a wrong implementation would get wrong, and which test catches it:
     KT_TIMELINE_MAX_RECORDS -> test_sampling_schedule.
   - dumping prefill chunks or capture-warmup forwards, or more than DUMP_MAX times
     -> test_dump_gating.
-  - the kt_ep_wrapper `_sync_timed` mirror drifting from the installed kt-kernel
+  - the kt_provider `KtKernelProvider.wait(mark=...)` mirror (T3.19b; was
+    kt_ep_wrapper `_sync_timed`) drifting from the installed kt-kernel
     `sync_forward` (wait, then H2D) -> test_kt_sync_forward_order_still_matches_mirror.
   - the recipe report script disagreeing with the recorder about bucket definitions,
     or its step identity being satisfiable by construction
@@ -217,12 +218,16 @@ def test_kt_sync_forward_order_still_matches_mirror():
     i_h2d = src.find("return self.copy_forward_output_to_device(hidden_states)")
     check(i_wait > 0 and i_h2d > i_wait, "kt sync_forward CUDA path = sync_with_cuda_stream then copy_forward_output_to_device")
     check("_layer_has_pending_deferred.get(self.layer_idx" in src, "kt sync_forward derives allow_pending from _layer_has_pending_deferred")
-    from sglang.srt.layers.moe import kt_ep_wrapper as w
-    wsrc = inspect.getsource(w.KTEPWrapperMethod._sync_timed)
+    from sglang.srt.layers.moe import kt_provider as kp
+    wsrc = inspect.getsource(kp.KtKernelProvider.wait)
     j_wait = wsrc.find("sync_with_cuda_stream(stream, allow_pending)")
     j_mark = wsrc.find('mark("sync")', j_wait)
     j_h2d = wsrc.find("copy_forward_output_to_device(x)", j_mark)
-    check(0 < j_wait < j_mark < j_h2d, "overlay _sync_timed mirrors that order with the sync mark in between")
+    check(0 < j_wait < j_mark < j_h2d, "overlay KtKernelProvider.wait(mark=...) mirrors that order with the sync mark in between")
+    from sglang.srt.layers.moe import kt_ep_wrapper as w
+    esrc = inspect.getsource(w.KTEPWrapperMethod._sync_timed)
+    check("provider.wait(" in esrc and "w.cpu_infer.sync_with_cuda_stream" not in esrc,
+          "overlay _sync_timed delegates to the provider (no second copy of the mirror)")
 
 
 def test_report_script_reproduces_buckets():

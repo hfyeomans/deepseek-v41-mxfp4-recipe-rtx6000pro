@@ -23,6 +23,14 @@ fi
 if bash "$ROOT/scripts/tests/run-kt-deferral-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt deferral tests (exit $rc)"; exit 1; fi
 fi
+# CpuExpertProvider seam conformance (T3.19b): FakeProvider + KtKernelProvider over the deferral recorders; in-image.
+if bash "$ROOT/scripts/tests/run-kt-provider-tests.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt provider tests (exit $rc)"; exit 1; fi
+fi
+# T3.16e(3) kt parity: recorded serving-path kt_output vs standalone kt replay, bit-for-bit; in-image, CPU-only.
+if bash "$ROOT/scripts/tests/run-kt-parity-check.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt parity check (exit $rc)"; exit 1; fi
+fi
 # SM120 page-split buffer seal (review C5): in-image against the overlay checkout; skipped without it.
 if bash "$ROOT/scripts/tests/run-sm120-split-seal-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL sm120 split seal tests (exit $rc)"; exit 1; fi

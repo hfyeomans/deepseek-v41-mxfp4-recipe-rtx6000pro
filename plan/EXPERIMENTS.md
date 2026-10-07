@@ -728,3 +728,46 @@ Record per-request tokens, TTFT, decode tok/s, finish reason; the six problems m
 **Go / stop.** Informational; no serving change depends on it. A score below 155 triggers a
 correctness investigation before anything else.
 
+## E33 — Context ladder 32K → 64K → 128K → 262K → 512K → 1M: qualify rung by rung, stop at the first failure (GPU; T3.6e–g)
+
+**Status:** registered 2026-10-07 (owner's framing), **32K rung done** (the T3.19b gate serve,
+[`evidence/t319/b/`](../evidence/t319/b/README.md)); 64K next. Runs on the qualified hybrid
+profile (226 / 158, D=4, spec off, capture 1 2 3 4, chunk 4096) after T3.19b and before T3.19c.
+
+**Question.** The hybrid is qualified at 32K with 4 slots. Where is its real context limit on
+two cards, and what does each rung cost in prefill tok/s, TTFT and C1 decode? The published
+mlx-stream recipe shows a 1K–1M ladder; ours should either match the shape or state the rung
+at which it stops and why (T3.25).
+
+**Hypotheses (projected, unverified).** (1) KV bytes alone do not bind: the T3.6g pool of
+147,456 tokens (32K × 4 slots + 16K) is ≈ 0.6 GB/rank, so 1M × 1 slot is ≈ 4.1 GB/rank, under
+the ≈ 6.2 GB the 226-expert placement leaves free before capture. (2) The first binder is more
+likely one of: the token-pool / slot arithmetic (`MAX_TOTAL_TOKENS` must be cleared per rung),
+FlashInfer / indexer workspace that grows with context, chunked-prefill time at 4096 per chunk
+(1M = 245 chunks, each paying the streamed-prefill CPU tier), or a placement trade (fewer GPU
+experts to hold the pool, which costs C1). (3) At the largest passing rung, 4 slots will not fit
+without reducing GPU experts; the single-slot rung is the honest "limit", the 4-slot rung the
+honest "deployment".
+
+**Protocol.** Per rung R ∈ {64K, 128K, 262K, 512K, 1M}, one serve with `CONTEXT_LENGTH=R
+MAX_TOTAL_TOKENS="" MAX_RUNNING_REQUESTS=1` (then, for the max passing rung only,
+`MAX_RUNNING_REQUESTS=4`). Gates in order, same server: (a) launch and capture succeed on the
+same expert placement (226 / 158) — if the pool does not fit, record the placement SGLang
+demands and treat that as a cost, not a failure; (b) `stress-kv-full.py --concurrency <slots>
+--prompt-tokens <R − 2K>` peak VRAM per GPU with no OOM; (c) `verify.py --context R` needles
+6/6; (d) `nll-score.py --compare evidence/t316-review-intake/nll-t316c.json` **0 tokens moved**
+(the 4K corpus must be bit-identical to 32K — a context change must not touch short-prompt
+arithmetic); (e) 0 NaN / Xid / Traceback / `KTContract` / `Sealed` lines, EDAC 0/0; (f) record
+prefill tok/s and TTFT at R − 2K from (c), and C1 `bench-decode.py` 512 tokens / 6 runs at the
+standard short fixture for the decode row. Evidence `evidence/e33-context-ladder/<R>/` with the
+redacted launch log and the `resolved:` line.
+
+**Stop rules.** Stop the ladder at the first rung that fails (a)–(e); record the failing gate,
+the message, and the last passing rung as the qualified limit in BENCHMARKS and the T3.6e–g row.
+A rung that passes only with fewer GPU experts is recorded as "passes at N/M" with its C1 cost,
+and the ladder continues from that placement. Do not retune D, chunk size or capture list inside
+the ladder; a candidate fix for a failed rung is a separate experiment.
+
+**Go / stop for the roadmap.** The ladder is informational for G1 (no code change rides on it);
+its outputs are the `BENCHMARKS.md` context ladder table, the T3.6e–g closure (262K qualified or
+the measured limit), and the TTFT / prefill rows the mlx-stream comparison (T3.25) is missing.

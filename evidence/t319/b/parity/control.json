@@ -1,0 +1,211 @@
+{
+  "harness": "scripts/tests/kt-parity-replay.py",
+  "mode": "control (layer L alone, L-1's deferred experts missing; expected NOT bit-equal)",
+  "pairs": [
+    [
+      13,
+      14
+    ],
+    [
+      19,
+      20
+    ]
+  ],
+  "config": {
+    "num_experts": 384,
+    "num_gpu_experts": 226,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "threads": 16,
+    "chunked_prefill_size": 4096,
+    "max_deferred": 4,
+    "swiglu_limit": 10.0,
+    "num_layers": 40
+  },
+  "results": [
+    {
+      "key": "decode-1-candidate_all",
+      "n": 0,
+      "layer": 14,
+      "tokens": 1,
+      "bit_equal": false,
+      "max_abs_diff": 0.09998321533203125,
+      "mismatching_elements": 5079,
+      "cpu_slots": 3,
+      "prev_cpu_slots": 2,
+      "replay_file": "replay-decode-1-candidate_all-layer14-0.pt",
+      "dump_file": "dump-rank0-decode-1-candidate_all-layer14-0.pt"
+    },
+    {
+      "key": "decode-1-candidate_all",
+      "n": 1,
+      "layer": 14,
+      "tokens": 1,
+      "bit_equal": false,
+      "max_abs_diff": 0.141845703125,
+      "mismatching_elements": 5099,
+      "cpu_slots": 3,
+      "prev_cpu_slots": 4,
+      "replay_file": "replay-decode-1-candidate_all-layer14-1.pt",
+      "dump_file": "dump-rank0-decode-1-candidate_all-layer14-1.pt"
+    },
+    {
+      "key": "decode-1-candidate_all",
+      "n": 0,
+      "layer": 20,
+      "tokens": 1,
+      "bit_equal": false,
+      "max_abs_diff": 0.0872802734375,
+      "mismatching_elements": 5104,
+      "cpu_slots": 2,
+      "prev_cpu_slots": 1,
+      "replay_file": "replay-decode-1-candidate_all-layer20-0.pt",
+      "dump_file": "dump-rank0-decode-1-candidate_all-layer20-0.pt"
+    },
+    {
+      "key": "decode-1-candidate_all",
+      "n": 1,
+      "layer": 20,
+      "tokens": 1,
+      "bit_equal": false,
+      "max_abs_diff": 0.2275390625,
+      "mismatching_elements": 5109,
+      "cpu_slots": 3,
+      "prev_cpu_slots": 3,
+      "replay_file": "replay-decode-1-candidate_all-layer20-1.pt",
+      "dump_file": "dump-rank0-decode-1-candidate_all-layer20-1.pt"
+    },
+    {
+      "key": "decode-2-candidate_all",
+      "n": 0,
+      "layer": 14,
+      "tokens": 2,
+      "bit_equal": false,
+      "max_abs_diff": 0.0523681640625,
+      "mismatching_elements": 5093,
+      "cpu_slots": 6,
+      "prev_cpu_slots": 4,
+      "replay_file": "replay-decode-2-candidate_all-layer14-0.pt",
+      "dump_file": "dump-rank0-decode-2-candidate_all-layer14-0.pt"
+    },
+    {
+      "key": "decode-2-candidate_all",
+      "n": 0,
+      "layer": 20,
+      "tokens": 2,
+      "bit_equal": false,
+      "max_abs_diff": 0.3267822265625,
+      "mismatching_elements": 5118,
+      "cpu_slots": 6,
+      "prev_cpu_slots": 3,
+      "replay_file": "replay-decode-2-candidate_all-layer20-0.pt",
+      "dump_file": "dump-rank0-decode-2-candidate_all-layer20-0.pt"
+    },
+    {
+      "key": "decode-3-candidate_all",
+      "n": 0,
+      "layer": 14,
+      "tokens": 3,
+      "bit_equal": false,
+      "max_abs_diff": 0.035400390625,
+      "mismatching_elements": 15130,
+      "cpu_slots": 12,
+      "prev_cpu_slots": 6,
+      "replay_file": "replay-decode-3-candidate_all-layer14-0.pt",
+      "dump_file": "dump-rank0-decode-3-candidate_all-layer14-0.pt"
+    },
+    {
+      "key": "decode-3-candidate_all",
+      "n": 0,
+      "layer": 20,
+      "tokens": 3,
+      "bit_equal": true,
+      "max_abs_diff": 0.0,
+      "mismatching_elements": 0,
+      "cpu_slots": 1,
+      "prev_cpu_slots": 3,
+      "replay_file": "replay-decode-3-candidate_all-layer20-0.pt",
+      "dump_file": "dump-rank0-decode-3-candidate_all-layer20-0.pt"
+    },
+    {
+      "key": "decode-4-candidate_all",
+      "n": 0,
+      "layer": 14,
+      "tokens": 4,
+      "bit_equal": false,
+      "max_abs_diff": 0.1708984375,
+      "mismatching_elements": 20315,
+      "cpu_slots": 12,
+      "prev_cpu_slots": 13,
+      "replay_file": "replay-decode-4-candidate_all-layer14-0.pt",
+      "dump_file": "dump-rank0-decode-4-candidate_all-layer14-0.pt"
+    },
+    {
+      "key": "decode-4-candidate_all",
+      "n": 1,
+      "layer": 14,
+      "tokens": 4,
+      "bit_equal": false,
+      "max_abs_diff": 0.188720703125,
+      "mismatching_elements": 20425,
+      "cpu_slots": 14,
+      "prev_cpu_slots": 11,
+      "replay_file": "replay-decode-4-candidate_all-layer14-1.pt",
+      "dump_file": "dump-rank0-decode-4-candidate_all-layer14-1.pt"
+    },
+    {
+      "key": "decode-4-candidate_all",
+      "n": 0,
+      "layer": 20,
+      "tokens": 4,
+      "bit_equal": false,
+      "max_abs_diff": 0.09033203125,
+      "mismatching_elements": 15360,
+      "cpu_slots": 6,
+      "prev_cpu_slots": 13,
+      "replay_file": "replay-decode-4-candidate_all-layer20-0.pt",
+      "dump_file": "dump-rank0-decode-4-candidate_all-layer20-0.pt"
+    },
+    {
+      "key": "decode-4-candidate_all",
+      "n": 1,
+      "layer": 20,
+      "tokens": 4,
+      "bit_equal": false,
+      "max_abs_diff": 0.306640625,
+      "mismatching_elements": 15360,
+      "cpu_slots": 3,
+      "prev_cpu_slots": 17,
+      "replay_file": "replay-decode-4-candidate_all-layer20-1.pt",
+      "dump_file": "dump-rank0-decode-4-candidate_all-layer20-1.pt"
+    },
+    {
+      "key": "eager",
+      "n": 0,
+      "layer": 14,
+      "tokens": 4,
+      "bit_equal": false,
+      "max_abs_diff": 0.024932861328125,
+      "mismatching_elements": 20452,
+      "cpu_slots": 12,
+      "prev_cpu_slots": 8,
+      "replay_file": "replay-eager-layer14-0.pt",
+      "dump_file": "dump-rank0-eager-layer14-0.pt"
+    },
+    {
+      "key": "eager",
+      "n": 0,
+      "layer": 20,
+      "tokens": 4,
+      "bit_equal": false,
+      "max_abs_diff": 0.0478515625,
+      "mismatching_elements": 20480,
+      "cpu_slots": 4,
+      "prev_cpu_slots": 12,
+      "replay_file": "replay-eager-layer20-0.pt",
+      "dump_file": "dump-rank0-eager-layer20-0.pt"
+    }
+  ],
+  "all_bit_equal": false
+}
