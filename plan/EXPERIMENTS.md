@@ -672,3 +672,59 @@ documented experiment; `_B2HostPool` + direct-UVA compute as a proven way to
 run a grouped GEMM on pinned host weights on SM120 without a custom kernel;
 the side-stream `fork`/`join` pattern for T3.20's Engram staging. T3.16i's
 review pass decides whether the ≈ 300 overlay lines stay.
+
+## E31 — CPU-tier route lookahead: how predictable are layer L+1's CPU experts from layer L, and how much CPU-pool idle is there to fill? (GPU, opt-in log; T3.25 follow-up, Stage 2 candidate)
+
+**Status:** registered 2026-10-07, **pending**. Low-coupling, opt-in instrumentation in the
+style of `KT_TIMELINE`; runs on any G1 gate serve. Build nothing until the probe says so.
+
+**Question.** mlx-stream fills 81 % of its per-layer SSD reads before the layer's routes are
+known by scoring layer L's router before attention (prefill) and layer L+1's router on layer L's
+MoE input (decode), after Eliseev & Mazur arXiv:2312.17238. The analogue here is to hand
+kt-kernel the predicted CPU experts of layer L+1 during layer L. T3.19a says the CPU tier is
+throughput-bound and D=4 already queues four layers of work, so an early start only pays where
+the pool is idle: the three segment starts after the Engram breaks and the D=0 last layer.
+Two unknowns decide it: the prediction's top-6 hit rate on *this* model, and the pool's idle
+time per step.
+
+**Hypotheses.** (1) Hit rate of layer L+1's top-6 scored on layer L's MoE output (post-combine
+residual) is ≥ 85 % per layer at bs 1; scored on the pre-attention residual it is lower. (2)
+CPU-pool idle per step is ≤ 2.5 ms at bs 1 (the Engram gaps plus layer 39) and near zero at
+bs 4. (3) Therefore the ceiling is ≈ 8 % C1 wall at bs 1 and ≈ 0 at C4; a miss costs one
+expert of CPU compute (0.146 ms at the kt read rate, E30), so the build pays only above ~90 %.
+
+**Protocol.** Opt-in `KT_ROUTE_PROBE=1`: in `kt_ep_wrapper`, for each MoE layer record the
+real top-6 ids and the ids that layer L+1's gate (weights already resident) produces on the
+current layer's input and output hidden states; sample every 8th step; write JSONL beside the
+timeline. Pool idle: from the T3.19a timeline, per layer, `sync` wait = 0 and no deferred backlog
+→ idle interval; sum per step. Traffic: C1 and C4 standard recipes. Report per-layer hit rate for
+the CPU-resident subset only (the 158 ids), overall and at segment starts.
+
+**Go / stop.** Go to a dispatch build (behind the T3.19b `CpuExpertProvider` seam) only if
+CPU-subset top-6 hit rate ≥ 90 % at bs 1 *and* measured pool idle ≥ 1.5 ms/step; else record
+the hit rates as a routing-locality fact (they also inform placement, E28) and close.
+
+## E32 — HumanEval pass@1 greedy on the served hybrid: a public quality number beside the NLL gate (GPU, ~20 min; T3.25 follow-up)
+
+**Status:** registered 2026-10-07, **pending**. Rides on any gate serve.
+
+**Question.** The frozen-corpus NLL gate is a relative A/B instrument and says nothing to an
+outsider. The one other published V4.1-Flash recipe prints HumanEval pass@1 0.9634 (158/164,
+greedy, lossy 3.0 bpw experts). What does the exact-weight hybrid score on the same test, and
+what does the run's decode/TTFT distribution look like on 164 short-prompt requests?
+
+**Hypotheses.** (1) ≥ 158/164 (exact experts should not score below a lossy requantization of
+the same checkpoint; a lower score would point at a serving bug, not at the weights). (2)
+Per-request decode median ≥ 38 tok/s, TTFT median < 1 s (prompts ≈ 200 tokens).
+
+**Protocol.** `human-eval` problems through `/v1/chat/completions`, temperature 0, max_tokens
+4096, one sample per problem, stop on the model's own stop; score offline by running each
+problem's tests on the last fenced code block, inside a throwaway container with no network.
+Record per-request tokens, TTFT, decode tok/s, finish reason; the six problems mlx-stream fails
+(32, 83, 132, 140, 145, 163) are reported separately for the comparison. Script
+`scripts/bench-humaneval.py` (to write; reuses `bench-decode.py`'s client). Evidence
+`evidence/e32-humaneval/`.
+
+**Go / stop.** Informational; no serving change depends on it. A score below 155 triggers a
+correctness investigation before anything else.
+
