@@ -839,7 +839,25 @@ prefill throughput was flat 929–963 tok/s from 40K to 184K prefix (the "prefil
 prefix" reading in E33 was end-to-end TTFT, i.e. tokenization + scheduling gaps, not the indexer).
 Part c is not needed.
 
-**Part b-ii (registered 2026-10-08, next):** publish the candidate mask at block granularity.
+**Part b-ii done 2026-10-08** (overlay `d6811728`): `select_candidate_block_keep` /
+`expand_candidate_blocks` in `dsv4/indexer.py`; both prefill paths publish `[rows, ceil(lc / 8)]`
+and each consumer tile expands only its own rows (asserting the block count matches its lc);
+decode's `select_candidate_blocks` is the composition, unchanged. Test extended (partial last
+block, block-level random masks, expansion vs index-gather reference, old == keep -> expand): 6/6;
+a one-block-shift mutant fails 2/6 (the random-mask run catches it; the source-published run
+cannot, since `topk_blocks` = 2048 keeps every block at 6K). **262K / 1 slot passes every gate:**
+253,490-token prompt TTFT 285.9 s, **min free 1,807 / 1,734 MiB** (E34b: OOM at 184K), per-chunk
+prefill 953-962 tok/s flat to 253K, needles **6/6 at 221,756 tokens** (TTFT 218 s), NLL 0 of
+4,795 moved, C1 42.27 / 40.34 wall, prefill 974 / 946 tok/s at 16K / 32K, decode at 253K context
+42.4 tok/s, health 0, EDAC 0/0. **64K x 4 re-measured: unchanged** (min free 1,541 / 1,484 MiB,
+C1 40.23 wall, prefill 1,040 / 1,040 after re-running on an idle server - the first pair taken
+right after the 4-stream stress read 965 / 946 and is kept as the confound), NLL 0 moved.
+Hypothesis held. Next binder for 512K / 1M: not yet seen; projected the KV pool / attention
+working set (compressed KV ~ 0.1-0.2 GB per 65K, so 512K / 1 slot is plausible on 1.7 GB spare,
+1M is not at 226 / 158). Evidence
+[`evidence/e34-indexer-memory/b-ii/`](../evidence/e34-indexer-memory/b-ii/README.md).
+The ladder's next rung is 512K / 1 slot, after part d.
+~~**Part b-ii (registered 2026-10-08, next):**~~ publish the candidate mask at block granularity.
 `select_candidate_blocks` decides per `candidate_block_size` = 8 positions and
 `repeat_interleave(8)`s the result, so the published `[rows, prefix]` bool is 8× redundant.
 Publish `[rows, ceil(prefix / 8)]` and expand per tile at the consumers
@@ -854,7 +872,7 @@ and the consumer selection is unchanged. Gates and evidence as part b (`b-ii/<ru
 Preallocating the full mask in place was considered and rejected: it removes only the duplicate
 (720 MiB here) and leaves a 1 GiB resident mask at 262K.
 
-**Part d (registered 2026-10-08, owner request, after b-ii):** prefill chunk size. E22a measured
+**Part d (registered 2026-10-08, owner request, after b-ii; next):** prefill chunk size. E22a measured
 streamed prefill at 3.9× (4K chunks) and 6.5× (8K chunks) over CPU prefill but 16K chunks were
 blocked by VRAM; E34b freed ≈ 0.8 GB at the deployment profile. One serve each at
 `CHUNKED_PREFILL_SIZE=8192` then 16384 on 64K × 4: 16K / 32K prefill tok/s, C1 / C4 decode

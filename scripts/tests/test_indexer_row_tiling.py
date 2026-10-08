@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GPU bit-equality test for the row-tiled dense fp4 indexer (recipe E34b).
+"""GPU bit-equality test for the row-tiled dense fp4 indexer (recipe E34b, E34b-ii).
 
 Runs INSIDE the recipe image with the overlay's python/sglang mounted over the installed
 package (scripts/tests/run-indexer-tiling-tests.sh); needs one GPU (the deep_gemm
@@ -28,6 +28,16 @@ What a wrong implementation would get wrong, and which assertion catches it:
   - a kernel that is not actually row-independent (accumulation that depends on T) ->
     the 1-row-tile run.
 
+E34b-ii: the source publishes block-level masks `[rows, ceil(lc / block_size)]`
+(`select_candidate_block_keep`) and each consumer tile expands its own rows
+(`expand_candidate_blocks`). What a wrong implementation would get wrong:
+  - an expansion that is not the old `repeat_interleave(block_size)[..., :width]` ->
+    `test_block_expansion` compares it with an index-gather reference and checks the
+    old per-position mask (`select_candidate_blocks`) equals the expanded keep.
+  - a consumer that still indexes the block mask by position (or expands to the wrong
+    width) -> consumer runs on block masks: a pick outside a kept block, or a shape error.
+  - publishing per-position masks again -> the published shape check.
+
 Equality is on the picks sorted per row: the fused ragged top-k writes a row's k picks
 in a launch-shape-dependent order (measured: identical sets, different order, at every
 tile size), and `_low_ratio_index_topk_dense` sorts each row ascending before any
@@ -44,14 +54,24 @@ import torch
 import sglang.srt.layers.attention.deepseek_v4_backend as backend
 from sglang.kernels.ops.attention.dsv4.fp4_indexer import quantize_fp4_indexer_tensor
 from sglang.srt.layers.attention.deepseek_v4_backend import DeepseekV4AttnBackend
+from sglang.srt.layers.attention.dsv4.indexer import (
+    expand_candidate_blocks,
+    select_candidate_block_keep,
+    select_candidate_blocks,
+)
 
 DEV = torch.device("cuda")
 HEADS = 32  # index_n_heads
 RATIO = 1  # the low-ratio dense path; compress_lens == pos + 1
 # two requests: visible compressed positions and query rows (the newest rows)
-LC = [6000, 1500]
+LC = [6001, 1500]  # 6001: the last block is partial, so expansion must truncate
 Q_LENS = [700, 300]
 HUGE = 1 << 40
+BLOCK = 8
+
+
+def blocks_of(lc: int) -> int:
+    return -(-lc // BLOCK)
 
 
 def make_indexer(source: bool, consume: bool):
@@ -60,7 +80,7 @@ def make_indexer(source: bool, consume: bool):
         uses_candidates=consume,
         index_topk=512,
         candidate_topk_blocks=2048,
-        candidate_block_size=8,
+        candidate_block_size=BLOCK,
     )
 
 
@@ -128,11 +148,12 @@ def tiles_for(rows_per_tile: int) -> int:
 
 
 def random_masks(seed: int = 1):
+    """Block-level masks, the form a source publishes (E34b-ii)."""
     g = torch.Generator(device=DEV).manual_seed(seed)
     out = []
     for lc, t_len in zip(LC, Q_LENS):
-        m = torch.rand((t_len, lc), device=DEV, generator=g) < 0.08
-        m[:, -1] = True  # the newest position is always a candidate
+        m = torch.rand((t_len, blocks_of(lc)), device=DEV, generator=g) < 0.08
+        m[:, -1] = True  # the block holding the newest position is always a candidate
         out.append(m)
     return out
 
@@ -158,7 +179,7 @@ def test_source_is_tile_invariant(inputs):
     one, masks_one = run("source", HUGE, inputs)
     check_shape_and_validity(one, inputs[4], inputs[3])
     assert [m.shape for m in masks_one] == [
-        (t, lc) for lc, t in zip(LC, Q_LENS)
+        (t, blocks_of(lc)) for lc, t in zip(LC, Q_LENS)
     ], [m.shape for m in masks_one]
     for rows in (37, 1):
         tiled, masks_tiled = run("source", tiles_for(rows), inputs)
@@ -180,9 +201,9 @@ def test_consume_is_tile_invariant(inputs, masks):
         picks = col[rows]
         ok = picks < 0
         valid = ~ok
-        gathered = masks[b].gather(1, picks.clamp(0, lc - 1))
+        gathered = masks[b].gather(1, picks.clamp(0, lc - 1) // BLOCK)
         assert bool((gathered | ok).all()), f"consume: non-candidate picked in request {b}"
-        assert bool((valid.sum(dim=1) <= masks[b].sum(dim=1)).all())
+        assert bool((valid.sum(dim=1) <= masks[b].sum(dim=1) * BLOCK).all())
     for rows in (37, 1):
         tiled, _ = run("consume", tiles_for(rows), inputs, masks)
         assert torch.equal(one, tiled), f"consume: {rows}-row tiles differ"
@@ -196,6 +217,29 @@ def test_consume_sees_the_mask(inputs):
     assert not torch.equal(plain, masked)
 
 
+def test_block_expansion():
+    """`expand_candidate_blocks` is the old per-position mask, bit for bit, including
+    the truncated last block; and the old `select_candidate_blocks` is exactly
+    keep -> expand on real block scores."""
+    g = torch.Generator(device=DEV).manual_seed(2)
+    for lc in (6001, 1500, 8, 9, 1):
+        rows = 5
+        keep = torch.rand((rows, blocks_of(lc)), device=DEV, generator=g) < 0.3
+        got = expand_candidate_blocks(keep, BLOCK, lc)
+        ref = keep[:, torch.arange(lc, device=DEV) // BLOCK]
+        assert got.shape == (rows, lc), (got.shape, lc)
+        assert torch.equal(got, ref), f"expansion differs at lc={lc}"
+        logits = torch.randn((rows, lc), device=DEV, generator=g)
+        lens = torch.randint(1, lc + 1, (rows, 1), device=DEV, generator=g)
+        logits = logits.masked_fill(
+            torch.arange(lc, device=DEV)[None, :] >= lens, -torch.inf
+        )
+        old = select_candidate_blocks(logits, lens, topk_blocks=64, block_size=BLOCK)
+        new = select_candidate_block_keep(logits, lens, topk_blocks=64, block_size=BLOCK)
+        assert new.shape == (rows, blocks_of(lc)), new.shape
+        assert torch.equal(old, expand_candidate_blocks(new, BLOCK, lc)), lc
+
+
 def main() -> int:
     if not torch.cuda.is_available():
         print("indexer row tiling tests: no GPU; skipped")
@@ -203,6 +247,7 @@ def main() -> int:
     inputs = make_inputs()
     failures = 0
     for name, fn in (
+        ("block expansion", test_block_expansion),
         ("plain", lambda: test_plain_is_tile_invariant(inputs)),
         ("source", lambda: test_source_is_tile_invariant(inputs)),
         ("consume(random mask)", lambda: test_consume_is_tile_invariant(inputs, random_masks())),
