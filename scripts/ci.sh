@@ -48,6 +48,8 @@ fi
 if bash "$ROOT/scripts/tests/run-kt-prefill-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt prefill tests (exit $rc)"; exit 1; fi
 fi
+# T3.29 launcher config guards (DRY_RUN=1, no docker/GPU): qualified profiles accepted, unqualified refused.
+if bash "$ROOT/scripts/tests/test-serve-config.sh" >/dev/null; then :; else echo "FAIL serve config tests"; exit 1; fi
 # DSpark multi-stream-overlap gate (review C4 / Bug A): pure Python against the overlay checkout; skipped without it.
 if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi

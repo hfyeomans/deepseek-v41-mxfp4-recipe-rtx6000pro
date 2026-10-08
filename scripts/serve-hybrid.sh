@@ -201,11 +201,24 @@ if [[ "${ALLOW_UNTESTED_FIT:-0}" != "1" ]]; then
       "first 16K prefill, E34d, and expandable_segments breaks the custom all-reduce). Set ALLOW_UNTESTED_FIT=1" \
       "to try, then run stress-kv-full.py followed by nll-score.py --corpus."
   fi
-  if (( CONTEXT_LENGTH > 65536 )) && { (( CHUNKED_PREFILL_SIZE != 4096 )) || (( KT_NUM_GPU_EXPERTS != 226 )); }; then
+  # T3.29 (2026-10-08): the 262K x 1 and 512K x 1 rungs re-qualified on 219 / 8192 (512K with
+  # MEM_FRACTION_STATIC=0.962), both faster than at 226 / 4096 and with more VRAM headroom
+  # (evidence/t329/). What did not fit is more than one slot above 64K: 262K x 4 OOMs on the
+  # 980 MiB fused-MoE prefill workspace at ~190K prefix of the *first* request, because the
+  # 1.06M-token pool leaves only 3.88 GB after capture and the chunk-8192 transients reach
+  # ~4.2 GB (E34e). So the refusal is now on slots, not on the placement.
+  if (( CONTEXT_LENGTH > 65536 )) && (( MAX_RUNNING_REQUESTS > 1 )); then
+    fail_config "CONTEXT_LENGTH=$CONTEXT_LENGTH with MAX_RUNNING_REQUESTS=$MAX_RUNNING_REQUESTS:" \
+      "above 64K only single-slot rungs are qualified (262K / 512K x 1 at 219 / 8192, T3.29; 512K needs" \
+      "MEM_FRACTION_STATIC=0.962). 262K x 4 OOMs in the fused-MoE prefill workspace at ~190K prefix." \
+      "Set MAX_RUNNING_REQUESTS=1, or ALLOW_UNTESTED_FIT=1 to try (then stress-kv-full.py at that" \
+      "concurrency, nll-score.py --corpus)."
+  fi
+  if (( CONTEXT_LENGTH > 65536 )) && { (( CHUNKED_PREFILL_SIZE != 8192 )) || (( KT_NUM_GPU_EXPERTS != 219 )); } \
+     && ! { (( CHUNKED_PREFILL_SIZE == 4096 )) && (( KT_NUM_GPU_EXPERTS == 226 )); }; then
     fail_config "CONTEXT_LENGTH=$CONTEXT_LENGTH with KT_NUM_GPU_EXPERTS=$KT_NUM_GPU_EXPERTS CHUNKED_PREFILL_SIZE=$CHUNKED_PREFILL_SIZE:" \
-      "the 128K / 262K / 512K x 1 ladder rungs (E33/E34) were qualified only at KT_NUM_GPU_EXPERTS=226" \
-      "CHUNKED_PREFILL_SIZE=4096; the 219/8192 default (2026-10-08) is qualified at 64K x 4. Pass those two" \
-      "values for a ladder rung, or ALLOW_UNTESTED_FIT=1 to re-qualify (E33 gates a-f, then nll-score.py --corpus)."
+      "the single-slot ladder rungs are qualified at 219 / 8192 (T3.29) and at 226 / 4096 (E33/E34);" \
+      "other placements above 64K need ALLOW_UNTESTED_FIT=1 and the E33 gates a-f + nll-score.py --corpus."
   fi
   if [[ "$DSPARK" == "1" ]] && (( KT_NUM_GPU_EXPERTS > 208 )); then
     fail_config "DSPARK=1 adds 3.85 GB/rank of draft stages; it was only ever fitted at KT_NUM_GPU_EXPERTS=208" \
@@ -227,6 +240,12 @@ echo "resolved: experts gpu=${KT_NUM_GPU_EXPERTS} cpu=$((384 - KT_NUM_GPU_EXPERT
   "slots=${MAX_RUNNING_REQUESTS} max_total_tokens=${MAX_TOTAL_TOKENS:-fraction-sized} capture_bs=[${CUDA_GRAPH_BS:-derived<=${CUDA_GRAPH_MAX_BS}}]" \
   "dspark=${DSPARK} dspark_k=${DSPARK_K} gpu_prefill_min=${KT_GPU_PREFILL_MIN_TOKENS} logprob_chunk=${SGLANG_LOGPROB_CHUNK_SIZE}" \
   "nan_probe_min=${KT_NAN_PROBE_MIN_TOKENS} image=${IMAGE}"
+# DRY_RUN=1: print the resolved line (after every fail_config check) and stop before any
+# docker call. For probing the guards and for the config tests; added after a guard probe
+# on 2026-10-08 launched a real server.
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  exit 0
+fi
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 server_args+=($EXTRA_SERVER_ARGS)
 

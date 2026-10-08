@@ -1,0 +1,18 @@
+01-readme-early.txt: tokens scored 4795  mean NLL 1.49469 nats/tok  ppl 4.458  cached_tokens 0  latency 4.7 s
+vs 01-readme-early.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 4795)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+02-learning.txt: tokens scored 10004  mean NLL 1.40643 nats/tok  ppl 4.081  cached_tokens 0  latency 10.4 s
+vs 02-learning.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 10004)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+03-experiments.txt: tokens scored 11053  mean NLL 1.84743 nats/tok  ppl 6.343  cached_tokens 0  latency 9.7 s
+vs 03-experiments.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 11053)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+04-benchmarks.txt: tokens scored 12028  mean NLL 1.57910 nats/tok  ppl 4.851  cached_tokens 0  latency 9.9 s
+vs 04-benchmarks.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 12028)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+05-troubleshooting.txt: tokens scored 9668  mean NLL 1.92614 nats/tok  ppl 6.863  cached_tokens 0  latency 10.0 s
+vs 05-troubleshooting.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 9668)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+06-bios-guide.txt: tokens scored 9546  mean NLL 1.58136 nats/tok  ppl 4.862  cached_tokens 0  latency 9.7 s
+vs 06-bios-guide.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 9546)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+07-serve-hybrid-sh.txt: tokens scored 5938  mean NLL 1.25140 nats/tok  ppl 3.495  cached_tokens 0  latency 5.0 s
+vs 07-serve-hybrid-sh.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 5938)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+08-bench-decode-py.txt: tokens scored 2621  mean NLL 0.66023 nats/tok  ppl 1.935  cached_tokens 0  latency 4.2 s
+vs 08-bench-decode-py.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 2621)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+POOLED over 8 texts: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 65653; cluster-robust se 0.00000, z +0.00)  changed 0  worse/better >0.5: 0/0
+wrote evidence/t329/262k-1slot/corpus/*.json
