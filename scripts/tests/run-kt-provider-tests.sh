@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run the CpuExpertProvider seam conformance tests (T3.19b) inside the recipe image:
-# the overlay's kt_contract.py + kt_provider.py through a stub `sglang` package, the
+# the overlay's kt_contract.py + kt_provider.py + kt_runtime.py through a stub `sglang` package, the
 # installed experts_base.py with every recipe patch applied, and the deferral test's
 # recorders (test_kt_deferral_adjacency.py) as the fake C++ side. No GPU is requested;
 # safe while a server is running. Exit 0 = all pass; 3 = docker/image/overlay unavailable.
@@ -15,7 +15,7 @@ if ! command -v docker >/dev/null || ! docker image inspect "$IMAGE" >/dev/null 
   echo "kt provider tests: docker or image $IMAGE unavailable; skipped" >&2
   exit 3
 fi
-for f in kt_contract.py kt_provider.py kt_ep_wrapper.py; do
+for f in kt_contract.py kt_provider.py kt_runtime.py kt_ep_wrapper.py; do
   if [[ ! -f "$MOE/$f" ]]; then
     echo "kt provider tests: overlay $MOE/$f not found (set OVERLAY_DIR); skipped" >&2
     exit 3
@@ -32,7 +32,7 @@ done
 python3 -m py_compile "$work/kt_kernel/experts_base.py"
 touch "$work/stub/sglang/__init__.py" "$work/stub/sglang/srt/__init__.py" \
   "$work/stub/sglang/srt/layers/__init__.py" "$work/stub/sglang/srt/layers/moe/__init__.py"
-cp "$MOE/kt_contract.py" "$MOE/kt_provider.py" "$work/stub/sglang/srt/layers/moe/"
+cp "$MOE/kt_contract.py" "$MOE/kt_provider.py" "$MOE/kt_runtime.py" "$work/stub/sglang/srt/layers/moe/"
 
 docker run --rm --entrypoint python3 \
   -e PYTHONPATH=/stub \

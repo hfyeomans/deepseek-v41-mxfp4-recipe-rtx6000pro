@@ -2,7 +2,7 @@
 """GPU-free conformance tests for the CpuExpertProvider seam (recipe T3.19b).
 
 Runs INSIDE the recipe image via scripts/tests/run-kt-provider-tests.sh: the overlay's
-kt_contract.py / kt_provider.py are imported through a stub `sglang` package, and
+kt_contract.py / kt_provider.py / kt_runtime.py are imported through a stub `sglang` package, and
 kt_kernel.experts_base (with the recipe patches applied) supplies the real Python
 decision layer over the same C++ recorders test_kt_deferral_adjacency.py uses. No
 CUDA is touched.
@@ -49,6 +49,7 @@ from sglang.srt.layers.moe.kt_provider import (  # noqa: E402
     ForwardLedger,
     KtKernelProvider,
 )
+from sglang.srt.layers.moe.kt_runtime import KtRuntime  # noqa: E402
 
 HIDDEN, TOP_K, D, STREAM = adj.HIDDEN, adj.TOP_K, adj.D, adj.STREAM
 IDS, SCORES = adj.routing(
@@ -115,12 +116,16 @@ def fake_factory():
 
 def kt_factory():
     adj.reset()
-    kp.reset_registry()
+    rt = KtRuntime(tp_rank=0)
 
     def make(layer_idx: int, d: int = D):
-        return KtKernelProvider(adj.make_layer(layer_idx, d=d, compact=True), layer_idx=layer_idx, hidden=HIDDEN, top_k=TOP_K, max_deferred=d)
+        return rt.new_provider(adj.make_layer(layer_idx, d=d, compact=True), layer_idx=layer_idx, hidden=HIDDEN, top_k=TOP_K, max_deferred=d)
 
     return make
+
+
+def kt_provider(rt: KtRuntime, layer_idx: int, d: int = D) -> KtKernelProvider:
+    return rt.new_provider(adj.make_layer(layer_idx, d=d, compact=True), layer_idx=layer_idx, hidden=HIDDEN, top_k=TOP_K, max_deferred=d)
 
 
 FACTORIES: Dict[str, Callable] = {"fake": fake_factory, "kt": kt_factory}
@@ -224,11 +229,11 @@ def test_kt_calls_are_unchanged() -> None:
     """Direct kt calls and provider calls must leave identical recorder traces."""
     def trace(via_provider: bool):
         adj.reset()
-        kp.reset_registry()
+        rt = KtRuntime(tp_rank=0)
         for L, d in ((6, D), (7, D), (8, 0)):
             w = adj.make_layer(L, d=d, compact=True)
             if via_provider:
-                run(KtKernelProvider(w, layer_idx=L, hidden=HIDDEN, top_k=TOP_K, max_deferred=d))
+                run(rt.new_provider(w, layer_idx=L, hidden=HIDDEN, top_k=TOP_K, max_deferred=d))
             else:
                 adj.submit(w, IDS, SCORES)
         # buffer addresses differ between runs; compare which slot each task targets
@@ -242,8 +247,7 @@ def test_kt_calls_are_unchanged() -> None:
 
 def test_kt_timed_wait_order() -> None:
     adj.reset()
-    kp.reset_registry()
-    p = KtKernelProvider(adj.make_layer(6, compact=True), layer_idx=6, hidden=HIDDEN, top_k=TOP_K, max_deferred=D)
+    p = kt_provider(KtRuntime(tp_rank=0), 6)
     marks: List[str] = []
     _, out = run(p, mark=marks.append)
     assert marks == ["sync", "h2d"], marks
@@ -253,24 +257,24 @@ def test_kt_timed_wait_order() -> None:
 
 def test_kt_lease_detects_replaced_buffers() -> None:
     adj.reset()
-    kp.reset_registry()
+    rt = KtRuntime(tp_rank=0)
     KExpertsCPUBuffer.capture_bs = [2]
-    p = KtKernelProvider(adj.make_layer(6, compact=True), layer_idx=6, hidden=HIDDEN, top_k=TOP_K, max_deferred=D)
+    p = kt_provider(rt, 6)
     run(p)  # eager warmup promotes bs=2 into capture_buffers; no lease yet
-    assert 2 not in kp._LEASES
+    assert 2 not in rt.leases
     kp._capturing = lambda: True  # pretend a graph is capturing this submit
     try:
-        run(KtKernelProvider(adj.make_layer(7, compact=True), layer_idx=7, hidden=HIDDEN, top_k=TOP_K, max_deferred=D))
+        run(kt_provider(rt, 7))
     finally:
         kp._capturing = lambda: False
-    lease = kp._LEASES[2]
+    lease = rt.leases[2]
     assert isinstance(lease, BufferLease) and len(lease.ptrs) == 14
-    run(KtKernelProvider(adj.make_layer(8, compact=True), layer_idx=8, hidden=HIDDEN, top_k=TOP_K, max_deferred=D))  # same tuple: ok
+    run(kt_provider(rt, 8))  # same tuple: ok
     # Replace the captured tuple with a fresh one (what clear_buffer_cache + re-promotion does).
     BaseMoEWrapper.clear_buffer_cache()
     adj.INFER.queue.clear()
     try:
-        run(KtKernelProvider(adj.make_layer(9, compact=True), layer_idx=9, hidden=HIDDEN, top_k=TOP_K, max_deferred=D))
+        run(kt_provider(rt, 9))
     except KTContractError as e:
         assert "not the one a CUDA graph captured" in str(e), e
     else:
@@ -281,8 +285,7 @@ def test_kt_lease_detects_replaced_buffers() -> None:
 def test_kt_forward_end_sees_kt_flags() -> None:
     """The ledger can be clean while kt's own flag says the last layer deferred: still refused."""
     adj.reset()
-    kp.reset_registry()
-    p = KtKernelProvider(adj.make_layer(39, d=0, compact=True), layer_idx=39, hidden=HIDDEN, top_k=TOP_K, max_deferred=0)
+    p = kt_provider(KtRuntime(tp_rank=0), 39, d=0)
     run(p)
     p.check_forward_end()
     BaseMoEWrapper._layer_has_pending_deferred[39] = True  # kt's view diverges
@@ -295,13 +298,13 @@ def test_kt_forward_end_sees_kt_flags() -> None:
 
 def test_kt_provider_validates_wrapper() -> None:
     adj.reset()
-    kp.reset_registry()
+    rt = KtRuntime(tp_rank=0)
     w = adj.make_layer(5, compact=True)
     for kw in ({"layer_idx": 6}, {"hidden": HIDDEN + 1}, {"top_k": TOP_K + 1}, {"max_deferred": D - 1}):
         args = dict(layer_idx=5, hidden=HIDDEN, top_k=TOP_K, max_deferred=D)
         args.update(kw)
         try:
-            KtKernelProvider(w, **args)
+            rt.new_provider(w, **args)
         except KTContractError:
             continue
         raise AssertionError(f"provider accepted a wrapper mismatch: {kw}")

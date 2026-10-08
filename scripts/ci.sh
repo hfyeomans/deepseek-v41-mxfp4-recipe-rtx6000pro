@@ -41,6 +41,9 @@ fi
 if bash "$ROOT/scripts/tests/run-kt-timeline-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt timeline tests (exit $rc)"; exit 1; fi
 fi
+if bash "$ROOT/scripts/tests/run-kt-runtime-tests.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt runtime tests (exit $rc)"; exit 1; fi
+fi
 # DSpark multi-stream-overlap gate (review C4 / Bug A): pure Python against the overlay checkout; skipped without it.
 if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi
