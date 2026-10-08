@@ -75,8 +75,7 @@ def test_two_runtimes_share_nothing() -> None:
     a.prefill_coordinator = object()
     assert b.prefill_coordinator is None
     assert a.timeline is None and b.timeline is None
-    a._side_streams[0] = object()
-    assert b._side_streams == {}
+    assert not hasattr(a, "_side_streams")  # B2 side streams removed at T3.16j
 
 
 def test_reserve_capture_sizes_is_per_runtime() -> None:

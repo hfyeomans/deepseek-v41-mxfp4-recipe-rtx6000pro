@@ -84,17 +84,10 @@ KT_GPU_PREFILL_MIN_TOKENS="${KT_GPU_PREFILL_MIN_TOKENS:-1024}"
 KT_GPU_PREFILL_LOG="${KT_GPU_PREFILL_LOG:-0}"
 # E22d debugging: per-layer non-finite check on forwards of >= N MoE tokens (0 = off).
 KT_NAN_PROBE_MIN_TOKENS="${KT_NAN_PROBE_MIN_TOKENS:-0}"
-# B2 direct-UVA experts (T3.18): the last N CPU experts of every layer are also kept
-# pinned in host memory in the GPU kernel's layout and computed by the GPUs straight
-# over PCIe (each rank its TP slice), off the CPU-core path. Costs N x 8.96 MiB x 40
-# layers x 2 ranks of pinned RAM (N=40: 28 GiB, taken from the Engram page cache while
-# kt still holds its own copy). 0 = off: T3.18/E30 measured +2 % C1 at N=40 and -3 % at
-# N=60 (gate was +10 %), so B2 stays off; kept as a research path (evidence/t318-b2-prototype).
-KT_B2_UVA_EXPERTS="${KT_B2_UVA_EXPERTS:-0}"
-# B2 only runs for forwards of at most this many MoE tokens (bs=1 decode by default);
-# larger eager forwards hand the B2 experts back to kt-kernel. With 40 B2 experts a
-# 13-token prefill layer hit most of them and TTFT went 0.61 -> 2.5 s (T3.18).
-KT_B2_MAX_TOKENS="${KT_B2_MAX_TOKENS:-1}"
+# B2 direct-UVA experts (KT_B2_UVA_EXPERTS / KT_B2_MAX_TOKENS) were removed at T3.16j:
+# E30 measured +2 % C1 at N=40 and -3 % at N=60 against a +10 % gate, and a PCIe expert
+# read is slower than kt's DRAM read, so the path only ever added bandwidth. The
+# evidence stays in evidence/t318-b2-prototype/; the launcher refuses the knobs below.
 # Speculative decoding (E23 / T3.9): DSPARK=1 adds the three MTP draft stages
 # (--speculative-algorithm DSPARK, block size DSPARK_K). Off by default: E6-DESIGN
 # 4.6 predicts K=5 loses under a CPU-bound MoE; E23 measures off / K=2 / K=5.
@@ -222,16 +215,8 @@ fi
 if [[ "$DSPARK" == "1" ]] && (( DSPARK_K > 5 || DSPARK_K < 1 )); then
   fail_config "DSPARK_K=$DSPARK_K outside the tested 1..5 (E23 R0-R3)."
 fi
-if (( KT_B2_UVA_EXPERTS > 0 )); then
-  if (( KT_GPU_PREFILL_MIN_TOKENS <= 0 )); then
-    fail_config "KT_B2_UVA_EXPERTS=$KT_B2_UVA_EXPERTS needs KT_GPU_PREFILL_MIN_TOKENS > 0 (reuses its export path)."
-  fi
-  if (( KT_B2_UVA_EXPERTS >= 384 - KT_NUM_GPU_EXPERTS )); then
-    fail_config "KT_B2_UVA_EXPERTS=$KT_B2_UVA_EXPERTS must be below the CPU expert count $((384 - KT_NUM_GPU_EXPERTS))."
-  fi
-  if (( KT_B2_MAX_TOKENS < 1 )); then
-    fail_config "KT_B2_MAX_TOKENS=$KT_B2_MAX_TOKENS must be >= 1 (set KT_B2_UVA_EXPERTS=0 to disable B2)."
-  fi
+if [[ -n "${KT_B2_UVA_EXPERTS:-}" || -n "${KT_B2_MAX_TOKENS:-}" ]]; then
+  fail_config "KT_B2_UVA_EXPERTS / KT_B2_MAX_TOKENS were removed at T3.16j (B2 rejected, E30); unset them."
 fi
 
 # Resolved configuration, one line, so a launch log names every knob that decides the
@@ -241,7 +226,7 @@ echo "resolved: experts gpu=${KT_NUM_GPU_EXPERTS} cpu=$((384 - KT_NUM_GPU_EXPERT
   "cpuinfer=${KT_CPUINFER} chunk=${CHUNKED_PREFILL_SIZE} mem_fraction=${MEM_FRACTION_STATIC} context=${CONTEXT_LENGTH}" \
   "slots=${MAX_RUNNING_REQUESTS} max_total_tokens=${MAX_TOTAL_TOKENS:-fraction-sized} capture_bs=[${CUDA_GRAPH_BS:-derived<=${CUDA_GRAPH_MAX_BS}}]" \
   "dspark=${DSPARK} dspark_k=${DSPARK_K} gpu_prefill_min=${KT_GPU_PREFILL_MIN_TOKENS} logprob_chunk=${SGLANG_LOGPROB_CHUNK_SIZE}" \
-  "nan_probe_min=${KT_NAN_PROBE_MIN_TOKENS} b2_uva_experts=${KT_B2_UVA_EXPERTS} b2_max_tokens=${KT_B2_MAX_TOKENS} image=${IMAGE}"
+  "nan_probe_min=${KT_NAN_PROBE_MIN_TOKENS} image=${IMAGE}"
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 server_args+=($EXTRA_SERVER_ARGS)
 
@@ -278,8 +263,6 @@ docker_cmd=(
   -e "KT_GPU_PREFILL_MIN_TOKENS=${KT_GPU_PREFILL_MIN_TOKENS}"
   -e "KT_GPU_PREFILL_LOG=${KT_GPU_PREFILL_LOG}"
   -e "KT_NAN_PROBE_MIN_TOKENS=${KT_NAN_PROBE_MIN_TOKENS}"
-  -e "KT_B2_UVA_EXPERTS=${KT_B2_UVA_EXPERTS}"
-  -e "KT_B2_MAX_TOKENS=${KT_B2_MAX_TOKENS}"
   "${extra_env_flags[@]}"
   "${extra_docker_args[@]}"
   "$IMAGE"

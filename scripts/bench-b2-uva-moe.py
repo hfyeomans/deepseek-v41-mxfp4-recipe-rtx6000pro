@@ -322,7 +322,7 @@ def main() -> None:
     report["moe"] = moe
 
     # ---- 5. sparse hits: what the model's B2 path actually sends ------------
-    # In the model, non-B2 slots carry -1 (see kt_ep_wrapper.remap_topk_ids_for_b2), so at
+    # In the model, non-B2 slots carry -1 (as the retired overlay path remap_topk_ids_for_b2 did; removed at T3.16j, this script is the E30 record), so at
     # bs=1 a layer typically has 0-2 of its 6 slots inside S. Time V0 (direct UVA) and the
     # device reference for h valid slots out of top-k, rest -1, M in --tokens. The fixed cost
     # at h=0 is the kernel's floor for |S| problems with no tiles.

@@ -47,8 +47,6 @@ QUALIFIED_TOPOLOGY = dict(
     num_experts=NUM_EXPERTS,
     max_deferred=4,
     top_k=TOP_K,
-    b2_experts=0,
-    has_streamer=True,
     layer_idx=7,
 )
 
@@ -112,10 +110,14 @@ def test_all_gpu_layer_must_not_build_hybrid() -> None:
     expect_error(topo(num_gpu_experts=NUM_EXPERTS), f"num_gpu_experts={NUM_EXPERTS}")
 
 
-def test_b2_needs_streamer_and_fits_cpu_tier() -> None:
-    topo(b2_experts=40)()
-    expect_error(topo(b2_experts=40, has_streamer=False), "KT_GPU_PREFILL_MIN_TOKENS")
-    expect_error(topo(b2_experts=NUM_EXPERTS - GPU_EXPERTS), "KT_B2_UVA_EXPERTS=158")
+def test_b2_knobs_are_gone() -> None:
+    # T3.16j: the B2 direct-UVA path was removed; the contract must not accept its knobs.
+    import inspect
+
+    from sglang.srt.layers.moe.kt_contract import check_moe_topology
+
+    params = inspect.signature(check_moe_topology).parameters
+    assert "b2_experts" not in params and "has_streamer" not in params, sorted(params)
 
 
 # ---- boundary -------------------------------------------------------------

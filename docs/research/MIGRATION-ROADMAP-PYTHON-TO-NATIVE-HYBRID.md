@@ -707,8 +707,8 @@ Until then the repository is an engineering recipe with an experimental overlay,
 | Gate | Task rows | Owner | Status | Evidence |
 |---|---|---|---|---|
 | G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | open: **C4, C5, C3-rest, T3.16e(3) done** (2026-09-24 / 2026-10-07); only C10/T3.13 remains, gated before G4 not G1 | review §10a, §10f; `evidence/t319/b/` |
-| G1 | T3.19 a..f | agent | **entered 2026-09-24** (8/8); **T3.19a done 2026-09-24**; **T3.19b done 2026-10-07** (overlay `9fc14817`; parity 14/14, C3 closed); **T3.19c done 2026-10-08** (overlay `095789db`; runner-owned state, explicit loader; comparators are now the T3.28 numbers, the pin file is superseded); T3.16j next, then d..f | `evidence/t319/baseline-pin.json`, `evidence/t319/a/`, `evidence/t319/b/`, `evidence/t319/c/` |
-| G2 | T3.16j | agent | **triggered 2026-10-08** (T3.19c committed); no T3.20 design note exists, so the stream/UVA primitives are removed with the rest | review §10c |
+| G1 | T3.19 a..f | agent | **entered 2026-09-24** (8/8); **T3.19a done 2026-09-24**; **T3.19b done 2026-10-07** (overlay `9fc14817`; parity 14/14, C3 closed); **T3.19c done 2026-10-08** (overlay `095789db`; runner-owned state, explicit loader; comparators are now the T3.28 numbers, the pin file is superseded); **T3.16j done 2026-10-08** (G2); T3.19d next, then e, f | `evidence/t319/baseline-pin.json`, `evidence/t319/a/`, `evidence/t319/b/`, `evidence/t319/c/` |
+| G2 | T3.16j | agent | ~~triggered 2026-10-08~~ **done 2026-10-08** (overlay `b6c76738`, +14/-314; stream/UVA primitives removed with the rest, no T3.20 design note existed; launcher refuses the knobs; consistency PASS, C1 39.21 wall, C4 53.93, NLL 0 moved) | review §10c; `evidence/t316j/` |
 | G3 | T3.20, T3.21 | agent | waits for G1 exit | E26 A3, E20 |
 | G4 | T3.22 | **owner approval** + agent | waits for G1 exit, G2, C10, design record | `evidence/t322/` (to be created) |
 | G5 | T3.23 | agent | waits for G4 timeline | decision record or units |
