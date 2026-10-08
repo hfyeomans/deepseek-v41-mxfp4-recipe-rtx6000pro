@@ -275,6 +275,7 @@ def main() -> int:
 
     sys.path.insert(0, "/sgl-workspace/sglang/python")
     import sglang.srt.layers.moe.kt_ep_wrapper as ktw
+    import sglang.srt.layers.moe.kt_prefill as ktp  # _HostSlice/_StreamedExpertSlots live here since T3.19d
 
     n_cpu = args.num_experts - args.num_gpu_experts
     gpu_mask = torch.zeros(args.num_experts, dtype=torch.bool)
@@ -361,11 +362,11 @@ def main() -> int:
             t = time.perf_counter()
             raws, hslices, slots = [], [], []
             for r in range(tp):
-                nb = ktw._HostSlice.nbytes(n_cpu, args.hidden, inter_tp)
+                nb = ktp._HostSlice.nbytes(n_cpu, args.hidden, inter_tp)
                 raw = torch.empty(nb, dtype=torch.uint8, pin_memory=True)
                 raws.append(raw)
-                hslices.append(ktw._HostSlice(raw, n_cpu, args.hidden, inter_tp))
-                slots.append(ktw._StreamedExpertSlots(n_cpu, args.hidden, inter_tp, devs[r]))
+                hslices.append(ktp._HostSlice(raw, n_cpu, args.hidden, inter_tp))
+                slots.append(ktp._StreamedExpertSlots(n_cpu, args.hidden, inter_tp, devs[r]))
             for e in range(n_cpu):
                 p = [h.ptrs(e) for h in hslices]
                 wrapper.submit_write_weight_scale_to_buffer(

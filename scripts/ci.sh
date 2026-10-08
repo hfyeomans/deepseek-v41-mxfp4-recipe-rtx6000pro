@@ -44,6 +44,10 @@ fi
 if bash "$ROOT/scripts/tests/run-kt-runtime-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt runtime tests (exit $rc)"; exit 1; fi
 fi
+# T3.19d streamed-prefill state machine (PrefillPipeline, pure Python): in-image against the overlay checkout; skipped without it.
+if bash "$ROOT/scripts/tests/run-kt-prefill-tests.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt prefill tests (exit $rc)"; exit 1; fi
+fi
 # DSpark multi-stream-overlap gate (review C4 / Bug A): pure Python against the overlay checkout; skipped without it.
 if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi

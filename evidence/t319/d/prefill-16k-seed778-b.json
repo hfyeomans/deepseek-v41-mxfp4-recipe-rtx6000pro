@@ -1,0 +1,32 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 3,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization",
+  "sizes": [
+    {
+      "target_tokens": 16384,
+      "median_prompt_tokens": 16063,
+      "median_prefill_tps": 1270.0162705887576,
+      "median_ttft_s": 12.613003735023085,
+      "runs": [
+        {
+          "prompt_tokens": 16063,
+          "ttft_s": 12.296264896984212,
+          "prefill_tps": 1306.331649047315
+        },
+        {
+          "prompt_tokens": 16069,
+          "ttft_s": 12.65259380696807,
+          "prefill_tps": 1270.0162705887576
+        },
+        {
+          "prompt_tokens": 15869,
+          "ttft_s": 12.613003735023085,
+          "prefill_tps": 1258.1459843649968
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-08T14:28:08-0400"
+}
