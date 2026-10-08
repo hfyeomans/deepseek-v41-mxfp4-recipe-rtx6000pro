@@ -68,6 +68,7 @@ Runnable now, no model download, no GPU contention:
 | `hardware-inventory.sh [--json]` | identifier-free hardware sheet |
 | `bench-engram-gather.py --backend dram\|nvme` | E3: 48-row random gathers per token, DRAM vs NVMe |
 | `bench-dram.py` | E1: host copy bandwidth |
+| `evidence_manifest.py write\|show\|verify\|check-evidence` | T3.19f: the per-serve provenance manifest (recipe/overlay SHA, image + container id, resolved knobs, BIOS slot + HSMP clocks, GPU caps, pre-serve memory and Engram page-cache state, content hash). The launcher writes one; the evidence scripts stamp their JSON with its hash and copy it beside the output as `manifest.json`; `ci.sh` checks `evidence/` |
 | `hsmp-clocks.py [--watch 1 --n 30]` | live FCLK / MCLK / DDR-controller GB/s / socket W from the kernel `hsmp_acpi` driver, unprivileged — the BIOS Tier 3 clock check (E27) |
 
 Need a GPU window (stop the GLM container first):

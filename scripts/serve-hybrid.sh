@@ -33,7 +33,7 @@ cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || ex
 declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K \
   MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS \
   CUDA_GRAPH_BS MAX_TOTAL_TOKENS EXTRA_SERVER_ARGS EXTRA_DOCKER_ENV EXTRA_DOCKER_ARGS DRY_RUN \
-  CONTAINER_NAME BIND_ADDRESS PORT HF_MODEL_DIR OVERLAY_DIR IMAGE RESOLVED_LINE CONTAINER_ENV DIAG_ENV
+  CONTAINER_NAME BIND_ADDRESS PORT HF_MODEL_DIR OVERLAY_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
 eval "$cfg"
 
 snapshot_dir="/hfm/snapshots/${SNAPSHOT}"
@@ -133,5 +133,12 @@ if ss -ltn "( sport = :${PORT} )" | grep -q LISTEN; then
 fi
 
 "${docker_cmd[@]}"
+# Evidence manifest (T3.19f): what served, on what, in what box state, with a content hash the
+# evidence scripts stamp into every JSON they write. A serve without one cannot produce evidence,
+# so a write failure stops the container rather than leaving an unrecorded server up.
+if ! manifest="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/evidence_manifest.py" write --container "$CONTAINER_NAME" --out-dir "$MANIFEST_DIR")"; then
+  echo "FAIL evidence manifest not written; stopping $CONTAINER_NAME"; docker rm -f "$CONTAINER_NAME" >/dev/null; exit 1
+fi
+echo "manifest $manifest"
 echo "started $CONTAINER_NAME (about 4 min to ready); follow with: docker logs -f $CONTAINER_NAME"
 echo "then: scripts/wait-ready.py --url http://${BIND_ADDRESS}:${PORT} && scripts/verify.py --url http://${BIND_ADDRESS}:${PORT} --model ${SERVED_MODEL_NAME}"

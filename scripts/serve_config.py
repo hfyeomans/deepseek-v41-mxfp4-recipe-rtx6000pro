@@ -70,6 +70,14 @@ REGISTRY: tuple[Knob, ...] = (
          evidence="PROVENANCE.md"),
     Knob("OVERLAY_DIR", "str", lambda r: _home("dev/src/sglang-dsv41-overlay"),
          "SGLang overlay checkout; its python/sglang is bind-mounted over the image's."),
+    # ---- evidence manifest (T3.19f) ----------------------------------------------------
+    Knob("MANIFEST_DIR", "str", lambda r: _home(".cache/dsv41-recipe/manifests"),
+         "Where each launch writes its evidence manifest (scripts/evidence_manifest.py); current.json is the "
+         "one the evidence scripts stamp with."),
+    Knob("BIOS_SLOT", "str", "3",
+         "BIOS profile the operator booted, as declared (not read from firmware): 3 = FCLK 2100 / VSOC 1.05 V / "
+         "VDDG 950 mV / EXPO 6400 (BIOS guide T3-F1v, Boot 12). The manifest records it beside the HSMP-measured "
+         "FCLK/MCLK so a mismatch is visible.", evidence="docs/BIOS-OPTIMIZATION-GUIDE.md"),
     # ---- expert placement and CPU tier --------------------------------------------------
     Knob("KT_NUM_GPU_EXPERTS", "int", "219",
          "Routed experts per layer resident on the GPUs (contiguous IDs 0..N-1 of 384; the rest run on the "

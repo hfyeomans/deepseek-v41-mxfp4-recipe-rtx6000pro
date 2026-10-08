@@ -21,6 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from evidence_manifest import stamp_or_exit  # noqa: E402
 from openai_client import chat_stream, get_json  # noqa: E402
 
 WORDS = ("ledger", "granite", "harbor", "signal", "meadow", "copper", "lantern", "orbit", "timber", "quartz",
@@ -103,7 +104,7 @@ def main() -> int:
         print(f"peak {g}: {peak[k]:,} MiB used{free}")
     print(f"wall {wall:.1f} s, all finished: {ok}")
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
+        stamp_or_exit(report, args.output, "stress-kv-full.py")
         args.output.write_text(json.dumps(report, indent=2) + "\n")
     return 0 if ok else 1
 

@@ -45,6 +45,9 @@ import pathlib
 import sys
 import urllib.request
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from evidence_manifest import stamp_or_exit  # noqa: E402
+
 HERE = pathlib.Path(__file__).resolve().parent
 DEFAULT_TEXT = HERE / "fixtures" / "nll-corpus.txt"
 
@@ -196,7 +199,7 @@ def main() -> int:
         print_compare(out["compare"])
 
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
+        stamp_or_exit(out, args.output, "nll-score.py")
         args.output.write_text(json.dumps(out, indent=1))
         print(f"wrote {args.output}")
     return 0
@@ -221,6 +224,7 @@ def run_corpus(args) -> int:
             print_compare(out["compare"])
             row["compare"] = out["compare"]
             pairs.append((res["logprobs"], base["logprobs"], out["compare"]["n"]))
+        stamp_or_exit(out, args.output_dir / f"{tf.stem}.json", "nll-score.py")
         (args.output_dir / f"{tf.stem}.json").write_text(json.dumps(out, indent=1))
         per_text.append(row)
 
@@ -238,6 +242,7 @@ def run_corpus(args) -> int:
     else:
         print(f"corpus: {len(per_text)} texts, {pooled['tokens_scored_total']} tokens, "
               f"token-weighted mean NLL {pooled['mean_nll_token_weighted']:.5f}")
+    stamp_or_exit(pooled, args.output_dir / "pooled.json", "nll-score.py")
     (args.output_dir / "pooled.json").write_text(json.dumps(pooled, indent=1))
     print(f"wrote {args.output_dir}/*.json")
     return 0

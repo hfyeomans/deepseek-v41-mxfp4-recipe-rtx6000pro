@@ -234,6 +234,16 @@ DeepSeek-V4.1 reasoning is on by default at effort 50 in both engines. Every cli
 
 It needs ~500 GiB free at `MODEL_DIR`. On this host nvme0 has 1.7 TB free; make sure `MODEL_DIR` is on it and not on a smaller volume. The checkpoint interleaves vision, DSpark and text tensors across all 48 shards, so a partial download cannot save space.
 
+## `FAIL evidence manifest: …` from a benchmark script, or `ci.sh` says a stamped file does not match its `manifest.json`
+
+Since T3.19f every `bench-decode.py` / `bench-prefill.py` / `nll-score.py` / `verify-batch-consistency.py` / `stress-kv-full.py` run stamps its output with the hash of the manifest the launcher wrote for the running serve (`MANIFEST_DIR/current.json`, default `~/.cache/dsv41-recipe/manifests/`).
+
+- *no manifest at …*: the server was not started through `scripts/serve-hybrid.sh` (or `MANIFEST_DIR` differs). Serve through the launcher, point `EVIDENCE_MANIFEST=<path>` at the right file, or set `EVIDENCE_MANIFEST=none` to record an unmanifested run on purpose (the JSON then says so).
+- *describes container X but … is now a different container*: `current.json` is from an earlier serve and the container was restarted by hand. Serve through the launcher again, or `EVIDENCE_MANIFEST_ALLOW_STALE=1` if you really mean this manifest (the stamp records `allowed_stale`).
+- *… is a different manifest; one evidence directory holds one serve*: you are writing a second serve's results into a directory that already has a `manifest.json`. Use a new directory per serve.
+- *content hash does not match its body*: the manifest or the sibling copy was edited after writing. The redaction `sed` over an evidence dir is safe only because the manifest never contains what it rewrites (it stores `$HOME` as `~`, no bridge IPs); a mismatch means a real edit — re-run rather than patching the hash.
+- `python3 scripts/evidence_manifest.py show` prints the current manifest; `verify PATH` recomputes the hash; `check-evidence evidence/` is what CI runs.
+
 ## `ci.sh` reports "possible identifier or secret"
 
 The scan catches home paths, LAN addresses, GPU UUIDs, PCI bus IDs and token-shaped strings in tracked files. Scrub the file (replace with placeholders) rather than whitelisting it; evidence JSON is meant to be publishable.

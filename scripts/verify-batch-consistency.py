@@ -45,6 +45,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from evidence_manifest import stamp_or_exit  # noqa: E402
 from openai_client import chat_stream  # noqa: E402
 
 DEFAULT_PROMPTS = [
@@ -179,12 +180,13 @@ def main() -> int:
 
     print("PASS" if ok else "FAIL")
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps({"label": args.label, "url": args.url, "model": args.model,
-                                           "concurrency": args.concurrency, "max_tokens": args.max_tokens,
-                                           "seed": args.seed, "pass": ok, "same_prompt": args.same_prompt, "flush_cache": args.flush_cache,
-                                           "rows_identical": rows_identical, "min_pairwise_row_prefix": min_pair_prefix,
-                                           "references": {p: r for p, r in refs.items()}, "slots": rows}, indent=2))
+        report = {"label": args.label, "url": args.url, "model": args.model,
+                  "concurrency": args.concurrency, "max_tokens": args.max_tokens,
+                  "seed": args.seed, "pass": ok, "same_prompt": args.same_prompt, "flush_cache": args.flush_cache,
+                  "rows_identical": rows_identical, "min_pairwise_row_prefix": min_pair_prefix,
+                  "references": {p: r for p, r in refs.items()}, "slots": rows}
+        stamp_or_exit(report, args.output, "verify-batch-consistency.py")
+        args.output.write_text(json.dumps(report, indent=2))
         print(f"wrote {args.output}")
     return 0 if ok else 1
 

@@ -25,6 +25,7 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from evidence_manifest import stamp_or_exit  # noqa: E402
 from openai_client import chat_stream, get_json  # noqa: E402
 
 FIXTURE = (
@@ -160,7 +161,7 @@ def main() -> int:
               f"{level['median_ttft_s']:11.3f} {acc_s}")
     report["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
+        stamp_or_exit(report, args.output, "bench-decode.py")
         args.output.write_text(json.dumps(report, indent=2) + "\n")
     return 0
 

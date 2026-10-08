@@ -56,6 +56,10 @@ if python3 "$ROOT/scripts/tests/test_serve_config.py" >/dev/null; then :; else e
 if ! diff -q <(python3 "$ROOT/scripts/serve_config.py" markdown) <(sed -n '/<!-- generated: python3 scripts\/serve_config.py markdown -->/,$p' "$ROOT/docs/CONFIG.md" | tail -n +2) >/dev/null; then
   echo "FAIL docs/CONFIG.md is stale: regenerate the table with python3 scripts/serve_config.py markdown"; exit 1
 fi
+# T3.19f immutable evidence manifests: hash round-trip, null-on-failure collectors, tilde'd paths, sibling/stale/none
+# stamping rules; then every stamped JSON under evidence/ must match its sibling manifest.json (pre-cut-over files exempt).
+if python3 "$ROOT/scripts/tests/test_evidence_manifest.py" >/dev/null; then :; else echo "FAIL evidence manifest tests"; exit 1; fi
+if python3 "$ROOT/scripts/evidence_manifest.py" check-evidence "$ROOT/evidence"; then :; else echo "FAIL evidence/ has stamped files that do not match their manifest.json"; exit 1; fi
 # DSpark multi-stream-overlap gate (review C4 / Bug A): pure Python against the overlay checkout; skipped without it.
 if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi
