@@ -12,6 +12,8 @@ python3 "$ROOT/scripts/test-openai-client.py"
 # kt-kernel buffer-lifetime tests run inside the recipe image (no GPU); skipped where docker/image is absent.
 python3 -m py_compile "$ROOT"/scripts/tests/*.py
 bash -n "$ROOT"/scripts/tests/*.sh
+# T3.28 shape-aware NLL gate: paired/pooled statistics in nll-score.py (pure Python, no server).
+python3 "$ROOT/scripts/tests/test_nll_stats.py"
 if bash "$ROOT/scripts/tests/run-kt-buffer-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt buffer-lifetime tests (exit $rc)"; exit 1; fi
 fi

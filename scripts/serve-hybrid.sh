@@ -47,7 +47,13 @@ OVERLAY_DIR="${OVERLAY_DIR:-$HOME/dev/src/sglang-dsv41-overlay}"
 # 230 was tried (E29, 2026-09-24): needs CHUNKED_PREFILL_SIZE=2048 + MEM_FRACTION_STATIC=0.975
 # + SGLANG_LOGPROB_CHUNK_SIZE=512 to fit, gives +1.6 % C1 wall for -40 % prefill and
 # fails the NLL gate (+0.0088) - rejected. 226 is the ceiling at this VRAM.
-KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-226}"
+# 226 -> 219 (2026-10-08, E34d-ii + T3.28): seven experts per rank (~2.3 GB) buy
+# CHUNKED_PREFILL_SIZE=8192 below. 219/165 + 8192 at 64K x 4: prefill 1,438 / 1,526 tok/s at
+# 16K / 32K (+38 / +47 %), C1 wall 39.45 (-1.9 %), C4 54.16, stress min free 2,339 / 1,302 MiB,
+# needles 6/6; pooled NLL vs 226/4096 +0.00075 +- 0.00098 (cluster-robust se 0.00165) over
+# 65,653 tokens (evidence/t328/). 226/158 + 4096 remains the measured fallback and the only
+# placement qualified on the 128K / 262K / 512K x 1 ladder rungs (guard below).
+KT_NUM_GPU_EXPERTS="${KT_NUM_GPU_EXPERTS:-219}"
 # One kt worker per physical core (E17; E26 A1 on the 16-core 9955WX: 14 and 16
 # threads are a plateau at C1 ≈ 33.5 wall tok/s, 24 costs −12 %, 30 collapses to
 # 5 tok/s). kt-kernel pins each worker to a distinct hwloc core and busy-spins
@@ -107,13 +113,16 @@ MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.96}"
 # in the indexer until E34b.
 CONTEXT_LENGTH="${CONTEXT_LENGTH:-65536}"
 # 4096 kept ~3.3 GiB VRAM free after a 32K prefill at 208 experts (E26 A4); that
-# headroom is now spent on experts. 8192 (1.4K tok/s prefill) needed ~2.2 GB more
-# and does not fit beside 226 experts (projected from E22's 1.2 GiB at 208); use it
-# only with KT_NUM_GPU_EXPERTS=208. 16384 never fit. 2048 frees ~1.6 / 1.2 GB per
-# rank of worst-case headroom (E29) but costs 40 % of prefill throughput (16K: 860 ->
-# 514 tok/s; the per-chunk CPU sync + Engram gather dominates) and is neutral on
-# decode - only worth it for a deployment whose prompts are all under ~1K tokens.
-CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-4096}"
+# headroom was then spent on experts. 8192 (1.4K tok/s prefill) needs ~2.2 GB more
+# than 4096 and does not fit beside 226 experts (E34d: fused-MoE prefill workspace
+# OOM). 16384 never fit. 2048 frees ~1.6 / 1.2 GB per rank of worst-case headroom
+# (E29) but costs 40 % of prefill throughput (16K: 860 -> 514 tok/s; the per-chunk CPU
+# sync + Engram gather dominates) and is neutral on decode - only worth it for a
+# deployment whose prompts are all under ~1K tokens.
+# 4096 -> 8192 (2026-10-08) together with KT_NUM_GPU_EXPERTS 226 -> 219 (above): the
+# box serves long coding / review sessions, so first-turn TTFT is what chunk buys
+# (16K first turn ~16 s -> ~11 s). Pair with 226 only via ALLOW_UNTESTED_FIT=1.
+CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-8192}"
 MAX_RUNNING_REQUESTS="${MAX_RUNNING_REQUESTS:-4}"
 SGLANG_LOGPROB_CHUNK_SIZE="${SGLANG_LOGPROB_CHUNK_SIZE:-512}"
 # KV pool cap (T3.6g). Left to the fraction, SGLang sized the pool at 1,933,056 tokens
@@ -193,11 +202,17 @@ if [[ "${ALLOW_UNTESTED_FIT:-0}" != "1" ]]; then
       "226 is the fit ceiling for 4 x 32K slots (E28; 230 needed chunk 2048 + fraction 0.975 and failed" \
       "the NLL gate, E29). Set ALLOW_UNTESTED_FIT=1 to try, then run stress-kv-full.py followed by nll-score.py."
   fi
-  if (( CHUNKED_PREFILL_SIZE >= 8192 )) && (( KT_NUM_GPU_EXPERTS > 208 )); then
+  if (( CHUNKED_PREFILL_SIZE >= 8192 )) && (( KT_NUM_GPU_EXPERTS > 219 )); then
     fail_config "CHUNKED_PREFILL_SIZE=$CHUNKED_PREFILL_SIZE needs ~2.2 GB more than 4096 and only fits" \
-      "beside KT_NUM_GPU_EXPERTS<=208 (E22/E28; confirmed at 226 by E34d: the fused-MoE prefill workspace" \
-      "OOMs, and expandable_segments breaks the custom all-reduce; 219 fits but 8192 failed the NLL gate" \
-      "by +0.0067 while 219 at 4096 passed, E34d-ii/E34d-iii). Set ALLOW_UNTESTED_FIT=1 to try, then nll-score.py."
+      "beside KT_NUM_GPU_EXPERTS<=219 (E22/E28/E34d-ii; at 226 the fused-MoE prefill workspace OOMs on the" \
+      "first 16K prefill, E34d, and expandable_segments breaks the custom all-reduce). Set ALLOW_UNTESTED_FIT=1" \
+      "to try, then run stress-kv-full.py followed by nll-score.py --corpus."
+  fi
+  if (( CONTEXT_LENGTH > 65536 )) && { (( CHUNKED_PREFILL_SIZE != 4096 )) || (( KT_NUM_GPU_EXPERTS != 226 )); }; then
+    fail_config "CONTEXT_LENGTH=$CONTEXT_LENGTH with KT_NUM_GPU_EXPERTS=$KT_NUM_GPU_EXPERTS CHUNKED_PREFILL_SIZE=$CHUNKED_PREFILL_SIZE:" \
+      "the 128K / 262K / 512K x 1 ladder rungs (E33/E34) were qualified only at KT_NUM_GPU_EXPERTS=226" \
+      "CHUNKED_PREFILL_SIZE=4096; the 219/8192 default (2026-10-08) is qualified at 64K x 4. Pass those two" \
+      "values for a ladder rung, or ALLOW_UNTESTED_FIT=1 to re-qualify (E33 gates a-f, then nll-score.py --corpus)."
   fi
   if [[ "$DSPARK" == "1" ]] && (( KT_NUM_GPU_EXPERTS > 208 )); then
     fail_config "DSPARK=1 adds 3.85 GB/rank of draft stages; it was only ever fitted at KT_NUM_GPU_EXPERTS=208" \

@@ -1,0 +1,185 @@
+# Learning guide
+
+A reading map for every piece of this project, written for the owner. Each section says why the piece matters *for this build*, what to read (primary sources first), and where it shows up in this repo so you can connect the reading to a file you can run. Read in order the first time; afterwards jump to whichever experiment you are about to run and read its row in the last table.
+
+Difficulty marks: ★ background, ★★ working knowledge needed to run and interpret experiments, ★★★ needed to write or modify kernels.
+
+## 0. The one-paragraph map
+
+We want a 475 GiB model on 192 GiB of VRAM. The model is a Mixture-of-Experts (MoE): most of its weights are "experts" of which only 6 of 384 fire per token, so weights that are not in VRAM only cost bandwidth when they are used. That turns the problem into memory-hierarchy engineering — VRAM (1.79 TB/s) → host DRAM (~150–300 GB/s) → NVMe (~14 GB/s, but 400K random rows/s) — and into kernel engineering, because the tensor cores on our RTX PRO 6000 (SM120) run 4-bit math natively only through a specific instruction that no serving engine uses yet on this card. Everything in `plan/` is one of those two threads.
+
+## 1. The model: DeepSeek-V4.1-Flash
+
+Why here: the byte budget in `evidence/budget-upstream-bf16fp8.json` and every number in `docs/FEASIBILITY.md` come from the model's structure. You cannot reason about offload without knowing which tensors are hot.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| Mixture-of-Experts routing (top-k gating, load balance, why only k experts cost compute) | ★ | Switch Transformers (Fedus et al., arXiv 2101.03961) §2; DeepSeekMoE (arXiv 2401.06066) for fine-grained + shared experts, which is the V4 lineage | `scripts/checkpoint-budget.py` classifier: how experts are counted (15,360 = 40 layers × 384) |
+| Multi-head Latent Attention (MLA) and why the KV cache is tiny | ★★ | DeepSeek-V2 report (arXiv 2405.04434) §2.1 | `feasibility-calc.py` `kv_bytes` (890 B/token) |
+| Sparse attention (DSA → CSA2 in V4.1): lightning indexer, top-k token selection | ★★ | DeepSeek-V3.2 technical report (DeepSeek Sparse Attention); V4.1 model card on Hugging Face `deepseek-ai/DeepSeek-V4.1-Flash` | RESEARCH.md "checkpoint facts"; the indexer weights are part of the non-expert resident set |
+| Engram conditional memory (n-gram hash → table lookup, why it is 183 GiB and read-only) | ★★ | DeepSeek "Engram" paper (search arXiv, Jan 2026, "conditional memory via scalable lookup"); V4.1 model card `engram_*` config keys | E3 gather benchmark (`scripts/bench-engram-gather.py`): 264-byte rows, 48 rows/token |
+| Multi-token prediction / DSpark speculative heads | ★★ | DeepSeek-V3 report (arXiv 2412.19437) §2.2 MTP; Leviathan et al. speculative decoding (arXiv 2211.17192) for acceptance-rate maths; SGLang docs "Speculative Decoding" (EAGLE/MTP flags, how verify steps are graph-captured) | E23 (was E10); the 7.39 GiB DSpark tensors in the budget |
+| Hyper-connections (replacing residual stream) | ★ | Zhu et al. "Hyper-Connections" (arXiv 2409.19606) | Relevant only to the E6 stage-2 port |
+| Reading a safetensors header without loading weights | ★ | huggingface.co/docs/safetensors (format section: 8-byte length + JSON header) | `scripts/checkpoint-budget.py` reads only headers over HTTPS |
+
+Exercise: run `python3 scripts/checkpoint-budget.py --help`, then reproduce the 268.9 GiB expert figure by hand from 15,360 experts × (4608×5120×2 + 5120×2304) × 0.5 byte + scales.
+
+## 2. Number formats: FP4, block scaling, MXFP4 vs NVFP4
+
+Why here: the experts are stored as E2M1 with one UE8M0 scale per 32 values. Whether a tensor core can consume that *exact* layout decided open question 9 and shapes E13.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| Floating-point mini-formats: E2M1 (FP4), E4M3/E5M2 (FP8), what mantissa/exponent bits buy | ★ | OCP "Microscaling Formats (MX) Specification v1.0" (opencompute.org), §5 element types — short and definitive | RESEARCH.md "Quantization as shipped" |
+| Block scaling: shared per-block scale, UE8M0 (power-of-two, 8 bits) vs UE4M3 | ★★ | Same OCP spec §4–6 for MX (block 32, UE8M0); NVIDIA blog "Introducing NVFP4" for NVFP4 (block 16, UE4M3 + a per-tensor FP32 scale) | E13 procedure step 1 (`mx_float4_t` vs `nv_float4_t`) |
+| Why MXFP4 and NVFP4 are *not* interchangeable numerically (re-quantising changes what the model was trained on) | ★★ | Compare the two block sizes and scale types above; then RESEARCH.md "MXFP4 is native" | Open question 9 (resolved) |
+| Weight-only (W4A16) vs weight-and-activation (W4A4/W4A8) quantization; why Marlin dequantises | ★★ | MARLIN paper (arXiv 2408.11743) §1–3 | RESEARCH.md "Engines" (Marlin fallback); E13 W4A4/W4A8 variants |
+| INT4-pair packing (two E2M1 nibbles per byte) | ★ | OCP spec packing section; `cutlass/include/cutlass/float_subbyte.h` | Budget classifier: "INT8-packed FP4 pairs" |
+
+Exercise: write a 20-line Python function that quantises a 32-float block to MXFP4 (find max, pick power-of-two scale, round each value to the E2M1 grid {0, 0.5, 1, 1.5, 2, 3, 4, 6}) and dequantises it back; plot the error. This is exactly what the E13 reference does.
+
+## 3. The GPU: RTX PRO 6000 Blackwell, SM120
+
+Why here: SM120 is *consumer* Blackwell. It shares the FP4 tensor-core instruction family with B200 (SM100) but not the memory system (no TMEM, no `tcgen05`, 99 KiB shared memory), so datacenter kernels do not run and engines fall back. Knowing the difference explains every "SM120 unsupported" issue in RESEARCH.md.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| GPU execution model: SMs, warps, blocks, shared memory, registers, occupancy | ★ | CUDA C++ Programming Guide ch. "Programming Model" and "Hardware Implementation" (docs.nvidia.com/cuda/cuda-c-programming-guide) | `docs/HARDWARE.md` GPU section |
+| Tensor cores and `mma.sync`: what a 16×8×64 block-scaled MMA does per warp | ★★★ | PTX ISA (docs.nvidia.com/cuda/parallel-thread-execution) → "Warp Level Matrix Multiply-Accumulate Instructions" → block scaling section; find `kind::mxf4nvf4` | RESEARCH.md "MXFP4 is native" item 1 |
+| SM100 vs SM120: TMEM, `tcgen05`, cluster launch, smem size; why "Blackwell" is two architectures | ★★ | NVIDIA Blackwell architecture whitepaper (datacenter) and the RTX Blackwell whitepaper (GeForce/PRO); Colfax "NVFP4 blockscaled GEMM on SM12x" (research.colfax-intl.com) | RESEARCH.md "Hardware/CUTLASS" |
+| Compute capability targets: `sm_120`, `sm_120a` (arch-specific), `sm_120f` (family); what `-gencode` does | ★★ | CUDA Compiler Driver NVCC guide, "GPU Compilation" → "Feature-specific / family-specific" targets | E13 build flag decision (`compute_120a,code=sm_120a`) |
+| Memory bandwidth and the roofline model (are we bound by FLOPs or bytes?) | ★★ | Williams, Waterman, Patterson "Roofline" (CACM 2009); NVIDIA "GPU Performance Background User's Guide" | E2; every "ceiling" number in `feasibility-calc.py` is a roofline |
+| PCIe Gen5 x16 realities (~50–60 GB/s per direction, pinned vs pageable, P2P) | ★★ | CUDA Best Practices Guide "Data Transfer Between Host and Device" | E4 (`scripts/bench-pcie-h2d.py`) |
+
+Exercise: after E2 and E4 run, put GDDR7, PCIe and DRAM bandwidth on one log-scale bar chart. That picture *is* the three-tier design.
+
+## 4. CUTLASS and CuTe
+
+Why here: the only production-quality open FP4 GEMM code for SM120 is CUTLASS. E13 is a small edit of a CUTLASS example, but reading it cold is hard: it is template metaprogramming over a layout algebra (CuTe). Budget real time here if you want to modify kernels rather than only run them.
+
+Local checkout: `~/dev/src/cutlass` (v4.7.1). Docs are in `media/docs/` in that tree and at docs.nvidia.com/cutlass.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| What a GEMM kernel does: tiling, shared-memory staging, register blocking, software pipelining | ★★ | Simon Boehm, "How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance" (siboehm.com) — the best 2-hour intro; then NVIDIA "CUTLASS: Fast Linear Algebra in CUDA C++" blog | — |
+| CuTe layouts: shapes, strides, `Layout`, `Tensor`, composition, `local_tile`, `partition`, MMA atoms | ★★★ | `media/docs/cpp/cute/00_quickstart.md` → `01_layout.md` → `02_layout_algebra.md` → `03_tensor.md` → `0t_mma_atom.md` → `0x_gemm_tutorial.md` in the CUTLASS tree | `Sm1xxBlkScaledConfig::tile_atom_to_shape_SFA` in 79d: how the scale-factor tensor is laid out |
+| CUTLASS 3.x structure: `CollectiveBuilder`, mainloop / epilogue collectives, `GemmUniversal`, dispatch policies and kernel schedules (TMA warp-specialized, cooperative vs pingpong) | ★★★ | `media/docs/cpp/cutlass_3x_design.md`, `media/docs/cpp/gemm_api_3x.md`, `media/docs/cpp/pipeline.md`; Colfax "CUTLASS Tutorial: Mastering the NVIDIA Tensor Memory Accelerator (TMA)" | `examples/79_blackwell_geforce_gemm/79d_*.cu` lines defining `CollectiveMainloop`, `CollectiveEpilogue`, `GemmKernel` |
+| Block-scaled GEMM in CUTLASS: `OpClassBlockScaledTensorOp`, `nv_float4_t` / `mx_float4_t` pairs, SF vector size, `blockscaled_type`, `select_instr` | ★★★ | `include/cutlass/gemm/collective/builders/sm1xx_common.inl` (namespace `detail::blockscaled`), `sm120_blockscaled_mma_builder.inl`; `test/unit/gemm/device/sm120_blockscaled_tensorop_gemm/sm120_bs_gemm_mxf4_mxf4_f32_f32.cu` as the smallest working MXFP4 instance | RESEARCH.md items 3–4 of "MXFP4 is native" |
+| Grouped GEMM (one launch, many problems — the MoE primitive): `GroupProblemShape`, pointer arrays, device-side TMA descriptor modification | ★★★ | 79d header comment and `run()`; `media/docs/cpp/grouped_scheduler.md`; `media/docs/cpp/blackwell_functionality.md` for the SM120 column of the support matrix; CUTLASS 4.3 release notes (MoE grouped GEMM API) | E13 step 3 (decode vs prefill problem lists) |
+| Epilogue fusions (`LinearCombination`, `LinCombBlockScaleFactor`) | ★★ | `include/cutlass/epilogue/fusion/operations.hpp` | E13 step 1: replacing FP4-output fusion with bf16 |
+| Building CUTLASS examples: CMake `-DCUTLASS_NVCC_ARCHS=120a`, or standalone `nvcc -I include -I tools/util/include` | ★★ | `README.md` "Building" in the CUTLASS tree; `examples/79_blackwell_geforce_gemm/CMakeLists.txt` | `kernels/e13/build.sh` (to be written) |
+
+Exercise: build unmodified `79d` for `sm_120a` inside `dsv4-sm120:cuda-devel-https` (no GPU needed to compile), then read the `--help` it prints. Then change one type and see what the compiler says — the `static_assert` messages in `sm1xx_common.inl` are the fastest way to learn what the builder allows.
+
+## 5. Writing and profiling CUDA kernels
+
+Why here: the kernel track (E12/E13, K1–K8) needs you to read a profile and tell native FP4 from a Marlin dequant path, and to know when a kernel is bandwidth-bound.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| CUDA C++ basics: kernels, streams, events, pinned memory, `cudaMemcpyAsync` overlap | ★ | CUDA C++ Programming Guide ch. 1–3; "An Even Easier Introduction to CUDA" (NVIDIA blog) | K7 hybrid glue design |
+| Nsight Systems: timeline, kernel names, CPU-GPU overlap, `nsys profile --trace=cuda,nvtx` | ★★ | docs.nvidia.com/nsight-systems user guide, "CLI profiling" | E12 procedure |
+| Nsight Compute: per-kernel roofline, memory throughput, achieved occupancy | ★★★ | docs.nvidia.com/nsight-compute, "Kernel Profiling Guide" | E13 speed analysis |
+| Reading SASS/PTX to confirm which MMA instruction ran (`cuobjdump -sass`, grep `MMA` variants) | ★★★ | CUDA Binary Utilities guide | Confirming `kind::mxf4nvf4` in the compiled E13 binary |
+| Inline PTX in CUDA (`asm volatile`) | ★★★ | "Inline PTX Assembly in CUDA" guide | `cute/arch/mma_sm120.hpp` |
+| Community course | ★★ | GPU MODE lecture series (YouTube; "Lecture 1: Profiling", "CUTLASS" lectures) | — |
+
+### 5.1 Why a correct GEMM can run 20× below the roofline: tiles, occupancy, split-K (E20)
+
+E19's profile put 57 % of the V4.1 decode step in one Triton kernel, `_w8a8_block_fp8_matmul`, doing the *dense* FP8 GEMMs (attention projections, shared expert, dense MLPs). Nothing was wrong with it: same math, right answer, tuned on H100/H200. It was 20× slower than the memory system allows. Understanding why is the most transferable lesson in the kernel track, because it is the failure mode of every "it works on H100" kernel on a new GPU.
+
+**The mental model.** A decode GEMM has M = batch (1–4 tokens), N = output width (1.8K–25.6K), K = input width (1.1K–6K). The weight matrix is N×K bytes of FP8 and must be read once per step; the activations are tiny. So it is a *memory-bound* op and the only question is how many bytes per second the kernel pulls from GDDR7. Roofline: 21 MB (5120×4096) at 1.6 TB/s ≈ 13 µs.
+
+**How a tiled GEMM turns that into work.** Triton (and CUTLASS) launch one CTA per (BLOCK_M × BLOCK_N) output tile; each CTA loops over K in BLOCK_K slices, loading an A tile and a B tile per iteration and feeding `tl.dot`. Three knobs decide whether the memory system is kept busy:
+
+1. **Grid size (parallelism).** CTAs in flight = (M/BLOCK_M) × (N/BLOCK_N). With M=1 that is just N/BLOCK_N. The default here was BLOCK_N=32 → 160 CTAs for N=5120 on a 188-SM card: under one CTA per SM, and each CTA is 4 warps. The profile read this as 2–3 % occupancy.
+2. **Bytes in flight per CTA (pipelining).** Each iteration loads a BLOCK_K × BLOCK_N slice of B — 32×32 = 1 KB here. `num_stages` is how many iterations are prefetched ahead (software pipelining through shared memory). 160 CTAs × 3 stages × 1 KB ≈ 0.5 MB outstanding. GDDR7 needs several MB outstanding to hide its latency (Little's law: bandwidth × latency ≈ 1.6 TB/s × ~600 ns ≈ 1 MB minimum, more in practice). The result is a latency-bound serial walk down K.
+3. **The K loop length.** K/BLOCK_K iterations, each a dependent step. With BLOCK_K pinned at 32 by the scale layout (below), K=4096 is 128 serial iterations per CTA.
+
+**Why BLOCK_K is stuck at 32.** V4.1-Flash quantises dense weights with a per-(32×32)-block FP8 scale (`block_shape=[32, 32]` in the checkpoint's `quantization_config`). The kernel applies the scale once per K-tile (`n_tiles_k_per_group_k = group_k // BLOCK_SIZE_K`), so BLOCK_K must divide 32. DeepSeek-V3 used 128×128 blocks, and every tuned config SGLang ships is for 128 — which is also why its tuner filters `block_k % BLOCK_SIZE_K == 0` over a `{64, 128}` search space and finds nothing for 32. BLOCK_N is *not* constrained: the kernel indexes the scale per column (`offs_bn // group_n`), so a 64- or 128-wide N tile just reads two or four scale columns.
+
+**The two fixes, and why they are the same fix.** Both raise bytes-in-flight:
+
+- **Split-K.** Launch SPLIT_K CTAs per output tile, each doing K/SPLIT_K of the loop into an FP32 partial buffer, then a reduce kernel sums the partials. Grid ×8 at the cost of an 8×M×N×4-byte scratch buffer (trivial at decode M) and one extra small launch. This is what the existing `_w8a8_block_fp8_matmul_hopper` kernel does; SGLang gated it to `is_sm90` only because that is where it was tuned — the kernel is portable Triton with no Hopper intrinsics.
+- **SWAP_AB.** For M < 16 the MMA instruction's minimum M tile (16) wastes 15/16 of the A rows. Transposing the problem (compute Cᵀ = Bᵀ Aᵀ) puts the weight's N dimension on the MMA's M axis, so the wide operand fills the instruction and the tiny batch sits on N. Same bytes, fewer wasted MMA lanes, and a larger effective tile per CTA.
+- More `num_stages` (4–5) and fewer warps (2) also help at these sizes: fewer warps per CTA means more CTAs per SM's register/smem budget; more stages means more outstanding loads per CTA.
+
+**How the engine picks a config.** `get_w8a8_block_fp8_configs(N, K, block_n, block_k)` looks for `configs/N=…,K=…,device_name=<nvidia-smi name with underscores>,dtype=fp8_w8a8,block_shape=[bn, bk].json`; the JSON maps batch sizes to configs and the runtime picks the key nearest to M. No file → the default `{BLOCK_M 64, BLOCK_N block_n, BLOCK_K block_k, 3 stages}` and a one-line warning at rank 0 that is easy to miss in 600 lines of startup log. Two consequences worth remembering: (a) the device name is part of the key, so a config tuned on "RTX PRO 6000 Blackwell Max-Q Workstation Edition" is not found by the non-Max-Q card; (b) the nearest-M lookup means a config file tuned only at small M would hand prefill (M=4096) a decode config — tune both ends.
+
+**How E20 tuned it** (`kernels/e20/tune_w8a8_block32.py`): import SGLang's own kernels, build the search space the stock tuner cannot (BLOCK_M 16, BLOCK_N 16–128, SPLIT_K 1–16, SWAP_AB, 2–8 warps, 2–5 stages for M ≤ 16; conventional tiles for M ≥ 32), time each with `triton.testing.do_bench` (CUDA events, L2 flushed), then check the *winner* against an FP32 dequantised reference before writing it — a fast kernel that silently disagrees is worse than a slow one. Verdict and numbers: E20 in EXPERIMENTS.md.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| Triton tiled matmul: `tl.dot`, `num_stages`, `num_warps`, grouped ordering (`GROUP_SIZE_M`) for L2 reuse | ★★ | triton-lang.org tutorials "03 Matrix Multiplication" (read the grouped-ordering section twice) | `fp8_kernel.py::_w8a8_block_fp8_matmul` — it *is* that tutorial plus per-tile scales |
+| Roofline and Little's law for memory-bound kernels: bytes in flight = bandwidth × latency | ★★ | Williams, Waterman, Patterson "Roofline" (CACM 2009); GPU MODE "Lecture 8: CUDA Performance Checklist" | E20 results: default 60–80 GB/s vs tuned ~700 GB/s on a 1.6 TB/s card |
+| Split-K and stream-K GEMM decomposition | ★★★ | Osama et al. "Stream-K" (arXiv 2301.03598) §2 for the split-K baseline; CUTLASS `examples/47_ampere_gemm_universal_streamk` | `_w8a8_block_fp8_matmul_hopper` (SPLIT_K) + `_reduce_block_fp8_split_k` |
+| Swap-AB for skinny GEMM (small M) | ★★★ | SGLang PR that introduced `SWAP_AB` in `fp8_kernel.py` (search the repo history for "SWAP_AB"); DeepGEMM README §"M-grouped GEMM" for the same idea in CUTLASS terms | H200 [32, 32] configs in `configs/` pick SWAP_AB + SPLIT_K 8 at M=1 |
+| Reading a torch profiler trace: `cudaLaunchKernel`-bound vs kernel-bound, occupancy column, grid/block per kernel | ★★ | PyTorch docs `torch.profiler`; Perfetto UI or `chrome://tracing` to open `.json.gz` | `evidence/t36d3-step-profile/` — the trace that found E20 |
+
+## 6. Serving engines and how they schedule MoE
+
+Why here: three engines appear in the plan (SGLang `dev-dsv41`, vLLM, KTransformers' sglang-kt, plus llama.cpp). The E6 port is against sglang-kt; the baseline is SGLang; E5 uses stock offload in SGLang/vLLM.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| Continuous batching, prefill vs decode, KV cache paging | ★ | vLLM paper (Kwon et al., arXiv 2309.06180) §3–4; SGLang paper (arXiv 2312.07104) for RadixAttention | `scripts/bench-decode.py` / `bench-prefill.py` measure exactly these two phases |
+| Tensor parallel vs expert parallel vs pipeline parallel; why TP3 is invalid for 64 heads | ★★ | Megatron-LM (arXiv 1909.08053) §3 for TP; GShard (arXiv 2006.16668) for EP | `feasibility-calc.py` `tp_valid`; open question 8 |
+| KTransformers: CPU experts + GPU attention, `--kt-num-gpu-experts`, frequency placement | ★★ | github.com/kvcache-ai/ktransformers → `doc/en/DeepSeek-V4-Flash.md` and the sglang-kt docs | E6 stage 1 flags |
+| llama.cpp expert offload (`-ot` tensor override regex) and GGUF quant types (Q4_K_M, q3_K) | ★★ | github.com/ggml-org/llama.cpp `docs/` and the `-ot` help text; GGUF spec in `ggml/docs/gguf.md` | T3.7; E11 q3_K Engram option |
+| **CUDA graphs**: why a decode step of a few hundred tiny kernels is launch-bound, what `--max-cudagraph-capture-size` / `cuda_graph_sizes` capture (one graph per batch size; speculative steps need size = seqs × (K+1)), why capture needs a fixed memory pool, and why a CPU call inside the step (KTransformers experts) breaks or must be re-expressed inside the graph | ★★ | NVIDIA blog "Getting Started with CUDA Graphs" (2019); CUDA Programming Guide §"CUDA Graphs"; vLLM docs `design/cuda_graphs` (piecewise capture); KTransformers `ktransformers/util/cuda_graph_runner.py` for the CPU-expert pattern | GLM `serve.sh` line 55 (`96` = 16 seqs × 6); sibling `.env` `MAX_CUDAGRAPH_CAPTURE_SIZE=16`; E15 measures the eager cost; E12 census gives the launch count |
+| vLLM MoE kernel selection and the Marlin fallback (`VLLM_MOE_FORCE_MARLIN`) | ★★ | vLLM source `vllm/model_executor/layers/quantization/` (search `marlin`, `sm120`); vLLM issue #30135 | RESEARCH.md "Engines"; K5 |
+| SGLang DeepSeek V4.1 branch: Engram host table env var, tokenizer/reasoning parsers | ★★ | SGLang repo branch `dev-dsv41`; RESEARCH.md vLLM recipe notes for flag names | `scripts/serve.sh` 4-GPU profile |
+| How a CPU expert call lives inside a captured CUDA graph: `cudaLaunchHostFunc` (stream-ordered host function) vs the deprecated `cudaStreamAddCallback`; why buffer addresses must be fixed across replays | ★★★ | CUDA Programming Guide "Stream ordered host functions"; kt-kernel `cpu_backend/cpuinfer.h` (`submit_with_cuda_stream`); SGLang `srt/layers/moe/kt_ep_wrapper.py` (393 lines in `dev-dsv41` — read it whole, it is the entire hybrid) | E6-DESIGN §4.1 rule 2; T3.6b |
+| How SGLang picks a MoE kernel: `FusedMoE` → `FusedMoEMethodBase` (`Fp8MoEMethod(is_fp4_expert=True)` for V4.1) → backend override (`flashinfer_mxfp4` → `cutlass_sm120` MXFP8×MXFP4 on this GPU) | ★★ | `srt/layers/moe/fused_moe_triton/layer.py`; `srt/layers/quantization/mxfp4.py` (~L400–420, `_fi_kernel` selection); `srt/arg_groups/model_overrides/deepseek_v4.py` | E12 on the V4.1 engine; TK.4 decision |
+| Inspecting a container image as source: `docker image inspect --format '{{json .Config.Labels}}'` for the build commit, `docker run --rm --entrypoint bash IMG -c '…'` to grep the installed tree, `ldd` on a wheel's `.so` to see what it really links | ★ | `man docker-image-inspect`; `man ldd` | T3.5b (this is how every §8 item was closed without a GPU) |
+
+### 6.1 Eager vs CUDA graphs — why it matters on this box, and why eager is not a fallback
+
+**What "eager" means.** PyTorch's default execution is eager: Python calls an op, the op picks a kernel, the CPU asks the driver to launch it, then Python moves to the next line. Every kernel is a separate round trip through Python → PyTorch dispatcher → CUDA runtime → driver. A single V4-Flash decode step runs several hundred of those (E12 counted 236 launches of one block-scaled GEMM alone, plus attention, norms, routing, gathers, sampling), and DSpark verifies 6 tokens per step so the graph is longer still.
+
+**Why that is slow.** A kernel launch costs the CPU roughly 5–10 µs of driver work plus whatever Python spent deciding to launch it (shape checks, dtype dispatch, allocator calls). The kernels themselves, at batch 1, are tiny — a few microseconds each, because decode is memory-bound and reads weights once per step. So the GPU finishes each kernel before the CPU has finished issuing the next one. The GPU then sits idle waiting for orders. E15 measured exactly this: eager V4-Flash without speculation took **63 ms per step vs 11.2 ms with graphs**, and the cards drew only 142–155 W at full clocks — powered up, waiting. That is 15.9 tok/s instead of 89, a 5.6× loss, with the same kernels and the same weights.
+
+**What a CUDA graph is.** You run the step once in "capture" mode; instead of executing, the driver records every kernel, its arguments and its dependencies into a graph object. Afterwards `cudaGraphLaunch` replays the whole step as one submission: one CPU call, hundreds of kernels, no Python in the loop. The GPU runs them back to back from its own queue. The step becomes GPU-bound again, which is what a memory-bound decode should be.
+
+**Why there is a "capture size."** A graph bakes in tensor shapes. A decode step for 1 sequence and for 16 sequences are different graphs, so the engine captures one per batch size up to `max_cudagraph_capture_size` (vLLM captures 1, 2, 4, 8, 16, 24, … up to the ceiling; GLM's log listed 27 sizes up to 192). If a batch arrives with more tokens than the largest captured graph, that step runs eager. With speculation each sequence contributes K+1 tokens per step (5 draft + 1 target), so the ceiling must be `MAX_NUM_SEQS × (K+1)`: 16 × 6 = 96. This is why the V4-Flash sibling's old `MAX_CUDAGRAPH_CAPTURE_SIZE=16` was a hidden trap — with 2 slots it covered 12 tokens and was fine; at 16 slots anything beyond ~2 active sequences would have dropped into the 5× slower path. Capture costs some VRAM (a graph pool: 0.30 GiB for GLM's 27 graphs, ~0.5 GiB for V4-Flash's) and startup time (73 s for GLM). Both are one-off.
+
+**FULL_DECODE_ONLY, PIECEWISE, and torch.compile.** vLLM can capture the whole decode step as one graph (`FULL_DECODE_ONLY`, what V4-Flash uses) or capture pieces between operations it cannot graph (`PIECEWISE`, what GLM's runtime profiles). Prefill is not captured — its shapes change every request and the kernels are big enough that launch overhead does not matter. `--enforce-eager` also switches off `torch.compile`, so you lose kernel fusion (several small ops merged into one kernel) at the same time as losing graphs; E15's 63 ms figure is the sum of both losses, which is why it undershot the "launch gaps only" hypothesis by 3×.
+
+**Why speculation softens the blow, and why that matters for E6.** In eager mode DSpark still gave 49.5 tok/s (vs 15.9 without): the CPU-bound step costs the same ~63 ms whether it verifies 1 token or 6, so accepting ~4 tokens per step amortises the overhead 3×. That is the E10 idea in miniature — and the reason the E6 hybrid engine design says the GPU half of the step **must** stay capturable even though the CPU experts run outside the graph. The tools for that are `cudaLaunchHostFunc` (a host callback recorded inside the graph) or KTransformers' submit-and-sync pattern, where the graph waits on an event the CPU thread signals when its expert GEMV is done. An eager hybrid step would put 63 ms of Python on top of the ~20 ms CPU expert time and land at ~12 tok/s; a captured one keeps the GPU side at 11 ms and the total near 30 ms — the difference between "unusable" and "usable" for V4.1 on two cards.
+
+**What to read.** NVIDIA blog "Getting Started with CUDA Graphs" (the one-page mental model); CUDA Programming Guide §3.2.8 (graphs, capture, `cudaLaunchHostFunc`); vLLM docs "CUDA graph / compilation config" and the source `vllm/compilation/cuda_graph.py` and `vllm/v1/worker/gpu_model_runner.py` (search `capture`); PyTorch `torch.cuda.CUDAGraph` docs for the raw API. Evidence on this box: [`evidence/e15-t24-v4-flash/`](../evidence/e15-t24-v4-flash/) and BENCHMARKS.md §E15.
+
+**How to see it yourself.** With the V4-Flash sibling running, watch `nvidia-smi --query-gpu=power.draw,utilization.gpu -lms 500` during `bench-decode.py --concurrency 1`: graphs → ~240 W steady; eager (`EAGER=1` in a `RECIPE_ENV_FILE`) → ~150 W with utilization flickering. The power meter is a launch-overhead detector.
+
+## 7. Memory hierarchy and offloading (the "innovation" half)
+
+Why here: the 2-GPU verdict is a bandwidth budget. Every offload design is bounded by the slowest tier it touches per token.
+
+| Topic | ★ | Read | Look at here |
+|---|---|---|---|
+| DRAM bandwidth: channels × width × MT/s; why 8 × DDR5-6400 is ~410 GB/s theoretical and ~250–300 achievable; STREAM | ★★ | John McCalpin's STREAM page (cs.virginia.edu/stream); Kingston KF564R32-32 datasheet for the DIMMs installed | E1/E1b; `docs/HARDWARE.md` memory table |
+| NUMA, hugepages (2 MiB / 1 GiB), THP, `numactl`, why page faults kill gather workloads | ★★ | Linux kernel docs `Documentation/admin-guide/mm/hugetlbpage.rst`; `man numactl` | T1.6 hugepage test; K7 pinned host memory |
+| CPU SIMD for dequant-GEMV: AVX-512, VNNI, BF16 extensions on Zen 5; what AMX is and why not having it matters less than it sounds | ★★ | AMD Zen 5 ISA notes; Intel Intrinsics Guide (filter AVX-512); KTransformers' `MXFP4` CPU kernel source | E6 stage 0 (`scripts/bench-cpu-expert.py`); HARDWARE.md CPU note |
+| NVMe random-read throughput vs sequential, queue depth, `io_uring`, O_DIRECT | ★★ | Samsung 9100 PRO datasheet; `man io_uring`; "fio" docs for the `randread` model | E3 (`bench-engram-gather.py`), `evidence/e3-*.json` |
+| GPUDirect Storage (GPU reads NVMe without host bounce) and zero-copy pinned host access from kernels | ★★★ | docs.nvidia.com/gpudirect-storage; CUDA Programming Guide "Mapped Memory" | K8 |
+| Caching theory for Engram rows: hit rate vs cache size, Zipf-like access | ★★ | Any textbook LRU/LFU chapter; measure instead of assume | E11 cache-hit simulation |
+| Prior art in CPU-GPU hybrid MoE inference | ★★ | KTransformers paper (search arXiv for "KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference"); "MoE-Lightning" (arXiv 2411.11217); "Fiddler" (arXiv 2402.07033) | Option B/B' design in FEASIBILITY.md |
+
+Exercise: compute the per-token DRAM traffic by hand. 6 routed experts × 40 MoE layers = 240 expert activations per token; 42% of them are CPU-resident ≈ 101; each activation reads one expert's three matrices = 17.9 MiB; 101 × 17.9 MiB ≈ 1.77 GiB per token (the calculator prints 1.75 with exact counts). Divide by 146 GB/s and by 300 GB/s: those are the 56 and 89 tok/s ceilings in FEASIBILITY.md.
+
+## 8. Host hardware in this box
+
+Why here: the specs that appear in `docs/HARDWARE.md` and gate feasibility.
+
+| Component | Know | Read |
+|---|---|---|
+| AMD Threadripper PRO 9955WX (16C Zen 5) | 8 DDR5 channels, 128 PCIe 5.0 lanes, AVX-512, no AMX, 64 MiB L3 | AMD product page; `lscpu`; `evidence/hardware-inventory.json` |
+| Kingston FURY Renegade Pro DDR5-6400 RDIMM (KF564R32-32 × 8) | RDIMM vs UDIMM, ECC, EXPO profile (SPD 4800 → configured 6400), rank | Kingston datasheet; `sudo dmidecode -t memory` (you already ran it) |
+| ASUS Pro WS WRX90E-SAGE SE | Slot lane map (which x16 slots share lanes), 8 DIMM slots one per channel | ASUS manual, block diagram page |
+| RTX PRO 6000 Blackwell Max-Q ×2 | 96 GB GDDR7, ~1.79 TB/s, 300 W Max-Q, SM120, no NVLink (P2P over PCIe) | NVIDIA product brief; `nvidia-smi -q` |
+| Samsung 9100 PRO, Crucial T705 | PCIe 5.0 x4 NVMe, ~14 GB/s seq, random 4K IOPS spec vs our measured 403K/347K rows/s | Vendor datasheets; `evidence/e3-*.json` |
+| 1,500 W PSU | 2 × 300 W GPUs + 350 W CPU + platform ≈ 1.1 kW peak; 4 GPUs do not fit | HARDWARE.md power table; T4.0 |
+| CCD ↔ IO-die link (GMI) and FCLK | Zen 5 Threadripper is chiplets: each CCD talks to the memory controllers on the IO die over one GMI link; the measured 62–63 GB/s per CCD is consistent with a 32 B/clk read path at FCLK = 2.0 GHz (**FCLK measured 2000 MHz via HSMP, Boot 3**; the 32 B/clk width is inferred — AMD does not publish it for the 9955WX). Two CCDs = two links = the 125 GB/s E1b/E25 ceiling, regardless of DIMM count or speed. FCLK is the only firmware knob on that link and it is an overclock — **at Auto voltage it has no headroom: FCLK 2100 produced ≈ 500 corrected MCEs/s from the "Global Memory Interconnect PCS Unit" bank (Boots 4–5) — but with VDDG CCD/IOD 1050 mV and VSOC 1.20 V it holds 2100 clean (0 MCE over 45 min incl. a full serve) and the per-CCD ceiling moves 62.7 → 66.4 GB/s (+6 %, the 32 B/clk model to 1 %), C1 +3.1 % (Boot 7, T3-F1v); the voltage floor is VSOC 1.05 V / VDDG 950 mV (Boots 8–9, identical bandwidth, idle socket 64–68 W vs 57–65 Auto); FCLK 2200 reaches GRUB but the kernel will not boot at both allowed voltage rungs (Boots 10–11) — **2100 is the ceiling; adopted as the standing BIOS profile (slot 3) after the Boot 12 second clean cold boot**; and the memory clock is not a substitute — DDR5-6600 with FCLK held at 2000 left the per-CCD ceiling at 62.7 GB/s exactly (Boot 6, T3-M1) | AMD "EPYC 9005 / Zen 5 tuning guide" (Infinity Fabric section); Chips and Cheese Zen 5 articles; `evidence/e25-dram-revalidation/suite-cpu.txt` (ccd0 ×2 = ×8 = 62 GB/s); BIOS guide §2 and §6 Tier 3 |
+| NUMA modes: NPS1 / NPS2 / NPS4, ACPI SRAT L3-as-NUMA | How the IO die interleaves the 8 channels across one, two or four NUMA nodes; why NPS1 (current) gives every core all channels but hides which CCD is "closer"; what `numactl --membind` can and cannot buy on a 2-CCD part | AMD EPYC tuning guides (NPS section); `numactl -H`; `lscpu -e`; BIOS guide §3.3 |
+| APBDIS, DF P-states, DF C-states, Power Profile | The data fabric has its own DVFS; under bursty load it can idle down between GPU sync points and add latency to the first DRAM reads of a burst. "Maximum IO Performance" / APBDIS=1 pin it. Matters for the hybrid's 40 per-layer CPU waits (E21), not for streaming bandwidth | AMD tuning guides (APBDIS); ASUS manual "AMD CBS → NBIO / DF Common Options"; BIOS guide §3.6 |
+| ECC, EDAC, patrol scrub, MCE | RDIMM ECC corrects single-bit errors silently; `edac-util`/`/sys/devices/system/edac/mc/*/ce_count` show the count; patrol scrub reads DRAM in the background (costs a few % bandwidth on some platforms — measure); an MCE in `journalctl -k` is the stop signal for any memory-frequency trial | Linux `Documentation/admin-guide/ras.rst`; `rasdaemon`; BIOS guide §5 stop criteria |

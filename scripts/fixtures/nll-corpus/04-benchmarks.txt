@@ -1,0 +1,189 @@
+
+### T2.9 — 325 W vs 300 W under load, GLM (2026-09-21, owner ran with sudo)
+
+`sudo bash scripts/bench-power-sweep.sh --url http://127.0.0.1:8000 --model glm-5.3-flash-local --caps 325,300 --concurrency 16 --output evidence/t29-glm-325w`. Evidence [`evidence/t29-glm-325w/`](../evidence/t29-glm-325w/).
+
+| Row | 325 W | 300 W | Δ | Busy W (both cards) | SM clock | Max temp | Fan max | Cap-flag samples | Thermal-flag samples |
+|---|---|---|---|---|---|---|---|---|---|
+| C16 decode, wall tok/s | **642.4** | 588.7 | **+9.1 %** | 647 / 600 | 2,062–2,070 / 1,860–1,875 MHz | 76 / 86 °C † | 44 / 58 % | ~100 % / ~100 % | 0 / 0 |
+| 32K prefill, tok/s | **4,428.5** | 4,214.9 | **+5.1 %** | 644 / 600 | 2,002–2,010 / 1,867–1,905 MHz | 83 / 88 °C † | 53 / 67 % | ~100 % / ~100 % | 0 / 0 |
+| tok/s per W, decode | 0.993 | 0.981 | +1 % | | | | | | |
+| tok/s per W, prefill | 6.88 | 7.02 | −2 % | | | | | | |
+
+† The 325 W rows ran first on cool cards and the 300 W rows second, so the temperatures reflect ordering, not the cap. The sustained check below is the thermal test.
+
+- **325 W is used, not wasted.** The software power-cap flag was set in essentially every busy sample at both caps: GLM is still power-bound at 325 W, and clocks rose 10 % (1.87 → 2.06 GHz) for 8 % more power — the 300 W point sits on a steep part of the V/f curve. Efficiency is unchanged (decode +1 %, prefill −2 % tok/s/W).
+- **No thermal event.** Zero samples with `sw_thermal_slowdown` / `hw_thermal_slowdown` at either cap; the firmware fan curve stayed at 44–67 %. The T.Limit margin readout puts the throttle point near 92 °C; the earlier 8-minute 300 W run reached 88–89 °C, so a sustained 325 W run is the number that decides — see below.
+- **Decision:** adopt 325 W for GLM (owner policy: max watts where it pays and stays cool). Persist it with [`systemd/gpu-power-limit.service`](../systemd/gpu-power-limit.service); `nvidia-smi -pl` resets on reboot. Pending: sustained-load temperature at 325 W, and the same sweep on V4-Flash once servers are swapped.
+
+### T2.9 — sustained 325 W (GLM) and first V4-Flash sweep (2026-09-21, owner ran)
+
+**GLM sustained:** `--caps 325 --concurrency 16 --runs 15 --phases decode` (~3.5 min pinned). **607 wall tok/s, max 89 °C, fans 73 / 64 %, 0 thermal-throttle samples**, SM 1,957–1,972 MHz (−5 % from the cold 2.06 GHz burst — leakage at 89 °C, the same heat-soak E8 measured at 300 W). Sustained 325 W still beats the cold 300 W burst (589). Margin to the ~92 °C T.Limit point: 3 °C, with 27 % fan headroom. **Adopted;** persist with `systemd/gpu-power-limit.service`. Evidence [`evidence/t29-glm-325w-sustained/`](../evidence/t29-glm-325w-sustained/).
+
+**V4-Flash, 16-slot profile, 325 → 300 W, 3 runs each** ([`evidence/t29-dsv4-325w/`](../evidence/t29-dsv4-325w/)) — medians unreliable, one stalled run per phase in the first (325 W) window of an 8-minute-old server:
+
+| Cap | Prefill 32K per run (tok/s) | median | C16 decode wall per run | median | Busy W | SM MHz | Thermal flags |
+|---|---|---|---|---|---|---|---|
+| 325 W | 7,544 / **3,623** / 8,582 | 7,544 | 1,242 / 1,279 / **647** | 1,242 | 621–650 | 2,242–2,280 (decode), 2,051–2,055 (prefill) | 0 |
+| 300 W | 7,817 / 7,905 / 8,068 | 7,905 | 1,188 / 1,188 / 1,165 | 1,188 | 600 | 2,062–2,096 / 1,905–1,920 | 0 |
+
+Healthy runs say **+6 % prefill (8,582 vs 8,068) and +8 % decode (1,279 vs 1,188)** at 325 W, consistent with GLM and with E8b's single-stream +4 % prefill. Decode at C16 draws 621 W of the 650 available — V4-Flash is only partly cap-bound there (bandwidth-bound in the expert reads), so its decode gain is smaller than GLM's. **Method fix:** `summarize-power.py` now prints `run spread … stalled` when any run is below 70 % of the best and records `tps_per_run`; rerun ordered `--caps 300,325 --runs 5` pending.
+
+### T2.9 — V4-Flash rerun, 300 → 325 W, 5 runs (2026-09-21, owner ran): 325 W is neutral for V4-Flash
+
+[`evidence/t29-dsv4-325w-rerun/`](../evidence/t29-dsv4-325w-rerun/). Prefill rows exclude prefix-cache hits (TTFT < 1 s; the sweep reused the first run's seeds — fixed, seeds are now per invocation).
+
+| | 300 W | 325 W | Δ |
+|---|---|---|---|
+| C16 decode wall tok/s, 5 runs | 1,213 (1,088–1,338) | 1,206 (1,092–1,302) | **0 %** |
+| 32K prefill tok/s, clean runs | 8,256 (n=3: 8,244–8,281) | 8,360 (n=2: 8,343–8,376) | +1.3 % (noise) |
+| SM clock, decode | 2,182–2,190 MHz | 2,175–2,205 MHz | same |
+| Busy W / max °C / max fan | 600 / 71 / 38 % | 650 / 86 / 57 % | +50 W, +15 °C |
+| Thermal-throttle samples | 0 | 0 | |
+
+- **Same clocks, more watts, same speed.** At 325 W the cards drew all 650 W but ran at the same 2.19 GHz as at 300 W: the extra power is leakage on hotter silicon. V4-Flash C16 decode is bandwidth-bound in the NVFP4 expert reads (memory clock is fixed), so the cap is not the limiter even though the cap flag is set. Contrast GLM (+9 %): EXL3 trellis dequant is SM-bound and converts every watt into clock.
+- **Efficiency cost:** decode 2.02 → 1.85 tok/s/W (−8 %) for nothing.
+- **Decision:** one system-wide cap, **325 W**, because GLM is the daily driver and V4-Flash loses no throughput and shows no thermal event at 86 °C. If V4-Flash becomes primary, `nvidia-smi -pl 300` (or disable `gpu-power-limit.service`) recovers the efficiency. Corrects E8b's "+4 % prefill at 325 W" — that was a 3-run median; with 5 runs and cache hits removed the gain is ≈ 1 %.
+- **Lesson for V4.1:** whatever engine serves it will be NVFP4/MXFP4 tensor-core GEMMs like V4-Flash, so expect power caps to be irrelevant to its decode and marginal to its prefill; the levers there are bytes per token, not watts.
+
+## E26 Part B — concurrency on the patched image, and what the DRAM counter says about the CPU tier (2026-09-23)
+
+Protocol in EXPERIMENTS E26. Same server as Part A plus `--cuda-graph-bs-decode 1 2 3 4` on every launch (the derived list from `--cuda-graph-max-bs-decode 4` is `[1, 2, 4]`); 325 W; every C > 1 cell preceded by `verify-batch-consistency.py --same-prompt` at C4 (PASS ×5, gibberish 0.02); 256 tokens, distinct prompts, seed 4242, 3 runs after 1 warmup unless stated. `hsmp-clocks.py --watch 1` sampled the memory controller's own bandwidth counter (all DRAM traffic, 1 s resolution) during the C1 and C4 cells of B2/B3; "busy" = samples above 30 GB/s, i.e. the ones inside the decode run. Evidence `evidence/e26-concurrency/`.
+
+| Cell | `KT_CPUINFER` | D | C | summed tok/s | **wall tok/s** | per stream | TTFT s | DRAM GB/s busy median (p10–p90) | vs default |
+|---|---|---|---|---|---|---|---|---|---|
+| B1 | 16 | 4 | 1 | 39.07 | **33.94** | 39.1 | 1.03 | — | = R3b 39.2 |
+| B1 | 16 | 4 | 2 | 45.60 | **40.82** | 22.8 | 1.26 | — | = R3b 44.9 |
+| B1 | 16 | 4 | **3** | **49.00** | **44.97** | 16.3 | 1.47 | — | **+28 % vs 38.3** (bs=3 captured, no padding) |
+| B1 | 16 | 4 | 4 | 51.34 | **47.53** | 12.8 | 1.68 | — | = R3b 50.8 |
+| B5 | 16 | 4 | 4 (1,024 tok, 2 runs) | 51.43 | **50.31** | 12.9 | 1.80 | — | per-row cost flat with output length |
+| B2 | 14 | 4 | 1 | 38.64 | **33.20** | 38.6 | 1.12 | 98 (77–108) | −2 % (plateau) |
+| B2 | 14 | 4 | 4 | 49.43 | **45.31** | 12.4 | 1.89 | 106 (95–110) | −5 % |
+| B2 | 12 | 4 | 1 | 38.31 | **32.14** | 38.3 | 1.30 | 93.5 (47–102) | −5 % |
+| B2 | 12 | 4 | 4 | 45.91 | **41.92** | 11.5 | 2.17 | 99 (78–107) | −12 % |
+| B3 | 16 | **0** | 1 | 31.52 | **27.97** | 31.5 | 1.07 | **64.5** (58–88) | −18 % (deferral is worth +21 % wall at C1) |
+| B3 | 16 | **0** | 4 | 45.67 | **42.55** | 11.4 | 1.74 | 96 (59–120) | −10 % (deferral is worth +12 % wall at C4) |
+
+B4 (`kt-cpu-per-step.sh`, 200 tokens): step wall 30.0 / 50.5 / 71.0 / 85.5 ms at 1–4 rows; kt CPU-s per step 0.46 / 0.79 / 1.12 / 1.36; **kt threads busy 15.6–15.8 at every C.** The last column is the instrument failing, not a result: kt-kernel workers busy-spin 50 ms before sleeping and no per-layer wait is that long, so all 16 workers burn CPU for the whole step whether they compute or wait — CPU-seconds ≈ 16 × step time and cannot separate compute from serialisation. The DRAM-counter column above is the replacement instrument (B4′).
+
+**What the DRAM counter shows (measured; the interpretation is inferred).** At the default (D=4, 14–16 threads) the memory controller moves ≈ 98 GB/s averaged over the whole C1 step and ≈ 106 GB/s at C4, against the 125 GB/s that this CPU's two CCDs can pull (E25/E27). Bytes per step ≈ 2.5–2.9 GB at C1 (FEASIBILITY's 101 CPU experts × 17.9 MiB ≈ 1.9 GB of expert weights plus Engram, activations, pinned copies) and ≈ 9 GB at C4 — bytes scale ≈ 3.1× for 4 rows, which is what near-zero expert reuse across rows predicts (≈ 2.75 CPU experts per token per layer out of 176). The tier is streaming weights for at least 78 % of the step wall (98 / 125) — it is **bandwidth-bound at bs=1 already**, not core-bound: 12 threads lose 5–12 % *and* pull 5–7 % less bandwidth; 14 → 16 threads is flat in both. D=0 is the control that makes this legible: same bytes, but the counter drops to 64.5 GB/s at C1 because the CPU reads no longer overlap the GPU phase — deferral raises *achieved* bandwidth (64.5 → 98), it does not shrink the byte count. Upper bound for this placement on this CPU: if the tier could read at the 125 GB/s ceiling for 100 % of the step, 2.5 GB/step → 20 ms → ≈ 50 tok/s summed at C1; the honest expectation for further overlap (D=5, scheduling) is well under that. The levers that move bytes or bandwidth — fewer CPU experts (placement T3.6g), more CCDs/GMI links (hardware), faster FCLK (E27: failed at 2100) — are the levers; more cores on the same two CCDs are not. Caveat: the counter is socket-wide (includes GPU DMA of pinned buffers and Engram page-cache reads) and 1 s samples average ≈ 12–33 steps, so the per-step byte figures are ± 15 % and the ≥ 78 % duty figure is a lower bound.
+
+**Quality gates for the new capture list:** same-prompt gate PASS at C2/C3/C4 (min pairwise row prefix 603 / 310 / 155 chars — the C4 figure is below R3's 225 and is flagged as watch-worthy in E26; no bug-C signature); teacher-forced NLL at bs=1 on the D=0 server 1.48644 vs E21's D=0 1.48741, ΔNLL −0.00097 (z +0.27), mean |Δlogp| 0.123 = the known E22 streamed-prefill offset — the bs=1 graph is unchanged. **E24 20K soak on this list: pending** (the default in `serve-hybrid.sh` is provisional until it runs).
+
+Verdict: `CUDA_GRAPH_BS="1 2 3 4"` becomes the launcher default (~~provisional, soak pending~~ qualified by the E27 served soak 2026-09-23, 141K tokens, 0 NaN); `KT_CPUINFER=16`, `KT_MAX_DEFERRED=4` stay. Four agents now get 12.8 tok/s each, three get 16.3, two get 22.8, one gets 39.1 summed / 33.9 wall. The cost model becomes: step ≈ 8 ms + 17.7 ms × rows because each row streams its own ≈ 1.9 GB of expert weights through a ≈ 100–125 GB/s pipe.
+
+## E28 — expert placement: spending the KV pool on GPU experts (2026-09-23)
+
+Protocol in EXPERIMENTS E28 (task T3.6g). Same server as E26 Part B (325 W, patched image, spec off, `KT_CPUINFER=16`, D=4, capture list `1 2 3 4`, 256 tokens, distinct prompts, seed 4242, 3 runs after 1 warmup) with three changes: `--max-total-tokens 147456` (SGLang had sized the KV pool at 1,933,056 tokens for a server that admits 4 × 32K), `MEM_FRACTION_STATIC=0.96`, and `KT_NUM_GPU_EXPERTS` stepped 208 → 222 → 226. GPU experts are the contiguous IDs 0..N−1 of every layer (`kt_ep_wrapper.py`), so each step moves the next IDs off the CPU tier. Every step passed `verify-batch-consistency.py --same-prompt` at C4 (min pairwise row prefix 310 chars, same as E26). Evidence [`evidence/t36g-placement/`](../evidence/t36g-placement/) (`launch-g*.txt`, `decode-g*-c*.json`, `hsmp-g*-c*.json`, `prefill-g*-32k.json`, `nll-g*-d4.json`, `stress-g*-c4-30k.json`, `vram-g*-*.txt`).
+
+| GPU / CPU experts per layer | weights per rank | free before capture | C1 summed / **wall** | C3 | C4 | per stream C1 / C3 / C4 | TTFT C1 | DRAM GB/s busy median C1 / C4 | 32K prefill tok/s / TTFT | free after one 32K prefill (GPU0 / GPU1) | worst case: 4 × 30K decoding, min free GPU0 / GPU1 | ΔNLL vs E22 (z; >0.5-nat worse/better) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 208 / 176 (E26 B1) | 82.97 GB | 6.2 GB (pool 1.93 M tokens) | 39.07 / **33.94** | 49.00 / 44.97 | 51.34 / 47.53 | 39.1 / 16.3 / 12.8 | 1.03 s | 98 / 106 | 870 / 36.7 s | 3.3 GB / 3.2 GB | not measured | baseline 1.48613 |
+| 222 / 162 | 87.73 GB (+4.76) | 5.28 GB | 40.53 / **35.39** (+4.3 %) | — | 54.08 / 50.12 (+5.4 %) | 40.5 / — / 13.5 | 0.95 s | 93.5 / 108 | 873 / 36.7 s | 2.8 GB / 2.5 GB | 2,937 MiB / 2,878 MiB (all four finished, 170 s wall) | +0.0055 (z +1.5; 160 / 140) |
+| **226 / 158 (new default)** | 89.01 GB (+1.28) | 4.00 GB | **41.23 / 36.08 (+6.3 %)** | **53.04 / 48.72 (+8.3 %)** | **56.18 / 51.91 (+9.2 %)** | 41.2 / 17.7 / 14.0 | 0.91 s | 90 / 108 | 845 / 38.1 s | 1.6 GB / 1.5 GB | **779 MiB / 1,226 MiB** (all four finished, 146 s wall, zero OOM) | **+0.0018 (z −0.48; 143 / 148)** |
+
+What the numbers say:
+
+- **The prediction held.** E26 A4 projected ≈ +4 % C1 wall for 14 experts moved (−8 % of the CPU tier's bytes); 222 measured +4.3 % wall / +3.7 % summed. At 226 (−10.2 % bytes) C1 wall is +6.3 %. At C4 the gain equals the byte reduction (+9.2 % for −10.2 %), which is what a purely bandwidth-bound tier predicts; at C1 it is ≈ 60 % of the byte reduction because ≈ 15 ms of the 29 ms step is GPU work that placement does not touch (E26 A3).
+- **The DRAM counter moved the right way.** C1 busy-median fell 98 → 93.5 → 90 GB/s as bytes per step fell faster than step time; C4 stayed at 106–108 GB/s (pipe saturated, so fewer bytes shorten the step directly). Same socket-wide caveats as E26 B4′.
+- **Quality is neutral, and the 222 reading shows the noise floor.** 222 read ΔNLL +0.0055 (z +1.5) and 226 read +0.0018 (z −0.48) against the same E22 baseline; moving a tier's worth of experts from kt-kernel's CPU numerics to FlashInfer's MXFP8-activation path shifts individual token log-probs by a mean |Δlogp| ≈ 0.128 (the E22 offset) in both directions, and the mean lands wherever the 4,795-token sample puts it. The strict |Δ| < 0.002 line (T3.9e) is passed by 226 and missed by 222; neither is a one-sided loss (per-token shape symmetric). Against E21's pre-streaming D=4 file the 222 reading is +0.0103 (z −2.59) — that comparison also contains the E22 offset and is not the right one.
+- **Where the VRAM went, and where the rest is.** Capping the pool returned ≈ 2.7 GB/rank (pool 3.33 → 0.60 GB); 18 experts cost 6.04 GB/rank (0.34 GB each) — the difference came from raising the fraction. Between "after capture" (93.7 GiB) and the worst-case peak (97.1 GiB on GPU0) sit ≈ 3.4 GB of dynamic allocations: prefill-chunk activations at 30K context, bs=4 decode workspaces, late-loaded Triton kernels (TP1 logged `free device mem: 0.97 GiB` warnings at 226 — none at 222). That 3.4 GB is the next placement budget and it is priced in prefill chunk size (T3.6g2), not in KV.
+- **Prefill.** 4K unchanged (869 vs 862 tok/s); 32K 845 vs 870 (−3 %, one 2-run cell — within the run-to-run spread seen in E26 A). TTFT at 30K under four concurrent prefills is 39 / 70 / 100 / 128 s: chunked prefill serialises the four prompts, as expected.
+
+Verdict: **226 GPU / 158 CPU experts is the launcher default** (`KT_NUM_GPU_EXPERTS=226`, `MEM_FRACTION_STATIC=0.96`, `MAX_TOTAL_TOKENS` derived as slots × context + 16K), ~~provisional in the same sense as the capture list — the E24 20K soak has not run on it~~ qualified 2026-09-23 by the E27 served soak on exactly these defaults (EXPERIMENTS E27 "Boot 12 served soak": C1 42.0 / C2 50–52 / C3 55.6–56.0 / C4 58.1–59.0 summed, NLL identical, 0 NaN). Fallback `KT_NUM_GPU_EXPERTS=222` for anyone who wants ≈ 2.9 GB of worst-case headroom instead of 0.8 (the four extra experts cost 1.28 GB of weights but 2.16 GB of worst-case peak on GPU0 — allocator fragmentation and late Triton loads eat the rest, so headroom is not linear in expert count). 228 is projected not to fit (≈ 0.1 GB worst-case free). `CHUNKED_PREFILL_SIZE=8192` (E22's 1.4K tok/s prefill) is incompatible with 226 — it needed ≈ 2.2 GB more than 4096 at 208. Current qualified single-user figure: **C1 41.2 summed / 36.1 wall tok/s, TTFT 0.9 s (short prompt), 845–870 tok/s streamed prefill.** The E26 Part A bar (C1 wall ≥ 37) is now 0.9 tok/s away.
+
+## E29 — placement round 2: prefill chunk 2048 → 230 GPU experts (2026-09-24) — rejected
+
+Protocol in EXPERIMENTS E29 (task T3.6g2). Launcher defaults except the columns shown (slot 3 BIOS, patched image, spec off, D=4, capture list `1 2 3 4`, 300 W — never binds, 512 tokens, distinct prompts, seed 4242, 12 runs). Controls are the E27 soak / E28 D=4 readings at the defaults. The owner's 340 GB `hf download` to the separate `/mnt/data` NVMe ran throughout (≈ 0.6 % C1 per E28's measurement).
+
+| Config (chunk / GPU experts / fraction) | after capture (GPU0 / GPU1) | worst-case min free (4 × 30K) | C1 summed / **wall** / TTFT | C3 | C4 | 16K prefill tok/s / TTFT | 32K prefill | ΔNLL vs E22 (z; better/worse) |
+|---|---|---|---|---|---|---|---|---|
+| **4096 / 226 / 0.96 (default; control)** | 93,646 / 93,703 MiB | **1,349 / 1,290 MiB** (E28 read 779 / 1,226 for the same config — ≈ 0.5 GB run-to-run) | 41.76 / **39.83** / 0.617 s | 56.00 / 54.38 | 58.09 / 55.79 | 860 / 18.6 s | 845 / 38.1 s | +0.00182 (z −0.48; 143/148) — bit-identical to E28 |
+| 2048 / 226 / 0.96 (A) | 93,646 / 93,703 | 2,923 / 2,462 | 42.10 / **40.16** / 0.609 | — | — | **513.9 / 31.2 s (−40 %)** | 518.3 / 61.8 s (−39 %) | +0.00033 (z −0.09; 121/149); repeat on same server bit-identical |
+| 2048 / 230 / **0.975** (B; 0.96 refused, "minimum viable 0.9633") | 95,106 / 95,165 | 1,253 / 1,068 | **42.84 / 40.81 / 0.599 (+2.5 % wall vs control, +1.6 % vs A)** | 57.56 / 55.94 (+2.9 %) | 60.00 / 57.64 (+3.3 %) | — | — | **server killed: CUDA OOM** on the logprob request (1.06 GB fp32 logits transient), fresh or after stress |
+| 2048 / 230 / 0.975 + `SGLANG_LOGPROB_CHUNK_SIZE=512` (D) | 95,106 / 95,165 | 1,025 / 838 | (as B) | | | 530.9 / 30.2 s | — | **+0.00877 (z −2.23; 141/125) — FAILS the 0.002 gate** |
+| 4096 / 226 / 0.96 + `SGLANG_LOGPROB_CHUNK_SIZE=512` (G) | 93,646 / 93,703 | — | — | | | — | — | +0.00182 — **Δ 0.0 vs the default on every token** |
+
+What the numbers say:
+
+- **Chunk 2048 buys the headroom and costs 39–40 % of prefill.** The fit gate gains ≈ 1.6 / 1.2 GB per rank at 226, enough to admit 230 (with the static fraction raised to 0.975). But 16K prefill drops 860 → 514 tok/s and 32K 845 → 518: the per-chunk fixed cost (rank-0 CPU expert sync, Engram gather, Python launch) dominates, not GEMM efficiency. Chunk size is neutral on decode (A vs control within noise).
+- **The 4 experts pay what the byte model says, again**: −2.5 % CPU-tier bytes → +1.6 % C1 wall, +2.9 % C3, +3.3 % C4.
+- **Break-even (derived, not measured):** the decode gain is ≈ 0.0004 s per output token; a 16K prompt pays +12.6 s of TTFT (≈ 31K output tokens to break even), a 2K prompt +1.5 s (≈ 3.8K tokens). Only prompts under ≈ 1K tokens come out ahead.
+- **NLL is deterministic per config**, so tier-swap deltas are real: the same config read the same value to the last digit across days (226/4096: 1.48795 in E28 G2, E29 C, E29 G) and across repeats on one server. The 230 tier moves it +0.0088 — the largest of the four swaps measured (222 +0.0055, 226 +0.0018, 230 +0.0088, all vs the E22 208-expert reference), and the first to fail the gate. Chunk size contributes +0.0003 and the logprob chunk exactly 0.
+- **The largest single VRAM transient is a `return_logprob` request**, not the 4 × 30K decode: `logprob_chunk × vocab` fp32 logits = 2048 × 129,280 × 4 B = 1.06 GB plus a bf16 copy. At 230 it kills the server (the scheduler exception calls `kill_process_tree`; E28's note that an OOM fails the request was wrong). `SGLANG_LOGPROB_CHUNK_SIZE=512` cuts it 4× at zero numerical cost and no material latency change (fresh NLL 25.3 vs 28.9 s).
+- GPU: 167 / 179 W and 74 / 71 °C peak at chunk 2048; 141–146 W / 69 °C at the default chunk. 0 NaN / Xid / Traceback except the two OOMs; EDAC 0/0.
+
+Verdict: **rejected** — defaults stay `CHUNKED_PREFILL_SIZE=4096`, `KT_NUM_GPU_EXPERTS=226`, `MEM_FRACTION_STATIC=0.96`. Adopted from this round: `SGLANG_LOGPROB_CHUNK_SIZE=512` as a launcher default (bit-identical output, ≈ 0.8 GB of worst-case margin for any logprob caller). Evidence [`evidence/t36g2-placement-r2/`](../evidence/t36g2-placement-r2/).
+
+## T3.19a — where the decode step goes: per-layer timeline inside the graph (2026-09-24)
+
+Stage 1 deliverable (a) of the migration roadmap; full tables and method in [`evidence/t319/a/README.md`](../evidence/t319/a/README.md). Overlay `e66d44fb` records six external CUDA events per MoE layer inside each captured graph (`KT_TIMELINE=1`, off by default, byte-identical when off); `scripts/kt-timeline-report.py` buckets them against the *unsampled* replay period. Qualified profile (D=4, spec off, 226/158, slot 3 BIOS), standard C1/C4 recipes with the instrumentation on.
+
+| rank 0 bucket (median) | bs 1 ms | share | bs 4 ms | share |
+|---|---:|---:|---:|---:|
+| export (D2H + kt submit) | 2.482 | 10.5 % | 2.890 | 4.2 % |
+| gpu_experts (resident GEMM) | 2.517 | 10.7 % | 5.111 | 7.4 % |
+| cpu_wait (exposed kt wait) | 7.879 | 33.4 % | 48.588 | 70.8 % |
+| h2d + combine | 0.459 | 2.0 % | 0.494 | 0.7 % |
+| engram_break (2 gaps) | 1.822 | 7.7 % | 2.915 | 4.2 % |
+| other_gpu (attention, dense, all-reduce, lm head) | 8.073 | 34.2 % | 8.336 | 12.1 % |
+| between_replays | 0.269 | 1.1 % | 0.209 | 0.3 % |
+| **step (replay period)** | **23.589** | | **68.659** | |
+| buckets / period | | 98.9 % | | 99.7 % |
+| bench-decode wall tok/s, same serve | 39.15 (TTFT 0.622) | | 55.56 = 13.9/stream | |
+
+Gate with timeline on: C1 41.37 median / 39.15 wall vs pin 41.92 / 39.86 (≥ 39.0 pass), C4 13.9/stream (≥ 13.6 pass), NLL 0/4795 tokens moved, consistency PASS 519/519, 0 NaN/Xid, EDAC 0/0. Instrumentation cost ≈ 1.8 % C1 wall. Rank 1: `other_gpu` 18.9 of 23.3 ms at bs 1 = all-reduce wait for rank 0. Python launch is not exposed (host 10.1 ms ahead of the GPU at bs 1, 41 ms at bs 4).
+
+## E30 / T3.18 — Option B2: GPUs compute a slice of the CPU experts straight out of host RAM (2026-09-24) — rejected
+
+Protocol in EXPERIMENTS E30, design and full tables in [`evidence/t318-b2-prototype/README.md`](../evidence/t318-b2-prototype/README.md). Launcher defaults (slot 3 BIOS, patched image, spec off, D=4, 226/158 placement, chunk 4096, 300 W — never binds) plus `KT_B2_UVA_EXPERTS=S`: the last *S* CPU experts of every layer are also held pinned in host RAM in FlashInfer layout and computed by each rank's stock SM120 CUTLASS MXFP4 grouped GEMM over UVA, forked on a side stream beside kt's `submit()`, joined after `sync()`; `KT_B2_MAX_TOKENS=1` hands them back to kt for any forward wider than one token. 512 tokens, distinct prompts, seed 4242, 6 runs, C1 fixture offset 6 / C4 offset 0. Control is the T3.16 review-intake baseline on the same image.
+
+| Config | C1 summed / **wall** / TTFT | C4 summed / wall / TTFT | union GPU busy per step (GPU-only trace) | B2 GEMM time per step | pinned RAM per rank / avail after load | verify-batch-consistency |
+|---|---|---|---|---|---|---|
+| **B2 off (control, `evidence/t316-review-intake/c1-off6-t316c.json`)** | 41.92 / **39.86** / 0.609 s | E27/E28/E29 reference 56.2–59.0 summed (E29 control 58.09 / 55.79) | 15.4 ms (E26 A3) | — | — / — | PASS |
+| S = 40, main stream, no token gate | 33.12 / **28.54** / **2.525 s** | — | — | — | 14.8 GiB / 62 GiB | PASS |
+| S = 40, side stream + gate | **42.71 / 40.71 / 0.617 (+2.1 % wall)** | 57.22 / 55.02 / 1.50 (within the reference band; B2 off at bs=4 by the gate) | 17.3 ms | 4.9 ms | 14.8 GiB / 62 GiB | PASS |
+| S = 60, side stream + gate | 40.65 / **38.73** / 0.639 (**−2.8 %**) | — | 19.8 ms | 7.3 ms | 21.0 GiB / 31 GiB | PASS |
+
+Microbench (`scripts/bench-b2-uva-moe.py`, `uva-moe-*.json`): UVA grouped GEMM is bit-equal to the VRAM run, graph-replayable, ≈ 0.09 ms floor + 0.21 ms per expert hit at TP2 (39–41 GiB/s effective per x16 link; plain memcpy 51–53), and unchanged under a concurrent 130 GB/s host-read hog once graphed; forked with the kt tier the step costs max(tier, B2), not the sum. kt's own read of one full expert costs ≈ 0.146 ms, so the PCIe reader is 1.4× slower per expert than the path it relieves.
+
+What the numbers say:
+
+- **Additive bandwidth is not additive throughput.** E4b's 98 % additivity (CCD reads + PCIe DMA) held — the HSMP DRAM counter rose as expected — but the step got no shorter because (a) each streamed expert costs more link time than kt's fabric time for it, and (b) D=4 deferral already hides most of the CPU tier's wall time behind the next layer (E21), so bytes taken off the CPU path were mostly bytes that were not on the critical path. E28 gained the full byte reduction because VRAM is free per expert; B2 pays 1.4×.
+- **S = 60 makes B2 the longest pole**: 7.3 ms of link-bound GEMM per step on the side stream exceeds what it overlaps and C1 loses 3 %.
+- **The token gate is not optional**: without it a 13-token prefill layer hits most of the 40 streamed experts and TTFT goes 0.61 → 2.5 s.
+- 0 NaN / Xid / Traceback in all three servers; EDAC 0/0; GPU peak 148–171 W.
+
+Verdict: **rejected as a decode lever; FEASIBILITY's 71–78 tok/s B2 column struck.** Code kept off by default (overlay `7e41317e`); the per-device fork/join stream pattern is reused for T3.20 Engram staging.
+
+## E33 — context ladder: 32K → 64K → 128K, stopped at 128K (2026-10-07)
+
+Protocol in EXPERIMENTS E33 (task T3.6e–g). One serve per rung on the launcher defaults (226 / 158, D=4, spec off, chunk 4096, `MEM_FRACTION_STATIC=0.96`, pool = slots × context + 16K; slot 3 BIOS, 325 W never binds), gates (a) launch and capture, (b) `stress-kv-full.py` at context − 2K, (c) `verify.py` needles, (d) `nll-score.py` 4K corpus vs T3.16c, (e) 0 NaN / Xid / Traceback, EDAC 0/0, (f) prefill tok/s / TTFT and C1 512 tokens × 6 runs. Stop at the first failing gate. Evidence [`evidence/e33-context-ladder/`](../evidence/e33-context-ladder/README.md).
+
+| Rung | Slots | Pool (tokens) | Free after capture (GPU0 / GPU1) | Stress-kv | Needles | NLL vs T3.16c | Prefill tok/s / TTFT | C1 summed / **wall** / TTFT | Min free during stress | Result |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 32K | 4 | 147,456 | 4.24 / 4.18 GB | 4 × 30K, all finished (E28, E29) | 6/6 (T3.19b) | 0 moved | 845 / 38.1 s at 32K (E28); 860 / 18.6 s at 16K (E29) | 42.04 / **40.15** / 0.594 s (T3.19b) | 779–1,349 / 1,226–1,290 MiB (E28, E29) | **pass — deployment profile** |
+| 64K | 1 | 81,920 | 4.19 / 4.11 GB | 61,927-token prompt, TTFT 84.33 s, peak 97,080 / 97,155 MiB | 6/6 at 55,206 tokens, TTFT 57.05 s | 0 of 4,795 moved (bit-identical) | ≈ 734 at 61.9K, ≈ 968 at 55.2K (derived from TTFT) | 42.25 / **40.35** / 0.592 s | 807 / 732 MiB | **pass — qualified limit** |
+| 128K | 1 | 147,456 | 4.05 / 3.97 GB | **CUDA OOM at ≈ 65K prefix** (1,024 MiB requested, 1,004 MiB free, GPU1) | not reached | — | — | — | — | **fail (b)** |
+| 64K | 4 | 278,528 | 3.48 / 3.42 GB | **CUDA OOM at ≈ 60K prefix, both ranks** (960 MiB requested, 903 / 842 MiB free) | not reached | — | — | — | — | **fail (b)** |
+
+What the numbers say:
+
+- **KV is not the binder.** "Memory pool end" reads 4.58 → 4.48 → 4.15 GB free for pools of 81,920 → 147,456 → 278,528 tokens: DSV4's compressed KV costs ≈ 0.1–0.2 GB per 65K tokens per rank. Hypothesis (1) of E33 held; a 1M single-slot pool would fit in the ≈ 4 GB left after capture.
+- **The binder is the DSV4 sparse-attention indexer's dense prefill scoring** (verified in the overlay source, upstream code): `_low_ratio_index_topk_dense` builds fp32 logits `[chunk_tokens, lc]` with `lc` = prefix length (compress ratio 1), i.e. 64 MiB per 4K of prefix per 4096-token chunk — 1 GiB at 64K, 2 GiB at 128K, 4 GiB at 262K, 16 GiB at 1M — and `select_candidate_blocks` pads a copy of it in slices bounded by `_TORCH_INDEXER_SCORE_BUDGET_BYTES = 1 << 30` (`deepseek_v4_backend.py:336`). The allocator-retry sizes (604, 738, 805, 872, 939, 1,007, 1,074 MiB) are exactly 4096 × prefix × 4 B at each chunk. Both OOMs are the `F.pad` inside `select_candidate_blocks`, Python-level, no Xid.
+- **64K prefill is slower than 32K for the same reason**: ≈ 734–968 tok/s derived from TTFT at 55–62K against 845 measured at 32K; the dense score and the sparse-attention cost both grow with the prefix.
+- **The deployment profile sits on the same edge.** E28's worst case (4 × 30K, min free 779 MiB) and E29's chunk-2048 reading (min free 2,923 MiB, ≈ 1.5 GB more, at −40 % prefill) are this transient at 32K; chunk size halves the logits, which is why chunk 2048 bought margin.
+- **The ladder stops here, not at a placement**: 262K / 512K / 1M were not launched. At 226 / 158 the fix is in the scorer, not in the expert split (E34c's trade of ≈ 12 experts for 262K (0.34 GB per expert per rank, E28) costs ≈ −7 % C4 / −4 % C1 by the E28 byte model and still leaves 1M out of reach).
+
+**E34a addendum (2026-10-07, overlay `1953a92e`, budget 256 MiB):**
+
+| Rung | Slots | Free after capture | Stress-kv | Needles | NLL | C1 summed / **wall** / TTFT | Min free during stress | Result |
+|---|---|---|---|---|---|---|---|---|
+| 64K | 4 | 3.48 / 3.42 GB | 4 × 62K all finished; TTFT 90.7 / 153 / 215 / 276 s; peak 97,246 / 97,305 MiB | 6/6 at 55.2K, TTFT 54.5 s | 0 moved | 42.20 / **40.26** / 0.592 s | 641 / 582 MiB | **pass — qualified rung** |
+| 128K | 1 | 4.05 / 3.97 GB | **CUDA OOM at ≈ 110K prefix** (448 MiB `[4096, lc]` bool mask, 196 MiB free; logits 1.75 GiB) | not reached | — | — | — | **fail (b)**, further than E33's ≈ 65K |
+
+**E34a served soak (2026-10-07, 64K × 4 slots, E27 Boot-12 shape, `soak-64k-4slot/`):** same-prompt C4 consistency PASS (min prefix 310 / 519); 8 distinct-prompt decode blocks × 12 runs × 512 tokens, NaN probe on, all health 0 — C1 41.89 / **39.94** wall, C2 50.47–52.10 / **47.92–49.72**, C3 55.80–56.06 / **54.30–54.48**, C4 57.84–58.96 / **55.53–57.40** (median / wall tok/s; all within 0.5 % of the 32K / 4-slot numbers); NLL 0 of 4,795 moved; 16K prefill 841.8 tok/s / 18.98 s TTFT; 4 × 62K stress all finished in 295 s (TTFT 76 / 144 / 212 / 278 s, peak 97,150 / 97,237 MiB, min free 737 / 650 MiB); needles 6/6 at 55,206 tokens, TTFT 57.5 s; 0 Xid, EDAC 0/0.
+
+**E34b (2026-10-08, overlay `c639cbee`, three serves, `evidence/e34-indexer-memory/b/`):** the dense fp4 indexer now scores each prefill chunk's query rows in ≤ 256 MiB tiles (`_dense_index_topk_rows`; rows, not key blocks — every kernel on the path is per row, so the tiling is bit-exact with no merge; GPU test `scripts/tests/test_indexer_row_tiling.py` 5/5, mask-slicing mutant 3/5 fail). **128K × 1 slot passes every gate:** 125,773-token prompt TTFT 154 s, needles 6/6 at 110,666 tokens (TTFT 110 s), NLL 0 of 4,795 moved, C1 42.00 / 40.07 wall, min free 1,335 / 1,260 MiB, health 0, EDAC 0/0. **64K × 4 (deployment) re-measured on the same gates:** min free 737 / 650 → **1,537 / 1,478 MiB**, prefill **842 → 1,048 tok/s at 16K and 845 → 1,042 at 32K (+24 %, TTFT 32K 38.1 → 30.7 s)**, C1 42.14 / 40.20 wall (unchanged), NLL 0 moved, needles 6/6, health 0. The prefill gain was not predicted: the hypothesis was ≤ 5 % *cost*; projected cause is the caching allocator no longer retrying 1 GiB + 256 MiB allocations from a 3.4 GB pool (untraced). **262K × 1 slot fails gate (b) at 184K prefix** on the next binder: the candidate-source layer's published `[chunk, prefix]` bool mask (720 MiB at 184K, duplicated by `torch.cat` at publish; 1 GiB at 262K, 4 GiB at 1M), 643 / 248 MiB free, 0 NaN / Xid. Per-chunk prefill throughput was flat 929–963 tok/s from 40K to 184K of prefix, so the E33 reading that prefill "degrades with prefix" was end-to-end TTFT (tokenization + inter-chunk gaps), not the indexer. Next: E34b-ii (block-granular candidate mask, 8× smaller, bit-exact), then the ladder from 262K; then E34d (chunk 8192 / 16384).
+
+**E34b-ii (2026-10-08, overlay `d6811728`, two serves, `evidence/e34-indexer-memory/b-ii/`):** the prefill candidate masks are published at block granularity (`select_candidate_block_keep`, `[rows, ceil(prefix / 8)]`) and expanded per consumer tile (`expand_candidate_blocks`); decode unchanged; GPU test 6/6, one-block-shift mutant 2/6 fail. **262K × 1 slot passes every gate:** 253,490-token prompt TTFT 285.9 s (per-chunk prefill 953–962 tok/s flat from 30K to 253K prefix), min free 1,807 / 1,734 MiB (E34b OOM'd at 184K), needles **6/6 at 221,756 tokens** (TTFT 218 s), NLL 0 of 4,795 moved, C1 42.27 / 40.34 wall, prefill 974 / 946 tok/s at 16K / 32K, **decode 42.4 tok/s with 253K of resident context** (DSA decode is flat with context), health 0, EDAC 0/0. **64K × 4 (deployment) unchanged:** min free 1,541 / 1,484 MiB, C1 42.17 / 40.23 wall, prefill 1,040 / 1,040 tok/s, NLL 0 moved, needles 6/6. Measurement note: the first 64K × 4 prefill pair, taken right after the 4 × 62K stress, read 965 / 946 (−8 %) and recovered to 1,040 / 1,040 two minutes later on the idle server — bench prefill only on an idle server.

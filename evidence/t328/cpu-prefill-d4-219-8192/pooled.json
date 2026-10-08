@@ -1,0 +1,184 @@
+{
+ "label": "219/165 chunk 8192 KT_GPU_PREFILL_MIN_TOKENS=0 D=4 (CPU prefill path)",
+ "corpus": "scripts/fixtures/nll-corpus",
+ "texts": [
+  {
+   "text": "01-readme-early.txt",
+   "tokens_scored": 4795,
+   "mean_nll": 1.483324714732712,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/01-readme-early.json",
+    "baseline_mean_nll": 1.4946902664415658,
+    "delta_full_text_nll": -0.011365551708853783,
+    "n": 4795,
+    "delta_mean_nll": -0.011365551708853755,
+    "se": 0.004178077306394648,
+    "z_paired": 2.7202827701293377,
+    "max_abs_delta_logp": 6.03761100769043,
+    "mean_abs_delta_logp": 0.12913008700107767,
+    "sd_delta_logp": 0.2893148842446872,
+    "tokens_changed": 4776,
+    "tokens_worse_gt_0p5": 120,
+    "tokens_better_gt_0p5": 154
+   }
+  },
+  {
+   "text": "02-learning.txt",
+   "tokens_scored": 10004,
+   "mean_nll": 1.4085932310389255,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/02-learning.json",
+    "baseline_mean_nll": 1.4064309512318651,
+    "delta_full_text_nll": 0.0021622798070604077,
+    "n": 10004,
+    "delta_mean_nll": 0.0021622798070605066,
+    "se": 0.002294446986598669,
+    "z_paired": -0.9423969347253957,
+    "max_abs_delta_logp": 3.926563262939453,
+    "mean_abs_delta_logp": 0.11858166501584598,
+    "sd_delta_logp": 0.22949058301162245,
+    "tokens_changed": 9933,
+    "tokens_worse_gt_0p5": 260,
+    "tokens_better_gt_0p5": 219
+   }
+  },
+  {
+   "text": "03-experiments.txt",
+   "tokens_scored": 11053,
+   "mean_nll": 1.8461416338377374,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/03-experiments.json",
+    "baseline_mean_nll": 1.8474283338707538,
+    "delta_full_text_nll": -0.0012867000330163414,
+    "n": 11053,
+    "delta_mean_nll": -0.0012867000330163275,
+    "se": 0.0027148754931733436,
+    "z_paired": 0.4739443986480349,
+    "max_abs_delta_logp": 3.042327880859375,
+    "mean_abs_delta_logp": 0.15214945595648577,
+    "sd_delta_logp": 0.2854236806429474,
+    "tokens_changed": 11038,
+    "tokens_worse_gt_0p5": 400,
+    "tokens_better_gt_0p5": 425
+   }
+  },
+  {
+   "text": "04-benchmarks.txt",
+   "tokens_scored": 12028,
+   "mean_nll": 1.578669957502973,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/04-benchmarks.json",
+    "baseline_mean_nll": 1.579102067261238,
+    "delta_full_text_nll": -0.00043210975826490916,
+    "n": 12028,
+    "delta_mean_nll": -0.0004321097582649884,
+    "se": 0.0025408970414106846,
+    "z_paired": 0.17006189201002994,
+    "max_abs_delta_logp": 6.387801170349121,
+    "mean_abs_delta_logp": 0.13586497805350267,
+    "sd_delta_logp": 0.2786658675157333,
+    "tokens_changed": 12016,
+    "tokens_worse_gt_0p5": 434,
+    "tokens_better_gt_0p5": 379
+   }
+  },
+  {
+   "text": "05-troubleshooting.txt",
+   "tokens_scored": 9668,
+   "mean_nll": 1.930986013229143,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/05-troubleshooting.json",
+    "baseline_mean_nll": 1.9261407976056193,
+    "delta_full_text_nll": 0.004845215623523691,
+    "n": 9668,
+    "delta_mean_nll": 0.004845215623523729,
+    "se": 0.0027899114528737176,
+    "z_paired": -1.7366915421394353,
+    "max_abs_delta_logp": 5.491473823785782,
+    "mean_abs_delta_logp": 0.1484464172230081,
+    "sd_delta_logp": 0.274320801225537,
+    "tokens_changed": 9636,
+    "tokens_worse_gt_0p5": 323,
+    "tokens_better_gt_0p5": 310
+   }
+  },
+  {
+   "text": "06-bios-guide.txt",
+   "tokens_scored": 9546,
+   "mean_nll": 1.5802583657413596,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/06-bios-guide.json",
+    "baseline_mean_nll": 1.5813640416004493,
+    "delta_full_text_nll": -0.0011056758590897164,
+    "n": 9546,
+    "delta_mean_nll": -0.0011056758590896473,
+    "se": 0.0028942242603174633,
+    "z_paired": 0.382028398507159,
+    "max_abs_delta_logp": 6.387415885925293,
+    "mean_abs_delta_logp": 0.14202466951205708,
+    "sd_delta_logp": 0.28277622641016176,
+    "tokens_changed": 9526,
+    "tokens_worse_gt_0p5": 315,
+    "tokens_better_gt_0p5": 332
+   }
+  },
+  {
+   "text": "07-serve-hybrid-sh.txt",
+   "tokens_scored": 5938,
+   "mean_nll": 1.2467422915496977,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/07-serve-hybrid-sh.json",
+    "baseline_mean_nll": 1.2513976091152033,
+    "delta_full_text_nll": -0.0046553175655055234,
+    "n": 5938,
+    "delta_mean_nll": -0.004655317565505393,
+    "se": 0.00322846122645688,
+    "z_paired": 1.44196173934368,
+    "max_abs_delta_logp": 3.9490439891815186,
+    "mean_abs_delta_logp": 0.10765657165507915,
+    "sd_delta_logp": 0.2487801191960225,
+    "tokens_changed": 5752,
+    "tokens_worse_gt_0p5": 152,
+    "tokens_better_gt_0p5": 160
+   }
+  },
+  {
+   "text": "08-bench-decode-py.txt",
+   "tokens_scored": 2621,
+   "mean_nll": 0.6706492832492223,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/08-bench-decode-py.json",
+    "baseline_mean_nll": 0.6602273670085815,
+    "delta_full_text_nll": 0.010421916240640816,
+    "n": 2621,
+    "delta_mean_nll": 0.010421916240640759,
+    "se": 0.0034738297765052857,
+    "z_paired": -3.0001228935072723,
+    "max_abs_delta_logp": 1.9278106689453125,
+    "mean_abs_delta_logp": 0.0681335737212355,
+    "sd_delta_logp": 0.17784515731835157,
+    "tokens_changed": 2551,
+    "tokens_worse_gt_0p5": 47,
+    "tokens_better_gt_0p5": 36
+   }
+  }
+ ],
+ "tokens_scored_total": 65653,
+ "mean_nll_token_weighted": 1.5766621639833018,
+ "compare": {
+  "baseline_dir": "evidence/t328/default-219-8192/corpus",
+  "n": 65653,
+  "delta_mean_nll": -0.00024864599075983043,
+  "se": 0.0010447629106854796,
+  "z_paired": 0.23799274286707905,
+  "max_abs_delta_logp": 6.387801170349121,
+  "mean_abs_delta_logp": 0.13297415065250048,
+  "sd_delta_logp": 0.2676979433235936,
+  "tokens_changed": 65228,
+  "tokens_worse_gt_0p5": 2051,
+  "tokens_better_gt_0p5": 2015,
+  "se_cluster": 0.0013207513363227197,
+  "z_cluster": 0.18826101774170373,
+  "texts": 8
+ }
+}

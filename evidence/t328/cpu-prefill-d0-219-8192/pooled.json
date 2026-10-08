@@ -1,0 +1,184 @@
+{
+ "label": "219/165 chunk 8192 KT_GPU_PREFILL_MIN_TOKENS=0 D=0 (CPU prefill path, no deferral)",
+ "corpus": "scripts/fixtures/nll-corpus",
+ "texts": [
+  {
+   "text": "01-readme-early.txt",
+   "tokens_scored": 4795,
+   "mean_nll": 1.4830703192315806,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/01-readme-early.json",
+    "baseline_mean_nll": 1.483324714732712,
+    "delta_full_text_nll": -0.000254395501131377,
+    "n": 4795,
+    "delta_mean_nll": -0.00025439550113148015,
+    "se": 0.003829590241680911,
+    "z_paired": 0.0664289088588807,
+    "max_abs_delta_logp": 5.064568996429443,
+    "mean_abs_delta_logp": 0.12382844538893709,
+    "sd_delta_logp": 0.26518357039031826,
+    "tokens_changed": 4775,
+    "tokens_worse_gt_0p5": 146,
+    "tokens_better_gt_0p5": 136
+   }
+  },
+  {
+   "text": "02-learning.txt",
+   "tokens_scored": 10004,
+   "mean_nll": 1.4053158449463201,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/02-learning.json",
+    "baseline_mean_nll": 1.4085932310389255,
+    "delta_full_text_nll": -0.0032773860926054166,
+    "n": 10004,
+    "delta_mean_nll": -0.003277386092605516,
+    "se": 0.002332123746955292,
+    "z_paired": 1.4053225506941098,
+    "max_abs_delta_logp": 4.185402870178223,
+    "mean_abs_delta_logp": 0.11766028357362347,
+    "sd_delta_logp": 0.23325901250715342,
+    "tokens_changed": 9932,
+    "tokens_worse_gt_0p5": 230,
+    "tokens_better_gt_0p5": 249
+   }
+  },
+  {
+   "text": "03-experiments.txt",
+   "tokens_scored": 11053,
+   "mean_nll": 1.8535222513469778,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/03-experiments.json",
+    "baseline_mean_nll": 1.8461416338377374,
+    "delta_full_text_nll": 0.00738061750924035,
+    "n": 11053,
+    "delta_mean_nll": 0.007380617509240446,
+    "se": 0.00265467373876321,
+    "z_paired": -2.7802352513115274,
+    "max_abs_delta_logp": 3.2635011672973633,
+    "mean_abs_delta_logp": 0.14958019799150155,
+    "sd_delta_logp": 0.2790944746192787,
+    "tokens_changed": 11037,
+    "tokens_worse_gt_0p5": 429,
+    "tokens_better_gt_0p5": 401
+   }
+  },
+  {
+   "text": "04-benchmarks.txt",
+   "tokens_scored": 12028,
+   "mean_nll": 1.5775493091325048,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/04-benchmarks.json",
+    "baseline_mean_nll": 1.578669957502973,
+    "delta_full_text_nll": -0.0011206483704682135,
+    "n": 12028,
+    "delta_mean_nll": -0.0011206483704683569,
+    "se": 0.00256988693181423,
+    "z_paired": 0.4360691346359068,
+    "max_abs_delta_logp": 6.730226993560791,
+    "mean_abs_delta_logp": 0.13310394245220625,
+    "sd_delta_logp": 0.2818452537036935,
+    "tokens_changed": 12007,
+    "tokens_worse_gt_0p5": 372,
+    "tokens_better_gt_0p5": 389
+   }
+  },
+  {
+   "text": "05-troubleshooting.txt",
+   "tokens_scored": 9668,
+   "mean_nll": 1.9193514234839417,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/05-troubleshooting.json",
+    "baseline_mean_nll": 1.930986013229143,
+    "delta_full_text_nll": -0.011634589745201263,
+    "n": 9668,
+    "delta_mean_nll": -0.011634589745201148,
+    "se": 0.002675784193330201,
+    "z_paired": 4.348104669353431,
+    "max_abs_delta_logp": 5.6118704825639725,
+    "mean_abs_delta_logp": 0.14358678123763363,
+    "sd_delta_logp": 0.26309912562454096,
+    "tokens_changed": 9636,
+    "tokens_worse_gt_0p5": 259,
+    "tokens_better_gt_0p5": 317
+   }
+  },
+  {
+   "text": "06-bios-guide.txt",
+   "tokens_scored": 9546,
+   "mean_nll": 1.5840008851682297,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/06-bios-guide.json",
+    "baseline_mean_nll": 1.5802583657413596,
+    "delta_full_text_nll": 0.0037425194268700945,
+    "n": 9546,
+    "delta_mean_nll": 0.003742519426870101,
+    "se": 0.0028294320765670992,
+    "z_paired": -1.3227104682473363,
+    "max_abs_delta_logp": 6.896117210388184,
+    "mean_abs_delta_logp": 0.1421833483506156,
+    "sd_delta_logp": 0.27644579463505387,
+    "tokens_changed": 9530,
+    "tokens_worse_gt_0p5": 342,
+    "tokens_better_gt_0p5": 290
+   }
+  },
+  {
+   "text": "07-serve-hybrid-sh.txt",
+   "tokens_scored": 5938,
+   "mean_nll": 1.248429469510228,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/07-serve-hybrid-sh.json",
+    "baseline_mean_nll": 1.2467422915496977,
+    "delta_full_text_nll": 0.0016871779605303061,
+    "n": 5938,
+    "delta_mean_nll": 0.001687177960530488,
+    "se": 0.0031464570138369026,
+    "z_paired": -0.5362151629947369,
+    "max_abs_delta_logp": 5.055976867675781,
+    "mean_abs_delta_logp": 0.10212665218267901,
+    "sd_delta_logp": 0.24246100418761235,
+    "tokens_changed": 5760,
+    "tokens_worse_gt_0p5": 139,
+    "tokens_better_gt_0p5": 135
+   }
+  },
+  {
+   "text": "08-bench-decode-py.txt",
+   "tokens_scored": 2621,
+   "mean_nll": 0.6666540068321429,
+   "compare": {
+    "baseline": "evidence/t328/cpu-prefill-d4-219-8192/08-bench-decode-py.json",
+    "baseline_mean_nll": 0.6706492832492223,
+    "delta_full_text_nll": -0.003995276417079419,
+    "n": 2621,
+    "delta_mean_nll": -0.003995276417079378,
+    "se": 0.003565589917913603,
+    "z_paired": 1.1205092310271074,
+    "max_abs_delta_logp": 1.9268264770507812,
+    "mean_abs_delta_logp": 0.0699129913130445,
+    "sd_delta_logp": 0.18254288226005366,
+    "tokens_changed": 2540,
+    "tokens_worse_gt_0p5": 30,
+    "tokens_better_gt_0p5": 54
+   }
+  }
+ ],
+ "tokens_scored_total": 65653,
+ "mean_nll_token_weighted": 1.5760054038941067,
+ "compare": {
+  "baseline_dir": "evidence/t328/cpu-prefill-d4-219-8192",
+  "n": 65653,
+  "delta_mean_nll": -0.000656760089195429,
+  "se": 0.001025716050642185,
+  "z_paired": 0.6402942498406275,
+  "max_abs_delta_logp": 6.896117210388184,
+  "mean_abs_delta_logp": 0.13038649073124367,
+  "sd_delta_logp": 0.2628175965882592,
+  "tokens_changed": 65217,
+  "tokens_worse_gt_0p5": 1947,
+  "tokens_better_gt_0p5": 1971,
+  "se_cluster": 0.002254712183757524,
+  "z_cluster": 0.2912833371490125,
+  "texts": 8
+ }
+}
