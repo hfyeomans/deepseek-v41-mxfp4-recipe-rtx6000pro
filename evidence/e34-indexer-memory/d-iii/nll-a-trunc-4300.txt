@@ -1,0 +1,9 @@
+tokens scored 4269  mean NLL 1.53033 nats/tok  ppl 4.620  cached_tokens 0  latency 4.0 s
+  seg @    0 n=1024  nll 2.04228
+  seg @ 1024 n=1024  nll 1.92931
+  seg @ 2048 n=1024  nll 1.18187
+  seg @ 3072 n=1024  nll 1.05330
+  seg @ 4096 n= 173  nll 1.02456
+WARNING: tokenisation differs from baseline; comparing only the common prefix
+vs nll-t316c.json: ΔNLL +0.04238 nats/tok (z -0.16)  max|Δlogp| 3.749  mean|Δlogp| 0.1284 sd 0.269  tokens >0.5 nats worse/better: 125/128 of 4269
+wrote evidence/e34-indexer-memory/d-iii/nll-a-trunc-4300.json

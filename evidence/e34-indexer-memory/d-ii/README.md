@@ -70,6 +70,8 @@ Hypotheses, all **unverified**, for E34d-iii:
 5. The 219 / 165 placement interacting with the larger chunk (different expert set streamed per
    chunk) — the control rules out placement alone but not the interaction.
 
+**Resolved by E34d-iii (`../d-iii/`, same day):** hypothesis 1 is out (bit-identical replicate) and hypothesis 2 is out in its stated form — the shift is a deterministic step at M = 4,736 rows (37 x 128) in some batch-wide kernel's schedule, not "M > 4096", and on three texts it is +0.0067 / -0.0029 / +0.0053 (pooled +0.003 +/- 0.0017): a 2-sigma draw, not a bias.
+
 `--compare` on a truncated prompt reports `delta_mean_nll` over different token counts; use the
 common-prefix paired mean / z (printed) or recompute offline as above.
 
