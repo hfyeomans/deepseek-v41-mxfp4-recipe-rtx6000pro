@@ -192,7 +192,8 @@ if [[ "${ALLOW_UNTESTED_FIT:-0}" != "1" ]]; then
   fi
   if (( CHUNKED_PREFILL_SIZE >= 8192 )) && (( KT_NUM_GPU_EXPERTS > 208 )); then
     fail_config "CHUNKED_PREFILL_SIZE=$CHUNKED_PREFILL_SIZE needs ~2.2 GB more than 4096 and only fits" \
-      "beside KT_NUM_GPU_EXPERTS<=208 (E22/E28). Set ALLOW_UNTESTED_FIT=1 to try."
+      "beside KT_NUM_GPU_EXPERTS<=208 (E22/E28; confirmed at 226 by E34d: the fused-MoE prefill workspace" \
+      "OOMs, and expandable_segments breaks the custom all-reduce). Set ALLOW_UNTESTED_FIT=1 to try."
   fi
   if [[ "$DSPARK" == "1" ]] && (( KT_NUM_GPU_EXPERTS > 208 )); then
     fail_config "DSPARK=1 adds 3.85 GB/rank of draft stages; it was only ever fitted at KT_NUM_GPU_EXPERTS=208" \

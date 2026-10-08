@@ -1,0 +1,38 @@
+ target tok  actual tok  median prefill tok/s  median TTFT s
+Traceback (most recent call last):
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-prefill.py", line 68, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/bench-prefill.py", line 51, in main
+    r = chat_stream(args.url, model, [{"role": "user", "content": make_prompt(n, rng)}], max_tokens=1, thinking=False, timeout=7200)
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/openai_client.py", line 74, in chat_stream
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 1349, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 1324, in do_open
+    r = h.getresponse()
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/http/client.py", line 1478, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/http/client.py", line 343, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/http/client.py", line 304, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/socket.py", line 729, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [Errno 104] Connection reset by peer

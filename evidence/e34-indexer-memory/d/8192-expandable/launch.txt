@@ -1,0 +1,4 @@
+resolved: experts gpu=226 cpu=158 deferral D=4 cpuinfer=16 chunk=8192 mem_fraction=0.96 context=65536 slots=4 max_total_tokens=278528 capture_bs=[1 2 3 4] dspark=0 dspark_k=5 gpu_prefill_min=1024 logprob_chunk=512 nan_probe_min=1 b2_uva_experts=0 b2_max_tokens=1 image=dsv41-kt:recipe
+79a7cda280ab7cde6011b1ef8853395a776a3eb7c1320a1eeafbc41f2295430f
+started dsv41-kt (about 4 min to ready); follow with: docker logs -f dsv41-kt
+then: scripts/wait-ready.py --url http://127.0.0.1:8000 && scripts/verify.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid

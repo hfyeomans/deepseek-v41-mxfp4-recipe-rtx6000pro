@@ -872,7 +872,7 @@ and the consumer selection is unchanged. Gates and evidence as part b (`b-ii/<ru
 Preallocating the full mask in place was considered and rejected: it removes only the duplicate
 (720 MiB here) and leaves a 1 GiB resident mask at 262K.
 
-**Part d (registered 2026-10-08, owner request, after b-ii; next):** prefill chunk size. E22a measured
+~~**Part d (registered 2026-10-08, owner request, after b-ii; next):**~~ **Part d done 2026-10-08, negative (two serves, `evidence/e34-indexer-memory/d/`).** prefill chunk size. E22a measured
 streamed prefill at 3.9× (4K chunks) and 6.5× (8K chunks) over CPU prefill but 16K chunks were
 blocked by VRAM; E34b freed ≈ 0.8 GB at the deployment profile. One serve each at
 `CHUNKED_PREFILL_SIZE=8192` then 16384 on 64K × 4: 16K / 32K prefill tok/s, C1 / C4 decode
@@ -881,6 +881,7 @@ blocked by VRAM; E34b freed ≈ 0.8 GB at the deployment profile. One serve each
 Go bar: ≥ 10 % prefill gain at ≤ 0.5 GB of margin; the winner becomes the `serve-hybrid.sh`
 default. Owner's framing: the box serves long coding / code-review sessions, so TTFT on the first
 turn and on cache misses is what chunk size buys.
+**Result:** `CHUNKED_PREFILL_SIZE=8192` at 226 / 158 (`ALLOW_UNTESTED_FIT=1` to bypass the launcher guard, which predates E34b) is ready with 3.25 / 3.19 GB free after capture (−0.23 GB vs 4096) but the first 16K prefill **OOMs on a 980 MiB FlashInfer CUTLASS fused-MoE workspace** (`FusedMoeRunner::getWorkspaceInfo` via `fused_experts_none_to_flashinfer_mxfp4`; 535 / 476 MiB free, 913 MiB reserved-but-fragmented). The workspace scales with chunk tokens — not the indexer, not KV. Retried with `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` to defragment: the server dies at CUDA-graph capture in the custom all-reduce (`get_graph_buffer_ipc_meta` → `RuntimeError: invalid argument`; VMM segments cannot be CUDA-IPC exported), so expandable segments are incompatible with this stack while the custom all-reduce is on, and the NCCL fallback taxes every decode step. 16384 not run (strictly more). **4096 stays the default; the launcher guard was right.** Registered **E34d-ii** (owner decision, not run): the only way 8192 fits is a placement trade, ~ 7 fewer GPU experts (**219 / 165**, 0.34 GB each per E28) for a projected −3-4 % C1 wall and +30-60 % prefill (E22 measured +64 % at 208 / 176; discounted because the tiled indexer already removed part of what the larger chunk amortised). Changes the deployment default → needs owner go.
 ~~**Part b next.**~~ Three parts, each its own serve, in order a → b → c; stop after the first part
 that qualifies the target rung.
 
