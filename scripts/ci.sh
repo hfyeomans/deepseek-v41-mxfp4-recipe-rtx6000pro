@@ -50,6 +50,12 @@ if bash "$ROOT/scripts/tests/run-kt-prefill-tests.sh"; then :; else
 fi
 # T3.29 launcher config guards (DRY_RUN=1, no docker/GPU): qualified profiles accepted, unqualified refused.
 if bash "$ROOT/scripts/tests/test-serve-config.sh" >/dev/null; then :; else echo "FAIL serve config tests"; exit 1; fi
+# T3.19e typed knob registry: goldens (resolved line + --print byte-identical), unknown/removed/mistyped knobs refused,
+# diagnostics forwarded only when set, every overlay env read declared (overlay part skipped without the checkout).
+if python3 "$ROOT/scripts/tests/test_serve_config.py" >/dev/null; then :; else echo "FAIL serve_config registry tests"; exit 1; fi
+if ! diff -q <(python3 "$ROOT/scripts/serve_config.py" markdown) <(sed -n '/<!-- generated: python3 scripts\/serve_config.py markdown -->/,$p' "$ROOT/docs/CONFIG.md" | tail -n +2) >/dev/null; then
+  echo "FAIL docs/CONFIG.md is stale: regenerate the table with python3 scripts/serve_config.py markdown"; exit 1
+fi
 # DSpark multi-stream-overlap gate (review C4 / Bug A): pure Python against the overlay checkout; skipped without it.
 if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi

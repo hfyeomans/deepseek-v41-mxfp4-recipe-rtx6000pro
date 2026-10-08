@@ -81,7 +81,7 @@ Need a GPU window (stop the GLM container first):
 | `download-model.sh` → `preflight.sh` → `serve.sh` → `wait-ready.py` → `verify.py` | the recipe chain; `preflight.sh` **fails closed** on 2 GPUs |
 | `bench-decode.py`, `bench-prefill.py` | the shared benchmark harness (also for the V4-Flash baseline) |
 | `stress-kv-full.py` | E28 fit gate for any VRAM spend: fills every running slot with a ≈ 30K prompt, decodes them together and reports the peak `nvidia-smi` memory per GPU — a single 32K prefill at C1 is not the worst case a config admits |
-| `serve-hybrid.sh` | E19–E21: the 2-GPU + CPU-expert (kt-kernel) hybrid; `EXTRA_SERVER_ARGS`, `KT_CPUINFER`, `KT_MAX_DEFERRED` |
+| `serve-hybrid.sh`, `serve_config.py` | E19–E21: the 2-GPU + CPU-expert (kt-kernel) hybrid; every knob (`KT_*`, `DSPARK*`, `MEM_FRACTION_STATIC`, `CUDA_GRAPH_BS`, `EXTRA_*`, …) is declared once in the typed registry `serve_config.py` (T3.19e) — table in [docs/CONFIG.md](docs/CONFIG.md); unknown or removed knobs are refused before docker starts; `DRY_RUN=1` / `--print` probe without launching |
 | `step-profile.py`, `gap-context.py` | E20/E21: per-step kernel timeline from a torch-profiler trace (`/start_profile`), and what surrounds each GPU idle gap |
 | `kt-cpu-per-step.sh`, `sched-wait-per-step.py` | E21: kt CPU-seconds per decode step, and per-thread run-queue wait / context switches (`/proc/<tid>/schedstat`) around one bench run |
 | `nll-score.py` | quality metric for approximations (expert deferral, kernels): teacher-forced mean NLL of `scripts/fixtures/nll-corpus.txt`, `--compare` a baseline JSON |
