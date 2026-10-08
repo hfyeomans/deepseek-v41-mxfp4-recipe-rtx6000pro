@@ -37,8 +37,36 @@ D=4, spec off, chunk 4096, `MEM_FRACTION_STATIC=0.96`), E33 gates (a)–(f) in o
   so neither the logits nor the mask are ever `[chunk, prefix]`) is the only part that reaches
   128K and beyond.
 - 64K / 4-slot min free of ≈ 0.6 GB is thinner than the 32K / 4-slot deployment profile's
-  ≈ 0.8–1.3 GB (E28, E29). It is a qualified rung, not a new deployment default; the default stays
-  32K / 4 slots until E34b lands and the margin is re-measured.
+  ≈ 0.8–1.3 GB (E28, E29). ~~It is a qualified rung, not a new deployment default; the default stays
+  32K / 4 slots until E34b lands and the margin is re-measured.~~ **Superseded the same day:** the
+  owner's rule was "if 64K × 4 is qualified it becomes the default", qualification requiring the
+  E27-shape served soak on top of the gates. The soak passed (below); `serve-hybrid.sh`
+  `CONTEXT_LENGTH` default is 65536 as of 2026-10-07.
+
+## Served soak, 64K × 4 slots (`soak-64k-4slot/`, 2026-10-07, one serve, 21:17–22:09)
+
+Shape = E27 Boot 12 (`soak-64k-4slot/soak-64k.sh`): same-prompt C4 consistency → 8 bench blocks
+(c4-off0 c3-off2 c2-off4 c4-off8 c1-off6 c4-off12 c3-off9 c2-off0; 12 runs × 512 tokens, distinct
+prompts seed 4242, health count after each) → NLL vs T3.16c → 16K prefill → 4 × 62K stress →
+64K needles → final health / EDAC. `KT_NAN_PROBE_MIN_TOKENS=1` throughout. Free after capture
+3.48 / 3.42 GB (identical to the gate serve).
+
+| Gate | Result |
+|---|---|
+| Same-prompt C4 consistency | PASS, min pairwise prefix 310 / 519 chars (gate ≥ 40; slot 2 exact) |
+| C1 (c1-off6) | 41.89 median / **39.94 wall** tok/s, TTFT 0.61 s |
+| C2 (off4, off0) | 52.10 / 49.72 and 50.47 / 47.92 |
+| C3 (off2, off9) | 56.06 / 54.48 and 55.80 / 54.30 |
+| C4 (off0, off8, off12) | 58.02 / 55.78, 57.84 / 55.53, 58.96 / 57.40 |
+| Health after every block | 0 (NaN / probability tensor / Xid / Traceback / KTContract / Sealed) |
+| NLL vs `nll-t316c.json` | 0 of 4,795 moved (Δ mean 0.0, max |Δ logp| 0.0) |
+| 16K prefill | 841.8 tok/s, TTFT 18.98 s (15,978 tokens) |
+| Stress 4 × 62K | all finished, wall 295 s; TTFT 76.3 / 144.3 / 212.4 / 277.6 s; peak 97,150 / 97,237 MiB; **min free 737 / 650 MiB** |
+| Needles at 64K | 6/6 at 55,206 tokens, TTFT 57.5 s, `finish_reason=stop` |
+| Final | health 0, EDAC 0 / 0, 0 Xid in container log |
+
+Every decode number is within 0.5 % of the 32K × 4 profile (E24 / T3.19b); the context change
+costs nothing on decode and nothing on quality. What it costs is margin: 0.65 GB worst case.
 
 ## Side observation
 

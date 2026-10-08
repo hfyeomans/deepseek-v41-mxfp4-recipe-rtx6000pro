@@ -800,8 +800,17 @@ bool mask of `scores.masked_fill_(j >= lens)` (448 MiB) over the 1.75 GiB logits
 no longer the binder; the logits and their mask are — exactly what part b removes. Hypothesis (a)
 half held (64K / 4 slots yes, 128K / 1 slot no; margin arithmetic was ≈ 1 GB optimistic because
 the broadcast mask and the other slots' working set were not counted). 256 MiB stays as the
-overlay default (no measured cost); 64K / 4 slots is a qualified rung, not the deployment default.
-Evidence [`evidence/e34-indexer-memory/a/`](../evidence/e34-indexer-memory/a/README.md).
+overlay default (no measured cost); ~~64K / 4 slots is a qualified rung, not the deployment default~~
+**64K × 4 slots is the deployment default since 2026-10-07** (owner decision: "if 64K × 4 is
+qualified it becomes the new default"): the E27-shape served soak passed on top of the E33 gates —
+same-prompt C4 consistency PASS (min prefix 310), 8 decode blocks (C1 41.9 / 39.9 wall, C2 50.5–52.1 /
+47.9–49.7, C3 55.8–56.1 / 54.3–54.5, C4 57.8–59.0 / 55.5–57.4) all health 0 with the NaN probe on,
+NLL 0 of 4,795 moved, 16K prefill 842 tok/s / 19.0 s, 4 × 62K stress all finished (295 s, peak
+97,150 / 97,237 MiB, min free 737 / 650 MiB), needles 6/6 at 55.2K (TTFT 57.5 s), 0 Xid, EDAC 0/0.
+`serve-hybrid.sh` default `CONTEXT_LENGTH` 32768 → 65536. Worst-case margin is ≈ 0.65 GB against
+0.8–1.3 GB at 32K — thinner, documented, and the reason E34b stays next.
+Evidence [`evidence/e34-indexer-memory/a/`](../evidence/e34-indexer-memory/a/README.md) and
+`soak-64k-4slot/` there.
 **Part b next.** Three parts, each its own serve, in order a → b → c; stop after the first part
 that qualifies the target rung.
 

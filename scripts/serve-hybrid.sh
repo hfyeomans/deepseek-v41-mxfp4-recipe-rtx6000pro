@@ -98,7 +98,11 @@ DSPARK_K="${DSPARK_K:-5}"
 # 0.92 -> 0.96 with T3.6g: the KV pool is capped by MAX_TOTAL_TOKENS, so the fraction
 # no longer sizes it; it only has to leave room for prefill activations and capture.
 MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.96}"
-CONTEXT_LENGTH="${CONTEXT_LENGTH:-32768}"
+# 32768 -> 65536 on 2026-10-07: E34a (overlay 1953a92e, indexer score budget 256 MiB) qualified
+# 64K x 4 slots on the E33 gates and the E27-shape served soak (evidence/e34-indexer-memory/a/
+# soak-64k-4slot/). Worst-case min free is ~0.65 GB (vs 0.8-1.3 GB at 32K); 128K still OOMs
+# in the indexer until E34b.
+CONTEXT_LENGTH="${CONTEXT_LENGTH:-65536}"
 # 4096 kept ~3.3 GiB VRAM free after a 32K prefill at 208 experts (E26 A4); that
 # headroom is now spent on experts. 8192 (1.4K tok/s prefill) needed ~2.2 GB more
 # and does not fit beside 226 experts (projected from E22's 1.2 GiB at 208); use it
