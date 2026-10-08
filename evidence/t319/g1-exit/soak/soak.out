@@ -1,0 +1,59 @@
+== start 17:50:50 edac=0 0 
+== consistency c1 17:50:50
+wrote evidence/t319/g1-exit/soak/consistency-c1.json
+== consistency c2 17:50:55
+wrote evidence/t319/g1-exit/soak/consistency-c2.json
+== consistency c3 17:51:02
+wrote evidence/t319/g1-exit/soak/consistency-c3.json
+== consistency c4 17:51:23
+wrote evidence/t319/g1-exit/soak/consistency-c4.json
+health=0
+== c4-off0 17:51:33
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  4         55.15     53.82     55.69       52.94       1.589     n/a
+health=0
+== c3-off2 17:59:19
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  3         53.89     53.48     54.20       52.38       0.877     n/a
+health=0
+== c2-off4 18:05:13
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  2         50.75     50.57     51.15       48.45       0.978     n/a
+health=0
+== c4-off8 18:09:27
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  4         55.69     55.35     56.06       53.52       1.564     n/a
+health=0
+== c1-off6 18:17:06
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         41.43     41.35     41.64       39.51       0.618     n/a
+health=0
+== c4-off12 18:19:42
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  4         57.06     56.76     57.30       55.58       1.030     n/a
+health=0
+== c3-off9 18:27:05
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  3         53.67     53.18     54.21       52.22       0.847     n/a
+health=0
+== c2-off0 18:32:59
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  2         48.81     48.38     49.31       46.30       1.165     n/a
+health=0
+== nll 18:37:26
+wrote evidence/t319/g1-exit/soak/nll.json
+== prefill-16k cold+warm 18:37:34
+ target tok  actual tok  median prefill tok/s  median TTFT s
+-- cold pass (seed 777)
+     16,384      16,020               1481.79         10.849
+-- warm pass (seed 1277)
+     16,384      15,980               1599.70          9.990
+== stress 4x62K 18:38:17
+     3     62,018     256    44.32   172.18 length
+peak gpu0: 95,894 MiB used, min free 1,993 MiB
+peak gpu1: 95,953 MiB used, min free 1,934 MiB
+wall 172.2 s, all finished: True
+== needles 64k 18:41:09
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 31.4, "total_s": 32.83, "finish_reason": "stop"}
+ALL PASS
+== done 18:41:46 health=0 edac=0 0 

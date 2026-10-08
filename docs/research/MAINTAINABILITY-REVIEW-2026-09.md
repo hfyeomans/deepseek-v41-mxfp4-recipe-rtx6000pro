@@ -612,7 +612,7 @@ Every open item in §10a now has one closing task and one closure criterion in t
 | C10 E24 per-request NaN rejection | T3.13 (ledger G0) | injected-NaN test fails one request, server survives; E22c bisected or pinned | **T3.22 entry**, release gate |
 | T3.16e (3) graph-vs-eager parity | T3.19a (ledger G0 → G1) | CPU replay of recorded layer-14/20 tensors bit-equal to the dumped kt output | T3.19 exit |
 | R1 `KTEPWrapperMethod` growth, R9 B2 residue | T3.16j (ledger G2) | removal list executed at the T3.19c commit; only T3.20-named primitives survive — **done 2026-10-08** (overlay `b6c76738`, +14/-314, `kt_ep_wrapper.py` 1,357 → 1,074 lines; no T3.20 note existed so `side_stream` / `_uva_view` went too; R9 closed, hotspot 16 gone; `evidence/t316j/`) | T3.19 exit (pass 2 must not re-count hotspot 16) |
-| R2–R4, R6–R8 (globals, monkey-patching, prefill coupling, flag soup, evidence metadata, BCG recursion) | T3.19c/d/e/f (ledger G1) | one deliverable each; per-step gate bit-identical NLL + consistency PASS + C1 wall in band  **c done 2026-10-08** (`095789db`, R2/R3 closed), **d done 2026-10-08** (`bc73ef8d`, R4 prefill coupling closed: `PrefillPipeline` + `LayerwisePrefillCoordinator` in `kt_prefill.py`; e, f open) | T3.20/T3.21 start, T3.22 design approval |
+| R2–R4, R6–R8 (globals, monkey-patching, prefill coupling, flag soup, evidence metadata, BCG recursion) | T3.19c/d/e/f (ledger G1) | one deliverable each; per-step gate bit-identical NLL + consistency PASS + C1 wall in band  **c done 2026-10-08** (`095789db`, R2/R3 kt-side halves closed — the BCG recursion and the SGLang-side `captured_req_width` int are not; see §11a), **d done 2026-10-08** (`bc73ef8d`, R4 prefill coupling closed: `PrefillPipeline` + `LayerwisePrefillCoordinator` in `kt_prefill.py`), **e, f done 2026-10-08** (R5, R6, R8: `scripts/serve_config.py`, `scripts/evidence_manifest.py`); **G1 exit 2026-10-08** (§11) | T3.20/T3.21 start, T3.22 design approval |
 | R5 single-source config | T3.19e (ledger G1) | typed registry generates the `resolved:` line byte-identically | T3.24 profile files |
 | Rank-0 assumptions (§8 ownership diagram) | T3.22 (ledger G4, owner-approved) | Python prototype gates; `--mode rank0` rollback from the same commit | T3.23, T4.1b |
 | Unsafe flags / escape hatches (`KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNTESTED_FIT`, `EXTRA_*`) | T3.24 (ledger G6) | removed from release profiles; developer profile only | completion definition |
@@ -624,3 +624,69 @@ Review passes are the stage exits: **pass 2** closes T3.19, **pass 3** closes T3
 - **Measured:** 7 of 11 immediate-correctness items are closed or reclassified; the open ones (C4, C9, C10 and the C3/C5 halves) are all "assert or gate a boundary" items, and C9 is the direct prerequisite for T3.19b/T3.22. *(Update 2026-09-24: C9 closed by T3.16d; remaining open: C4, C10, halves of C3/C5.)*
 - **Measured:** the only new complexity since the review is the B2 prototype, and it is off by default. It goes out with T3.19 except for two reusable pieces.
 - **Inferred:** the sequencing rule from §9 still holds — contracts (T3.16d, done 2026-09-24) → seams (T3.19) → ownership (T3.22). Nothing measured since the review argues for moving native work earlier.
+
+## 11. Review pass 2 — Stage 1 (T3.19) exit (2026-10-08)
+
+Standing task T3.16i; this pass is the G1 exit condition in the [gate ledger](MIGRATION-ROADMAP-PYTHON-TO-NATIVE-HYBRID.md#gate-ledger-added-2026-09-24-the-enforced-sequence). Scope: the eight overlay commits since pass 1's last-cited SHA (`e66d44fb` T3.19a, `9fc14817` T3.19b, `1953a92e` / `c639cbee` / `d6811728` E34a/b/b-ii, `095789db` T3.19c, `b6c76738` T3.16j, `bc73ef8d` T3.19d = final Stage 1 overlay commit), the recipe-side deliverables of T3.19e (`scripts/serve_config.py`) and T3.19f (`scripts/evidence_manifest.py`), and the G1 exit soak (`evidence/t319/g1-exit/`). Method as §1 (diffs read, `git log --reverse da64c5cb..HEAD` = 30 commits, every one linked below); every "Measured" row names its file or evidence dir.
+
+### 11a. Debt register status
+
+| ID | Status | Evidence |
+|---|---|---|
+| C3 | **Closed** | T3.19b (`9fc14817`): `ForwardLedger` asserts forward-boundary emptiness and adjacent-layer tuple identity (§7.5, §7.6) inside the `CpuExpertProvider` seam; `test_kt_provider.py` carries the two negative tests; serve gate NLL bit-identical. |
+| C10 | Open, unchanged | E24 per-request NaN rejection; T3.13 — blocks **T3.22 entry** (ledger G4), not G1. |
+| R1 | **Closed** | `KTEPWrapperMethod` 606 lines at the review (`kt_ep_wrapper.py:374-980`) → 1,357-line file after B2 → 1,074 after T3.16j → **765-line file, class 538 lines (`:228-765`), 11 methods** (`__init__`, `create_weights`, `process_weights_after_loading`, `create_moe_runner`, `submit`, `sync`, `_take_pending`, `_sync_timed`, `apply`, `_nan_probe`, `__getattr__`). What left: loader monkey-patching → `kt_loader.py` (`CompactMXFP4Loader`, 67 lines); runtime/stream state → `kt_runtime.py` (`KtRuntime`, 187); kt submission + capture contract → `kt_provider.py` (`ExpertBatchShape`, `CaptureContract`, `ExpertSubmission`, `BufferLease`, `ForwardLedger`, `CpuExpertProvider`, `KtKernelProvider`, 375); streamed prefill → `kt_prefill.py` (`PrefillPipeline`, `LayerwisePrefillCoordinator`, 601); the timeline probe → `kt_timeline.py` (389). The wrapper now holds config, routing split, the NaN probe and output combining — the §8 "CPU-expert protocol" boundary, in Python. |
+| R2 | **Half closed; record corrected** | The ledger's T3.19c row says "R2/R3 closed"; measured against §R2's own text that is half true. The kt-side half — process-global state that BCG segments depended on — is gone (`095789db`: registry, `_TIMELINE`, coordinator singleton, `_B2_STREAMS`; `test_kt_runtime.py` 5/5). The other half — BCG's recursive interpretation of arbitrary output containers (`breakable_cuda_graph.py`) — is **untouched**: the only graph outputs today are static tensors, so it is not load-bearing. Closing row: T3.23 (native consolidation) or T3.24 upstream cleanup; earlier only if T3.20's Engram staging adds a non-tensor graph output. |
+| R3 | **Half closed; record corrected** | kt side: `ExpertBatchShape` / `CaptureContract` (`kt_provider.py:55-74`) replace bare `(tokens, hidden, top_k)` ints at the seam (T3.19b). SGLang side: `captured_req_width` still crosses `runner/decode_cuda_graph_runner.py` (23 uses), `base_cuda_graph_runner.py` and `cpu_graph_runner.py` as a bare int — upstream files the overlay only patches, so a `GraphRequestShape` type there is a rebase cost ([OPEN-SOURCE-PLAN](OPEN-SOURCE-PLAN.md)); deferred to T3.24 with the other upstream-facing cleanups. |
+| R4 | **Closed** (T3.19d, `bc73ef8d`) | `PrefillPipeline` state machine with explicit `begin_forward` / `end_forward`; every illegal transition raises (`test_kt_prefill.py`); `evidence/t319/d/`. |
+| R5 | **Closed** (T3.19e, recipe `scripts/serve_config.py`) | 48 knobs declared once (type, default, sink, evidence link, the T3.16b/E34d/T3.29 refusals verbatim); `serve-hybrid.sh` evals the generated environment (308 → 137 lines); `docs/CONFIG.md` generated; `test_serve_config.py` + `test-serve-config.sh` in `ci.sh`. The registry lives in the recipe, not the overlay (owner decision): the overlay reads env as before, so R5's "kt reads `os.environ` directly" (`experts_base.orig.py:75`) is unchanged by design — the launcher is the single writer. |
+| R6 | **Closed** (T3.19f, `scripts/evidence_manifest.py`) | Each serve writes a hashed manifest (recipe/overlay SHA, image + container id, 48 resolved knobs, BIOS slot, HSMP clocks, GPU caps, kernel); five evidence scripts stamp `report["evidence"]`; `check-evidence evidence/` in `ci.sh`. The duplicated-conclusion problem is addressed at the source (evidence carries its provenance), not by de-duplicating prose. |
+| R7 | **Closed** (T3.19c) | `CompactMXFP4Loader(wrapper, cpu_ids, gpu_mask)` is an explicit object; `_install_kt_mxfp4_loader_compact` / `_KT_LOADER_GPU_MASK` gone; the three recipe harnesses that used the patch (`test-kt-one-layer.py`, `kt-export-bench.py`, `tests/kt-parity-replay.py`) refreshed and re-run in the image at G1 exit: one-layer rel-L2 0.00387 (prior 0.00377), export byte-identical for compact experts 0/1/164 (`evidence/t319/g1-exit/harness/`). |
+| R8 | **Closed** (T3.19e) | Registry sinks separate `SERVER_ARG` / `RUNTIME_ENV` / `DIAGNOSTIC_ENV`; diagnostic knobs print under their own banner in the `resolved:` line. The escape hatches themselves (`KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNTESTED_FIT`, `EXTRA_*`) stay until T3.24 (ledger G6) as registered. |
+| R9 | **Closed** (T3.16j, `b6c76738`) | B2 residue removed (+14/−314); hotspot 16 gone. |
+
+### 11b. Hotspot map refresh
+
+| # | Status at pass 2 | Location now |
+|---:|---|---|
+| 1 kt buffer lifetime | unchanged behind the seam; `BufferLease` names the tuple's lifetime | `kt_provider.py` + kt patch 0002 |
+| 2 SM120 page-split buffers | unchanged (sealed since C5) | `flash_mla_sm120.py` |
+| 3 BCG segmentation | unchanged (R2 remainder) | `breakable_cuda_graph.py` |
+| 6 streamed prefill coordinator | **re-homed**: state machine, own module, 601 lines, illegal transitions refused | `kt_prefill.py` |
+| 7 D=4 deferral | unchanged in kt; adjacency asserted by `ForwardLedger` | kt pristine + `kt_provider.py` |
+| 8 compact view / rank-0 ownership | **re-homed**: `CompactMXFP4Loader` + `check_moe_topology`; rank-0 assumption itself is T3.22's | `kt_loader.py`, `kt_contract.py` |
+| 9 Engram file path | unchanged; T3.20 (a)/(b) and E36 now name what moves | `engram.py:675-798` |
+| 12 launch assembly | **re-homed**: typed registry, generated shell | `scripts/serve_config.py` |
+| 13 evidence matrices | provenance now machine-checked (T3.19f); prose duplication accepted | `scripts/evidence_manifest.py` |
+| 16 B2 UVA | **gone** | — |
+| **17 (new, Measured)** DSA indexer prefill transients | E34a/b/b-ii (`1953a92e`, `c639cbee`, `d6811728`): score budget, row tiling, block-granular candidate masks — three behaviour-preserving commits with NLL 0 moved each; the remaining prefix-dependent growth is E34e's | `indexer.py` (`_low_ratio_index_topk_dense`, `select_candidate_block_keep`) |
+
+Concentration of risk (update): the four "implicit ownership" instances counted at pass 1 are down to zero in the kt path (runtime, loader, prefill and submission each have one owner); the per-forward "which engine owns this expert" decision (D=4) is unchanged and remains the thing T3.22 must make deterministic across ranks.
+
+### 11c. Overlay commit traceability
+
+`git log --reverse --oneline da64c5cb..HEAD` = 30 commits; the eight since pass 1 each have a recipe task, a test and an evidence dir: `e66d44fb` (T3.19a, `test_kt_timeline.py`, `evidence/t319/a/`), `9fc14817` (T3.19b, `test_kt_provider.py`, `evidence/t319/b/`), `1953a92e` / `c639cbee` / `d6811728` (E34a/b/b-ii, `test_indexer_row_tiling.py`, `evidence/e34-indexer-memory/`), `095789db` (T3.19c, `test_kt_runtime.py`, `evidence/t319/c/`), `b6c76738` (T3.16j, `evidence/t316j/`), `bc73ef8d` (T3.19d, `test_kt_prefill.py`, `evidence/t319/d/`). `ci.sh` runs 16 test entry points (CPU-only, no image), up from 8 at pass 1.
+
+### 11d. "Do later" scorecard (§9 / T3.16h list)
+
+| Item | Status |
+|---|---|
+| `CpuExpertProvider` / `BufferLease` adapters | Done (T3.19b) |
+| Runner-owned state | Done (T3.19c) |
+| Prefill coordinator | Done (T3.19d) |
+| Typed flag registry | Done (T3.19e, recipe side) |
+| Evidence manifests | Done (T3.19f) |
+| BCG output protocol | Not done (R2 remainder, Low); no consumer needs it yet |
+| Graph/eager parity on a recorded layer (T3.16e (3)) | Done (T3.19a dump + `kt-parity-replay.py check` in `ci.sh`) |
+
+### 11e. G1 exit soak (final Stage 1 overlay commit `bc73ef8d`, launcher defaults 219 / 165, D=4, chunk 8192, 64K × 4)
+
+`evidence/t319/g1-exit/soak/` — first evidence set stamped by T3.19f manifests (`manifest.json` beside every file). Measured (`README.md` there): 141,312 decoded tokens over the eight E27 / E34a bench blocks, health 0 after every block, EDAC 0 / 0; consistency PASS at bs 1..4; **C1 41.43 / 39.51 wall / TTFT 0.618 s** (gate ≥ 39.0; post-T3.29 reference 41.35 / 39.41 / 0.636); **C4 55.15 / 52.94 wall, 13.79 per stream** at off0 (13.92 / 14.27 at off8 / off12; gate ≥ 13.6); pooled NLL vs the same-shape T3.28 baseline **0 of 65,653 tokens moved**; prefill 16K cold 1,482 / warm 1,600 tok/s (first T3.19f cold / warm pair); 4 × 62K stress 4 / 4 finished at 95.9 GB peak; 64K needles 6 / 6. The script's own NLL step still used the pre-T3.28 single-fixture comparator (`nll-t316c.json`, 226 / 158): +0.0067 with 4,776 tokens changed, the documented E34d-iii shape shift, not a regression — the pooled gate was run on the same serve and is the record.
+
+Performance band vs `evidence/t319/baseline-pin.json` (226 / 158, chunk 4096: C1 41.92 / 39.86, C4 58.09 / 55.79): the pin profile predates the T3.29 default change; the post-T3.29 reference is `evidence/t319/d/README.md` (C1 41.35 / 39.41, C4 55.99 / 53.74); the soak lands C1 +0.3 % wall, C4 −1.5 % wall, TTFT −0.018 s against it. The soak is recorded as a `confirmations_after_pin` entry on the pin rather than a re-pin, since neither image nor BIOS changed.
+
+### Pass 2 bottom line
+
+- **Measured:** every Stage 1 deliverable (a–f) landed as one behaviour-preserving commit with its evidence dir; the per-step gate (NLL bit-identical, consistency PASS, C1 wall ≥ 39.0) held at each step and at the exit soak.
+- **Measured:** R1, R4–R9 closed; R2/R3 are half closed with the SGLang-side halves correctly re-filed under T3.23/T3.24 (the T3.19c ledger note over-claimed them); no new High or Medium debt. The wrapper is 538 lines with eleven methods; nothing in the kt path is owned by a module global.
+- **Inferred:** the §9 sequencing rule (contracts → seams → ownership) is satisfied through "seams"; **G1 is done** and T3.20 / T3.21 (G3) may start. T3.22 (G4) still waits on C10 / T3.13 and owner approval.

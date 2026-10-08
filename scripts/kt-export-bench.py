@@ -281,8 +281,8 @@ def main() -> int:
     gpu_mask = torch.zeros(args.num_experts, dtype=torch.bool)
     gpu_mask[: args.num_gpu_experts] = True
 
-    ktw._install_kt_mxfp4_loader_compact()
-    ktw._KT_LOADER_GPU_MASK = gpu_mask
+    from sglang.srt.layers.moe.kt_runtime import KtRuntime  # compact CPU-expert load, as the server does (T3.19c)
+
     t0 = time.time()
     wrapper = KTMoEWrapper(
         layer_idx=args.layer,
@@ -299,8 +299,7 @@ def main() -> int:
         max_deferred_experts_per_token=0,
         swiglu_limit=args.swiglu_limit,
     )
-    wrapper.load_weights(torch.arange(n_cpu))
-    ktw._KT_LOADER_GPU_MASK = None
+    KtRuntime(tp_rank=0).load_cpu_experts(wrapper, torch.arange(n_cpu), gpu_mask)
     report["load_seconds"] = round(time.time() - t0, 2)
     print(f"loaded layer {args.layer}: {n_cpu} CPU experts in {report['load_seconds']} s")
 

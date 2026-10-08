@@ -400,7 +400,7 @@ def main(argv: list[str]) -> int:
                 return 2
         m = collect(dict(os.environ), container=container)
         path = write(m, out_dir or manifest_dir(), container)
-        print(path)
+        print(_tilde(str(path), os.environ.get("HOME")))  # launch.txt is captured into evidence; no account name
         for e in m["errors"]:
             print(f"warning: {e}", file=sys.stderr)
         return 0

@@ -185,13 +185,14 @@ def main() -> int:
     sys.path.insert(0, "/sgl-workspace/sglang/python")
     import sglang.srt.layers.moe.kt_ep_wrapper as ktw
 
+    from sglang.srt.layers.moe.kt_runtime import KtRuntime
+
     compact = not args.no_loader_patch
     report["compact_cpu_view"] = compact
     if compact:
-        # Same path the serving wrapper takes: loader returns only the CPU
-        # experts, kt-kernel sees an n_cpu-expert MoE, ids are remapped.
-        ktw._install_kt_mxfp4_loader_compact()
-        ktw._KT_LOADER_GPU_MASK = gpu_mask
+        # Same path the serving wrapper takes (T3.19c): KtRuntime.load_cpu_experts
+        # hands kt a CompactMXFP4Loader for this layer's mask, so kt-kernel sees an
+        # n_cpu-expert MoE and ids are remapped; it raises if kt did not use it.
         kt_num_experts, kt_mask = n_cpu, None
     else:
         # kt-kernel's native memory model: all 384 experts loaded, mask skips
@@ -215,8 +216,10 @@ def main() -> int:
         max_deferred_experts_per_token=0,
         swiglu_limit=args.swiglu_limit,
     )
-    wrapper.load_weights(torch.arange(kt_num_experts))
-    ktw._KT_LOADER_GPU_MASK = None
+    if compact:
+        KtRuntime(tp_rank=0).load_cpu_experts(wrapper, torch.arange(n_cpu), gpu_mask)
+    else:
+        wrapper.load_weights(torch.arange(kt_num_experts))
     t_load = time.time() - t0
     rss1, anon1 = rss_gib(), anon_gib()
     report["load"] = {
@@ -236,7 +239,7 @@ def main() -> int:
     )
     def to_kt_ids(ids: torch.Tensor) -> torch.Tensor:
         if compact:
-            return ktw.remap_topk_ids_for_cpu(ids, args.num_gpu_experts)
+            return ktw.remap_topk_ids_for_cpu(ids, args.num_gpu_experts, n_cpu)
         return ids
 
     if args.bench_tokens == "" and args.skip_reference:

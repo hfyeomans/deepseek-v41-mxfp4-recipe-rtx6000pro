@@ -618,11 +618,11 @@ Rules that make the sequence non-skippable:
 
 **Exit gate** (all required, then T3.16i pass 2):
 
-- [ ] a..f done with evidence directories
-- [ ] Review R1 (`KTEPWrapperMethod` size) and R5 (single-source config) re-measured and updated; hotspot map refreshed
-- [ ] One C1..C4 soak block (E27 style, ≥ 20K decoded tokens, 0 NaN/Xid) on the final Stage 1 overlay commit
-- [ ] T3.16i **pass 2** recorded in review §11; this ledger's G1 status set to `done`
-- [ ] ROADMAP change-log entry; LEARNING §11 Surprise row
+- [x] a..f done with evidence directories (`evidence/t319/{a,b,c,d}/`; e = `scripts/tests/test_serve_config.py` goldens; f = manifests, first stamped set `evidence/t319/g1-exit/soak/`)
+- [x] Review R1 (`KTEPWrapperMethod` size) and R5 (single-source config) re-measured and updated; hotspot map refreshed (review §11a / §11b, 2026-10-08: class 538 lines / 11 methods; 48 knobs in one registry)
+- [x] One C1..C4 soak block (E27 style, ≥ 20K decoded tokens, 0 NaN/Xid) on the final Stage 1 overlay commit (`bc73ef8d`, 2026-10-08: 141,312 tokens, health 0, EDAC 0/0, C1 39.51 wall, C4 13.79/stream, pooled NLL 0 moved; `evidence/t319/g1-exit/`)
+- [x] T3.16i **pass 2** recorded in review §11; this ledger's G1 status set to `done` (2026-10-08)
+- [x] ROADMAP change-log entry; LEARNING §11 Surprise row (2026-10-08)
 
 Performance non-regression across the stage: final C1 wall and C4 per-stream within the −2 % band of the pinned baseline; TTFT within 0.05 s. Stage 1 promises **no** performance gain; a measured gain is recorded but is not a pass criterion.
 
@@ -707,7 +707,7 @@ Until then the repository is an engineering recipe with an experimental overlay,
 | Gate | Task rows | Owner | Status | Evidence |
 |---|---|---|---|---|
 | G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | open: **C4, C5, C3-rest, T3.16e(3) done** (2026-09-24 / 2026-10-07); only C10/T3.13 remains, gated before G4 not G1 | review §10a, §10f; `evidence/t319/b/` |
-| G1 | T3.19 a..f | agent | **entered 2026-09-24** (8/8); **T3.19a done 2026-09-24**; **T3.19b done 2026-10-07** (overlay `9fc14817`; parity 14/14, C3 closed); **T3.19c done 2026-10-08** (overlay `095789db`; runner-owned state, explicit loader; comparators are now the T3.28 numbers, the pin file is superseded); **T3.16j done 2026-10-08** (G2); **T3.19d done 2026-10-08** (overlay `bc73ef8d`; `PrefillPipeline` state machine, prefill comparator settled by A/B + clean-box retest); e, f next; exit checklist must also refresh the stale GPU harnesses (`kt-export-bench.py`, `test-kt-one-layer.py`, `kt-parity-replay.py` dump) off the removed compact-loader monkey-patch | `evidence/t319/baseline-pin.json`, `evidence/t319/a/`, `evidence/t319/b/`, `evidence/t319/c/` |
+| G1 | T3.19 a..f | agent | **entered 2026-09-24** (8/8); **T3.19a done 2026-09-24**; **T3.19b done 2026-10-07** (overlay `9fc14817`; parity 14/14, C3 closed); **T3.19c done 2026-10-08** (overlay `095789db`; runner-owned state, explicit loader; comparators are now the T3.28 numbers, the pin file is superseded); **T3.16j done 2026-10-08** (G2); **T3.19d done 2026-10-08** (overlay `bc73ef8d`; `PrefillPipeline` state machine, prefill comparator settled by A/B + clean-box retest); **T3.19e / T3.19f done 2026-10-08** (recipe-side: `serve_config.py` registry, `evidence_manifest.py`); **G1 done 2026-10-08** (exit checklist all ticked: harnesses refreshed off the removed monkey-patch and re-run, `evidence/t319/g1-exit/harness/`; soak on `bc73ef8d` clean, `evidence/t319/g1-exit/soak/`; review pass 2 = §11, which corrects the T3.19c note here: R2/R3 are half closed, their SGLang-side halves wait for T3.23/T3.24). Final Stage 1 overlay commit `bc73ef8d`; G3 (T3.20 / T3.21) may start | `evidence/t319/baseline-pin.json` (soak as `confirmations_after_pin`), `evidence/t319/{a,b,c,d}/`, `evidence/t319/g1-exit/` |
 | G2 | T3.16j | agent | ~~triggered 2026-10-08~~ **done 2026-10-08** (overlay `b6c76738`, +14/-314; stream/UVA primitives removed with the rest, no T3.20 design note existed; launcher refuses the knobs; consistency PASS, C1 39.21 wall, C4 53.93, NLL 0 moved) | review §10c; `evidence/t316j/` |
 | G3 | T3.20, T3.21 | agent | waits for G1 exit | E26 A3, E20 |
 | G4 | T3.22 | **owner approval** + agent | waits for G1 exit, G2, C10, design record | `evidence/t322/` (to be created) |

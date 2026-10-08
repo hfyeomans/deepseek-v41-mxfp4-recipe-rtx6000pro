@@ -1,56 +1,71 @@
 {
-  "purpose": "T3.19 Stage 1 pinned baseline (ledger G1 entry). Every T3.19 step is judged against these files until the image or BIOS slot changes.",
-  "pinned_utc": "2026-09-24",
-  "recipe_sha": "ee10613",
-  "overlay_sha_at_pin": "9ecd54a6",
-  "image": "dsv41-kt:recipe",
-  "bios_slot": "3 (FCLK 2100, VSOC 1.05 V, VDDG 950 mV; EXPO 6400)",
-  "gpu_power_cap_w": 325,
-  "profile": "KT_NUM_GPU_EXPERTS=226, KT_MAX_DEFERRED=4, spec off, capture_bs 1 2 3 4, CHUNKED_PREFILL_SIZE=4096, MEM_FRACTION_STATIC=0.96",
-  "reference": {
-    "c1": {
-      "file": "evidence/t316-review-intake/c1-off6-t316c.json",
-      "sha256": "bc6c2950deaaaf366f1c126c80a043056c50ab72e0d4fbe8159a8482d7cd2e71",
-      "summed_tps": 41.92,
-      "wall_tps": 39.86,
-      "ttft_s": 0.609,
-      "note": "6 runs, offset 6, 512 tokens"
-    },
-    "c4": {
-      "file": "evidence/bios-trials/2026-09-23-boot12-slot3-2nd-cold-boot/soak/c4-off0.json",
-      "sha256": "376b45fe5c4619041276e86b4e6ce945caa0ec071de67db0ac00e5a42a32b281",
-      "summed_tps": 58.09,
-      "wall_tps": 55.79,
-      "per_stream_tps": 13.9,
-      "note": "E29 control / Boot 12 soak block; 4 streams, offset 0"
-    },
-    "nll": {
-      "file": "evidence/t316-review-intake/nll-t316c.json",
-      "sha256": "3c04357d043b59a1e7895948cd5c116c09d154d2f13ac06efb686aef37622e99",
-      "note": "frozen 4,795-token corpus; T3.19 steps must be bit-identical (0 tokens moved)"
-    },
-    "consistency": {
-      "file": "evidence/t316-review-intake/verify-c4-t316c.json",
-      "sha256": "9368b9559739d4467f3110f19ba91d7745bab6ca11768a7f438f8da57562b2c3",
-      "note": "same-prompt gate PASS at concurrency 4"
-    }
+ "purpose": "T3.19 Stage 1 pinned baseline (ledger G1 entry). Every T3.19 step is judged against these files until the image or BIOS slot changes.",
+ "pinned_utc": "2026-09-24",
+ "recipe_sha": "ee10613",
+ "overlay_sha_at_pin": "9ecd54a6",
+ "image": "dsv41-kt:recipe",
+ "bios_slot": "3 (FCLK 2100, VSOC 1.05 V, VDDG 950 mV; EXPO 6400)",
+ "gpu_power_cap_w": 325,
+ "profile": "KT_NUM_GPU_EXPERTS=226, KT_MAX_DEFERRED=4, spec off, capture_bs 1 2 3 4, CHUNKED_PREFILL_SIZE=4096, MEM_FRACTION_STATIC=0.96",
+ "reference": {
+  "c1": {
+   "file": "evidence/t316-review-intake/c1-off6-t316c.json",
+   "sha256": "bc6c2950deaaaf366f1c126c80a043056c50ab72e0d4fbe8159a8482d7cd2e71",
+   "summed_tps": 41.92,
+   "wall_tps": 39.86,
+   "ttft_s": 0.609,
+   "note": "6 runs, offset 6, 512 tokens"
   },
-  "per_step_gate": {
-    "c1_wall_min": 39.0,
-    "c4_per_stream_min": 13.6,
-    "ttft_max_s": 0.65,
-    "nll_tokens_moved_max": 0,
-    "nan_xid": 0,
-    "edac_ce_ue": "0/0"
+  "c4": {
+   "file": "evidence/bios-trials/2026-09-23-boot12-slot3-2nd-cold-boot/soak/c4-off0.json",
+   "sha256": "376b45fe5c4619041276e86b4e6ce945caa0ec071de67db0ac00e5a42a32b281",
+   "summed_tps": 58.09,
+   "wall_tps": 55.79,
+   "per_stream_tps": 13.9,
+   "note": "E29 control / Boot 12 soak block; 4 streams, offset 0"
   },
-  "confirmations_after_pin": [
-    {
-      "date": "2026-09-24",
-      "what": "C5 serve gate",
-      "c1_summed": 41.75,
-      "c1_wall": 39.64,
-      "ttft_s": 0.614,
-      "file": "evidence/t316-review-intake/c5-split-seal/c1-off6.json"
-    }
-  ]
+  "nll": {
+   "file": "evidence/t316-review-intake/nll-t316c.json",
+   "sha256": "3c04357d043b59a1e7895948cd5c116c09d154d2f13ac06efb686aef37622e99",
+   "note": "frozen 4,795-token corpus; T3.19 steps must be bit-identical (0 tokens moved)"
+  },
+  "consistency": {
+   "file": "evidence/t316-review-intake/verify-c4-t316c.json",
+   "sha256": "9368b9559739d4467f3110f19ba91d7745bab6ca11768a7f438f8da57562b2c3",
+   "note": "same-prompt gate PASS at concurrency 4"
+  }
+ },
+ "per_step_gate": {
+  "c1_wall_min": 39.0,
+  "c4_per_stream_min": 13.6,
+  "ttft_max_s": 0.65,
+  "nll_tokens_moved_max": 0,
+  "nan_xid": 0,
+  "edac_ce_ue": "0/0"
+ },
+ "confirmations_after_pin": [
+  {
+   "date": "2026-09-24",
+   "what": "C5 serve gate",
+   "c1_summed": 41.75,
+   "c1_wall": 39.64,
+   "ttft_s": 0.614,
+   "file": "evidence/t316-review-intake/c5-split-seal/c1-off6.json"
+  },
+  {
+   "date": "2026-10-08",
+   "what": "G1 exit soak on the final Stage 1 overlay commit bc73ef8d, launcher defaults (219/165, D=4, chunk 8192, 64K x 4; post-T3.29 profile, so C4 aggregate is compared with evidence/t319/d/README.md 55.99/53.74 rather than the Boot 12 pin)",
+   "c1_summed": 41.43,
+   "c1_wall": 39.51,
+   "ttft_s": 0.618,
+   "c4_summed": 55.15,
+   "c4_wall": 52.94,
+   "c4_per_stream": 13.79,
+   "nll": "pooled 65,653-token corpus vs evidence/t328/default-219-8192/corpus (same shape): 0 tokens moved; nll-t316c.json is a different shape since T3.29 and is no longer the same-shape comparator",
+   "decoded_tokens": 141312,
+   "health": "0 NaN/Xid/Traceback/KTContract; EDAC 0/0",
+   "file": "evidence/t319/g1-exit/soak/c1-off6.json",
+   "readme": "evidence/t319/g1-exit/README.md"
+  }
+ ]
 }
