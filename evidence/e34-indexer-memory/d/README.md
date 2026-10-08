@@ -22,6 +22,11 @@ but unallocated on each. The allocation is the FlashInfer CUTLASS fused-MoE **wo
 the chunk's token count — not the indexer, not KV. `prefill-16k.txt` / `prefill-32k.txt` hold the
 client-side HTTP 500 / connection reset.
 
+*Evidence gap:* `8192/launch-container.txt` was copied at ready time and ends before the crash; the
+OOM figures above (980 MiB request, 535 / 476 MiB free, 913 MiB reserved-unallocated,
+`FusedMoeRunner::getWorkspaceInfo` in the traceback) were read from the live container log, which was
+not re-captured before the container was removed. Treat them as operator-transcribed, not archived.
+
 Reading of the budget at chunk 8192: 3.25 GB after capture minus the prefill activations of an
 8192-row chunk (hyper-connection residual streams, attention and MoE intermediates, ~ 2x the 4096
 figure) leaves ~ 1.4 GB, of which 913 MiB was fragmented into blocks too small for one 980 MiB
