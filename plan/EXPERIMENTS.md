@@ -811,7 +811,59 @@ NLL 0 of 4,795 moved, 16K prefill 842 tok/s / 19.0 s, 4 × 62K stress all finish
 0.8–1.3 GB at 32K — thinner, documented, and the reason E34b stays next.
 Evidence [`evidence/e34-indexer-memory/a/`](../evidence/e34-indexer-memory/a/README.md) and
 `soak-64k-4slot/` there.
-**Part b next.** Three parts, each its own serve, in order a → b → c; stop after the first part
+**Part b done 2026-10-08** (overlay `c639cbee`): `_low_ratio_index_topk_dense` now scores the
+chunk's query rows in tiles of `_TORCH_INDEXER_SCORE_BUDGET_BYTES // (width × 4 B)` rows
+(`_dense_index_topk_rows`), publishing / consuming the candidate masks per request segment inside
+each tile. **Rows, not key blocks:** every kernel on the path (`fp8_fp4_mqa_logits`,
+`select_candidate_blocks`, `topk_transform_ragged_v2`, `_mask_topk_scores`) is per query row, so
+row tiling is bit-exact by construction with no running-top-k merge and no tie-break rule — the
+registration's key-block design was not needed. GPU bit-equality test
+`scripts/tests/test_indexer_row_tiling.py` (two requests, tiles straddling the boundary, 1-row
+tiles, plain / source / consumer): 5/5; a mask-slicing mutant fails 3/5. Finding while testing:
+the fused ragged top-k returns identical sets per row in a launch-shape-dependent order, which
+the caller's ascending sort normalises. **128K / 1 slot passes every gate** (129K-token prompt
+TTFT 154 s, needles 6/6 at 110,666 tokens, NLL 0 of 4,795 moved, C1 42.00 / 40.07 wall, min free
+1,335 / 1,260 MiB, health 0, EDAC 0/0). **64K × 4 (deployment) re-measured:** min free 737 / 650 →
+**1,537 / 1,478 MiB** (+0.8 GB, projected +0.9), **prefill 842 → 1,048 tok/s at 16K and 845 → 1,042 at
+32K (+24 %)**, C1 42.14 / 40.20 wall (unchanged), NLL 0 moved, needles 6/6. Hypothesis (b) held
+on memory and was wrong on cost in the good direction: no second pass exists (rows, not blocks),
+and prefill is faster, projected to be the caching allocator no longer retrying 1 GiB + 256 MiB
+allocations from a 3.4 GB pool (E34a's 128K traceback shows those retry sizes; untraced).
+Evidence [`evidence/e34-indexer-memory/b/`](../evidence/e34-indexer-memory/b/README.md).
+**Ladder resumed at 262K / 1 slot (2026-10-08): fail, gate (b), new binder.** CUDA OOM at
+184K prefix (chunk 46 of 64) allocating 720 MiB for `torch.cat(parts)` of the candidate-source
+layer's published mask — a `[chunk_rows, prefix]` bool per request (1 B × prefix per row: 1 GiB at
+262K, 4 GiB at 1M) that the tiling builds in parts and copies once more at publish. 643 / 248 MiB
+free; 0 NaN / Xid. The score matrix is no longer the binder; the candidate mask is. Per-chunk
+prefill throughput was flat 929–963 tok/s from 40K to 184K prefix (the "prefill degrades with
+prefix" reading in E33 was end-to-end TTFT, i.e. tokenization + scheduling gaps, not the indexer).
+Part c is not needed.
+
+**Part b-ii (registered 2026-10-08, next):** publish the candidate mask at block granularity.
+`select_candidate_blocks` decides per `candidate_block_size` = 8 positions and
+`repeat_interleave(8)`s the result, so the published `[rows, prefix]` bool is 8× redundant.
+Publish `[rows, ceil(prefix / 8)]` and expand per tile at the consumers
+(`_dense_index_topk_rows` consume branch, `_low_ratio_index_topk_torch` `consume[b][rows]`; the
+late-layer-tail row slice and the decode path's `[bs, lmax]` tensor are unaffected or separate).
+Bit-exact by construction; resident mask 128 MiB at 262K, 512 MiB at 1M, no publish-time
+duplicate. Hypothesis: 262K / 1 slot passes gate (b) with ≥ 1 GB min free; 512K / 1M then meet
+the next binder (projected: the consumers' per-tile expansion is ≤ tile-sized, so the candidate
+is the KV pool itself or the attention working set). Test: extend
+`test_indexer_row_tiling.py` so the published block mask expands to the E34b full mask bit-for-bit
+and the consumer selection is unchanged. Gates and evidence as part b (`b-ii/<rung>/`).
+Preallocating the full mask in place was considered and rejected: it removes only the duplicate
+(720 MiB here) and leaves a 1 GiB resident mask at 262K.
+
+**Part d (registered 2026-10-08, owner request, after b-ii):** prefill chunk size. E22a measured
+streamed prefill at 3.9× (4K chunks) and 6.5× (8K chunks) over CPU prefill but 16K chunks were
+blocked by VRAM; E34b freed ≈ 0.8 GB at the deployment profile. One serve each at
+`CHUNKED_PREFILL_SIZE=8192` then 16384 on 64K × 4: 16K / 32K prefill tok/s, C1 / C4 decode
+(unchanged expected — chunk size is prefill-only), 4 × 62K stress min free (the cost: the
+`[chunk, ·]` transients and the streamed expert staging scale with chunk), NLL 0 moved, needles.
+Go bar: ≥ 10 % prefill gain at ≤ 0.5 GB of margin; the winner becomes the `serve-hybrid.sh`
+default. Owner's framing: the box serves long coding / code-review sessions, so TTFT on the first
+turn and on cache misses is what chunk size buys.
+~~**Part b next.**~~ Three parts, each its own serve, in order a → b → c; stop after the first part
 that qualifies the target rung.
 
 **Question.** E33 stops at 128K / 1 slot and 64K / 4 slots because the DSV4 indexer scores each
