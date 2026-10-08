@@ -1,0 +1,46 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 1,
+  "prompt_tokens_target": 522240,
+  "max_tokens": 256,
+  "seed": 31337,
+  "wall_s": 1.3239798545837402,
+  "all_finished": false,
+  "peak_vram_used_mib": {
+    "gpu0_used_mib": 94280,
+    "gpu1_used_mib": 94353
+  },
+  "vram_total_mib": {
+    "gpu0_total_mib": 97887,
+    "gpu1_total_mib": 97887
+  },
+  "results": [
+    {
+      "stream": 0,
+      "prompt_tokens": 1,
+      "completion_tokens": 1,
+      "ttft_s": 1.2551225520437583,
+      "total_s": 1.2551225520437583,
+      "finish_reason": null,
+      "wall_s": 1.3236589431762695
+    }
+  ],
+  "vram_samples": [
+    {
+      "t": 1791460460.3537285,
+      "gpu0_used_mib": 94280,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 94353,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1791460461.3731647,
+      "gpu0_used_mib": 94280,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 94353,
+      "gpu1_total_mib": 97887
+    }
+  ],
+  "timestamp": "2026-10-08T07:54:21-0400"
+}

@@ -97,6 +97,9 @@ DSPARK="${DSPARK:-0}"
 DSPARK_K="${DSPARK_K:-5}"
 # 0.92 -> 0.96 with T3.6g: the KV pool is capped by MAX_TOTAL_TOKENS, so the fraction
 # no longer sizes it; it only has to leave room for prefill activations and capture.
+# Exception (512K ladder rung, 2026-10-08): at CONTEXT_LENGTH=524288 x 1 slot the cap exceeds
+# what 0.96 leaves for the pool (1,630 B/token), SGLang silently lowers max_total_tokens to
+# 505,856 and 400s longer inputs; MEM_FRACTION_STATIC=0.962 is the qualified value for that rung.
 MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.96}"
 # 32768 -> 65536 on 2026-10-07: E34a (overlay 1953a92e, indexer score budget 256 MiB) qualified
 # 64K x 4 slots on the E33 gates and the E27-shape served soak (evidence/e34-indexer-memory/a/
