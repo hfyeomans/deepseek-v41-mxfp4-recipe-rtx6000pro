@@ -1,0 +1,44 @@
+Traceback (most recent call last):
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/stress-kv-full.py", line 113, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/stress-kv-full.py", line 81, in main
+    results = list(ex.map(one, range(args.concurrency)))
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/concurrent/futures/_base.py", line 645, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/concurrent/futures/_base.py", line 312, in _result_or_cancel
+    return fut.result(timeout)
+           ~~~~~~~~~~^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/concurrent/futures/_base.py", line 454, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/concurrent/futures/_base.py", line 396, in __get_result
+    raise self._exception
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/concurrent/futures/thread.py", line 86, in run
+    result = ctx.run(self.task)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/concurrent/futures/thread.py", line 73, in run
+    return fn(*args, **kwargs)
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/stress-kv-full.py", line 74, in one
+    r = chat_stream(args.url, model, [{"role": "user", "content": make_prompt(args.prompt_tokens, rng)}],
+                    max_tokens=args.max_tokens, thinking=False, timeout=7200)
+  File "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/scripts/openai_client.py", line 74, in chat_stream
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 493, in open
+    response = meth(req, response)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 602, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 531, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 611, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error
+stress rc=1
