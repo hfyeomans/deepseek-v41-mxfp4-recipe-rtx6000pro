@@ -38,6 +38,17 @@ E34b-ii: the source publishes block-level masks `[rows, ceil(lc / block_size)]`
     width) -> consumer runs on block masks: a pick outside a kept block, or a shape error.
   - publishing per-position masks again -> the published shape check.
 
+E34e e-i: the source publishes block-ID lists `[rows, min(topk_blocks, blocks)]` int32,
+-1 padded (`select_candidate_block_ids`), prefix-independent in size, and the consumer
+expands them (`expand_candidate_ids`). What a wrong implementation would get wrong:
+  - an ID list that is not the keep mask (a dropped -inf check keeps unreachable
+    blocks; a clamp of -1 to 0 inside the scatter can erase a real block-0 pick) ->
+    `test_block_ids` compares expand(ids) with the keep path bit for bit at every lc,
+    with rows that have fewer reachable blocks than topk (so -1 padding occurs while
+    block 0 is kept), and counts the -1 entries against the keep mask.
+  - publishing keep masks again -> the published shape / dtype check.
+  - a consumer that reads the IDs as a mask -> consumer runs on ID lists.
+
 Equality is on the picks sorted per row: the fused ragged top-k writes a row's k picks
 in a launch-shape-dependent order (measured: identical sets, different order, at every
 tile size), and `_low_ratio_index_topk_dense` sorts each row ascending before any
@@ -56,6 +67,8 @@ from sglang.kernels.ops.attention.dsv4.fp4_indexer import quantize_fp4_indexer_t
 from sglang.srt.layers.attention.deepseek_v4_backend import DeepseekV4AttnBackend
 from sglang.srt.layers.attention.dsv4.indexer import (
     expand_candidate_blocks,
+    expand_candidate_ids,
+    select_candidate_block_ids,
     select_candidate_block_keep,
     select_candidate_blocks,
 )
@@ -68,10 +81,21 @@ LC = [6001, 1500]  # 6001: the last block is partial, so expansion must truncate
 Q_LENS = [700, 300]
 HUGE = 1 << 40
 BLOCK = 8
+TOPK_BLOCKS = 2048
 
 
 def blocks_of(lc: int) -> int:
     return -(-lc // BLOCK)
+
+
+def ids_width(lc: int) -> int:
+    return min(TOPK_BLOCKS, blocks_of(lc))
+
+
+def ids_of(keep: torch.Tensor) -> torch.Tensor:
+    """A keep mask as the ID list a source publishes: kept block IDs, -1 padded."""
+    top = keep.to(torch.int32).topk(ids_width(keep.shape[1] * BLOCK), dim=-1)
+    return torch.where(top.values > 0, top.indices, -1).to(torch.int32)
 
 
 def make_indexer(source: bool, consume: bool):
@@ -79,7 +103,7 @@ def make_indexer(source: bool, consume: bool):
         is_candidate_source=source,
         uses_candidates=consume,
         index_topk=512,
-        candidate_topk_blocks=2048,
+        candidate_topk_blocks=TOPK_BLOCKS,
         candidate_block_size=BLOCK,
     )
 
@@ -107,7 +131,7 @@ def make_inputs(seed: int = 0):
         torch.tensor(Q_LENS, dtype=torch.int64, device=DEV),
         output_size=num_tokens,
     )
-    empty_mask = torch.zeros(0, 0, dtype=torch.bool, device=DEV)
+    empty_mask = torch.zeros(0, 0, dtype=torch.int32, device=DEV)
     return (q_fp4, q_sf), (k_fp4, k_sf), weights, ks, compress_lens, empty_mask
 
 
@@ -148,13 +172,13 @@ def tiles_for(rows_per_tile: int) -> int:
 
 
 def random_masks(seed: int = 1):
-    """Block-level masks, the form a source publishes (E34b-ii)."""
+    """Block-ID lists, the form a source publishes (E34e e-i), from random keep masks."""
     g = torch.Generator(device=DEV).manual_seed(seed)
     out = []
     for lc, t_len in zip(LC, Q_LENS):
         m = torch.rand((t_len, blocks_of(lc)), device=DEV, generator=g) < 0.08
         m[:, -1] = True  # the block holding the newest position is always a candidate
-        out.append(m)
+        out.append(ids_of(m))
     return out
 
 
@@ -179,8 +203,9 @@ def test_source_is_tile_invariant(inputs):
     one, masks_one = run("source", HUGE, inputs)
     check_shape_and_validity(one, inputs[4], inputs[3])
     assert [m.shape for m in masks_one] == [
-        (t, blocks_of(lc)) for lc, t in zip(LC, Q_LENS)
+        (t, ids_width(lc)) for lc, t in zip(LC, Q_LENS)
     ], [m.shape for m in masks_one]
+    assert all(m.dtype == torch.int32 for m in masks_one), [m.dtype for m in masks_one]
     for rows in (37, 1):
         tiled, masks_tiled = run("source", tiles_for(rows), inputs)
         assert torch.equal(one, tiled), f"source: {rows}-row tiles differ"
@@ -201,9 +226,10 @@ def test_consume_is_tile_invariant(inputs, masks):
         picks = col[rows]
         ok = picks < 0
         valid = ~ok
-        gathered = masks[b].gather(1, picks.clamp(0, lc - 1) // BLOCK)
+        keep = expand_candidate_ids(masks[b], BLOCK, lc)
+        gathered = keep.gather(1, picks.clamp(0, lc - 1))
         assert bool((gathered | ok).all()), f"consume: non-candidate picked in request {b}"
-        assert bool((valid.sum(dim=1) <= masks[b].sum(dim=1) * BLOCK).all())
+        assert bool((valid.sum(dim=1) <= keep.sum(dim=1)).all())
     for rows in (37, 1):
         tiled, _ = run("consume", tiles_for(rows), inputs, masks)
         assert torch.equal(one, tiled), f"consume: {rows}-row tiles differ"
@@ -240,6 +266,35 @@ def test_block_expansion():
         assert torch.equal(old, expand_candidate_blocks(new, BLOCK, lc)), lc
 
 
+def test_block_ids():
+    """`expand_candidate_ids(select_candidate_block_ids(...))` is the keep path bit for
+    bit; the list is int32 `[rows, min(topk, blocks)]` and its -1 count per row is the
+    number of unreachable blocks among the topk picks."""
+    g = torch.Generator(device=DEV).manual_seed(3)
+    for lc in (6001, 1500, 8, 9, 1):
+        rows = 64
+        logits = torch.randn((rows, lc), device=DEV, generator=g)
+        # short lens: rows with fewer reachable blocks than topk, so -1 padding occurs
+        # while block 0 is kept
+        lens = torch.randint(1, lc + 1, (rows, 1), device=DEV, generator=g)
+        lens[: rows // 2] = torch.randint(1, min(lc, 40) + 1, (rows // 2, 1), device=DEV, generator=g)
+        logits = logits.masked_fill(
+            torch.arange(lc, device=DEV)[None, :] >= lens, -torch.inf
+        )
+        for topk in (64, TOPK_BLOCKS):
+            k = min(topk, blocks_of(lc))
+            keep = select_candidate_block_keep(logits, lens, topk_blocks=topk, block_size=BLOCK)
+            ids = select_candidate_block_ids(logits, lens, topk_blocks=topk, block_size=BLOCK)
+            assert ids.dtype == torch.int32 and ids.shape == (rows, k), (ids.dtype, ids.shape)
+            assert torch.equal((ids < 0).sum(1), k - keep.sum(1)), (lc, topk)
+            assert torch.equal(
+                expand_candidate_ids(ids, BLOCK, lc), expand_candidate_blocks(keep, BLOCK, lc)
+            ), f"ids differ from keep at lc={lc} topk={topk}"
+            # the collision case is exercised: block 0 kept in some row, -1 padding in some row
+            assert bool(keep[:, 0].any()), (lc, topk)
+            assert k == 1 or bool((ids < 0).any()), (lc, topk)
+
+
 def main() -> int:
     if not torch.cuda.is_available():
         print("indexer row tiling tests: no GPU; skipped")
@@ -248,6 +303,7 @@ def main() -> int:
     failures = 0
     for name, fn in (
         ("block expansion", test_block_expansion),
+        ("block ids", test_block_ids),
         ("plain", lambda: test_plain_is_tile_invariant(inputs)),
         ("source", lambda: test_source_is_tile_invariant(inputs)),
         ("consume(random mask)", lambda: test_consume_is_tile_invariant(inputs, random_masks())),
