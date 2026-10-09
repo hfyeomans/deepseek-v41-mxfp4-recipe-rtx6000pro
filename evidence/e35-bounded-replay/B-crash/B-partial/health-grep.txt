@@ -1,0 +1,11 @@
+[2026-10-09 00:03:20 TP1] Scheduler hit an exception: Traceback (most recent call last):
+    raise KTContractError(
+sglang.srt.layers.moe.kt_contract.KTContractError: [KT layerwise prefill] layer 21: 128 tokens take the CPU path while a streamed forward is open ({'open': True, 'forward_tokens': 8192, 'expected_layer': 21, 'current_buf': 1, 'buffers': [('reading', 20), ('exporting', 21)], 'forwards_completed': 0})
+[2026-10-09 00:03:20 TP0] Scheduler hit an exception: Traceback (most recent call last):
+    raise KTContractError(
+sglang.srt.layers.moe.kt_contract.KTContractError: [KT layerwise prefill] layer 21: 128 tokens take the CPU path while a streamed forward is open ({'open': True, 'forward_tokens': 8192, 'expected_layer': 21, 'current_buf': 1, 'buffers': [('reading', 20), ('exporting', 21)], 'forwards_completed': 0})
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+[2026-10-09 00:03:25] ERROR:    Traceback (most recent call last):
+Traceback (most recent call last):

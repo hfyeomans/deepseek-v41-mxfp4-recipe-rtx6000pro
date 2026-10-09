@@ -1,0 +1,42 @@
+diff --git a/scripts/tests/test_kt_prefill.py b/scripts/tests/test_kt_prefill.py
+index 739fa2c..c389076 100755
+--- a/scripts/tests/test_kt_prefill.py
++++ b/scripts/tests/test_kt_prefill.py
+@@ -154,6 +154,37 @@ def test_token_count_fixed_per_forward():
+     expect_raise(lambda: fresh.begin_forward(-5), "with -5 tokens")
+ 
+ 
++def test_abandon_closes_early_when_tokens_shrink():
++    # E35: decoder SWA bounded replay shrinks the rows after the last kv_source layer,
++    # so a forward may close at that layer; the export already claimed for it is
++    # discarded, and the next forward starts clean.
++    p = PrefillPipeline(LAYERS)
++    p.begin_forward(8192)
++    p.claim_for_export(0, 1)
++    walk_layer(p, 1, 8192)  # layer_end(1) claimed buffer 1 for layer 2's export
++    assert p.buffers[1].state is BufferState.EXPORTING and p.buffers[1].layer == 2
++    # only a shrink may close early; same or more tokens is still the T3.19d violation
++    expect_raise(lambda: p.abandon(2, 8192), "only a forward", "shrank")
++    expect_raise(lambda: p.abandon(2, 0), "with 0 tokens")
++    expect_raise(lambda: p.abandon(3, 128), "abandon(3) while expecting 2")
++    buf = p.abandon(2, 128)
++    assert buf == 1 and not p.open and p.forwards_completed == 1
++    expect_raise(lambda: p.abandon(2, 128), "while expecting no forward")
++    # the abandoned export is still EXPORTING until rank 0 synced it
++    expect_raise(lambda: p.begin_forward(8192), "host buffer 1 exporting", "unread export")
++    p.export_discarded(1)
++    assert p.buffers[1].state is BufferState.FREE and p.buffers[1].layer is None
++    expect_raise(lambda: p.export_discarded(1), "in state free")
++    # next forward: buffer 0 still has layer 1's DMA in flight, buffer 1 is free
++    assert p.begin_forward(4096) == 0 and p.needs_dma_wait(0)
++    p.dma_complete(0)
++    p.claim_for_export(0, 1)
++    layer = 1
++    while layer is not None:
++        layer = walk_layer(p, layer, 4096)
++    assert p.forwards_completed == 2 and not p.open
++
++
+ def test_begin_forward_requires_closed():
+     p = PrefillPipeline(LAYERS)
+     p.begin_forward(1024)

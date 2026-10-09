@@ -14,6 +14,7 @@ the one running. `ci.sh` then checks every stamped file under `evidence/` agains
     python3 scripts/evidence_manifest.py show [PATH]                    # summary of a manifest (default: current)
     python3 scripts/evidence_manifest.py verify PATH                    # recompute the hash; rc 1 on mismatch
     python3 scripts/evidence_manifest.py check-evidence evidence/       # CI: stamped files match their sibling manifest
+    python3 scripts/evidence_manifest.py rescrub evidence/<run>/        # re-scrub $HOME from a leaked manifest, re-stamp siblings
 
 Lookup from the evidence scripts: `EVIDENCE_MANIFEST=<path>` names the manifest, `EVIDENCE_MANIFEST=none`
 records an explicitly unmanifested run (the file says so), unset means `<MANIFEST_DIR>/current.json`.
@@ -56,9 +57,13 @@ class ManifestError(RuntimeError):
 # ---- helpers --------------------------------------------------------------------------------
 
 def _tilde(value: Any, home: str | None) -> Any:
-    """Replace $HOME with ~ in strings (recursively) so manifests carry no account name."""
-    if isinstance(value, str) and home and value.startswith(home):
-        return "~" + value[len(home):]
+    """Replace $HOME with ~ in strings (recursively) so manifests carry no account name. Anywhere in
+    the string, not only at the start: a knob such as EXTRA_DOCKER_ARGS holds `-v $HOME/...:...`."""
+    if isinstance(value, str) and home:
+        home = home.rstrip("/")
+        if value == home:
+            return "~"
+        return value.replace(home + "/", "~/")
     if isinstance(value, dict):
         return {k: _tilde(v, home) for k, v in value.items()}
     if isinstance(value, list):
@@ -357,6 +362,36 @@ def check_evidence(root: Path) -> list[str]:
     return problems
 
 
+def rescrub(evidence_dir: Path, home: str | None) -> tuple[str, str, list[Path]]:
+    """Re-apply `_tilde` to an already-written `DIR/manifest.json` and re-stamp its siblings.
+
+    For a manifest whose writer leaked `$HOME` inside a knob value (the `_tilde` before 2026-10-09
+    scrubbed string prefixes only). The manifest must still verify: this is the only sanctioned way
+    to edit one, and it records the old hash as `rescrubbed_from`. Every sibling JSON stamped with
+    the old hash has the hash string replaced in place, so its formatting is untouched. Returns
+    (old_hash, new_hash, restamped files); a no-op (nothing to scrub) returns old == new.
+    """
+    path = evidence_dir / "manifest.json"
+    m = load(path)
+    old = m["content_hash"]
+    scrubbed = _tilde({k: v for k, v in m.items() if k != "content_hash"}, home)
+    if scrubbed == {k: v for k, v in m.items() if k != "content_hash"}:
+        return old, old, []
+    scrubbed["rescrubbed_from"] = old
+    new_m = finalize(scrubbed)
+    path.write_text(json.dumps(new_m, indent=1) + "\n")
+    restamped = []
+    for sib in sorted(evidence_dir.glob("*.json")):
+        if sib.name == "manifest.json":
+            continue
+        text = sib.read_text()
+        if f'"manifest_hash": "{old}"' not in text:
+            continue
+        sib.write_text(text.replace(f'"manifest_hash": "{old}"', f'"manifest_hash": "{new_m["content_hash"]}"'))
+        restamped.append(sib)
+    return old, new_m["content_hash"], restamped
+
+
 # ---- CLI ------------------------------------------------------------------------------------
 
 def summary(m: dict) -> str:
@@ -421,6 +456,15 @@ def main(argv: list[str]) -> int:
         for p in problems:
             print(p)
         return 1 if problems else 0
+    if cmd == "rescrub":
+        old, new, files = rescrub(Path(rest[0]), os.environ.get("HOME"))
+        if old == new:
+            print(f"{rest[0]}/manifest.json: nothing to scrub ({old[:12]})")
+        else:
+            print(f"{rest[0]}/manifest.json: {old[:12]} -> {new[:12]}; restamped {len(files)} file(s)")
+            for f in files:
+                print(f"  {f.name}")
+        return 0
     print(f"unknown command {cmd}", file=sys.stderr)
     return 2
 

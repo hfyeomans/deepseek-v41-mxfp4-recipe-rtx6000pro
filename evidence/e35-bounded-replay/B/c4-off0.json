@@ -1,0 +1,212 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 512,
+  "runs": 6,
+  "warmup": 1,
+  "distinct_prompts": true,
+  "fixture_offset": 0,
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 4,
+      "median_tps": 56.14764802423704,
+      "min_tps": 56.015385606080464,
+      "max_tps": 56.40343266556444,
+      "median_wall_tps": 54.04043108027219,
+      "median_ttft_s": 1.4904832349857315,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 56.40343266556444,
+          "wall_tps": 54.26221726596255,
+          "wall_s": 37.74265231296886,
+          "per_seq_tps": [
+            14.100896112201433,
+            14.100740699453896,
+            14.10098438665805,
+            14.100811467251061
+          ],
+          "ttft_s": [
+            1.5030763290124014,
+            1.5025813460233621,
+            1.5027304599643685,
+            1.50187790900236
+          ],
+          "completion_tokens": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 56.015385606080464,
+          "wall_tps": 53.91862887757545,
+          "wall_s": 37.98316171299666,
+          "per_seq_tps": [
+            14.003962569709921,
+            14.003810515857937,
+            14.00370211152625,
+            14.003910408986354
+          ],
+          "ttft_s": [
+            1.4925729380338453,
+            1.4917508729849942,
+            1.4915994159528054,
+            1.4917718050419353
+          ],
+          "completion_tokens": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 56.32779668433551,
+          "wall_tps": 54.216069477953845,
+          "wall_s": 37.77477821096545,
+          "per_seq_tps": [
+            14.081904313463717,
+            14.081915615014735,
+            14.081926403581182,
+            14.082050352275875
+          ],
+          "ttft_s": [
+            1.486453810997773,
+            1.486339939001482,
+            1.4858036839868873,
+            1.485768911021296
+          ],
+          "completion_tokens": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 56.19834331432331,
+          "wall_tps": 54.08268600727976,
+          "wall_s": 37.867941686999984,
+          "per_seq_tps": [
+            14.049651776535947,
+            14.049569857889187,
+            14.04957879415464,
+            14.049542885743534
+          ],
+          "ttft_s": [
+            1.4963599150069058,
+            1.495906132971868,
+            1.4958603639970534,
+            1.495225500955712
+          ],
+          "completion_tokens": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 56.03655014335436,
+          "wall_tps": 53.94342721004619,
+          "wall_s": 37.96570047404384,
+          "per_seq_tps": [
+            14.009061750066783,
+            14.0090428682724,
+            14.00925418206787,
+            14.009191342947304
+          ],
+          "ttft_s": [
+            1.4887467629741877,
+            1.488391239021439,
+            1.4886795819620602,
+            1.488486832997296
+          ],
+          "completion_tokens": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 56.09695273415077,
+          "wall_tps": 53.99817615326462,
+          "wall_s": 37.927206915046554,
+          "per_seq_tps": [
+            14.024139281819718,
+            14.024170627735517,
+            14.02427963477886,
+            14.024363189816674
+          ],
+          "ttft_s": [
+            1.4893670540186577,
+            1.4891933239996433,
+            1.4890354169765487,
+            1.4888957570074126
+          ],
+          "completion_tokens": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-08T20:23:32-0400",
+  "evidence": {
+    "tool": "bench-decode.py",
+    "recorded_utc": "2026-10-09T00:23:32Z",
+    "manifest_hash": "6b02b1608fce00dd2d083ace0d2ae61aaed4d73cfd8a77e197e4ceefa9c01509",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "8c1e98c03ade427a1b9845b2a64c5ed26806ba998beee37971b6363ad2e5761f"
+  }
+}

@@ -1,0 +1,45 @@
+== start A 19:05:46 edac=0 0 
+== prefill 16K/32K x3 cold+warm 19:05:46
+ target tok  actual tok  median prefill tok/s  median TTFT s
+-- cold pass (seed 777)
+     16,384      16,063               1514.47         10.606
+     32,768      32,004               1620.32         19.765
+-- warm pass (seed 1277)
+     16,384      15,991               1650.31          9.693
+     32,768      31,996               1665.64         19.213
+health=0
+== C1 19:09:01
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         41.35     41.03     41.48       39.46       0.616     n/a
+== C4 19:10:33
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  4         56.13     55.66     56.39       53.94       1.555     n/a
+health=0
+== needles 64k 19:15:00
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 30.84, "total_s": 32.27, "finish_reason": "stop"}
+ALL PASS
+== corpus NLL (expected to be refused on B) 19:15:38
+nll rc=0
+vs 08-bench-decode-py.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 2621)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+POOLED over 8 texts: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 65653; cluster-robust se 0.00000, z +0.00)  changed 0  worse/better >0.5: 0/0
+wrote evidence/e35-bounded-replay/A/corpus/*.json
+== teacher-forced scorer 19:16:39
+fresh 01-readme-early: 20 positions, mean lp -1.8420 (71s)
+fresh 02-learning: 20 positions, mean lp -0.7544 (144s)
+fresh 03-experiments: 20 positions, mean lp -2.3212 (205s)
+fresh 04-benchmarks: 20 positions, mean lp -2.5664 (267s)
+fresh 05-troubleshooting: 20 positions, mean lp -2.8093 (334s)
+fresh 06-bios-guide: 20 positions, mean lp -2.2179 (403s)
+fresh 07-serve-hybrid-sh: 20 positions, mean lp -1.6684 (467s)
+fresh 08-bench-decode-py: 18 positions, mean lp -1.3145 (521s)
+ext 01-readme-early: 300 positions, mean lp -2.1490, extend lens min/max 1/256 (780s)
+ext 02-learning: 300 positions, mean lp -1.2949, extend lens min/max 1/256 (1016s)
+ext 03-experiments: 300 positions, mean lp -2.0317, extend lens min/max 1/256 (1249s)
+ext 04-benchmarks: 300 positions, mean lp -1.5662, extend lens min/max 1/256 (1481s)
+ext 05-troubleshooting: 300 positions, mean lp -1.2947, extend lens min/max 1/256 (1714s)
+ext 06-bios-guide: 300 positions, mean lp -1.3830, extend lens min/max 1/256 (1955s)
+ext 07-serve-hybrid-sh: 300 positions, mean lp -1.5618, extend lens min/max 1/256 (2195s)
+ext 08-bench-decode-py: 300 positions, mean lp -0.3870, extend lens min/max 1/256 (2420s)
+wrote evidence/e35-bounded-replay/A/tf-score.json
+health=0
+== done A 19:56:59 health=0 edac=0 0 

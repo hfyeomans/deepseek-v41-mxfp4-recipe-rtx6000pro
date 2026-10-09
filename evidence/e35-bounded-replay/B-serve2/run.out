@@ -1,0 +1,27 @@
+ready: model=dsv41-flash-hybrid ttft=0.23s reply='READY'
+== serve 2 start 21:09:01 edac=0 0 
+== teacher-forced scorer 21:09:01
+fresh 01-readme-early: 20 positions, mean lp -2.3925 (46s)
+fresh 02-learning: 20 positions, mean lp -1.7008 (95s)
+fresh 03-experiments: 20 positions, mean lp -5.0374 (137s)
+fresh 04-benchmarks: 20 positions, mean lp -2.3916 (180s)
+fresh 05-troubleshooting: 20 positions, mean lp -2.8865 (225s)
+fresh 06-bios-guide: 20 positions, mean lp -2.1876 (272s)
+fresh 07-serve-hybrid-sh: 20 positions, mean lp -3.9705 (317s)
+fresh 08-bench-decode-py: 18 positions, mean lp -4.1244 (353s)
+ext 01-readme-early: 300 positions, mean lp -2.2185, extend lens min/max 1/256 (573s)
+ext 02-learning: 300 positions, mean lp -1.3899, extend lens min/max 1/256 (792s)
+ext 03-experiments: 300 positions, mean lp -2.0748, extend lens min/max 1/256 (1010s)
+ext 04-benchmarks: 300 positions, mean lp -1.5890, extend lens min/max 1/256 (1226s)
+ext 05-troubleshooting: 300 positions, mean lp -1.3412, extend lens min/max 1/256 (1443s)
+ext 06-bios-guide: 300 positions, mean lp -1.4379, extend lens min/max 1/256 (1668s)
+ext 07-serve-hybrid-sh: 300 positions, mean lp -1.6462, extend lens min/max 1/256 (1892s)
+ext 08-bench-decode-py: 300 positions, mean lp -0.4136, extend lens min/max 1/256 (2100s)
+wrote evidence/e35-bounded-replay/B-serve2/tf-score.json
+health=0
+== stress 4x62K 21:44:02
+     3     62,018     256   111.83   129.65 length
+peak gpu0: 96,946 MiB used, min free 941 MiB
+peak gpu1: 97,007 MiB used, min free 880 MiB
+wall 129.7 s, all finished: True
+== done B2 21:46:11 health=0 edac=0 0 

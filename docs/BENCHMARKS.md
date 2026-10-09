@@ -484,6 +484,26 @@ Plain-default serve checks (`evidence/t328/default-219-8192/`): prefill 1,504 to
 
 Reading: the eight per-text means scatter more than iid token noise predicts (Σz² ≈ 19 on 8 texts for the candidate), which is why `pooled.json` carries a cluster-robust se with one cluster per text. The signs are mixed within every comparison and the >0.5-nat worse/better counts are balanced (1,891 / 1,846; 2,051 / 2,015), the signature of accumulation-order jitter under block-scaled activations rather than a systematic shift. The 95 % upper bound on the adopted config's shift is +0.004 nats/token (cluster-robust); tightening it to the gate value would take ~4× the corpus.
 
+## E35 — decoder SWA bounded replay: +39 % prefill, +1.13 nats/token (2026-10-09) — rejected
+
+Four serves on the launcher default (219 / 165, chunk 8192, 64K × 4), overlay `bc73ef8d` (+ a bind-mounted E22-contract patch for the B serves, archived and reverted), `evidence/e35-bounded-replay/` (README has the per-shape tables). A = control with `--cuda-graph-backend-prefill=disabled` (a no-op: the overlay already disables it for DSV4; A's corpus NLL is 0 of 65,653 moved vs T3.28's default serve). B = A + `--enable-decoder-swa-bounded-replay`.
+
+| | A (= default) | B (decoder replay) | Δ |
+|---|---|---|---|
+| prefill 16K cold / warm, tok/s (TTFT) | 1,514.5 / 1,650.3 (10.6 s) | **2,106.3 / 1,990.6 (7.6 s)** | +39 % / +21 % |
+| prefill 32K cold / warm, tok/s (TTFT) | 1,620.3 / 1,665.6 (19.8 s) | **2,175.4 / 2,155.6 (14.7 s)** | +34 % / +29 % |
+| C1 median / wall tok/s | 41.35 / 39.46 | 41.46 / 39.55 | 0 |
+| C4 median / wall tok/s | 56.13 / 53.94 | 56.15 / 54.04 | 0 |
+| needles 64K (55,206 tok), TTFT | 6/6, 30.8 s | 6/6, 22.6 s | −27 % |
+| 4 × 62K stress min free GPU0 / GPU1 | 641 / 582 MiB (E34a, same config) | 941 / 880 MiB | — |
+| corpus NLL (prompt logprobs) | 0 moved | refused; the refusal (`ValueError` in the forward) kills the server | — |
+| teacher-forced Δ NLL vs A, fresh prompts (158 positions, 8 texts) | — | **+1.1286 (se 0.356); greedy differs 34 / 158; code texts +2.3…+2.8** | STOP |
+| teacher-forced Δ NLL vs A, extends (2,400 positions) | — | **+0.0553 (se 0.008)**; 1–8-token extends +0.289, 9–32 +0.087, 33–128 +0.049, 129–256 +0.020 | STOP |
+
+Method for the quality rows (the corpus gate cannot run under the flag): paired teacher-forced next-token logprob through `/generate` (`input_ids = ids[:k]`, `max_new_tokens 1`, `token_ids_logprob = [ids[k]]`) at the same seeded positions on A and B; `fresh` flushes the radix cache before each position (prefix lengths 256…4,096), `ext` prefills 1,024 tokens then scores 300 consecutive positions so the extends cycle 1…256 tokens (page-aligned radix hits). Resolution at 2,558 positions is ~±0.005 nats at 95 %; the measured deltas are 10–200× that. The fresh-prompt means were identical across the two B serves: the replay is deterministic, as its help text says, and not equivalent, which it never claimed.
+
+Reading: the win and the loss are one mechanism. Layers 21–39 run over the last 128 rows of each extend with the SWA window floored at the tail start (the late layers never write window KV for earlier rows), so ~19 of 40 layers cost 128 rows instead of 8,192 — and the row that produces the next token inherits 19 layers of truncated-window states. Code and 1–8-token extends suffer most: the owner's shape. E35-ii (tail = 2,560-row receptive field, exact for everything decode can reach) is registered as a candidate; expected to keep roughly half the speed-up on first turns and none on chat turns.
+
 ## Erratum (2026-09-23): every V4.1-hybrid C3 and C4 decode figure from E19 to E23 R0 is an artifact of kt-kernel bug C
 
 **What was wrong.** The unpatched kt-kernel bs=4 decode CUDA graph was baked to a pinned host buffer that the first prefill freed ([TROUBLESHOOTING, bug C and the entry after it](TROUBLESHOOTING.md#c4-decode-drops-from--148-to--50-toks-after-the-bug-c-patch--and-four-identical-greedy-prompts-in-one-batch-return-four-different-answers-on-the-old-build)). It never crashed; it computed CPU experts for effectively one row of the batch and copied stale bytes for rows 1–3. Two consequences: (1) the bs=4 step took as long as a bs=1 step, so C4 looked like 4 × C1 ("near-linear batching") and C3 (padded into the bs=4 graph) like 3 × C1; (2) rows 1–3 of every C3/C4 request since E19 were **wrong** — four identical greedy prompts in one batch returned four different answers on the old build, one of them having lost the prompt. bs=1 and bs=2 were always correct, so every C1 and C2 figure stands, as do prefill, TTFT, NLL (bs=1) and needle results.

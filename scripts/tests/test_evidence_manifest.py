@@ -110,6 +110,41 @@ def test_collect_tildes_paths():
         assert m["recipe"]["dir"] == "~/recipe" and m["overlay"]["dir"] == "~/overlay"
         assert m["config"]["BIOS_SLOT"] == "3" and m["bios"]["slot_declared"] == "3"
         assert "MANIFEST_DIR" in m["config"] and "experts gpu=" in m["resolved_line"]
+        # $HOME embedded in a knob value (E35 EXTRA_DOCKER_ARGS), not only as a string prefix
+        env = {**base_env(home), "EXTRA_DOCKER_ARGS": f"-v {home}/overlay/x.py:/sgl/x.py:ro -v {home}/y:/y:ro"}
+        m = em.collect(env, container=None, collectors=fake_collectors(), now=lambda: FIXED_NOW,
+                       recipe_dir=pathlib.Path(home) / "recipe")
+        assert home not in json.dumps(m), "a $HOME path inside a knob value leaked into the manifest"
+        assert m["config"]["EXTRA_DOCKER_ARGS"] == "-v ~/overlay/x.py:/sgl/x.py:ro -v ~/y:/y:ro"
+
+
+def test_rescrub_leaked_manifest():
+    """A manifest written by the prefix-only scrubber: rescrub fixes the value, keeps the manifest
+    verifying, records the old hash, and re-stamps every sibling in place (formatting untouched)."""
+    with tempfile.TemporaryDirectory() as home:
+        d = pathlib.Path(home) / "run"
+        d.mkdir()
+        m = make_manifest(home)
+        m["config"]["EXTRA_DOCKER_ARGS"] = f"-v {home}/overlay/x.py:/sgl/x.py:ro"
+        m = em.finalize(m)  # a leaked but validly hashed manifest, as the old writer produced
+        old = m["content_hash"]
+        (d / "manifest.json").write_text(json.dumps(m, indent=1) + "\n")
+        a = d / "a.json"
+        a.write_text(json.dumps({"tps": 1, "evidence": {"tool": "t", "recorded_utc": "x", "manifest_hash": old}}, indent=2) + "\n")
+        b = d / "b.json"  # stamped with another hash: left alone
+        b.write_text(json.dumps({"evidence": {"tool": "t", "recorded_utc": "x", "manifest_hash": "f" * 64}}))
+        got_old, new, files = em.rescrub(d, home)
+        assert got_old == old and new != old and files == [a]
+        nm = em.load(d / "manifest.json")
+        assert nm["rescrubbed_from"] == old and home not in json.dumps(nm)
+        assert nm["config"]["EXTRA_DOCKER_ARGS"] == "-v ~/overlay/x.py:/sgl/x.py:ro"
+        assert json.loads(a.read_text())["evidence"]["manifest_hash"] == new and a.read_text().endswith("}\n")
+        assert "  \"tps\": 1" in a.read_text()  # indent=2 preserved
+        assert json.loads(b.read_text())["evidence"]["manifest_hash"] == "f" * 64
+        problems = em.check_evidence(d.parent)
+        assert [p for p in problems if "b.json" not in p] == [], problems  # only the deliberately foreign b.json
+        # idempotent
+        assert em.rescrub(d, home)[:2] == (new, new)
 
 
 def _write_manifest(home: str, **overrides) -> tuple[pathlib.Path, dict]:

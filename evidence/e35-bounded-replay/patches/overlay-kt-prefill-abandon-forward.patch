@@ -1,0 +1,108 @@
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index beced563..06c303f2 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -617,11 +617,17 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         if not streamed and self.streamer is not None and self.streamer.forward_open:
+             # Mode compatibility (T3.19d): a forward is either streamed on every
+             # MoE layer or on none; a CPU-path layer inside an open streamed
+-            # forward means the token count changed mid-forward.
+-            raise KTContractError(
+-                f"[KT layerwise prefill] layer {self.kt_config.layer_idx}: {x.shape[0]} tokens take the "
+-                f"CPU path while a streamed forward is open ({self.streamer.pipeline.snapshot()})"
+-            )
++            # forward means the token count changed mid-forward. One exception
++            # (E35): decoder SWA bounded replay shrinks the rows after the last
++            # kv_source layer to each extend's 128-token tail, so a forward may
++            # close early there and finish on the CPU path.
++            if 0 < x.shape[0] < self.streamer.pipeline.forward_tokens:
++                self.streamer.abandon_forward(self, x.shape[0])
++            else:
++                raise KTContractError(
++                    f"[KT layerwise prefill] layer {self.kt_config.layer_idx}: {x.shape[0]} tokens take the "
++                    f"CPU path while a streamed forward is open ({self.streamer.pipeline.snapshot()})"
++                )
+         # The probe does a host sync (`.item()`), which CUDA forbids while a
+         # graph is being captured; skip it there. Consequence: with a small
+         # threshold the probe covers prefill and eager decode steps only — a
+diff --git a/python/sglang/srt/layers/moe/kt_prefill.py b/python/sglang/srt/layers/moe/kt_prefill.py
+index baff4087..331952de 100644
+--- a/python/sglang/srt/layers/moe/kt_prefill.py
++++ b/python/sglang/srt/layers/moe/kt_prefill.py
+@@ -215,6 +215,47 @@ class PrefillPipeline:
+             self.current_buf = (self.current_buf + 1) % len(self.buffers)
+         return nxt
+ 
++    def abandon(self, layer_idx: int, num_tokens: int) -> int:
++        """Close the forward early at ``layer_idx`` because the token count shrank.
++
++        Decoder SWA bounded replay (E35) runs the layers after the last kv_source
++        layer over only the last 128 tokens of each extend, so a streamed forward
++        that began with a chunk's tokens meets a layer with fewer; that layer and
++        the rest take the CPU path. The buffer holding ``layer_idx``'s export is
++        EXPORTING (claimed by the previous ``layer_end``): the coordinator must
++        wait for the export before the buffer is reused; returns that buffer.
++        """
++        self._check_layer(layer_idx)
++        if not self.open or layer_idx != self.expected_layer:
++            raise KTContractError(
++                f"[KT layerwise prefill] abandon({layer_idx}) while expecting "
++                f"{self.expected_layer if self.open else 'no forward'}"
++            )
++        if not 0 < int(num_tokens) < self.forward_tokens:
++            raise KTContractError(
++                f"[KT layerwise prefill] abandon({layer_idx}) with {num_tokens} tokens: only a forward "
++                f"whose token count shrank below its {self.forward_tokens} may close early"
++            )
++        b = self.buffers[self.current_buf]
++        if b.state is not BufferState.EXPORTING or b.layer != layer_idx:
++            raise KTContractError(
++                f"[KT layerwise prefill] abandon({layer_idx}): host buffer {self.current_buf} is "
++                f"{b.state.value} (layer {b.layer}), not exporting layer {layer_idx}"
++            )
++        self.forward_tokens = None
++        self.expected_layer = None
++        self.forwards_completed += 1
++        return self.current_buf
++
++    def export_discarded(self, buf: int) -> None:
++        """Rank 0 synced an abandoned export: the buffer holds nothing anyone will read."""
++        b = self.buffers[buf]
++        if b.state is not BufferState.EXPORTING:
++            raise KTContractError(
++                f"[KT layerwise prefill] export_discarded on host buffer {buf} in state {b.state.value}"
++            )
++        b.state, b.layer = BufferState.FREE, None
++
+     # -- buffer life cycle -----------------------------------------------------------
+ 
+     def needs_dma_wait(self, buf: int) -> bool:
+@@ -526,6 +567,28 @@ class LayerwisePrefillCoordinator:
+         buf = self.pipeline.begin_forward(num_tokens)
+         self._submit_export(self.pipeline.first_layer, buf)
+ 
++    def abandon_forward(self, method: "KTEPWrapperMethod", num_tokens: int) -> None:
++        """Close the open forward at ``method``'s layer: its token count shrank
++        (decoder SWA bounded replay tail, E35), so this layer and the rest of the
++        forward take the CPU path. Rank 0 waits for the export it submitted for
++        this layer before the buffer is released; no rank DMAs it."""
++        layer_idx = method.kt_config.layer_idx
++        began = self.pipeline.forward_tokens
++        buf = self.pipeline.abandon(layer_idx, num_tokens)
++        if self.tp_rank == 0:
++            self._pending.wrapper.sync_write_weight_scale_to_buffer()
++            self._pending = None
++        self.pipeline.export_discarded(buf)
++        if KT_GPU_PREFILL_LOG:
++            logger.info(
++                "[KT layerwise prefill] forward closed at layer %d: %d tokens (streamed layers ran at %d), "
++                "%.2f s (host side)",
++                layer_idx,
++                num_tokens,
++                began,
++                time.perf_counter() - self._t_forward,
++            )
++
+     def end_forward(self, num_tokens: int) -> None:
+         if KT_GPU_PREFILL_LOG:
+             logger.info(

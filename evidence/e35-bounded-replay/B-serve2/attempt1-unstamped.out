@@ -1,0 +1,27 @@
+ready: model=dsv41-flash-hybrid ttft=34.33s reply='READY'
+== serve 2 start 20:29:39 edac=0 0 
+== teacher-forced scorer 20:29:39
+fresh 01-readme-early: 20 positions, mean lp -2.3925 (57s)
+fresh 02-learning: 20 positions, mean lp -1.7008 (106s)
+fresh 03-experiments: 20 positions, mean lp -5.0374 (149s)
+fresh 04-benchmarks: 20 positions, mean lp -2.3916 (191s)
+fresh 05-troubleshooting: 20 positions, mean lp -2.8865 (237s)
+fresh 06-bios-guide: 20 positions, mean lp -2.1876 (284s)
+fresh 07-serve-hybrid-sh: 20 positions, mean lp -3.9705 (328s)
+fresh 08-bench-decode-py: 18 positions, mean lp -4.1244 (365s)
+ext 01-readme-early: 300 positions, mean lp -2.2226, extend lens min/max 1/256 (608s)
+ext 02-learning: 300 positions, mean lp -1.4001, extend lens min/max 1/256 (825s)
+ext 03-experiments: 300 positions, mean lp -2.0811, extend lens min/max 1/256 (1041s)
+ext 04-benchmarks: 300 positions, mean lp -1.5906, extend lens min/max 1/256 (1254s)
+ext 05-troubleshooting: 300 positions, mean lp -1.3364, extend lens min/max 1/256 (1470s)
+ext 06-bios-guide: 300 positions, mean lp -1.4339, extend lens min/max 1/256 (1694s)
+ext 07-serve-hybrid-sh: 300 positions, mean lp -1.6469, extend lens min/max 1/256 (1915s)
+ext 08-bench-decode-py: 300 positions, mean lp -0.4124, extend lens min/max 1/256 (2122s)
+FAIL evidence manifest: evidence/e35-bounded-replay/B/manifest.json is a different manifest (4e06fdbd4ef0 vs 3cb2eeb2c337); one evidence directory holds one serve
+health=0
+== stress 4x62K 21:05:01
+peak gpu0: 96,944 MiB used, min free 943 MiB
+peak gpu1: 97,005 MiB used, min free 882 MiB
+wall 136.7 s, all finished: True
+FAIL evidence manifest: evidence/e35-bounded-replay/B/manifest.json is a different manifest (4e06fdbd4ef0 vs 3cb2eeb2c337); one evidence directory holds one serve
+== done B2 21:07:18 health=0 edac=0 0 

@@ -1,0 +1,68 @@
+== start B 20:03:11 edac=0 0 
+== prefill 16K/32K x3 cold+warm 20:03:11
+    response = meth(req, response)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 602, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 531, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 611, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error
+health=11
+== C1 20:03:25
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+== C4 20:03:25
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno 32] Broken pipe>
+health=11
+== needles 64k 20:03:25
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+== corpus NLL (expected to be refused on B) 20:03:26
+nll rc=1
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+== teacher-forced scorer 20:03:26
+    with urllib.request.urlopen(req, timeout=60) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 1349, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/urllib/request.py", line 1324, in do_open
+    r = h.getresponse()
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/http/client.py", line 1478, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/http/client.py", line 343, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/http/client.py", line 304, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/socket.py", line 729, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+health=11
+== stress 4x62K 20:03:26
+  File "/<brew>/.linuxbrew/Cellar/python@3.14/3.14.7/lib/python3.14/socket.py", line 729, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+== done B 20:03:26 health=11 edac=0 0 
