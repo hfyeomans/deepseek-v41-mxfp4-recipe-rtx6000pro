@@ -13,7 +13,7 @@ P0 research ──▶ P1 host micro ──▶ P2 baseline ──▶ P3 2-GPU hyb
    DONE          DONE + E25         DONE           SERVING, qualified   info-only
                  (125 GB/s =        (E8, E14,      64K × 4 default;     (H1 more CCDs
                   2-CCD fabric)     E15/16)        ladder 1M × 1,       or a third card;
-                                                   262K × 4 (c4096)
+                                                   262K × 4 (idea 8)
                                                    C1 41.6 / 39.7 wall  T4.1b waits
                                                    C4 56.2 / 54.0 wall  on T3.22)
                                                    prefill 1.9K tok/s
@@ -21,7 +21,7 @@ P0 research ──▶ P1 host micro ──▶ P2 baseline ──▶ P3 2-GPU hyb
 
 **Deployment profile** (`bash scripts/serve-hybrid.sh`, overlay `1eeb48cd`, image `dsv41-kt:recipe`): 219 GPU / 165 CPU experts per layer, prefill chunk 8192, D=4, speculation off, 64K context × 4 slots, `MEM_FRACTION_STATIC=0.96`, BIOS slot 3 (FCLK 2100), 300 W (never binds). Measured on this overlay (E34d-v (ii), 2026-10-09, `evidence/e34-indexer-memory/d-v-ii/64k4/`): **C1 41.6 summed / 39.7 wall tok/s (TTFT 0.62 s), C4 56.2 / 54.0 wall, prefill 1,887 / 1,901 tok/s at 16K / 32K (TTFT 8.5 / 16.8 s)**, 4 × 62K stress min free 1,791 / 1,746 MiB, needles 6/6 at 55K, NLL bit-identical to the T3.28 corpus, health 0.
 
-**Qualified ladder** (one serve per rung, E33 gates (a)–(f); rungs are per-serve overrides, not defaults): 64K × 4 (deployment, soaked); 128K / 262K / 512K × 1 (T3.29); **1M × 1** (E34d-v (ii): `CONTEXT_LENGTH=1048576 MAX_RUNNING_REQUESTS=1 MEM_FRACTION_STATIC=0.962`; 1,019K-token prompt TTFT 803 s, needles 6/6 at 887K, min free 547 / 574 MiB). **262K × 4** (E34d-v (b): `CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4 CHUNKED_PREFILL_SIZE=4096 ALLOW_UNTESTED_FIT=1`; 4 × 253K stress wall 1,082 s, needles 6/6 at 222K, min free 877 / 738 MiB — at chunk 8192 it OOMs on fragmentation, 1.05 GiB reserved-but-unallocated). The only multi-slot rung above 64K; prefill there is 975 tok/s (chunk 4096), decode unchanged.
+**Qualified ladder** (one serve per rung, E33 gates (a)–(f); rungs are per-serve overrides, not defaults): 64K × 4 (deployment, soaked); 128K / 262K / 512K × 1 (T3.29); **1M × 1** (E34d-v (ii): `CONTEXT_LENGTH=1048576 MAX_RUNNING_REQUESTS=1 MEM_FRACTION_STATIC=0.962`; 1,019K-token prompt TTFT 803 s, needles 6/6 at 887K, min free 547 / 574 MiB). **262K × 4** (idea 8, overlay `30e8c412`: `CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4 ALLOW_UNTESTED_FIT=1 SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1` at the chunk-8192 default; 4 × 253K stress wall 678 s, needles 6/6 at 222K in 123 s, NLL 0 moved, decode unchanged, 114 allocator mapping retries at 16–20 MiB free = no headroom; or E34d-v (b): `CHUNKED_PREFILL_SIZE=4096` without the lever, stress 1,082 s, min free 877 / 738 MiB, prefill 975). The only multi-slot rung above 64K.
 
 **Progression (first serve 2026-09-21 → 2026-10-09):**
 
@@ -30,7 +30,7 @@ P0 research ──▶ P1 host micro ──▶ P2 baseline ──▶ P3 2-GPU hyb
 | C1 summed / wall tok/s | 14.0 / — | 31.6 / — | 38.5 / — | 42.0–42.6 / 37.2–40.1 | 41.4 / 39.5 | **41.6 / 39.7** |
 | C4 wall tok/s | (76 — bug C artifact) | — | — | 56–57 | 54.2 | **54.0** |
 | Prefill 16K tok/s | 216 | — | 837 (E22, chunk 4096) | 845 → 1,048 (E34b) | 1,438 → 1,512 | **1,887** |
-| Context × slots qualified | 32K × 4 (pool 15× oversized) | — | — | 32K × 4 (E27 soak) | 64K × 4; 512K × 1 | **64K × 4; 1M × 1; 262K × 4 (chunk 4096)** |
+| Context × slots qualified | 32K × 4 (pool 15× oversized) | — | — | 32K × 4 (E27 soak) | 64K × 4; 512K × 1 | **64K × 4; 1M × 1; 262K × 4 (chunk 8192 + idea 8 lever, or chunk 4096)** |
 
 Costs accepted on the way (each measured, none hidden): C1 wall 40.2 → 39.4–39.7 for chunk 8192 (45 % more prefill per 1 % of wall, E34d-ii / T3.28); 7 GPU experts returned (226 → 219) to fit that chunk; capture-end free VRAM −0.95 GB on every profile for the resident fused-MoE workspace (E34d-v (i); buys fragmentation-free long prefill). Measured and rejected, do not reopen without new data: B2 PCIe split (E30), DSpark / MTP speculation (E23), D=5 (bug C), placement round 2 (E29), chunk 16384 (E34d-iv), decoder SWA bounded replay (E35, +1.13 nats), 212 / 172 as a default, TensorFold as an engine (T3.32). Every measured fact behind these lives in [LEARNING.md §11](../docs/LEARNING.md#11-what-the-box-has-taught-us-so-far-read-this-before-any-of-the-sections-above).
 
@@ -38,26 +38,26 @@ Costs accepted on the way (each measured, none hidden): C1 wall 40.2 → 39.4–
 
 ```diagram
 262K × 4 ──▶ E32 ──▶ T3.9h n-gram ──▶ T3.20 Engram ──▶ T3.21 FP8 ──▶ T3.27 autotune ──▶ T3.22 multi- ──▶ T3.23 ──▶ T3.24 ──▶ T3.30
- DONE        DONE    (closed: KV       prefetch        prefill GEMM    (bit-exact        rank (Python     native    packaging  demo
- (chunk               pool API gap)    (+ E36 row      (cuTile bench   launch tables)    prototype)       hot loops            snapshot
-  4096)                                 I/O)            first)                                │
+ DONE +      DONE    (closed: KV       prefetch        prefill GEMM    (bit-exact        rank (Python     native    packaging  demo
+ idea 8               pool API gap)    (+ E36 row      (cuTile bench   launch tables)    prototype)       hot loops            snapshot
+ (c8192)                                I/O)            first)                                │
                                                                                               └──▶ T3.36 NUMA · T4.1b third GPU
 ```
 
-T3.9h n-gram closed 2026-10-09 (verify crash, go bar unreachable by arithmetic; T3.9h-b registered, not scheduled). **Next serve: T3.31 idea 8** — 262K × 4 at chunk 8192 with `expandable_segments` enabled after capture, so the rung keeps the 1,887 tok/s prefill instead of chunk 4096's 975; per-serve override first, 64K × 4 soak before any default change. T3.35 (code-review exercise) is unblocked by the 262K × 4 rung and runs after the idea 8 serve (low priority). Recipe-strengthening items that ride on any serve and need no sequencing: ~~E32 HumanEval~~ (done), a served soak at the new rungs (262K × 4 is the candidate), T3.35.
+T3.9h n-gram closed 2026-10-09 (verify crash, go bar unreachable by arithmetic; T3.9h-b registered, not scheduled). ~~**Next serve: T3.31 idea 8** — 262K × 4 at chunk 8192 with `expandable_segments` enabled after capture, so the rung keeps the 1,887 tok/s prefill instead of chunk 4096's 975; per-serve override first, 64K × 4 soak before any default change.~~ **Idea 8 done 2026-10-09: 262K × 4 at chunk 8192 passes every gate with the lever on** (stress 678 s vs 1,082 at chunk 4096, NLL 0 moved, decode unchanged; `evidence/e34-indexer-memory/d-v-a/262k-4slot-idea8/`). **Next serve: the 64K × 4 soak with the lever on** (prefill A/B with `--warm-pass` against 1,887 / 1,901 — the idea 8 serve's 1,532 was read at 12 % Engram residency and is not a lever cost until measured on the same box state; stress, NLL, C1 / C4) before any default change; then T3.20. T3.35 (code-review exercise) runs at 262K × 4 / chunk 8192 (low priority). Recipe-strengthening items that ride on any serve and need no sequencing: ~~E32 HumanEval~~ (done), a served soak at the new rungs (262K × 4 is the candidate), T3.35.
 
 ### Open items register (the one list — every row is in [TASKS.md](TASKS.md); struck rows stay there)
 
 | Item | What | Waits on | Priority |
 |---|---|---|---|
-| ~~E34 Part d-v (a): 262K × 4~~ | **done 2026-10-09**: (a) chunk 8192 OOMs on the third chunk (320 MiB `mhc_post`, 1.05 GiB reserved-but-unallocated → idea 8's trigger); (b) **chunk 4096 passes every gate** (prefill 975 tok/s); (c) not run | — | done |
+| ~~E34 Part d-v (a): 262K × 4~~ | **done 2026-10-09**: (a) chunk 8192 OOMs on the third chunk (320 MiB `mhc_post`, 1.05 GiB reserved-but-unallocated → idea 8's trigger); (b) **chunk 4096 passes every gate** (prefill 975 tok/s); (c) not run; **idea 8: chunk 8192 passes every gate with the lever** (same day) | — | done |
 | ~~T3.9h / E23 R6~~ | **closed 2026-10-09**: n-gram verify crashes on the first request (`DeepSeekV4TokenToKVPool` has no `move_kv_cache`); not retried — always-on 5-row verify makes the review-fixture clause unreachable (floor ≈ 12–13 tok/s, copy-span ceiling ≈ 62) | — | done |
 | T3.9h-b | n-gram on DSV4 properly: chain-skip + c128 clear + skip-verify-on-no-match (three overlay changes, ½–2 days) | a copy-heavy product workload, or a CPU-tier change that makes verify rows cheaper | low, not scheduled |
 | T3.20 (+ E36) | Engram fixed-buffer prefetch, graph-compatible staging, ahead-of-use row I/O | — | **next code task** |
 | T3.21 | large-M block-scaled FP8 prefill GEMM (cuTile bench first) | T3.20 | high |
 | T3.27 | bit-exact launch-table autotune (Aevonix `glm_autotune.py` method, T3.32) | T3.21 | high |
 | T3.22 → T3.23 → T3.24 → T3.30 | multi-rank CPU-expert / Engram ownership → native hot loops → packaging → demo snapshot | in sequence | planned |
-| T3.35 | code-review exercise at 262K × 4 (several sessions, one pool, chunk 4096) | ~~a multi-slot rung above 64K~~ unblocked 2026-10-09; after ~~T3.9h~~ the idea 8 serve | low |
+| T3.35 | code-review exercise at 262K × 4 (several sessions, one pool, chunk 4096) | ~~a multi-slot rung above 64K~~ unblocked 2026-10-09; after ~~T3.9h~~ ~~the idea 8 serve~~ the 64K × 4 lever soak; run at chunk 8192 with the lever | low |
 | ~~E32~~ | **done 2026-10-09**: 161/164 pass@1 greedy (mlx-stream 3.0 bpw 158/164), decode median 42.2 tok/s | — | done |
 | E31 | CPU-tier route lookahead log (opt-in) | input to T3.20 planning | low |
 | E35-ii | exact bounded replay (tail = late layers' receptive field) | candidate, not scheduled | low |
@@ -67,7 +67,8 @@ T3.9h n-gram closed 2026-10-09 (verify crash, go bar unreachable by arithmetic; 
 | T3.15b | source of the bs=1 greedy drift | a GPU window | low |
 | TK.3b | activation-format error on real expert weights | — | low |
 | K10 | decode-shaped MXFP4 grouped GEMM (M tile 16–32) | parked (E12: served path already at roofline) | parked |
-| T3.31 idea 8 | `expandable_segments` after capture — 262K × 4 at chunk 8192 (owner-approved 2026-10-09; toggle verified in the image: new segments expandable and coalescing, pre-toggle graphs replay) | — | **next serve** |
+| ~~T3.31 idea 8~~ | **done 2026-10-09**: 262K × 4 at 219 / 165 + chunk 8192 passes every gate with `SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1` (stress 678 s, needles TTFT 123 s, NLL 0 moved, C1 / C4 unchanged; 114 mapping retries at 16–20 MiB free — no headroom at the shape); per-serve lever, default off | — | done |
+| 64K × 4 soak, lever on | the owner-stipulated A/B before idea 8 may become a default: `bench-prefill.py --warm-pass` vs 1,887 / 1,901 (lever off, 26 % residency) and T3.19d's warm 1,820; stress, NLL 0 moved, C1 / C4 | — | **next serve** |
 | T3.16g | external review findings never received | input | blocked |
 | T3.10 / T3.7 / E5 | Engram tiering A/B, llama.cpp `deepseek41`, stock-offload control | upstream / hardware | blocked |
 | P4 / T4.1b / H1 | third or fourth card; CPU with more CCDs | owner purchase | option |
@@ -242,6 +243,7 @@ Ordered by how directly each moves a number in the readout above.
 | CPU DRAM limit is CCD fabric, not DIMMs | **directly measured (E25)**: 62–63 GB/s per CCD in every pattern (read/write/copy/triad), 2 threads saturate one CCD, 4 split threads saturate the socket; DIMMs have ≥ 110 GB/s of headroom the GPUs' DMA can use (235 GB/s combined). Four tiers: 409.6 theoretical / ≥ 235 socket / 125 CPU / 120–127 kt | only FCLK (H3 Tier 3) or more CCDs (H1) can move it; `pcm-memory`-style DIMM counters (root, `perf_event_paranoid=4`) would give the true socket ceiling — **Boot 1 (APBDIS 1, DF C-states off, IO power profile): ceiling still 125–126, per-CCD 63; only latency-bound single-thread reads moved (+38 %)** |
 
 ## Change log
+- 2026-10-09 (T3.31 idea 8, one serve, ~45 min) — **262K × 4 at the 219 / 165 + chunk 8192 default passes every gate with `expandable_segments` enabled after capture** (`SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1`, overlay `30e8c412`; `evidence/e34-indexer-memory/d-v-a/262k-4slot-idea8/`): 4 × 253K stress wall 678 s (chunk 4096: 1,082), needles 6/6 at 222K in 123 s (216), NLL 0 of 65,653 moved, C1 41.31 / 39.42 wall, C4 56.25 / 54.07; prefill 1,532 / 1,541 cold at 12 % Engram residency (not comparable to the 1,887 at 26 % without the warm-pass A/B). The binder was split-block fragmentation (`empty_cache()` released 0 B); 114 mapping-retry warnings during stress mean the rung has no headroom. Lever is per-serve (flag in `serve_config.py`, `DIAGNOSTIC_ENV` sink, goldens unchanged); deployment default stays 64K × 4 with the lever off. **Next: the owner-stipulated 64K × 4 soak with the lever on** (`bench-prefill.py --warm-pass` A/B vs 1,887 / 1,901, stress, NLL, C1 / C4) before any default change; then T3.20 (+ E36). T3.35 (code-review exercise) can run at 262K × 4 / chunk 8192 (low).
 - 2026-10-09 (E23 R6 / T3.9h, one serve, ~4 min) — **n-gram speculation closed: the first request crashes both TP ranks** (`DeepSeekV4TokenToKVPool` has no `move_kv_cache`; upstream's EAGLE/DSPARK-only guard on DSV4 hides a missing pool API, not a policy). Not retried: the worker always runs a full 5-row verify, so fresh text floors at ≈ 12–13 tok/s and the ≤ 5 % review clause of the go bar is unreachable; a copy-span ceiling of ≈ 62 tok/s would be a per-workload flag at best. Follow-up T3.9h-b (chain-skip + c128 clear + skip-on-no-match) registered, not scheduled. Overlay probe commits (`eeb5320c`) only admit NGRAM through guards; qualified serves stay on `1eeb48cd`. **Next serve: T3.31 idea 8** (`expandable_segments` after capture) at 262K × 4 / chunk 8192, verified in the image first (torch 2.13.0+cu130: the toggle takes effect mid-process, new segments are expandable and coalesce, a graph captured before the toggle still replays).
 - 2026-10-09 (E32, on the 262K × 4 chunk-4096 serve, ~15 min) — **HumanEval pass@1 greedy 161/164 = 0.9817** on the exact-weight hybrid (mlx-stream's lossy 3.0 bpw repack: 158/164 = 0.9634); failed ids 132, 140, 145; decode median 42.2 tok/s, TTFT median 1.05 s over 164 short prompts. `scripts/bench-humaneval.py` (generate + sandboxed score) added; `evidence/e32-humaneval/`.
 - 2026-10-09 (E34d-v (a)/(b), two serves, ~1 h 45 min) — **262K × 4 is a qualified rung at 219 / 165 + chunk 4096** (`CHUNKED_PREFILL_SIZE=4096 ALLOW_UNTESTED_FIT=1`: 4 × 253K stress wall 1,082 s, min free 877 / 738 MiB, needles 6/6 at 222K, pooled ΔNLL −0.0011 ± 0.0010, C1 39.55 wall, prefill 975 tok/s = −48 % vs chunk 8192). At chunk 8192 the same pool OOMs on the *third* chunk of the first request: 320 MiB `mhc_post` with **1.05 GiB reserved-but-unallocated** — fragmentation of freed chunk-8192 blocks, the first concrete trigger for T3.31 idea 8 (`expandable_segments` after capture), which stays a fallback. (c) 212 / 172 not run. T3.35 unblocked. `evidence/e34-indexer-memory/d-v-a/`.

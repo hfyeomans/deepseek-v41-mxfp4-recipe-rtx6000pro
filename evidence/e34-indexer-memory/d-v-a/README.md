@@ -1,4 +1,4 @@
-# E34d-v (a) / (b) — 262K × 4: fails at chunk 8192, qualified at chunk 4096 (2026-10-09)
+# E34d-v (a) / (b) / idea 8 — 262K × 4: fails at chunk 8192, qualified at chunk 4096, then at chunk 8192 with `expandable_segments` after capture (2026-10-09)
 
 Overlay `1eeb48cd` (the 1M × 1 overlay, unchanged), image `dsv41-kt:recipe`, 219 / 165 experts, D=4,
 spec off, `MEM_FRACTION_STATIC=0.96`, `ALLOW_UNTESTED_FIT=1` (the launcher guard refuses more than
@@ -49,6 +49,50 @@ Two extra C1 runs on this serve are the spec-off baselines for the T3.9h n-gram 
 41.70 wall**, TTFT 0.124 s (the TTFT is a radix-cache hit on the warmup run's prefix; the wall figure
 is therefore closer to the summed one than on the other fixtures).
 
+## idea 8 `262k-4slot-idea8/` — chunk 8192 + `expandable_segments` after capture: every gate passed
+
+Overlay `30e8c412` (= `1eeb48cd` + `post_capture_allocator.py`, hook off by default), third serve,
+~45 min. `CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4 ALLOW_UNTESTED_FIT=1
+SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1` — chunk 8192, 219 / 165, nothing else changed from
+(a). The hook runs on both ranks after graph capture, prewarm and the post-capture KV resize:
+`torch.cuda.synchronize()`, `empty_cache()`, then `setAllocatorSettings("expandable_segments:True")`;
+segments created from then on are VMM-backed and coalesce, the graph pools and everything captured
+before stay as they were (the custom all-reduce's CUDA-IPC handles are therefore untouched).
+
+| gate | measured | vs (a) chunk 8192 / (b) chunk 4096 | verdict |
+|---|---|---|---|
+| after capture | **2.92 / 2.86 GB** available (pool 1,064,960); hook log: reserved 93,126 → 93,126 MiB, allocated 92,836 MiB — `empty_cache()` released nothing, so the 1.05 GiB (a) could not hand out was split blocks, not free segments | = (a) | — |
+| (b) stress 4 × ~253K (`--seed 31`) | all four finished, wall **678 s**; TTFT 346 / 506 / 184 / 660 s; peak used 97,334 / 97,335 MiB, min free (1 s samples) 553 / 552 MiB | (a) OOMed on the third chunk; (b) 1,082 s | **pass** |
+| (c) needles (`verify.py --context 262144`) | **6/6 at 221,756 tokens**, TTFT **123 s**; all other checks PASS | (b) 216 s; one slot on 219 / 8192: 133 s | **pass** |
+| (d) NLL corpus vs `../../t328/default-219-8192/corpus` | **0 of 65,653 tokens moved**, max|Δlogp| 0.000 on all 8 texts (same chunk, same experts: the exact gate, not the pooled one) | (b) pooled −0.00114 (shape change) | **pass** |
+| (f) decode C1 / C4 (`--distinct-prompts --seed 4242`) | C1 **41.31 / 39.42 wall**, TTFT 0.616 s; C4 **56.25 / 54.07 wall**, TTFT 1.518 s | (b) 41.44 / 39.55, 56.23 / 54.07 | unchanged: **pass** |
+| (f) prefill 16K / 32K (cold pass, `--seed 777`) | **1,532 / 1,541 tok/s**, TTFT 10.48 / 20.78 s, Engram shards **12 % resident** before the pass | (b) 975 / 975 at 32 % resident; 64K × 4 default 1,887 / 1,901 at 26 %; 1M × 1 1,659 / 1,657 at 20 % | measured, see below |
+| (e) health, EDAC | `health-hits.txt`: only the two benign sealed-buffer lines; EDAC 0/0 | | **pass** |
+
+Two readings the gate table does not show:
+
+- **114 `expandable_segments: memory mapping failed with OOM ... trying to map 20971520 bytes (free:
+  16–20 MiB)` warnings** (`CUDACachingAllocator.cpp:508`), 110 during the stress run (19:23–19:36
+  UTC, both ranks) and 4 during the 221K needle prompt; none during NLL, C1 / C4 or the prefill
+  benches. Each is the allocator's first attempt at growing a segment with the device at ~20 MiB
+  free; PyTorch then releases cached blocks and retries, and every retry succeeded (no request
+  failed, no Traceback). So the real trough during the 4 × 253K stress was ~16–20 MiB, not the
+  553 MiB the 1 s `nvidia-smi` sampler saw, and the rung passes on the allocator's fallback path:
+  the run is qualified, but there is no headroom at 262K × 4 / chunk 8192 for anything else
+  (a fifth slot, spec decode, a bigger chunk).
+- **Prefill 1,532 vs 1,887 on the 64K × 4 default (−19 %) is not attributable to the lever from
+  this serve.** The T3.19d lesson applies: `bench-prefill.py`'s cold pass reads the box's Engram
+  page-cache state, and the four serves of the day line up with residency, not with the lever —
+  12 % → 1,532 (this), 20 % → 1,659 (1M × 1, lever off), 26 % → 1,887 (64K × 4, lever off),
+  7 % → 1,482 (`t319/g1-exit`), 0.01 % → 1,512 (`d-v-i`). The stress run's 1 M tokens of fresh
+  Engram rows had just churned the cache. Whether VMM-backed segments cost anything on the chunk
+  path is the one open question, and it needs the same-box A/B the owner stipulated anyway: a 64K ×
+  4 serve with the lever on, `bench-prefill.py --warm-pass`, against 1,887 / 1,901 (lever off) and
+  the warm 1,820–1,823 from T3.19d.
+
+The `gates-262k4-idea8.sh` script in `.amp/in/` passed `--model` to `nll-score.py`, which rejects
+it; the NLL gate was rerun by hand with the same arguments minus `--model` (`corpus.txt`).
+
 ## What this settles
 
 - **262K × 4 is a qualified rung at 219 / 165 + chunk 4096** (`CHUNKED_PREFILL_SIZE=4096` per serve,
@@ -56,14 +100,24 @@ is therefore closer to the summed one than on the other fixtures).
   unblocked at this shape.
 - The price is prefill: 975 tok/s against 1,887 at chunk 8192, i.e. the chunk-4096 figure E22/E34b
   measured before the chunk flip (≈ 1,040), not a new regression. Decode and NLL do not move.
-- Keeping chunk 8192 at 262K × 4 needs either idea 8 (compaction of the 1.05 GiB the allocator holds
+- ~~Keeping chunk 8192 at 262K × 4 needs either idea 8 (compaction of the 1.05 GiB the allocator holds
   but cannot hand out) or (c) 212 / 172 (≈ 2.3 GB for 7 experts, −2 % decode). Owner decision; the
-  rung as qualified needs neither.
+  rung as qualified needs neither.~~ **Idea 8 did it (third serve, same day): 262K × 4 at 219 / 165
+  + chunk 8192 is qualified with `SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1` — stress 678 s
+  vs 1,082 at chunk 4096, needles TTFT 123 vs 216 s, NLL 0 moved, decode unchanged.** The binder
+  was allocator split-block fragmentation (1.05 GiB reserved, 0 B released by `empty_cache()`),
+  which VMM segments created after capture coalesce away. (c) 212 / 172 stays unneeded. The lever
+  is a per-serve override, not a default: the deployment default remains 64K × 4 with the lever off
+  until the 64K × 4 + lever soak (prefill A/B with `--warm-pass`, stress, NLL, C1 / C4) is in.
 
 ## Files
 
 - `262k-4slot/`: `launch.txt`, `launch-container.txt` (OOM traceback at line ~580), `stress-kv.txt`,
   `vram-after-capture.txt`, `edac.txt`, `health-hits.txt` (empty).
+- `262k-4slot-idea8/`: `manifest.json`, `launch.txt`, `launch-container.txt` (hook log at lines
+  ~472 / 476, the 114 mapping-retry warnings from line ~509), `vram-after-capture.txt`,
+  `stress-kv.{json,txt}`, `verify.{json,txt}`, `corpus/` + `corpus.txt`, `prefill-16k.*`,
+  `prefill-32k.*`, `c1.*`, `c4.*`, `health-hits.txt`, `edac.txt`.
 - `262k-4slot-chunk4096/`: `manifest.json`, `launch.txt`, `launch-container.txt`,
   `vram-after-capture.txt`, `stress-kv.{json,txt}`, `verify.{json,txt}`, `corpus/` + `corpus.txt`,
   `prefill-16k.*`, `prefill-32k.*`, `c1.*`, `c4.*`, `c1-copy-code.*`, `c1-copy-table.*`,
