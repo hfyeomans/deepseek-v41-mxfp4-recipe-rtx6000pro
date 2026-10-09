@@ -38,25 +38,26 @@ Costs accepted on the way (each measured, none hidden): C1 wall 40.2 → 39.4–
 
 ```diagram
 262K × 4 ──▶ E32 ──▶ T3.9h n-gram ──▶ T3.20 Engram ──▶ T3.21 FP8 ──▶ T3.27 autotune ──▶ T3.22 multi- ──▶ T3.23 ──▶ T3.24 ──▶ T3.30
- DONE        DONE    (next serve,      prefetch        prefill GEMM    (bit-exact        rank (Python     native    packaging  demo
- (chunk               copy fixtures)   (+ E36 row      (cuTile bench   launch tables)    prototype)       hot loops            snapshot
+ DONE        DONE    (closed: KV       prefetch        prefill GEMM    (bit-exact        rank (Python     native    packaging  demo
+ (chunk               pool API gap)    (+ E36 row      (cuTile bench   launch tables)    prototype)       hot loops            snapshot
   4096)                                 I/O)            first)                                │
                                                                                               └──▶ T3.36 NUMA · T4.1b third GPU
 ```
 
-T3.35 (code-review exercise) is unblocked by the 262K × 4 rung and runs after the T3.9h serve (low priority). Recipe-strengthening items that ride on any serve and need no sequencing: ~~E32 HumanEval~~ (done), a served soak at the new rungs (262K × 4 is the candidate), T3.35.
+T3.9h n-gram closed 2026-10-09 (verify crash, go bar unreachable by arithmetic; T3.9h-b registered, not scheduled). **Next serve: T3.31 idea 8** — 262K × 4 at chunk 8192 with `expandable_segments` enabled after capture, so the rung keeps the 1,887 tok/s prefill instead of chunk 4096's 975; per-serve override first, 64K × 4 soak before any default change. T3.35 (code-review exercise) is unblocked by the 262K × 4 rung and runs after the idea 8 serve (low priority). Recipe-strengthening items that ride on any serve and need no sequencing: ~~E32 HumanEval~~ (done), a served soak at the new rungs (262K × 4 is the candidate), T3.35.
 
 ### Open items register (the one list — every row is in [TASKS.md](TASKS.md); struck rows stay there)
 
 | Item | What | Waits on | Priority |
 |---|---|---|---|
 | ~~E34 Part d-v (a): 262K × 4~~ | **done 2026-10-09**: (a) chunk 8192 OOMs on the third chunk (320 MiB `mhc_post`, 1.05 GiB reserved-but-unallocated → idea 8's trigger); (b) **chunk 4096 passes every gate** (prefill 975 tok/s); (c) not run | — | done |
-| T3.9h / E23 R6 | n-gram speculation (SGLang `NGRAM`, no draft model): knobs + copy fixtures landed, spec-off baselines taken; overlay overlap-gate one-liner, then one serve ~30 min | — | **next serve** |
+| ~~T3.9h / E23 R6~~ | **closed 2026-10-09**: n-gram verify crashes on the first request (`DeepSeekV4TokenToKVPool` has no `move_kv_cache`); not retried — always-on 5-row verify makes the review-fixture clause unreachable (floor ≈ 12–13 tok/s, copy-span ceiling ≈ 62) | — | done |
+| T3.9h-b | n-gram on DSV4 properly: chain-skip + c128 clear + skip-verify-on-no-match (three overlay changes, ½–2 days) | a copy-heavy product workload, or a CPU-tier change that makes verify rows cheaper | low, not scheduled |
 | T3.20 (+ E36) | Engram fixed-buffer prefetch, graph-compatible staging, ahead-of-use row I/O | — | **next code task** |
 | T3.21 | large-M block-scaled FP8 prefill GEMM (cuTile bench first) | T3.20 | high |
 | T3.27 | bit-exact launch-table autotune (Aevonix `glm_autotune.py` method, T3.32) | T3.21 | high |
 | T3.22 → T3.23 → T3.24 → T3.30 | multi-rank CPU-expert / Engram ownership → native hot loops → packaging → demo snapshot | in sequence | planned |
-| T3.35 | code-review exercise at 262K × 4 (several sessions, one pool, chunk 4096) | ~~a multi-slot rung above 64K~~ unblocked 2026-10-09; after T3.9h | low |
+| T3.35 | code-review exercise at 262K × 4 (several sessions, one pool, chunk 4096) | ~~a multi-slot rung above 64K~~ unblocked 2026-10-09; after ~~T3.9h~~ the idea 8 serve | low |
 | ~~E32~~ | **done 2026-10-09**: 161/164 pass@1 greedy (mlx-stream 3.0 bpw 158/164), decode median 42.2 tok/s | — | done |
 | E31 | CPU-tier route lookahead log (opt-in) | input to T3.20 planning | low |
 | E35-ii | exact bounded replay (tail = late layers' receptive field) | candidate, not scheduled | low |
@@ -66,7 +67,7 @@ T3.35 (code-review exercise) is unblocked by the 262K × 4 rung and runs after t
 | T3.15b | source of the bs=1 greedy drift | a GPU window | low |
 | TK.3b | activation-format error on real expert weights | — | low |
 | K10 | decode-shaped MXFP4 grouped GEMM (M tile 16–32) | parked (E12: served path already at roofline) | parked |
-| T3.31 idea 8 | `expandable_segments` after capture | fallback only (not needed at 1M × 1); first trigger: 262K × 4 at chunk 8192 (1.05 GiB reserved-but-unallocated) — only if chunk 8192 is wanted at that shape | fallback |
+| T3.31 idea 8 | `expandable_segments` after capture — 262K × 4 at chunk 8192 (owner-approved 2026-10-09; toggle verified in the image: new segments expandable and coalescing, pre-toggle graphs replay) | — | **next serve** |
 | T3.16g | external review findings never received | input | blocked |
 | T3.10 / T3.7 / E5 | Engram tiering A/B, llama.cpp `deepseek41`, stock-offload control | upstream / hardware | blocked |
 | P4 / T4.1b / H1 | third or fourth card; CPU with more CCDs | owner purchase | option |
@@ -235,12 +236,13 @@ Ordered by how directly each moves a number in the readout above.
 | PCIe per GPU | **57 GB/s measured (E4)**, additive with CPU reads (E4b) | done |
 | Host reserve | 24 GiB | — (policy) |
 | Engram placement | **file-backed mmap in the checkpoint shards, page cache as the row cache (E18 `file` layout) — decision closed 2026-09-22 (T3.12).** Not tmpfs / mlock / pinned: 188.8 GiB + ≈ 155 GiB CPU experts and processes does not fit 247 GiB. Cold 1.02 ms/token, warm 3 µs/row; 2 graph breaks ≈ 2.4–3 ms/step | warm-cache residency vs NVMe I/O measurement, A-full prefetch, graph-compatible staging (T3.12) |
-| Speculative decoding on the hybrid | **off — measured (E23, closed 2026-09-23)**: K=2 parity at C1, −57 to −63 % at C3/C4; K=5 −16 % at C1, −69 to −77 % at C3/C4; E6-DESIGN §4.6's prior held. Never with `KT_MAX_DEFERRED ≥ 5` | re-open only after a CPU-tier change (T3.6d3 rank-split, third GPU, more cores); the one untested family is n-gram (T3.9h, no draft model, deferred behind T3.22) |
+| Speculative decoding on the hybrid | **off — measured (E23, closed 2026-09-23)**: K=2 parity at C1, −57 to −63 % at C3/C4; K=5 −16 % at C1, −69 to −77 % at C3/C4; E6-DESIGN §4.6's prior held. Never with `KT_MAX_DEFERRED ≥ 5` | re-open only after a CPU-tier change (T3.6d3 rank-split, third GPU, more cores); ~~the one untested family is n-gram (T3.9h, no draft model, deferred behind T3.22)~~ n-gram run 2026-10-09 (E23 R6): verify crashes on DSV4 (no `move_kv_cache`) and the always-on 5-row verify bounds it to −70 % on fresh text / +50 % on a perfect copy span — closed, T3.9h-b low |
 | Streamed prefill threshold | `KT_GPU_PREFILL_MIN_TOKENS=1024` (default) from the E22a break-even (≈ 750 tokens); 3.9× at 4K chunks, 6.5× at 8K; ~~16K chunk blocked by VRAM~~ chunk 8192 is the default since T3.28 (2026-10-08); 16384 measured (E34d-iv) and rejected on C1 cost (−4.4 %) | ~~Revisit if GPU experts move to CPU~~ Revisit 16384 only if Part d-v makes the transient set chunk-independent |
 | CPU expert compute | bf16 GEMV measured at 76 ms/token (7.15 GiB read); **kt-kernel MXFP4 measured (E17): 1.08 ms/layer at T=1 cold = 127 GB/s; ≈ 18 ms/token → 55 tok/s floor**; 21.8 MiB per CPU expert, 136 GiB at 224/160 | E6 s0 + E17 done |
 | CPU DRAM limit is CCD fabric, not DIMMs | **directly measured (E25)**: 62–63 GB/s per CCD in every pattern (read/write/copy/triad), 2 threads saturate one CCD, 4 split threads saturate the socket; DIMMs have ≥ 110 GB/s of headroom the GPUs' DMA can use (235 GB/s combined). Four tiers: 409.6 theoretical / ≥ 235 socket / 125 CPU / 120–127 kt | only FCLK (H3 Tier 3) or more CCDs (H1) can move it; `pcm-memory`-style DIMM counters (root, `perf_event_paranoid=4`) would give the true socket ceiling — **Boot 1 (APBDIS 1, DF C-states off, IO power profile): ceiling still 125–126, per-CCD 63; only latency-bound single-thread reads moved (+38 %)** |
 
 ## Change log
+- 2026-10-09 (E23 R6 / T3.9h, one serve, ~4 min) — **n-gram speculation closed: the first request crashes both TP ranks** (`DeepSeekV4TokenToKVPool` has no `move_kv_cache`; upstream's EAGLE/DSPARK-only guard on DSV4 hides a missing pool API, not a policy). Not retried: the worker always runs a full 5-row verify, so fresh text floors at ≈ 12–13 tok/s and the ≤ 5 % review clause of the go bar is unreachable; a copy-span ceiling of ≈ 62 tok/s would be a per-workload flag at best. Follow-up T3.9h-b (chain-skip + c128 clear + skip-on-no-match) registered, not scheduled. Overlay probe commits (`eeb5320c`) only admit NGRAM through guards; qualified serves stay on `1eeb48cd`. **Next serve: T3.31 idea 8** (`expandable_segments` after capture) at 262K × 4 / chunk 8192, verified in the image first (torch 2.13.0+cu130: the toggle takes effect mid-process, new segments are expandable and coalesce, a graph captured before the toggle still replays).
 - 2026-10-09 (E32, on the 262K × 4 chunk-4096 serve, ~15 min) — **HumanEval pass@1 greedy 161/164 = 0.9817** on the exact-weight hybrid (mlx-stream's lossy 3.0 bpw repack: 158/164 = 0.9634); failed ids 132, 140, 145; decode median 42.2 tok/s, TTFT median 1.05 s over 164 short prompts. `scripts/bench-humaneval.py` (generate + sandboxed score) added; `evidence/e32-humaneval/`.
 - 2026-10-09 (E34d-v (a)/(b), two serves, ~1 h 45 min) — **262K × 4 is a qualified rung at 219 / 165 + chunk 4096** (`CHUNKED_PREFILL_SIZE=4096 ALLOW_UNTESTED_FIT=1`: 4 × 253K stress wall 1,082 s, min free 877 / 738 MiB, needles 6/6 at 222K, pooled ΔNLL −0.0011 ± 0.0010, C1 39.55 wall, prefill 975 tok/s = −48 % vs chunk 8192). At chunk 8192 the same pool OOMs on the *third* chunk of the first request: 320 MiB `mhc_post` with **1.05 GiB reserved-but-unallocated** — fragmentation of freed chunk-8192 blocks, the first concrete trigger for T3.31 idea 8 (`expandable_segments` after capture), which stays a fallback. (c) 212 / 172 not run. T3.35 unblocked. `evidence/e34-indexer-memory/d-v-a/`.
 - 2026-10-09 (planning, owner) — **T3.9h n-gram pulled forward to the next serve** (was behind T3.22); knobs `NGRAM` / `NGRAM_DRAFT_TOKENS` / `NGRAM_BREADTH` in `serve_config.py` + launcher, `bench-decode.py --fixture-set copy` (module edit, table re-emit), spec-off baselines taken on the 262K × 4 serve. Roadmap hygiene: completed E1–E29 readout rows folded into a `<details>` block; E32 / d-v (a) rows closed in the register.

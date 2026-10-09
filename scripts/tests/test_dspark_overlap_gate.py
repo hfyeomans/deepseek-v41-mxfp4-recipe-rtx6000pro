@@ -12,6 +12,9 @@ these are written against:
   - honouring only "unset" and not an explicit `=0` would leave a launch that already
     carries the old workaround without the log line -> test_explicit_false_forced_off.
   - case-sensitive algorithm match ("dspark" from a lower-cased CLI) -> test_case_insensitive.
+  - gating DSpark only: NGRAM verifies through the same captured target forward, so a
+    gate keyed on the drafter name would leave the n-gram serve exposed to Bug A
+    -> test_ngram_forced_off, test_ngram_explicit_true_is_refused (T3.9h).
 """
 from __future__ import annotations
 
@@ -69,6 +72,22 @@ def test_dspark_off_sm120_untouched():
     # Not this overlay's problem on Hopper/Blackwell-datacenter parts; leave upstream behaviour.
     d = decide(speculative_algorithm="DSPARK", is_sm120=False, env_is_set=True, env_value=True)
     assert not d.force_off, d
+
+
+def test_ngram_forced_off():
+    for is_set, val in ((False, True), (True, False)):
+        d = decide(speculative_algorithm="NGRAM", is_sm120=True, env_is_set=is_set, env_value=val)
+        assert d.force_off, (is_set, val, d)
+        assert "NGRAM" in d.reason and "Bug A" in d.reason
+
+
+def test_ngram_explicit_true_is_refused():
+    try:
+        decide(speculative_algorithm="ngram", is_sm120=True, env_is_set=True, env_value=True)
+    except OverlapGateError as e:
+        assert "NGRAM" in str(e)
+    else:
+        raise AssertionError("explicit overlap=1 with NGRAM on SM120 must be refused")
 
 
 def test_eagle_untouched():

@@ -1,0 +1,26 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:63: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+  Example: sglang serve --model-path <model> [options]
+  warnings.warn(
+[2026-10-09 18:07:39] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-09 18:07:39] Hybrid SWA model detected. architectures=['DeepseekV4ForCausalLM']
+[2026-10-09 18:07:39] Breakable CUDA graph is incompatible with DeepSeek-V4 (heavy capture-pool memory pressure); disabling prefill CUDA graph.
+[2026-10-09 18:07:39] Use dsv4 attention backend for DeepseekV4ForCausalLM, setting page_size to 256.
+[2026-10-09 18:07:39] Setting KV cache dtype to fp8_e4m3 for DeepseekV4ForCausalLM.
+[2026-10-09 18:07:39] NGRAM speculation on DeepseekV4ForCausalLM is an overlay probe (recipe T3.9h); upstream admits EAGLE and DSPARK only.
+[2026-10-09 18:07:39] kill_process_tree called: parent_pid=1, include_parent=False, pid=1
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 76, in <module>
+    run_server(server_args)
+  File "/sgl-workspace/sglang/python/sglang/launch_server.py", line 21, in run_server
+    server_args.resolve_once()
+  File "/sgl-workspace/sglang/python/sglang/srt/server_args.py", line 3746, in resolve_once
+    run_resolution_pipeline(self)
+  File "/sgl-workspace/sglang/python/sglang/srt/arg_groups/pipeline.py", line 237, in run_resolution_pipeline
+    handle_model_specific_adjustments(server_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/arg_groups/model_hook.py", line 355, in handle_model_specific_adjustments
+    validate_deepseek_v41_features(server_args)
+  File "/sgl-workspace/sglang/python/sglang/srt/arg_groups/deepseek_v4_hook.py", line 297, in validate_deepseek_v41_features
+    raise ValueError(
+ValueError: DeepSeek-V4.1 does not support speculative decoding other than DSpark yet; disable it to serve this model.
