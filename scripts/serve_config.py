@@ -168,13 +168,14 @@ REGISTRY: tuple[Knob, ...] = (
          sink=GUARD, unsafe=True),
     Knob("KT_ALLOW_UNSAFE_DEFERRAL", "flag", "0", "Bypass the D>=5 refusal (fails the NLL gate, T3.15).", sink=GUARD, unsafe=True),
     Knob("ALLOW_UNKNOWN_KNOBS", "flag", "0", "Accept KT_* / DSPARK* variables this registry does not declare.", sink=GUARD, unsafe=True),
-    # ---- overlay experiment levers (forwarded into the container only when set) ---------
-    Knob("SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE", "flag", "0",
+    # ---- overlay allocator lever (always forwarded; default-on since 2026-10-09) ---------
+    Knob("SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE", "flag", "1",
          "T3.31 idea 8: after CUDA-graph capture, empty the cache and switch the allocator to expandable segments "
          "so chunk-sized prefill temporaries stop fragmenting (262K x 4 at chunk 8192 OOMed on a 320 MiB request "
          "with 1.05 GiB reserved-but-unallocated). Graph pools, weights and the KV pool stay ordinary segments. "
-         "Per-serve lever; never a default without a 64K x 4 soak.",
-         sink=DIAGNOSTIC_ENV, evidence="evidence/e34-indexer-memory/d-v-a/262k-4slot-idea8/"),
+         "Default since 2026-10-09 on the T3.31 64K x 4 soak (NLL 0 moved, C1/C4/prefill within noise, "
+         "+390 MiB min free under stress); set 0 for the pre-flip allocator.",
+         sink=CONTAINER_ENV, evidence="evidence/t331/64k4-lever-soak/, evidence/e34-indexer-memory/d-v-a/262k-4slot-idea8/"),
     # ---- overlay diagnostics (forwarded into the container only when set) ---------------
     Knob("KT_TIMELINE", "flag", "0", "T3.19a per-layer decode timeline recorder (kt_timeline.py).", sink=DIAGNOSTIC_ENV,
          evidence="evidence/t319/a/"),
@@ -218,6 +219,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"KT_GPU_PREFILL_MIN_TOKENS={r['KT_GPU_PREFILL_MIN_TOKENS']}",
         f"KT_GPU_PREFILL_LOG={r['KT_GPU_PREFILL_LOG']}",
         f"KT_NAN_PROBE_MIN_TOKENS={r['KT_NAN_PROBE_MIN_TOKENS']}",
+        f"SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']}",
     ]
 
 
@@ -350,7 +352,8 @@ def resolved_line(r: dict[str, str]) -> str:
             f"max_total_tokens={mtt} capture_bs=[{cap}] dspark={r['DSPARK']} dspark_k={r['DSPARK_K']} "
             f"ngram={r['NGRAM']} ngram_draft={r['NGRAM_DRAFT_TOKENS']} ngram_breadth={r['NGRAM_BREADTH']} "
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
-            f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} image={r['IMAGE']}")
+            f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} "
+            f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} image={r['IMAGE']}")
 
 
 def diagnostic_env(r: dict[str, str], env: dict[str, str]) -> list[str]:
