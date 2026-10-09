@@ -15,6 +15,8 @@ Wrong implementations these are written against:
   - `EVIDENCE_MANIFEST=none` written as if it had a manifest -> test_stamp_none_is_explicit.
   - check_evidence rejecting every pre-cut-over file, or accepting a tampered sibling
     -> test_check_evidence.
+  - a script that benches a served endpoint writing its report without a stamp (verify.py did
+    this until T3.34, so every needles result read as pre-cut-over) -> test_served_scripts_stamp.
 """
 from __future__ import annotations
 
@@ -264,6 +266,30 @@ def test_check_evidence():
         hit = {k for k in ("none/b.json", "orphan/a.json", "tamper/manifest.json", "mismatch/a.json") if any(k in s for s in problems)}
         assert hit == {"none/b.json", "orphan/a.json", "tamper/manifest.json", "mismatch/a.json"}, problems
         assert not any("good" in s or "old" in s for s in problems), problems
+
+
+def test_served_scripts_stamp():
+    """Census: every scripts/*.py that talks to the served endpoint (imports openai_client or posts
+    to /generate) and writes a JSON report must call stamp_or_exit before each write. Exempt:
+    wait-ready.py and test-openai-client.py (no report)."""
+    scripts = HERE.parent
+    served = [p for p in sorted(scripts.glob("*.py"))
+              if ("from openai_client import" in p.read_text() or "/generate\"" in p.read_text())]
+    writers = {}
+    for p in served:
+        lines = p.read_text().splitlines()
+        writes = [i for i, l in enumerate(lines) if "write_text(json.dumps(" in l]
+        if writes:
+            writers[p.name] = (lines, writes)
+    expected = {"bench-decode.py", "bench-prefill.py", "nll-score.py", "stress-kv-full.py",
+                "trace-prefix-memory.py", "verify-batch-consistency.py", "verify.py"}
+    assert expected <= set(writers), sorted(set(writers) ^ expected)
+    for name, (lines, writes) in sorted(writers.items()):
+        src = "\n".join(lines)
+        assert "from evidence_manifest import" in src and "stamp_or_exit" in src, f"{name}: no stamp import"
+        for i in writes:
+            window = "\n".join(lines[max(0, i - 3):i])
+            assert "stamp_or_exit(" in window, f"{name}:{i + 1} writes a report without stamp_or_exit just above it"
 
 
 if __name__ == "__main__":

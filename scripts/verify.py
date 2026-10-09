@@ -21,6 +21,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from evidence_manifest import stamp_or_exit  # noqa: E402
 from openai_client import chat_stream, get_json  # noqa: E402
 
 FILLER_WORDS = ("ledger", "granite", "harbor", "signal", "meadow", "copper", "lantern", "orbit", "timber", "quartz",
@@ -113,6 +114,7 @@ def main() -> int:
     report["pass"] = ok_all
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
+        stamp_or_exit(report, args.output, "verify.py")
         args.output.write_text(json.dumps(report, indent=2) + "\n")
     print("ALL PASS" if ok_all else "FAILURES PRESENT")
     return 0 if ok_all else 1
