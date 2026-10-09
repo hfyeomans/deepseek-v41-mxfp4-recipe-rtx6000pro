@@ -1,0 +1,14 @@
+1M x 1 serve on overlay e5f60f54 (indexer gather fix only), MEM_FRACTION_STATIC=0.962, 2026-10-09 12:23.
+Capture end avail mem 3.25 / 3.18 GB (TP0 / TP1); max_total_num_tokens 1,064,960.
+Crashed at 12:31:06 on the prefill chunk with full token usage 0.28 (~298K prefix, #pending-token 732,531):
+
+  File ".../sglang/srt/models/deepseek_v4.py", line 4304, in forward
+    pre_hc_head.float(), last_pre, self.hc_mult, hidden_states.dtype
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 640.00 MiB. GPU 1 has a total capacity of
+95.06 GiB of which 503.75 MiB is free. ... Of the allocated memory 91.26 GiB is allocated by PyTorch, with
+28.00 MiB allocated in private pools (e.g., CUDA Graphs), and 2.09 GiB is reserved by PyTorch but unallocated.
+
+No OOM in get_index_k_fp4 (the E34d-v (i) site, which failed at ~680K). The 640 MiB request is the fp32
+copy of the [8192, 20480] bf16 hyper-connection stream at the model tail; fixed in overlay f18dc961.
+The container log of this attempt was not saved (container removed before the copy); the lines above are
+transcribed from `docker logs` at the time.

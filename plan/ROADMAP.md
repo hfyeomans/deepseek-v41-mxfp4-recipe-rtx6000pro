@@ -6,7 +6,73 @@ Conventions: one row per experiment; `Result so far` is a measured number with i
 
 Status vocabulary (same as TASKS.md): `done`, `ready`, `quiet-host`, `gpu-window`, `blocked`, `decision`, plus `partial` when a stage has run.
 
-## Where we are (2026-09-23)
+## Where we are (2026-10-09)
+
+```diagram
+P0 research ──▶ P1 host micro ──▶ P2 baseline ──▶ P3 2-GPU hybrid ──▶ P4 3/4-GPU
+   DONE          DONE + E25         DONE           SERVING, qualified   info-only
+                 (125 GB/s =        (E8, E14,      64K × 4 default;     (H1 more CCDs
+                  2-CCD fabric)     E15/16)        ladder top 1M × 1    or a third card;
+                                                   C1 41.6 / 39.7 wall  T4.1b waits
+                                                   C4 56.2 / 54.0 wall  on T3.22)
+                                                   prefill 1.9K tok/s
+```
+
+**Deployment profile** (`bash scripts/serve-hybrid.sh`, overlay `1eeb48cd`, image `dsv41-kt:recipe`): 219 GPU / 165 CPU experts per layer, prefill chunk 8192, D=4, speculation off, 64K context × 4 slots, `MEM_FRACTION_STATIC=0.96`, BIOS slot 3 (FCLK 2100), 300 W (never binds). Measured on this overlay (E34d-v (ii), 2026-10-09, `evidence/e34-indexer-memory/d-v-ii/64k4/`): **C1 41.6 summed / 39.7 wall tok/s (TTFT 0.62 s), C4 56.2 / 54.0 wall, prefill 1,887 / 1,901 tok/s at 16K / 32K (TTFT 8.5 / 16.8 s)**, 4 × 62K stress min free 1,791 / 1,746 MiB, needles 6/6 at 55K, NLL bit-identical to the T3.28 corpus, health 0.
+
+**Qualified ladder** (one serve per rung, E33 gates (a)–(f); rungs are per-serve overrides, not defaults): 64K × 4 (deployment, soaked); 128K / 262K / 512K × 1 (T3.29); **1M × 1** (E34d-v (ii): `CONTEXT_LENGTH=1048576 MAX_RUNNING_REQUESTS=1 MEM_FRACTION_STATIC=0.962`; 1,019K-token prompt TTFT 803 s, needles 6/6 at 887K, min free 547 / 574 MiB). Not qualified: any multi-slot profile above 64K — 262K × 4 (the owner's target shape) OOMed on the first chunk on `2323052b`; the retry on `1eeb48cd` is the next serve.
+
+**Progression (first serve 2026-09-21 → 2026-10-09):**
+
+| | E19 first serve | E20 FP8 tune | E21 D=4 | E28 + slot 3 BIOS | E34b–d (tiling, chunk 8192) | today `1eeb48cd` |
+|---|---|---|---|---|---|---|
+| C1 summed / wall tok/s | 14.0 / — | 31.6 / — | 38.5 / — | 42.0–42.6 / 37.2–40.1 | 41.4 / 39.5 | **41.6 / 39.7** |
+| C4 wall tok/s | (76 — bug C artifact) | — | — | 56–57 | 54.2 | **54.0** |
+| Prefill 16K tok/s | 216 | — | 837 (E22, chunk 4096) | 845 → 1,048 (E34b) | 1,438 → 1,512 | **1,887** |
+| Context × slots qualified | 32K × 4 (pool 15× oversized) | — | — | 32K × 4 (E27 soak) | 64K × 4; 512K × 1 | **64K × 4; 1M × 1** |
+
+Costs accepted on the way (each measured, none hidden): C1 wall 40.2 → 39.4–39.7 for chunk 8192 (45 % more prefill per 1 % of wall, E34d-ii / T3.28); 7 GPU experts returned (226 → 219) to fit that chunk; capture-end free VRAM −0.95 GB on every profile for the resident fused-MoE workspace (E34d-v (i); buys fragmentation-free long prefill). Measured and rejected, do not reopen without new data: B2 PCIe split (E30), DSpark / MTP speculation (E23), D=5 (bug C), placement round 2 (E29), chunk 16384 (E34d-iv), decoder SWA bounded replay (E35, +1.13 nats), 212 / 172 as a default, TensorFold as an engine (T3.32). Every measured fact behind these lives in [LEARNING.md §11](../docs/LEARNING.md#11-what-the-box-has-taught-us-so-far-read-this-before-any-of-the-sections-above).
+
+**Agreed sequence (owner, 2026-10-09):**
+
+```diagram
+262K × 4 retry ──▶ T3.20 Engram ──▶ T3.21 FP8 ──▶ T3.27 autotune ──▶ T3.22 multi- ──▶ T3.23 ──▶ T3.24 ──▶ T3.30
+ on 1eeb48cd        prefetch        prefill GEMM    (bit-exact        rank (Python     native    packaging  demo
+ (d-v (a); (b)      (+ E36 row      (cuTile bench   launch tables)    prototype)       hot loops            snapshot
+  chunk 4096 /       I/O)            first)                                │
+  (c) 212/172                                                              └──▶ T3.9h n-gram · T3.36 NUMA · T4.1b third GPU
+  as fallbacks)
+```
+
+T3.35 (code-review exercise) runs after the first multi-slot rung above 64K passes. Recipe-strengthening items that ride on any serve and need no sequencing: E32 HumanEval (~20 min), a served soak at the new rungs, T3.9h as a 30-min C1 probe (owner call to pull it ahead of T3.22).
+
+### Open items register (the one list — every row is in [TASKS.md](TASKS.md); struck rows stay there)
+
+| Item | What | Waits on | Priority |
+|---|---|---|---|
+| E34 Part d-v (a): 262K × 4 | retry on `1eeb48cd` (≈ 0.87 GiB of the ≈ 3 GB transient set removed; 64K × 4 margin +0.67 GB); on OOM, name the 320 / 400 MiB requests from the timeline (+ `num_alloc_retries`); fallbacks (b) chunk 4096 for the rung, (c) 212 / 172 | — | **next serve** |
+| T3.20 (+ E36) | Engram fixed-buffer prefetch, graph-compatible staging, ahead-of-use row I/O | — | **next code task** |
+| T3.21 | large-M block-scaled FP8 prefill GEMM (cuTile bench first) | T3.20 | high |
+| T3.27 | bit-exact launch-table autotune (Aevonix `glm_autotune.py` method, T3.32) | T3.21 | high |
+| T3.22 → T3.23 → T3.24 → T3.30 | multi-rank CPU-expert / Engram ownership → native hot loops → packaging → demo snapshot | in sequence | planned |
+| T3.35 | code-review exercise at 262K × 4 (several sessions, one pool) | a multi-slot rung above 64K | low |
+| T3.9h / E23 R6 | n-gram speculation (SGLang `NGRAM`, no draft model), one serve ~30 min | deferred behind T3.22 by decision; candidate to pull forward | owner call |
+| E32 | HumanEval pass@1 greedy on the served hybrid (~20 min) | nothing — rides on any serve | owner call |
+| E31 | CPU-tier route lookahead log (opt-in) | input to T3.20 planning | low |
+| E35-ii | exact bounded replay (tail = late layers' receptive field) | candidate, not scheduled | low |
+| T3.8 / E7 | phase-aware per-(layer, expert) routing counts on real traffic → placement (sidecar note) | gpu-window | low |
+| T3.36 | NUMA / THP / thread placement for kt-kernel (sidecar note) | T3.22 | low |
+| T3.13 / E24 rule 4 | fail the request, not the server, on a NaN row | blocks T3.22's C10 | standing |
+| T3.15b | source of the bs=1 greedy drift | a GPU window | low |
+| TK.3b | activation-format error on real expert weights | — | low |
+| K10 | decode-shaped MXFP4 grouped GEMM (M tile 16–32) | parked (E12: served path already at roofline) | parked |
+| T3.31 idea 8 | `expandable_segments` after capture | fallback only (not needed at 1M × 1) | fallback |
+| T3.16g | external review findings never received | input | blocked |
+| T3.10 / T3.7 / E5 | Engram tiering A/B, llama.cpp `deepseek41`, stock-offload control | upstream / hardware | blocked |
+| P4 / T4.1b / H1 | third or fourth card; CPU with more CCDs | owner purchase | option |
+
+
+<details><summary>Previous readout (2026-09-23)</summary>
 
 ```diagram
 P0 research ──▶ P1 host micro ──▶ P2 baseline ──▶ P3 2-GPU hybrid ──▶ P4 3/4-GPU
@@ -21,6 +87,8 @@ P0 research ──▶ P1 host micro ──▶ P2 baseline ──▶ P3 2-GPU hyb
 ```
 
 State of the hybrid (`bash scripts/serve-hybrid.sh`, image `dsv41-kt:recipe` rebuilt 2026-09-23 with the kt bug C patch): **226 GPU / 158 CPU experts per layer (E28, was 208 / 176)**, KV pool capped at 147,456 tokens, D=4 deferral, speculation off, streamed prefill on, capture list bs 1 2 3 4, GPUs at the 300 W default (the cap never binds: peak 183 W), **BIOS slot 3 (FCLK 2100 / VSOC 1.05 / VDDG 950)**. Qualified decode at slot 3 **C1 42.0–42.6 summed / 37.2 wall (E28-fixture; 40.1 on the soak fixture), C2 50–52 / 48–50, C3 55–56 / 54, C4 58–59 / 56–57 tok/s** (pre-FCLK E28 figures: C1 41.2 / 36.1, C3 53.0 / 48.7, C4 56.2 / 51.9); **every C3/C4 figure before E26 (E19–E23 R0) is an artifact** — see BENCHMARKS "Erratum". ~~Provisional until the E24 20K soak runs on the new defaults (capture list + placement).~~ Qualified by the E27 served soak 2026-09-23 (141K tokens, 0 NaN, NLL identical). Open: E24 (NaN root cause; first lead = bug C, T3.15 approval-gated), ~~T3.6g2 (placement round 2, priced in prefill chunk)~~ (E29 2026-09-24: rejected, 226 / 4096 stays; `SGLANG_LOGPROB_CHUNK_SIZE=512` adopted), ~~T3.16a–c~~ T3.16c (a–b done 2026-09-24) (overlay assertions), T3-F1v adoption (Boot 7 FCLK 2100 + VDDG 1050 / VSOC 1.20 passes all gates on boot 1 of 2, C1 37.19 wall; **ADOPTED 2026-09-23 as slot 3 = standing BIOS profile** (FCLK 2100 / VSOC 1.05 / VDDG 950; FCLK 2200 failed at both allowed rungs); soak PASS and `--dram-gbps 131` done 2026-09-23 — E27/T3.17 CLOSED), T3.6d3 rank-split dispatch, kernel track. GLM (`glm53-flash-2x-rtxpro6000`) remains the owner's daily driver; the owner announces GPU windows.
+
+</details>
 
 **Primary metric (owner decision 2026-09-23): C1 wall tok/s and TTFT.** The hybrid is a single-heavy-user machine; C2 is the realistic multi-user point; C3/C4 are cost-model inputs, not headlines. Single-user lever ladder, by expected payoff per unit risk (E26 Part A measures the coefficients):
 
@@ -39,16 +107,16 @@ Realistic ceiling with 176 experts on this CPU: C1 wall in the low-to-mid 40s; 6
 **Three tracks, one order (owner decision 2026-09-24; every row lives in [`TASKS.md`](TASKS.md)):**
 
 ```diagram
-~~T3.18 B2 prototype~~ (done, rejected 2026-09-24) ──▶ ~~T3.16i review pass 1~~ (done 2026-09-24) ──▶ ~~T3.16d boundary asserts~~ (done 2026-09-24) ──▶ T3.19 Stage 1 seams ──▶ T3.20 / T3.21 Stage 2 ──▶ T3.22 Stage 3 multi-rank ──▶ T3.23 Stage 4 native
-  (GPU; go ≥ +10 %)     (refresh hotspots)     (Python refactor,        (Engram prefetch,       (Python prototype,        (only what T3.22
-                                                behaviour-preserving)    FP8 prefill GEMM)       approval-gated)           proves hot)
-                                                                                                     │
-                                                                                                     └──▶ T4.1b third GPU TP2+EP (needs a card + T3.22 seams)
+~~T3.18 B2~~ (rejected) ──▶ ~~T3.16i pass 1~~ ──▶ ~~T3.16d asserts~~ ──▶ ~~T3.19 Stage 1 seams~~ (done 2026-10-08) ──▶ T3.20 / T3.21 Stage 2 ──▶ T3.27 ──▶ T3.22 Stage 3 multi-rank ──▶ T3.23 Stage 4 native ──▶ T3.24 / T3.30
+                                                                                                        (Engram prefetch,       (autotune)  (Python prototype,        (only what T3.22    (packaging,
+                                                                                                         FP8 prefill GEMM)                   approval-gated)           proves hot)         snapshot)
+                                                                                                                                                  │
+                                                                                                                                                  └──▶ T4.1b third GPU TP2+EP (needs a card + T3.22 seams)
 ```
 
 - **Code review** = T3.16 (a–c, f done; d–e open; g blocked; ~~j = B2 retirement, triggered 2026-10-08 by T3.19c~~ j done 2026-10-08, overlay `b6c76738`) + the standing T3.16i pass after each stage (pass 1 recorded 2026-09-24, review §10).
-- **Refactoring** = T3.19 (Python seams, *before* the architecture change — re-sequenced from "deferred by design"; only the native consolidation T3.23 waits, because multi-rank can invalidate native dispatch code). Rule kept: no broad rewrite while a GPU experiment is mid-flight.
-- **Architecture** = T3.18 → T3.20/T3.21 → T3.22 → T3.23 → T4.1b, i.e. migration Stages 2 → 3 → 4 → 5.
+- **Refactoring** = T3.19 — **done 2026-10-08** (Python seams, *before* the architecture change — re-sequenced from "deferred by design"; only the native consolidation T3.23 waits, because multi-rank can invalidate native dispatch code). Rule kept: no broad rewrite while a GPU experiment is mid-flight.
+- **Architecture** = ~~T3.18~~ → T3.20/T3.21 → T3.27 → T3.22 → T3.23 → T3.24 / T3.30 (→ T4.1b only with a third card), i.e. migration Stages 2 → 3 → 4 → 6.
 - **Gates** = the [Gate ledger](../docs/research/MIGRATION-ROADMAP-PYTHON-TO-NATIVE-HYBRID.md#gate-ledger-added-2026-09-24-the-enforced-sequence) (G0..G6; added 2026-09-24): each arrow above is an entry/exit checklist with owner and status; T3.24 packaging and the completion definition close the chain.
 
 <details><summary>Previous readout (2026-09-21)</summary>
@@ -102,6 +170,12 @@ Blocking condition for everything below marked `quiet-host` or `gpu-window`: the
 | E26 | **Single-user first** (Part A: `KT_CPUINFER`, D 0/4/(5 via T3.15), Engram break time, VRAM census for expert placement; target C1 wall ≥ 37), then concurrency requalification after bug C (Part B: capture bs=3, `KT_CPUINFER` vs rows, D=0 vs D=4 at C4, CPU-s/step vs rows, kt C++ M > 1 loop structure → per-row cost model | GPU + kt code reading | **ready** 2026-09-23 (T3.14) | Qualified spec-off (patched image, D=4, 256 tok, distinct): **C1 39.2 / C2 44.9 / C3 38.3 / C4 50.8 summed** (34.0 / 40.6 / 35.8 / 47.0 wall; 12.7 per stream at C4); same-prompt C4 56.2 (+11 % for full expert reuse); step ≈ 8 + 17.7 × rows ms | Replaces "near-linear batching" everywhere (FEASIBILITY, HETEROGENEOUS-ROUTING four-agent / third-GPU projections, MIGRATION-ROADMAP gates); `verify-batch-consistency.py` in the release gate; whether cores are a concurrency lever |
 | E28 | **Expert placement:** cap the 15×-oversized KV pool (`--max-total-tokens`), raise the static fraction, step `KT_NUM_GPU_EXPERTS` 208 → 222 → 226 with gate / C1 / C3 / C4 / NLL / 32K / 4 × 30K worst case at each step | GPU window, relaunches | **done** 2026-09-23 (T3.6g) | **226 / 158 default: C1 41.23 summed / 36.08 wall (+6.3 %), C3 53.04 / 48.72, C4 56.18 / 51.91 (+9.2 %); NLL +0.0018 (z −0.48); worst case 779 MiB free on GPU0; 228 projected not to fit** | Launcher defaults (`KT_NUM_GPU_EXPERTS`, `MEM_FRACTION_STATIC`, `MAX_TOTAL_TOKENS`); confirms the E26 byte model (C4 gain = byte reduction); T3.6g2 priced in prefill chunk size; third-GPU projections in HETEROGENEOUS-ROUTING start from 226 |
 | E29 | **Placement round 2:** `CHUNKED_PREFILL_SIZE=2048` to free worst-case VRAM, then `KT_NUM_GPU_EXPERTS=230` (`MEM_FRACTION_STATIC=0.975`); fit gate = 4 × 30K stress **then** NLL on the same server; chunk-only, tier-only and logprob-chunk-only controls | GPU window, 8 launches | **done** 2026-09-24 (T3.6g2) — **rejected** | **230 / 2048: C1 42.84 / 40.81 wall (+2.5 % vs default, +1.6 % vs same-chunk 226), C3 +2.9 %, C4 +3.3 %; 16K prefill 860 → 514 tok/s (−40 %); NLL +0.0088 (z −2.23) fails the gate; logprob request OOM-kills the server unless `SGLANG_LOGPROB_CHUNK_SIZE=512`; break-even ≈ 31K output tokens on a 16K prompt** | Defaults unchanged (226 / 4096 / 0.96); launcher default `SGLANG_LOGPROB_CHUNK_SIZE=512` (bit-identical, +≈ 0.8 GB worst-case margin); NLL shown bit-deterministic per config → T3.6g3 gate calibration; fit-gate protocol amended (stress then NLL) |
+| E36 | Engram row I/O ahead of use (early-issued deduplicated prefetch vs lookup-time `MADV_WILLNEED`) | GPU, T3.20 part b | registered 2026-10-08 | — | T3.20 design |
+| E35 | DSV4.1 decoder SWA bounded replay (dormant overlay path) | GPU, four serves | **done 2026-10-09 — rejected** | +39 % 16K prefill, decode / needles / stress unchanged, **+1.13 nats/token on fresh prompts** | stays off; E35-ii (exact tail) is a candidate, not scheduled |
+| E34 | Indexer / prefill memory: make the sparse-attention and MoE prefill transients independent of prefix and chunk (Parts a, b, b-ii, d, d-ii–iv, e-i/ii, d-v (i)/(ii)) | GPU, ~20 serves | **Parts done 2026-10-07 → 10-09; d-v (a) open** | 64K × 4 default (E34a), 128K → 1M × 1 rungs, chunk 8192 default (T3.28), prefill 845 → 1,887 tok/s at 16K; 262K × 4 still OOMs on the first chunk | ladder, default, Part d-v (a) next |
+| E33 | Context ladder 32K → 1M, stop at the first failure | GPU, one serve per rung | **done** (re-qualified by T3.29, extended by E34) | 64K × 4 (deployment); 128K / 262K / 512K / 1M × 1 | T3.29 |
+| E32 | HumanEval pass@1 greedy on the served hybrid | GPU, ~20 min on any serve | registered 2026-10-07, not run | — | public quality number beside the NLL gate |
+| E31 | CPU-tier route lookahead: predictability of layer L+1's CPU experts from layer L; CPU-pool idle | GPU, opt-in log | registered 2026-10-07, not run | — | T3.20 planning input |
 | E30 | **B2 in a real forward (T3.18):** pinned-host copy of the last |S| CPU experts computed by the SM120 grouped GEMM over UVA on a side stream beside kt-kernel; microbench (raw PCIe, UVA GEMM, graph replay, host-DRAM hog, overlap), then served |S| = 40 main-stream, 40 forked + bs≤1 gate, 60 forked | GPU window, 3 launches | **done** 2026-09-24 — **rejected: +2 % C1 at 40, −3 % at 60; 0.21 ms per expert hit vs kt's 0.146; C4/TTFT unchanged once gated.** Kept off by default; fork/join pattern reusable for Engram staging (T3.20) | `evidence/t318-b2-prototype/`, EXPERIMENTS E30 |
 
 ## Kernel experiment menu (E13 sub-items and successors; pick by measured need)
@@ -154,12 +228,13 @@ Ordered by how directly each moves a number in the readout above.
 | PCIe per GPU | **57 GB/s measured (E4)**, additive with CPU reads (E4b) | done |
 | Host reserve | 24 GiB | — (policy) |
 | Engram placement | **file-backed mmap in the checkpoint shards, page cache as the row cache (E18 `file` layout) — decision closed 2026-09-22 (T3.12).** Not tmpfs / mlock / pinned: 188.8 GiB + ≈ 155 GiB CPU experts and processes does not fit 247 GiB. Cold 1.02 ms/token, warm 3 µs/row; 2 graph breaks ≈ 2.4–3 ms/step | warm-cache residency vs NVMe I/O measurement, A-full prefetch, graph-compatible staging (T3.12) |
-| Speculative decoding on the hybrid | **off — measured (E23, closed 2026-09-23)**: K=2 parity at C1, −57 to −63 % at C3/C4; K=5 −16 % at C1, −69 to −77 % at C3/C4; E6-DESIGN §4.6's prior held. Never with `KT_MAX_DEFERRED ≥ 5` | re-open only after a CPU-tier change (T3.6d3 rank-split, third GPU, more cores) |
-| Streamed prefill threshold | `KT_GPU_PREFILL_MIN_TOKENS=1024` (default) from the E22a break-even (≈ 750 tokens); 3.9× at 4K chunks, 6.5× at 8K; 16K chunk blocked by VRAM | Revisit if GPU experts move to CPU (frees VRAM for a 16K chunk) |
+| Speculative decoding on the hybrid | **off — measured (E23, closed 2026-09-23)**: K=2 parity at C1, −57 to −63 % at C3/C4; K=5 −16 % at C1, −69 to −77 % at C3/C4; E6-DESIGN §4.6's prior held. Never with `KT_MAX_DEFERRED ≥ 5` | re-open only after a CPU-tier change (T3.6d3 rank-split, third GPU, more cores); the one untested family is n-gram (T3.9h, no draft model, deferred behind T3.22) |
+| Streamed prefill threshold | `KT_GPU_PREFILL_MIN_TOKENS=1024` (default) from the E22a break-even (≈ 750 tokens); 3.9× at 4K chunks, 6.5× at 8K; ~~16K chunk blocked by VRAM~~ chunk 8192 is the default since T3.28 (2026-10-08); 16384 measured (E34d-iv) and rejected on C1 cost (−4.4 %) | ~~Revisit if GPU experts move to CPU~~ Revisit 16384 only if Part d-v makes the transient set chunk-independent |
 | CPU expert compute | bf16 GEMV measured at 76 ms/token (7.15 GiB read); **kt-kernel MXFP4 measured (E17): 1.08 ms/layer at T=1 cold = 127 GB/s; ≈ 18 ms/token → 55 tok/s floor**; 21.8 MiB per CPU expert, 136 GiB at 224/160 | E6 s0 + E17 done |
 | CPU DRAM limit is CCD fabric, not DIMMs | **directly measured (E25)**: 62–63 GB/s per CCD in every pattern (read/write/copy/triad), 2 threads saturate one CCD, 4 split threads saturate the socket; DIMMs have ≥ 110 GB/s of headroom the GPUs' DMA can use (235 GB/s combined). Four tiers: 409.6 theoretical / ≥ 235 socket / 125 CPU / 120–127 kt | only FCLK (H3 Tier 3) or more CCDs (H1) can move it; `pcm-memory`-style DIMM counters (root, `perf_event_paranoid=4`) would give the true socket ceiling — **Boot 1 (APBDIS 1, DF C-states off, IO power profile): ceiling still 125–126, per-CCD 63; only latency-bound single-thread reads moved (+38 %)** |
 
 ## Change log
+- 2026-10-09 (E34d-v (ii), four serves, ~2 h) — **1M × 1 is qualified** (overlay `1eeb48cd`; `MEM_FRACTION_STATIC=0.962`, one slot: 1,019K-token prompt TTFT 803 s, needles 6/6 at 887K, NLL 0 moved, min free 547 / 574 MiB; `evidence/e34-indexer-memory/d-v-ii/`). Three chunk-proportional prefill transients were named by successive 1M OOMs and removed bit-exactly (indexer gather index 332 MiB → ≈ 10 MiB; a 640 MiB fp32 `pre_hc_head` copy per chunk; 2 × 234 MiB int32 per streamed layer in the kt scale conversion). **On the 64K × 4 default the same overlay reads prefill 1,887 / 1,901 tok/s at 16K / 32K (+25 / +20 %, unpredicted; allocator-relief hypothesis) and 4 × 62K stress min free 1,791 / 1,746 MiB (+0.67 GB), C1 / C4 wall unchanged.** Idea 8 not needed. Roadmap readout rewritten (this section, open-items register, E31–E36 rows, stale TASKS rows annotated); owner approved the sidecar-assessment notes (compact CPU staging under Part d-v (a), phase-aware routing counts on T3.8, T3.36 NUMA/THP). Next: 262K × 4 retry on `1eeb48cd`, then T3.20.
 - 2026-10-09 (E34d-v (i), three serves, ~45 min) — **The fused-MoE workspace is now one persistent 979.6 MiB buffer per rank, allocated before capture (overlay `2323052b`; no row tiling needed — FlashInfer 0.6.18 sizes it monotonically in rows). 64K × 4 passes every gate bit-identically (NLL 0 moved, prefill 1,512 / 1,580, C1 41.50 / 39.59). The 1M × 1 fragmentation binder is gone: prefill reached ≈ 680K (was ~306K) before OOMing on the next one — a 332 MiB int64 index tensor the indexer's key gather builds (`get_index_k_fp4`, 512 B per prefix token; T3.31 idea 9's workspace) → E34d-v (ii) registered, one function, bit-exact. 262K × 4 now fails on the first chunk** (2.92 GB after bs-4 capture vs ≈ 3 GB of remaining chunk-8192 transients): the owner's target shape needs Part d-v's transient timeline, chunk 4096 for the rung, or 212 / 172 — owner decision. Cost of (i): capture-end avail reads 0.95 GB lower everywhere (resident instead of cached; same bytes). Idea 8 (`expandable_segments` after capture) registered as (ii)'s fallback. The 512K × 1 rung has not been re-run on `2323052b`. `evidence/e34-indexer-memory/d-v-i/`.
 - 2026-10-09 (1M × 1 rung, one serve, ~10 min) — **1M × 1 on the 219 / 165 + chunk 8192 default fails: CUDA OOM at ~306K prefix on the 980 MiB `cutlass_fused_moe` per-chunk workspace, with 499 MiB free and 1.87 GiB reserved-but-unallocated** (`evidence/t329/1m-1slot/`; pool 1,064,960 tokens, 4.19 / 4.11 GB after capture, prefill 1,600–1,694 tok/s per chunk until then, EDAC 0/0). e-i's coin flip lost on allocator fragmentation, not on total bytes; same binder as T3.29's 262K × 4. Ladder stays closed at 512K × 1 / 64K × 4. Recommendation: pull **E34d-v (i)** (caller-owned fused-MoE workspace allocated before capture, one call-site change + tile loop) ahead of T3.20 — it is the binder for both the 1M × 1 rung and the owner's 262K × 4 target shape; T3.31 idea 8 (`expandable_segments` after capture) is now admissible as its fallback; 212 / 172 + `ALLOW_UNTESTED_FIT=1` stays the placement fallback for the rung alone. Owner decision pending.
 - 2026-10-09 (E34e e-i, one 512K × 1 serve, ~75 min) — **The prefix-scaling candidate publish is gone: prefill now publishes block-ID lists (`[rows, min(2048, blocks)]` int32, 8 KiB per row whatever the prefix; overlay `b6dc5173`, bit-exact, test 7/7 incl. the clamp-race mutant) — 52 → 24 MiB at 384K → 508K where e-ii measured 275 → 200, allocated −205 / −166 MiB, NLL 0 of 65,653 moved, prefill 1,627 / 1,660 tok/s, C1 41.48 / 39.57 wall, needles 6/6, 508K TTFT 369 → 333 s, health 0, EDAC 0/0. But min free VRAM at 508K did not move (1,091 / 1,018 MiB; Go gate not met):** the mask always fit inside the first prefill's cached inactive blocks, so the 512K peak is the chunk-proportional transient set (E34d-v (i)), not the mask. e-i's value is at 1M, where up to 2 GiB of mask + `torch.cat` transient would have been added on top: the 1M × 1 rung is now a ~0.1 GB coin flip instead of 0.5–1.0 GB short. Next: the 1M × 1 rung (`CONTEXT_LENGTH=1048576`, 0.962, T3.29 gates; 212 / 172 + `ALLOW_UNTESTED_FIT=1` as the fallback by owner decision), then T3.20.

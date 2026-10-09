@@ -23,6 +23,11 @@ What a wrong implementation would get wrong, and which test catches it:
   - a single-layer streaming set, and an odd layer count (buffer 0 reused across
     the forward boundary with a DMA wait)                       -> test_single_layer_and_odd_count
   - malformed construction accepted                            -> test_construction
+  - (E34d-v (ii)) the in-place bf16-bits -> E8M0 scale conversion `e8m0_from_bf16_bits_`
+    not matching the old `(int16 -> int32 >> 7) -> uint8` expression on some bit
+    pattern (a logical shift, a shift of the wrong width, or a narrowing cast that
+    saturates instead of wrapping would all fail on exponents >= 128)
+                                                                -> test_e8m0_from_bf16_bits
 """
 from __future__ import annotations
 
@@ -30,7 +35,13 @@ import random
 import sys
 
 from sglang.srt.layers.moe.kt_contract import KTContractError
-from sglang.srt.layers.moe.kt_prefill import BufferState, PrefillPipeline
+import torch
+
+from sglang.srt.layers.moe.kt_prefill import (
+    BufferState,
+    PrefillPipeline,
+    e8m0_from_bf16_bits_,
+)
 
 LAYERS = (1, 2, 3, 4)  # layer 0 dense, like DeepSeek-V4.1-Flash's first layer
 
@@ -249,6 +260,24 @@ def test_construction():
     p = PrefillPipeline([1, 4, 9])  # list input is fine when ascending
     assert p.layers == (1, 4, 9) and p.first_layer == 1 and p.last_layer == 9
     assert len(p.buffers) == 2 and all(b.state is BufferState.FREE for b in p.buffers)
+
+
+def test_e8m0_from_bf16_bits():
+    # every 16-bit pattern once, in a [E, N, K/32]-shaped landing zone like the
+    # streamed slots use (not only the e8m0 << 7 ones kt-kernel writes)
+    bits = torch.arange(-32768, 32768, dtype=torch.int32).to(torch.int16)
+    raw = bits.view(torch.bfloat16).reshape(4, 128, 128).clone()
+    want = (raw.view(torch.int16).to(torch.int32) >> 7).to(torch.uint8)
+    dst = torch.empty(raw.shape, dtype=torch.uint8)
+    e8m0_from_bf16_bits_(raw, dst)
+    assert dst.dtype == torch.uint8 and dst.shape == raw.shape
+    assert torch.equal(dst, want), "e8m0 conversion differs from the int32 expression"
+    # the e8m0 << 7 patterns in particular decode to the exponent itself
+    exps = torch.arange(256, dtype=torch.int32)
+    raw = (exps << 7).to(torch.int16).view(torch.bfloat16).reshape(1, 16, 16).clone()
+    dst = torch.empty(raw.shape, dtype=torch.uint8)
+    e8m0_from_bf16_bits_(raw, dst)
+    assert torch.equal(dst.flatten().to(torch.int32), exps), "e8m0 << 7 does not round-trip"
 
 
 def main() -> int:
