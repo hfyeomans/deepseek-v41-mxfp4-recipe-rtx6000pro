@@ -13,7 +13,7 @@ plus `scripts/tests/test_serve_config.py` pin their messages and the `resolved:`
     python3 scripts/serve_config.py markdown       # knob table for the docs
     python3 scripts/serve_config.py check-overlay DIR   # every env the overlay reads is declared
 
-Rules: an unknown `KT_*` / `DSPARK*` variable in the environment is refused (rc 2) unless
+Rules: an unknown `KT_*` / `DSPARK*` / `NGRAM*` variable in the environment is refused (rc 2) unless
 `ALLOW_UNKNOWN_KNOBS=1`; a removed knob is refused with the experiment that removed it;
 a value that does not parse as its type is refused. No docker, no GPU, no side effects.
 """
@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 EXPERTS_PER_LAYER = 384
-OWNED_PREFIXES = ("KT_", "DSPARK")
+OWNED_PREFIXES = ("KT_", "DSPARK", "NGRAM")
 
 # sinks: where the resolved value is consumed
 SERVER_ARG = "server-arg"      # becomes an sglang.launch_server flag
@@ -112,6 +112,18 @@ REGISTRY: tuple[Knob, ...] = (
          evidence="evidence/e23-spec-decode/"),
     Knob("DSPARK_K", "int", "5", "DSPARK block size; tested 1..5 (E23 R0-R3).", sink=SERVER_ARG,
          evidence="evidence/e23-spec-decode/"),
+    Knob("NGRAM", "flag", "0",
+         "NGRAM=1 turns on SGLang n-gram speculation (--speculative-algorithm NGRAM: drafts come from a suffix "
+         "cache of the request's own tokens, no draft model, no extra weights). E23 R6: pays only where the "
+         "output copies spans of the prompt; a verify of N rows routes N rows' worth of CPU experts. Exclusive "
+         "with DSPARK.", sink=SERVER_ARG, evidence="evidence/e23-spec-decode/r6-ngram/"),
+    Knob("NGRAM_DRAFT_TOKENS", "int", "5",
+         "--speculative-num-draft-tokens for NGRAM (verify window incl. the root; SGLang's default is 12, which "
+         "would route 12 rows of CPU experts per step; 5 matches DSpark's K=4 window).", sink=SERVER_ARG,
+         evidence="evidence/e23-spec-decode/r6-ngram/"),
+    Knob("NGRAM_BREADTH", "int", "1",
+         "--speculative-ngram-max-bfs-breadth for NGRAM (1 = one chain per step; SGLang's default 10 builds a "
+         "tree, more verify rows).", sink=SERVER_ARG, evidence="evidence/e23-spec-decode/r6-ngram/"),
     # ---- memory, context, prefill -------------------------------------------------------
     Knob("MEM_FRACTION_STATIC", "float", "0.96",
          "SGLang static fraction. 0.92 -> 0.96 at T3.6g (the pool is capped by MAX_TOTAL_TOKENS, so the fraction "
@@ -312,6 +324,13 @@ def guards(r: dict[str, str]) -> None:
                 "with MEM_FRACTION_STATIC=0.935 (E23). Set KT_NUM_GPU_EXPERTS=208 or ALLOW_UNTESTED_FIT=1.")
     if r["DSPARK"] == "1" and not 1 <= int(r["DSPARK_K"]) <= 5:
         raise ConfigError(f"DSPARK_K={r['DSPARK_K']} outside the tested 1..5 (E23 R0-R3).")
+    if r["NGRAM"] == "1" and r["DSPARK"] == "1":
+        raise ConfigError("NGRAM=1 and DSPARK=1 are two speculative algorithms; SGLang runs one. Pick one.")
+    if r["NGRAM"] == "1" and not 2 <= int(r["NGRAM_DRAFT_TOKENS"]) <= 12:
+        raise ConfigError(f"NGRAM_DRAFT_TOKENS={r['NGRAM_DRAFT_TOKENS']} outside 2..12 (SGLang's default is 12; "
+                          "every row above 1 is CPU-expert bytes per step).")
+    if r["NGRAM"] == "1" and not 1 <= int(r["NGRAM_BREADTH"]) <= 10:
+        raise ConfigError(f"NGRAM_BREADTH={r['NGRAM_BREADTH']} outside 1..10 (SGLang's default is 10).")
 
 
 def resolved_line(r: dict[str, str]) -> str:
@@ -322,6 +341,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"deferral D={r['KT_MAX_DEFERRED']} cpuinfer={r['KT_CPUINFER']} chunk={r['CHUNKED_PREFILL_SIZE']} "
             f"mem_fraction={r['MEM_FRACTION_STATIC']} context={r['CONTEXT_LENGTH']} slots={r['MAX_RUNNING_REQUESTS']} "
             f"max_total_tokens={mtt} capture_bs=[{cap}] dspark={r['DSPARK']} dspark_k={r['DSPARK_K']} "
+            f"ngram={r['NGRAM']} ngram_draft={r['NGRAM_DRAFT_TOKENS']} ngram_breadth={r['NGRAM_BREADTH']} "
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
             f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} image={r['IMAGE']}")
 
@@ -356,7 +376,7 @@ def markdown_table() -> str:
     return "\n".join(rows) + "\n"
 
 
-_ENV_READ = re.compile(r'(?:environ(?:\.get)?\(?\[?|get_bool_env_var\(|get_int_env_var\()\s*"((?:KT_|DSPARK|SGLANG_DSV41|SGLANG_BCG|SGLANG_LOGPROB)[A-Z_0-9]*)"')
+_ENV_READ = re.compile(r'(?:environ(?:\.get)?\(?\[?|get_bool_env_var\(|get_int_env_var\()\s*"((?:KT_|DSPARK|NGRAM|SGLANG_DSV41|SGLANG_BCG|SGLANG_LOGPROB)[A-Z_0-9]*)"')
 
 
 def overlay_env_reads(overlay_dir: Path) -> set[str]:

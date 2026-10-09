@@ -24,13 +24,13 @@ done
 # Every knob (type, default, evidence, where it goes) is declared once in
 # scripts/serve_config.py (T3.19e). It validates the environment, refuses the
 # combinations the evidence condemned (T3.16b / E34d / T3.29; each refusal names its
-# override), rejects unknown KT_* / DSPARK* variables and removed knobs, and emits the
+# override), rejects unknown KT_* / DSPARK* / NGRAM* variables and removed knobs, and emits the
 # resolved values this script evals. `python3 scripts/serve_config.py markdown` prints
 # the knob table (docs/CONFIG.md).
 cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || exit $?
 # Assigned by the eval (listed for shellcheck): the knobs this script reads directly plus
 # RESOLVED_LINE, CONTAINER_ENV (fixed + forwarded -e pairs) and DIAG_ENV (set-only diagnostics).
-declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K \
+declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K NGRAM NGRAM_DRAFT_TOKENS NGRAM_BREADTH \
   MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS \
   CUDA_GRAPH_BS MAX_TOTAL_TOKENS EXTRA_SERVER_ARGS EXTRA_DOCKER_ENV EXTRA_DOCKER_ARGS DRY_RUN \
   CONTAINER_NAME BIND_ADDRESS PORT HF_MODEL_DIR OVERLAY_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
@@ -65,6 +65,10 @@ server_args=(
 )
 if [[ "$DSPARK" == "1" ]]; then
   server_args+=(--speculative-algorithm DSPARK --speculative-dspark-block-size "$DSPARK_K")
+fi
+if [[ "$NGRAM" == "1" ]]; then
+  server_args+=(--speculative-algorithm NGRAM --speculative-num-draft-tokens "$NGRAM_DRAFT_TOKENS"
+                --speculative-ngram-max-bfs-breadth "$NGRAM_BREADTH")
 fi
 if [[ -n "$CUDA_GRAPH_BS" ]]; then
   # shellcheck disable=SC2206  # intentional word splitting of the batch-size list

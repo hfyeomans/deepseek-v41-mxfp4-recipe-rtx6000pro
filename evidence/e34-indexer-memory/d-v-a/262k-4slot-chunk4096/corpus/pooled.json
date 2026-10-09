@@ -1,0 +1,192 @@
+{
+ "label": "",
+ "corpus": "scripts/fixtures/nll-corpus",
+ "texts": [
+  {
+   "text": "01-readme-early.txt",
+   "tokens_scored": 4795,
+   "mean_nll": 1.4892892346846531,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/01-readme-early.json",
+    "baseline_mean_nll": 1.4946902664415658,
+    "delta_full_text_nll": -0.005401031756912644,
+    "n": 4795,
+    "delta_mean_nll": -0.005401031756912637,
+    "se": 0.0033570767329872703,
+    "z_paired": 1.6088496589431749,
+    "max_abs_delta_logp": 2.5172009468078613,
+    "mean_abs_delta_logp": 0.11516533025403705,
+    "sd_delta_logp": 0.23246392902262,
+    "tokens_changed": 4775,
+    "tokens_worse_gt_0p5": 113,
+    "tokens_better_gt_0p5": 115
+   }
+  },
+  {
+   "text": "02-learning.txt",
+   "tokens_scored": 10004,
+   "mean_nll": 1.4075786299069588,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/02-learning.json",
+    "baseline_mean_nll": 1.4064309512318651,
+    "delta_full_text_nll": 0.0011476786750936885,
+    "n": 10004,
+    "delta_mean_nll": 0.001147678675093706,
+    "se": 0.0023831706383787565,
+    "z_paired": -0.4815763741846277,
+    "max_abs_delta_logp": 7.44163703918457,
+    "mean_abs_delta_logp": 0.11466565322147508,
+    "sd_delta_logp": 0.23836472248525498,
+    "tokens_changed": 9934,
+    "tokens_worse_gt_0p5": 228,
+    "tokens_better_gt_0p5": 241
+   }
+  },
+  {
+   "text": "03-experiments.txt",
+   "tokens_scored": 11053,
+   "mean_nll": 1.8514754340915218,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/03-experiments.json",
+    "baseline_mean_nll": 1.8474283338707538,
+    "delta_full_text_nll": 0.004047100220768041,
+    "n": 11053,
+    "delta_mean_nll": 0.004047100220767943,
+    "se": 0.002557240202330971,
+    "z_paired": -1.5826046442875945,
+    "max_abs_delta_logp": 2.727532386779785,
+    "mean_abs_delta_logp": 0.14568312521363716,
+    "sd_delta_logp": 0.2688509703935869,
+    "tokens_changed": 11036,
+    "tokens_worse_gt_0p5": 401,
+    "tokens_better_gt_0p5": 377
+   }
+  },
+  {
+   "text": "04-benchmarks.txt",
+   "tokens_scored": 12028,
+   "mean_nll": 1.5784859502092476,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/04-benchmarks.json",
+    "baseline_mean_nll": 1.579102067261238,
+    "delta_full_text_nll": -0.0006161170519902726,
+    "n": 12028,
+    "delta_mean_nll": -0.0006161170519901987,
+    "se": 0.0024312072109817246,
+    "z_paired": 0.25342021412539734,
+    "max_abs_delta_logp": 6.190988063812256,
+    "mean_abs_delta_logp": 0.13085598468391113,
+    "sd_delta_logp": 0.2666359382206961,
+    "tokens_changed": 12007,
+    "tokens_worse_gt_0p5": 393,
+    "tokens_better_gt_0p5": 383
+   }
+  },
+  {
+   "text": "05-troubleshooting.txt",
+   "tokens_scored": 9668,
+   "mean_nll": 1.9201324314681842,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/05-troubleshooting.json",
+    "baseline_mean_nll": 1.9261407976056193,
+    "delta_full_text_nll": -0.0060083661374350505,
+    "n": 9668,
+    "delta_mean_nll": -0.006008366137434951,
+    "se": 0.0025190137699276968,
+    "z_paired": 2.3852057536022953,
+    "max_abs_delta_logp": 3.1367743015289307,
+    "mean_abs_delta_logp": 0.13888166897863907,
+    "sd_delta_logp": 0.2476845187874873,
+    "tokens_changed": 9630,
+    "tokens_worse_gt_0p5": 279,
+    "tokens_better_gt_0p5": 291
+   }
+  },
+  {
+   "text": "06-bios-guide.txt",
+   "tokens_scored": 9546,
+   "mean_nll": 1.5808593510575728,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/06-bios-guide.json",
+    "baseline_mean_nll": 1.5813640416004493,
+    "delta_full_text_nll": -0.0005046905428764958,
+    "n": 9546,
+    "delta_mean_nll": -0.0005046905428763066,
+    "se": 0.0026855682956563485,
+    "z_paired": 0.18792690682735405,
+    "max_abs_delta_logp": 3.7832980155944824,
+    "mean_abs_delta_logp": 0.13514737062858653,
+    "sd_delta_logp": 0.2623897805103647,
+    "tokens_changed": 9530,
+    "tokens_worse_gt_0p5": 291,
+    "tokens_better_gt_0p5": 295
+   }
+  },
+  {
+   "text": "07-serve-hybrid-sh.txt",
+   "tokens_scored": 5938,
+   "mean_nll": 1.2455470429890867,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/07-serve-hybrid-sh.json",
+    "baseline_mean_nll": 1.2513976091152033,
+    "delta_full_text_nll": -0.005850566126116563,
+    "n": 5938,
+    "delta_mean_nll": -0.0058505661261163975,
+    "se": 0.0028876180267921048,
+    "z_paired": 2.0260872704884285,
+    "max_abs_delta_logp": 3.685636520385742,
+    "mean_abs_delta_logp": 0.09707481018921754,
+    "sd_delta_logp": 0.2225152809675591,
+    "tokens_changed": 5756,
+    "tokens_worse_gt_0p5": 121,
+    "tokens_better_gt_0p5": 150
+   }
+  },
+  {
+   "text": "08-bench-decode-py.txt",
+   "tokens_scored": 2621,
+   "mean_nll": 0.6602273670085815,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/08-bench-decode-py.json",
+    "baseline_mean_nll": 0.6602273670085815,
+    "delta_full_text_nll": 0.0,
+    "n": 2621,
+    "delta_mean_nll": -0.0,
+    "se": 0.0,
+    "z_paired": 0.0,
+    "max_abs_delta_logp": 0.0,
+    "mean_abs_delta_logp": 0.0,
+    "sd_delta_logp": 0.0,
+    "tokens_changed": 0,
+    "tokens_worse_gt_0p5": 0,
+    "tokens_better_gt_0p5": 0
+   }
+  }
+ ],
+ "tokens_scored_total": 65653,
+ "mean_nll_token_weighted": 1.5757723707806381,
+ "compare": {
+  "baseline_dir": "evidence/t328/default-219-8192/corpus",
+  "n": 65653,
+  "delta_mean_nll": -0.0011384391934237004,
+  "se": 0.0009664986517631093,
+  "z_paired": 1.177900446469256,
+  "max_abs_delta_logp": 7.44163703918457,
+  "mean_abs_delta_logp": 0.12326564389699941,
+  "sd_delta_logp": 0.24764441640855653,
+  "tokens_changed": 62668,
+  "tokens_worse_gt_0p5": 1826,
+  "tokens_better_gt_0p5": 1852,
+  "se_cluster": 0.0013023283584215088,
+  "z_cluster": 0.874156802362462,
+  "texts": 8
+ },
+ "evidence": {
+  "tool": "nll-score.py",
+  "recorded_utc": "2026-10-09T17:28:50Z",
+  "manifest_hash": "d112c660e015668f0c3ea92e48984e243b8883534e556bd4fb01be7d8fcc86cb",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "285ebd58cbd8bb1f961b99ff739cf34f230eac25c1a0755ee9688c6cc3e58f78"
+ }
+}

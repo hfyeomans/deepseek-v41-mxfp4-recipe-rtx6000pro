@@ -58,6 +58,42 @@ DISTINCT_FIXTURES = [
     "Summarize the causes of the 1873 financial panic and compare them with 2008. Where do the analogies break down?",
 ]
 
+# Copy-heavy prompts for --fixture-set copy (E23 R6, n-gram speculation): the right answer
+# re-emits long spans of the prompt, which is where a suffix-cache drafter can accept many
+# tokens per verify. Built deterministically so the prompt is the same in every run.
+def _copy_module() -> str:
+    lines = ["import json", "import os", "from dataclasses import dataclass, field", "from pathlib import Path", "",
+             "", "@dataclass", "class Record:", "    key: str", "    value: float", "    tags: list[str] = field(default_factory=list)",
+             "", "    def scaled(self, factor: float) -> 'Record':", "        return Record(self.key, self.value * factor, list(self.tags))", "", ""]
+    for i in range(1, 13):
+        lines += [f"def step_{i:02d}(records: list[Record], threshold: float = {i * 0.25:.2f}) -> list[Record]:",
+                  f"    \"\"\"Keep records whose value exceeds the threshold and tag them with 'step{i:02d}'.\"\"\"",
+                  "    out = []", "    for r in records:", "        if r.value > threshold:",
+                  f"            out.append(Record(r.key, r.value, r.tags + ['step{i:02d}']))", "    return out", "", ""]
+    lines += ["def load(path: Path) -> list[Record]:", "    data = json.loads(path.read_text())",
+              "    return [Record(d['key'], float(d['value']), list(d.get('tags', []))) for d in data]", ""]
+    return "\n".join(lines)
+
+
+def _copy_table() -> str:
+    rows = ["| id | host | region | cpu_pct | mem_gib | status |", "|---|---|---|---|---|---|"]
+    regions = ("us-east-1", "us-west-2", "eu-central-1", "ap-south-1")
+    for i in range(1, 41):
+        rows.append(f"| {i:03d} | node-{(i * 7919) % 1000:03d}.internal | {regions[i % 4]} | {(i * 37) % 100}.{i % 10} | "
+                    f"{(i * 13) % 256} | {'ok' if i % 5 else 'degraded'} |")
+    return "\n".join(rows)
+
+
+COPY_FIXTURES = [
+    "Rename the function `load` to `load_records` and change every `step_NN` function's docstring to say "
+    "'Keep records above the threshold' instead of its current text. Output the complete module with those "
+    "edits and nothing else, in one ```python block.\n\n```python\n" + _copy_module() + "```\n",
+    "Re-emit the following table in full, sorted by `id` descending, keeping every column and value exactly as "
+    "given. Output only the table.\n\n" + _copy_table() + "\n",
+]
+
+FIXTURE_SETS = {"distinct": DISTINCT_FIXTURES, "copy": COPY_FIXTURES}
+
 SPEC_PATTERNS = {
     "accepted": re.compile(r"^(?:sglang:|vllm:)?spec_decode_num_accepted_tokens_total(?:\{[^}]*\})?\s+([0-9.e+]+)", re.M),
     "draft": re.compile(r"^(?:sglang:|vllm:)?spec_decode_num_draft_tokens_total(?:\{[^}]*\})?\s+([0-9.e+]+)", re.M),
@@ -78,12 +114,13 @@ def spec_counters(url: str) -> dict[str, float] | None:
 
 
 def one_run(url: str, model: str, concurrency: int, max_tokens: int, seed: int, distinct: bool = False,
-            fixture_offset: int = 0) -> dict:
+            fixture_offset: int = 0, fixture_set: str = "distinct") -> dict:
     before = spec_counters(url)
     t0 = time.perf_counter()
+    fixtures = FIXTURE_SETS[fixture_set]
 
     def prompt(i: int) -> str:
-        return DISTINCT_FIXTURES[(i + fixture_offset) % len(DISTINCT_FIXTURES)] if distinct else FIXTURE
+        return fixtures[(i + fixture_offset) % len(fixtures)] if distinct else FIXTURE
 
     with cf.ThreadPoolExecutor(max_workers=concurrency) as ex:
         futs = [ex.submit(chat_stream, url, model, [{"role": "user", "content": prompt(i)}], max_tokens=max_tokens,
@@ -130,12 +167,16 @@ def main() -> int:
                          "between streams; use for CPU/DRAM-offloaded MoE)")
     ap.add_argument("--fixture-offset", type=int, default=0,
                     help="with --distinct-prompts, start the fixture cycle at this index (isolate one prompt at C=1)")
+    ap.add_argument("--fixture-set", choices=sorted(FIXTURE_SETS), default="distinct",
+                    help="with --distinct-prompts: 'distinct' = the 8 domain-diverse prompts; 'copy' = the 2 copy-heavy "
+                         "prompts (edit a module given in the prompt; re-emit a table) for speculation (E23 R6)")
     args = ap.parse_args()
 
     model = args.model or get_json(f"{args.url}/v1/models")["data"][0]["id"]
     levels = [int(x) for x in args.concurrency.split(",")]
     report = {"url": args.url, "model": model, "max_tokens": args.max_tokens, "runs": args.runs, "warmup": args.warmup,
               "distinct_prompts": args.distinct_prompts, "fixture_offset": args.fixture_offset,
+              "fixture_set": args.fixture_set,
               "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
               "levels": []}
     print(f"model={model}  runs={args.runs} warmup={args.warmup} max_tokens={args.max_tokens}"
@@ -143,9 +184,10 @@ def main() -> int:
     print(f"{'C':>3} {'median tok/s':>13} {'min':>9} {'max':>9} {'wall tok/s':>11} {'med TTFT s':>11} {'accept':>7}")
     for c in levels:
         for _ in range(args.warmup):
-            one_run(args.url, model, c, args.max_tokens, args.seed, args.distinct_prompts, args.fixture_offset)
+            one_run(args.url, model, c, args.max_tokens, args.seed, args.distinct_prompts, args.fixture_offset,
+                    args.fixture_set)
         runs = [one_run(args.url, model, c, args.max_tokens, args.seed + 100 * i, args.distinct_prompts,
-                        args.fixture_offset)
+                        args.fixture_offset, args.fixture_set)
                 for i in range(args.runs)]
         aggs = [r["aggregate_decode_tps"] for r in runs]
         walls = [r["wall_tps"] for r in runs]

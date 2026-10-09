@@ -55,6 +55,7 @@ def test_goldens() -> None:
                                             "KT_NUM_GPU_EXPERTS": "226", "CHUNKED_PREFILL_SIZE": "4096"}),
         "resolved-dspark-208.txt": ([], {"DRY_RUN": "1", "DSPARK": "1", "KT_NUM_GPU_EXPERTS": "208",
                                          "MEM_FRACTION_STATIC": "0.935"}),
+        "resolved-ngram.txt": ([], {"DRY_RUN": "1", "NGRAM": "1"}),
         "print-default.txt": (["--print"], {}),
         "print-empties-extras.txt": (["--print"], {"CUDA_GRAPH_BS": "", "MAX_TOTAL_TOKENS": "",
                                                    "EXTRA_DOCKER_ENV": "CUDA_LAUNCH_BLOCKING=1 KT_TIMELINE=1",
@@ -110,7 +111,9 @@ def test_diagnostic_forwarded() -> None:
 def test_guards_match_launcher_messages() -> None:
     # the registry raises the exact messages test-serve-config.sh pins; probe two directly
     for env, needle in (({"KT_MAX_DEFERRED": "5"}, "D>=5 fails the NLL gate"),
-                        ({"CONTEXT_LENGTH": "262144"}, "above 64K only single-slot rungs")):
+                        ({"CONTEXT_LENGTH": "262144"}, "above 64K only single-slot rungs"),
+                        ({"NGRAM": "1", "DSPARK": "1", "KT_NUM_GPU_EXPERTS": "208"}, "two speculative algorithms"),
+                        ({"NGRAM": "1", "NGRAM_DRAFT_TOKENS": "13"}, "outside 2..12")):
         try:
             sc.guards(sc.resolve(env))
         except sc.ConfigError as e:
