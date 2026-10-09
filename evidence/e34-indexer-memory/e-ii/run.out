@@ -1,0 +1,50 @@
+idle: rank 0: reserved 90.57 GiB, allocated 88.44 GiB; rank 1: reserved 90.57 GiB, allocated 88.44 GiB
+01-131072: rank 0 dev 0: reserved 93.11 GiB, allocated 88.45, inactive 4.66 (216 blocks, largest 980 MiB); window peak +1.30 GiB, net -1755 MiB; prompt 127822 tok, TTFT 95.4 s
+          +17 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           -2 MiB  sglang/srt/layers/attention/dsv4/indexer.py:1156 select_candidate_block_keep
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           +1 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+           +0 MiB  sglang/srt/mem_cache/deepseek_v4_memory_pool.py:821 translate_loc_from_full_to_swa
+           +0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:153 redistribute_on_node_split
+01-131072: rank 1 dev 1: reserved 93.11 GiB, allocated 88.45, inactive 4.65 (208 blocks, largest 980 MiB); window peak +1.30 GiB, net -1755 MiB; prompt 127822 tok, TTFT 95.4 s
+          +17 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           -2 MiB  sglang/srt/layers/attention/dsv4/indexer.py:1156 select_candidate_block_keep
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           +1 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+           +0 MiB  sglang/srt/mem_cache/deepseek_v4_memory_pool.py:821 translate_loc_from_full_to_swa
+           +0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:153 redistribute_on_node_split
+02-262144: rank 0 dev 0: reserved 93.26 GiB, allocated 88.48, inactive 4.77 (216 blocks, largest 980 MiB); window peak +1.47 GiB, net -1690 MiB; prompt 255456 tok, TTFT 164.6 s
+          +29 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           +2 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           +0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:153 redistribute_on_node_split
+           +0 MiB  sglang/srt/mem_cache/deepseek_v4_memory_pool.py:821 translate_loc_from_full_to_swa
+           -0 MiB  sglang/srt/mem_cache/allocator/paged.py:322 _release_page_ids
+02-262144: rank 1 dev 1: reserved 93.26 GiB, allocated 88.48, inactive 4.77 (210 blocks, largest 980 MiB); window peak +1.47 GiB, net -1690 MiB; prompt 255456 tok, TTFT 164.6 s
+          +29 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           +2 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           +0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:153 redistribute_on_node_split
+           +0 MiB  sglang/srt/mem_cache/deepseek_v4_memory_pool.py:821 translate_loc_from_full_to_swa
+           -0 MiB  sglang/srt/mem_cache/allocator/paged.py:322 _release_page_ids
+03-393216: rank 0 dev 0: reserved 93.28 GiB, allocated 88.71, inactive 4.57 (223 blocks, largest 980 MiB); window peak +0.89 GiB, net -2194 MiB; prompt 382855 tok, TTFT 240.6 s
+         +229 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           +1 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           +0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:153 redistribute_on_node_split
+           -0 MiB  sglang/srt/mem_cache/allocator/paged.py:322 _release_page_ids
+03-393216: rank 1 dev 1: reserved 93.28 GiB, allocated 88.71, inactive 4.57 (217 blocks, largest 980 MiB); window peak +0.89 GiB, net -2194 MiB; prompt 382855 tok, TTFT 240.6 s
+         +229 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           +1 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           +0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:153 redistribute_on_node_split
+           -0 MiB  sglang/srt/mem_cache/allocator/paged.py:322 _release_page_ids
+04-507904: rank 0 dev 0: reserved 93.28 GiB, allocated 88.64, inactive 4.64 (220 blocks, largest 980 MiB); window peak +1.18 GiB, net -2102 MiB; prompt 494910 tok, TTFT 317.3 s
+          -75 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           -0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+04-507904: rank 1 dev 1: reserved 93.28 GiB, allocated 88.64, inactive 4.64 (213 blocks, largest 980 MiB); window peak +1.18 GiB, net -2102 MiB; prompt 494910 tok, TTFT 317.3 s
+          -75 MiB  sglang/srt/layers/attention/deepseek_v4_backend.py:3392 _dense_index_topk_rows
+           +1 MiB  sglang/srt/mem_cache/unified_radix_cache.py:1042 cache_unfinished_req
+           -0 MiB  sglang/srt/mem_cache/unified_cache/components/full_component.py:152 redistribute_on_node_split
+wrote evidence/e34-indexer-memory/e-ii/trace.json

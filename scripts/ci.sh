@@ -14,6 +14,7 @@ python3 -m py_compile "$ROOT"/scripts/tests/*.py
 bash -n "$ROOT"/scripts/tests/*.sh
 # T3.28 shape-aware NLL gate: paired/pooled statistics in nll-score.py (pure Python, no server).
 python3 "$ROOT/scripts/tests/test_nll_stats.py"
+python3 "$ROOT/scripts/tests/test_trace_prefix_memory.py"
 if bash "$ROOT/scripts/tests/run-kt-buffer-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt buffer-lifetime tests (exit $rc)"; exit 1; fi
 fi
