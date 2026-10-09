@@ -156,7 +156,12 @@ REGISTRY: tuple[Knob, ...] = (
          "Explicit decode capture list. SGLang derives [1, 2, 4] and pads bs=3 to 4, which cost C3 22 % (E26 B1); "
          "capturing 3 costs ~nothing. Qualified by the E27 served soak. CUDA_GRAPH_BS=\"\" falls back to the derived list.",
          sink=SERVER_ARG, empty_disables=True, evidence="evidence/e26-single-user/, evidence/e27-soak/"),
-    Knob("ENGRAM_FILE_THREADS", "int", "16", "Reader threads for the Engram tables left in the checkpoint shard on NVMe (E18).",
+    Knob("ENGRAM_FILE_PREFETCH", "str", "ahead",
+         "How the Engram rows left in the checkpoint shard are fetched (T3.20/E36): ahead = layer 14's rows advised and "
+         "gathered on a worker thread from layer 1's break; sync = serial MADV_WILLNEED per distinct page in the break; "
+         "pool = the E18 per-row thread pool (A/B comparator).",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_FILE_PREFETCH", evidence="evidence/t320-engram-prefetch/"),
+    Knob("ENGRAM_FILE_THREADS", "int", "16", "Threads of ENGRAM_FILE_PREFETCH=pool only (E18).",
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_FILE_THREADS", evidence="evidence/e18-engram-file/"),
     # ---- escape hatches -----------------------------------------------------------------
     Knob("EXTRA_SERVER_ARGS", "str", "", "Appended verbatim (word-split) to the sglang.launch_server command."),
@@ -212,6 +217,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         "SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE=1",
         "SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT=file",
         f"SGLANG_DSV41_ENGRAM_FILE_DIR={snapshot_dir}",
+        f"SGLANG_DSV41_ENGRAM_FILE_PREFETCH={r['ENGRAM_FILE_PREFETCH']}",
         f"SGLANG_DSV41_ENGRAM_FILE_THREADS={r['ENGRAM_FILE_THREADS']}",
         "SGLANG_OPT_USE_TILELANG_INDEXER=0",
         "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0",
@@ -353,7 +359,8 @@ def resolved_line(r: dict[str, str]) -> str:
             f"ngram={r['NGRAM']} ngram_draft={r['NGRAM_DRAFT_TOKENS']} ngram_breadth={r['NGRAM_BREADTH']} "
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
             f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} "
-            f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} image={r['IMAGE']}")
+            f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
+            f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} image={r['IMAGE']}")
 
 
 def diagnostic_env(r: dict[str, str], env: dict[str, str]) -> list[str]:

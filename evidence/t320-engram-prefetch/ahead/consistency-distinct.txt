@@ -1,0 +1,16 @@
+== bs=1 references (4 prompts, 96 tok, greedy)
+  ref 'Explain, in three short paragraphs, why the sky ': 96 tok, gib 0.03
+  ref 'Write a Python function that returns the n-th Fi': 96 tok, gib 0.16
+  ref 'List the planets of the solar system in order fr': 96 tok, gib 0.07
+  ref 'Summarize the plot of Romeo and Juliet in five s': 96 tok, gib 0.00
+== concurrent run (C=4)
+  slot 0: exact=True prefix=525/525 gib=0.03 tok=96 OK
+  slot 1: exact=False prefix=226/359 gib=0.19 tok=96 FAIL
+    ref : '# Iterative Fibonacci Function\n\nHere\'s a Python function that computes the n-th Fibonacci number iteratively:\n\n```python\ndef fibonacci(n):\n    """\n    Return th'
+    conc: '# Iterative Fibonacci Function\n\nHere\'s a Python function that computes the n-th Fibonacci number iteratively:\n\n```python\ndef fibonacci(n):\n    """\n    Return th'
+  slot 2: exact=False prefix=38/447 gib=0.09 tok=96 FAIL
+    ref : 'Mercury – The smallest planet, with a year lasting only 88 Earth days.\nVenus – The hottest planet, with surface temperatures hot enough to melt lead.\nEarth – Th'
+    conc: 'Mercury – The smallest planet, with a day longer than its year.\nVenus – The hottest planet, with a thick, toxic atmosphere.\nEarth – The only known planet with l'
+  slot 3: exact=False prefix=173/440 gib=0.00 tok=96 OK
+FAIL
+wrote evidence/t320-engram-prefetch/ahead/consistency-distinct.json

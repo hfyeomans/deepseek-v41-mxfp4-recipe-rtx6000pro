@@ -1,0 +1,72 @@
+rank 0 decode:1:candidate_all: 255 sampled; step 23.808 ms (unsampled tick period), GPU buckets 23.694 ms = 99.5 %, gpu span 23.694 ms, event err 0.00 %, GPU backlog at start 10.546 ms
+    export             2.572 ms   10.8 %
+    gpu_experts        2.460 ms   10.3 %
+    cpu_wait           8.464 ms   35.6 %
+    h2d                0.231 ms    1.0 %
+    combine            0.225 ms    0.9 %
+    engram_break       1.800 ms    7.6 %
+    other_gpu          7.990 ms   33.6 %
+    between_replays    0.114 ms    0.5 %
+rank 0 decode:1:candidate_c2_all: 43 sampled; step 24.077 ms (unsampled tick period), GPU buckets 23.391 ms = 97.1 %, gpu span 23.391 ms, event err 0.00 %, GPU backlog at start 10.470 ms
+    export             2.592 ms   10.8 %
+    gpu_experts        2.485 ms   10.3 %
+    cpu_wait           8.081 ms   33.6 %
+    h2d                0.229 ms    0.9 %
+    combine            0.227 ms    0.9 %
+    engram_break       1.789 ms    7.4 %
+    other_gpu          8.097 ms   33.6 %
+    between_replays    0.687 ms    2.9 %
+rank 0 decode:4:candidate_all: 196 sampled; step 71.078 ms (unsampled tick period), GPU buckets 71.021 ms = 99.9 %, gpu span 71.021 ms, event err 0.00 %, GPU backlog at start 41.592 ms
+    export             2.968 ms    4.2 %
+    gpu_experts        4.955 ms    7.0 %
+    cpu_wait          51.203 ms   72.0 %
+    h2d                0.258 ms    0.4 %
+    combine            0.236 ms    0.3 %
+    engram_break       2.911 ms    4.1 %
+    other_gpu          8.344 ms   11.7 %
+    between_replays    0.057 ms    0.1 %
+rank 0 decode:4:candidate_c2_all: 82 sampled; step 71.101 ms (unsampled tick period), GPU buckets 70.890 ms = 99.7 %, gpu span 70.890 ms, event err 0.00 %, GPU backlog at start 41.847 ms
+    export             2.947 ms    4.1 %
+    gpu_experts        5.015 ms    7.1 %
+    cpu_wait          50.936 ms   71.6 %
+    h2d                0.255 ms    0.4 %
+    combine            0.235 ms    0.3 %
+    engram_break       2.928 ms    4.1 %
+    other_gpu          8.423 ms   11.8 %
+    between_replays    0.211 ms    0.3 %
+rank 1 decode:1:candidate_all: 255 sampled; step 23.808 ms (unsampled tick period), GPU buckets 23.698 ms = 99.5 %, gpu span 23.698 ms, event err 0.00 %, GPU backlog at start 10.474 ms
+    export             0.028 ms    0.1 %
+    gpu_experts        2.407 ms   10.1 %
+    cpu_wait           0.016 ms    0.1 %
+    h2d                0.016 ms    0.1 %
+    combine            0.023 ms    0.1 %
+    engram_break       1.859 ms    7.8 %
+    other_gpu         19.354 ms   81.3 %
+    between_replays    0.110 ms    0.5 %
+rank 1 decode:1:candidate_c2_all: 43 sampled; step 24.077 ms (unsampled tick period), GPU buckets 23.398 ms = 97.2 %, gpu span 23.398 ms, event err 0.00 %, GPU backlog at start 10.351 ms
+    export             0.027 ms    0.1 %
+    gpu_experts        2.426 ms   10.1 %
+    cpu_wait           0.016 ms    0.1 %
+    h2d                0.016 ms    0.1 %
+    combine            0.023 ms    0.1 %
+    engram_break       1.907 ms    7.9 %
+    other_gpu         19.262 ms   80.0 %
+    between_replays    0.679 ms    2.8 %
+rank 1 decode:4:candidate_all: 196 sampled; step 71.078 ms (unsampled tick period), GPU buckets 71.029 ms = 99.9 %, gpu span 71.029 ms, event err 0.00 %, GPU backlog at start 41.530 ms
+    export             0.025 ms    0.0 %
+    gpu_experts        4.945 ms    7.0 %
+    cpu_wait           0.016 ms    0.0 %
+    h2d                0.016 ms    0.0 %
+    combine            0.022 ms    0.0 %
+    engram_break       2.974 ms    4.2 %
+    other_gpu         62.959 ms   88.6 %
+    between_replays    0.048 ms    0.1 %
+rank 1 decode:4:candidate_c2_all: 82 sampled; step 71.101 ms (unsampled tick period), GPU buckets 70.900 ms = 99.7 %, gpu span 70.900 ms, event err 0.00 %, GPU backlog at start 41.724 ms
+    export             0.025 ms    0.0 %
+    gpu_experts        5.013 ms    7.1 %
+    cpu_wait           0.016 ms    0.0 %
+    h2d                0.016 ms    0.0 %
+    combine            0.022 ms    0.0 %
+    engram_break       3.021 ms    4.2 %
+    other_gpu         62.670 ms   88.1 %
+    between_replays    0.201 ms    0.3 %

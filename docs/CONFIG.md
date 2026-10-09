@@ -53,7 +53,8 @@ below with `python3 scripts/serve_config.py markdown`; `scripts/ci.sh` fails whe
 | `MAX_TOTAL_TOKENS` | int | `derived` | server-arg | KV pool cap (T3.6g): slots x context + one 16K chunk. Left to the fraction SGLang sized the pool 15x too large (E26 A4). MAX_TOTAL_TOKENS="" lets the fraction size it again. | evidence/e26-single-user/ |
 | `CUDA_GRAPH_MAX_BS` | int | `4` | server-arg | Largest captured decode batch. |  |
 | `CUDA_GRAPH_BS` | list | `1 2 3 4` | server-arg | Explicit decode capture list. SGLang derives [1, 2, 4] and pads bs=3 to 4, which cost C3 22 % (E26 B1); capturing 3 costs ~nothing. Qualified by the E27 served soak. CUDA_GRAPH_BS="" falls back to the derived list. | evidence/e26-single-user/, evidence/e27-soak/ |
-| `ENGRAM_FILE_THREADS` | int | `16` | container-env | Reader threads for the Engram tables left in the checkpoint shard on NVMe (E18). | evidence/e18-engram-file/ |
+| `ENGRAM_FILE_PREFETCH` | str | `ahead` | container-env | How the Engram rows left in the checkpoint shard are fetched (T3.20/E36): ahead = layer 14's rows advised and gathered on a worker thread from layer 1's break; sync = serial MADV_WILLNEED per distinct page in the break; pool = the E18 per-row thread pool (A/B comparator). | evidence/t320-engram-prefetch/ |
+| `ENGRAM_FILE_THREADS` | int | `16` | container-env | Threads of ENGRAM_FILE_PREFETCH=pool only (E18). | evidence/e18-engram-file/ |
 | `EXTRA_SERVER_ARGS` | str | `""` | launcher | Appended verbatim (word-split) to the sglang.launch_server command. |  |
 | `EXTRA_DOCKER_ENV` | str | `""` | launcher | Space-separated KEY=VALUE pairs passed as -e (e.g. CUDA_LAUNCH_BLOCKING=1). |  |
 | `EXTRA_DOCKER_ARGS` | str | `""` | launcher | Extra `docker run` flags, word-split (diagnosis: bind-mount an instrumented module). |  |
