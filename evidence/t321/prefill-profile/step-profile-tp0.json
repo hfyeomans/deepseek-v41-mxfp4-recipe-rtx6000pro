@@ -1,0 +1,218 @@
+{
+  "trace": {
+    "trace": "evidence/t321/prefill-profile/1791595471.659799-TP-0.trace.json.gz",
+    "steps": 1,
+    "gpu_events": 11837,
+    "per_step_ms": {
+      "span": 8759.711,
+      "gpu_busy": 5242.594,
+      "idle_total": 3517.116,
+      "idle_gaps_ge_100us": 3485.043,
+      "n_gaps_ge_100us": 333.0
+    },
+    "by_category_ms_per_step": {
+      "memcpy_memset": 2340.933,
+      "collective": 1123.041,
+      "moe_expert_gpu": 515.452,
+      "dense_fp8_gemm": 351.256,
+      "elementwise_index": 339.087,
+      "other": 271.056,
+      "attention_indexer": 261.58,
+      "fp8_quant": 24.601,
+      "rope_norm_act": 15.88,
+      "engram": 2.848,
+      "bf16_gemm": 2.575,
+      "sampling": 0.139
+    },
+    "top_kernels": [
+      {
+        "name": "[gpu_memcpy] Memcpy HtoD ",
+        "calls_per_step": 398.0,
+        "ms_per_step": 2309.377,
+        "avg_us": 5802.5,
+        "category": "memcpy_memset"
+      },
+      {
+        "name": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL",
+        "calls_per_step": 166.0,
+        "ms_per_step": 1120.329,
+        "avg_us": 6749.0,
+        "category": "collective"
+      },
+      {
+        "name": "_w8a8_block_fp8_matmul",
+        "calls_per_step": 462.0,
+        "ms_per_step": 349.251,
+        "avg_us": 756.0,
+        "category": "dense_fp8_gemm"
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 320.0,
+        "ms_per_step": 344.703,
+        "avg_us": 1077.2,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::dir\u2026",
+        "calls_per_step": 240.0,
+        "ms_per_step": 241.264,
+        "avg_us": 1005.3,
+        "category": "elementwise_index"
+      },
+      {
+        "name": "sparse_mla_prefill_mg_dual_kernel<",
+        "calls_per_step": 76.0,
+        "ms_per_step": 233.367,
+        "avg_us": 3070.6,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "_hc_mix_stats_partial_kernel",
+        "calls_per_step": 240.0,
+        "ms_per_step": 119.773,
+        "avg_us": 499.1,
+        "category": "other"
+      },
+      {
+        "name": "mhc_post_tilelang_kernel",
+        "calls_per_step": 160.0,
+        "ms_per_step": 74.845,
+        "avg_us": 467.8,
+        "category": "other"
+      },
+      {
+        "name": "cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_256x128_32x3_tn_align8>",
+        "calls_per_step": 81.0,
+        "ms_per_step": 72.847,
+        "avg_us": 899.3,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_hc_combine_kernel",
+        "calls_per_step": 161.0,
+        "ms_per_step": 35.226,
+        "avg_us": 218.8,
+        "category": "other"
+      },
+      {
+        "name": "[gpu_memcpy] Memcpy DtoD ",
+        "calls_per_step": 429.0,
+        "ms_per_step": 30.918,
+        "avg_us": 72.1,
+        "category": "memcpy_memset"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::finalizeMoeRoutingKernel<__nv_bfloat16, __nv_bflo\u2026",
+        "calls_per_step": 160.0,
+        "ms_per_step": 29.532,
+        "avg_us": 184.6,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::dir\u2026",
+        "calls_per_step": 325.0,
+        "ms_per_step": 26.86,
+        "avg_us": 82.6,
+        "category": "elementwise_index"
+      },
+      {
+        "name": "sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bfloat16\u2026",
+        "calls_per_step": 630.0,
+        "ms_per_step": 24.601,
+        "avg_us": 39.0,
+        "category": "fp8_quant"
+      },
+      {
+        "name": "tensorrt_llm::kernels::block_scale_interleave_kernel<unsigned char>",
+        "calls_per_step": 160.0,
+        "ms_per_step": 23.985,
+        "avg_us": 149.9,
+        "category": "other"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::doActivationKernel<__nv_fp8_e4m3, __nv_bfloat16, \u2026",
+        "calls_per_step": 200.0,
+        "ms_per_step": 18.098,
+        "avg_us": 90.5,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel<__nv_fp8_e4m3, __nv_fp8_e4m\u2026",
+        "calls_per_step": 200.0,
+        "ms_per_step": 17.652,
+        "avg_us": 88.3,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<c10::BFloat16>, \u2026",
+        "calls_per_step": 240.0,
+        "ms_per_step": 16.093,
+        "avg_us": 67.1,
+        "category": "elementwise_index"
+      },
+      {
+        "name": "at::native::vectorized_elementwise_kernel<4, at::native::BUnaryFunctor<short, short, shor\u2026",
+        "calls_per_step": 160.0,
+        "ms_per_step": 12.992,
+        "avg_us": 81.2,
+        "category": "elementwise_index"
+      },
+      {
+        "name": "kernel_cutlass_kernel_flashinfernormkernelsrmsnormRMSNormKernel_object_at__tensorptrbf16g\u2026",
+        "calls_per_step": 164.0,
+        "ms_per_step": 10.455,
+        "avg_us": 63.7,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda",
+        "calls_per_step": 160.0,
+        "ms_per_step": 10.308,
+        "avg_us": 64.4,
+        "category": "elementwise_index"
+      },
+      {
+        "name": "deep_gemm::sm120_fp4_mqa_logits<32u, 128u, true, 4u, 128u, 2u, 5u, 188u, 128u, 256u, floa\u2026",
+        "calls_per_step": 21.0,
+        "ms_per_step": 9.624,
+        "avg_us": 458.3,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "_hc_mix_reduce_sinkhorn_kernel",
+        "calls_per_step": 240.0,
+        "ms_per_step": 7.421,
+        "avg_us": 30.9,
+        "category": "other"
+      },
+      {
+        "name": "tensorrt_llm::kernels::quantize_with_block_size<",
+        "calls_per_step": 200.0,
+        "ms_per_step": 7.4,
+        "avg_us": 37.0,
+        "category": "other"
+      },
+      {
+        "name": "cutlass::Kernel2<cutlass_80_tensorop_s16816gemm_bf16_128x256_32x3_tn_align8>",
+        "calls_per_step": 43.0,
+        "ms_per_step": 6.658,
+        "avg_us": 154.8,
+        "category": "moe_expert_gpu"
+      }
+    ],
+    "largest_gaps_us": [
+      371269.8,
+      331026.1,
+      61875.9,
+      59855.4,
+      35732.0,
+      35497.3,
+      35421.2,
+      35370.4,
+      35274.1,
+      35223.6
+    ]
+  },
+  "compare": null
+}
