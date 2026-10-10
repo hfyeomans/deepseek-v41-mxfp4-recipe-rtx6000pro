@@ -249,6 +249,35 @@ Fix: `kernels/e20/tune_w8a8_block32.py` (run inside the container, see its docst
 
 DeepSeek-V4.1 reasoning is on by default at effort 50 in both engines. Every client in this repo sends `chat_template_kwargs: {"thinking": false}` unless asked otherwise. If your own client sees long, slow answers, that is why. The recipe's smoke test is `17*19` → `323`.
 
+## Using the server from a coding agent (OMP, Amp, any OpenAI-compatible client)
+
+The server is a plain OpenAI-compatible endpoint: `http://127.0.0.1:8000/v1`, model `dsv41-flash-hybrid`, no key. Context is whatever rung you launched (64K default; `CONTEXT_LENGTH=262144` for 262K × 4), so tell the client the same number or it will pack prompts the server refuses. Reasoning is on by default (previous entry): a coding-agent client should either send `chat_template_kwargs: {"thinking": false}` or expect `reasoning_content` in the stream.
+
+OMP (`omp`, oh-my-pi) — add to `~/.omp/agent/models.yml` under `providers:` (explicit entries win over `/v1/models` discovery, which is how the context window and the DeepSeek reasoning field get set):
+
+```yaml
+  sglang-dsv41:
+    baseUrl: http://127.0.0.1:8000/v1
+    api: openai-completions
+    auth: none
+    models:
+      - id: dsv41-flash-hybrid
+        name: DeepSeek-V4.1-Flash hybrid (local SGLang)
+        contextWindow: 262144      # match CONTEXT_LENGTH of the running serve (65536 at the default rung)
+        maxTokens: 32768
+        reasoning: true
+        compat:
+          thinkingFormat: openai
+          reasoningContentField: reasoning_content
+          maxTokensField: max_tokens
+          stripDeepseekSpecialTokens: true
+          supportsUsageInStreaming: true
+```
+
+Then `omp --model sglang-dsv41/dsv41-flash-hybrid`, and for client-side latency numbers that do not touch the recipe's scripts: `omp bench sglang-dsv41/dsv41-flash-hybrid --detailed --par 4` (TTFT and tok/s p50 / p95, single-user vs 4 concurrent, prefill phase) and `--cache --cache-pairs 3` (cold / warm prompt-cache pairs through SGLang's radix cache). These are a second opinion from outside the container; the recipe's own numbers stay `bench-decode.py` / `bench-prefill.py` because they stamp the manifest.
+
+Amp — a Custom URL model-provider connection (`chat-completions` format) gives a thread the served model with per-thread usage (input / output / cached tokens), tool calls and timings visible in the thread, which is why T3.35 runs through Amp. Two things the OMP route does not need: **Amp's servers make the request, so `127.0.0.1:8000` is not reachable** — expose the port over HTTPS first (`tailscale funnel 8000` on this box, or any tunnel) and launch the serve with an API key the tunnel's callers must present; and the mapping names a canonical Amp model that the custom endpoint stands in for, e.g. `openai/gpt-5.6 -> dsv41-flash-hybrid` (the thread selects that canonical model; the connection rewrites the id). The launcher has no API-key knob today: pass `--api-key` through `PROFILE=developer EXTRA_SERVER_ARGS="--api-key …"` until T3.35 registers one.
+
 ## Weight load is slow
 
 475 GiB from NVMe at ~14 GB/s is at least 33 s of pure I/O; the engine's dequant and layout passes dominate, and the Engram host-table copy adds a pass over 189 GiB. Ten to thirty minutes is normal on the 4-GPU profile. `wait-ready.py` defaults to a one-hour timeout.
