@@ -1,0 +1,51 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 64,
+  "runs": 1,
+  "warmup": 1,
+  "distinct_prompts": false,
+  "fixture_offset": 0,
+  "fixture_set": "distinct",
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 41.551266762251146,
+      "min_tps": 41.551266762251146,
+      "max_tps": 41.551266762251146,
+      "median_wall_tps": 25.95699644599737,
+      "median_ttft_s": 0.9488901569857262,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 41.551266762251146,
+          "wall_tps": 25.95699644599737,
+          "wall_s": 2.4656165490159765,
+          "per_seq_tps": [
+            41.551266762251146
+          ],
+          "ttft_s": [
+            0.9488901569857262
+          ],
+          "completion_tokens": [
+            64
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-10T01:31:55-0400",
+  "evidence": {
+    "tool": "bench-decode.py",
+    "recorded_utc": "2026-10-10T05:31:55Z",
+    "manifest_hash": "19283e60675dd0eb27b671054b51f8b369067f3c71f3cb4e5cb5356c983dee08",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "186d4e2472fdc513b9ee48372c1052a86ad3bf29ea21ec8436cf8e31906fe2c0"
+  }
+}

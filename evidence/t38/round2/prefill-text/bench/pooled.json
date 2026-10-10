@@ -1,0 +1,56 @@
+{
+ "label": "",
+ "corpus": "scripts/fixtures/nll-corpus",
+ "texts": [
+  {
+   "text": "01-readme-early.txt",
+   "tokens_scored": 4795,
+   "mean_nll": 1.4946902664415658
+  },
+  {
+   "text": "02-learning.txt",
+   "tokens_scored": 10004,
+   "mean_nll": 1.4064309512318651
+  },
+  {
+   "text": "03-experiments.txt",
+   "tokens_scored": 11053,
+   "mean_nll": 1.8474283338707538
+  },
+  {
+   "text": "04-benchmarks.txt",
+   "tokens_scored": 12028,
+   "mean_nll": 1.579102067261238
+  },
+  {
+   "text": "05-troubleshooting.txt",
+   "tokens_scored": 9668,
+   "mean_nll": 1.9261407976056193
+  },
+  {
+   "text": "06-bios-guide.txt",
+   "tokens_scored": 9546,
+   "mean_nll": 1.5813640416004493
+  },
+  {
+   "text": "07-serve-hybrid-sh.txt",
+   "tokens_scored": 5938,
+   "mean_nll": 1.2513976091152033
+  },
+  {
+   "text": "08-bench-decode-py.txt",
+   "tokens_scored": 2621,
+   "mean_nll": 0.6602273670085815
+  }
+ ],
+ "tokens_scored_total": 65653,
+ "mean_nll_token_weighted": 1.5769108099740619,
+ "evidence": {
+  "tool": "nll-score.py",
+  "recorded_utc": "2026-10-10T05:37:15Z",
+  "manifest_hash": "19283e60675dd0eb27b671054b51f8b369067f3c71f3cb4e5cb5356c983dee08",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "186d4e2472fdc513b9ee48372c1052a86ad3bf29ea21ec8436cf8e31906fe2c0"
+ }
+}
