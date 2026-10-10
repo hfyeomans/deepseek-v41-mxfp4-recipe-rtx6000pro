@@ -76,6 +76,7 @@ Need a GPU window (stop the GLM container first):
 
 | Script | Purpose |
 |---|---|
+| `release-smoke.sh units` / `release-smoke.sh serve --output-dir evidence/<dir> [--context N --slots N --full]` | T3.24d: the pre-release GPU smoke — the three GPU unit suites with the cards free, then the qualification gate set (same-prompt C4, NLL corpus vs the T3.28 baseline, needles, log health; `--full` adds stress + decode / prefill benches) against a running `serve-hybrid.sh` server; see CONTRIBUTING |
 | `bench-pcie-h2d.py` (inside a torch container) | E2/E4: GDDR7 and PCIe bandwidth; prints the Option B decode ceiling |
 | `bench-dram-read.py` (inside a torch container, GPU-free) | E1b: read-only host DRAM bandwidth (fp32/int64 sum) at 8/16/32 threads |
 | `bench-dram-contention.py` (inside a torch container, `--gpus all`) | E4b: CPU DRAM reads and both-GPU H2D DMA alone and together; additivity |

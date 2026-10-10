@@ -1,0 +1,28 @@
+PASS block expansion
+PASS block ids
+PASS plain
+PASS source
+PASS consume(random mask)
+PASS consume sees mask
+PASS consume(source-published mask)
+OK: 0 failure(s)
+PASS run-indexer-tiling-tests.sh
+[TensorRT-LLM][INFO] Set logger level to INFO
+  size(8192 rows, 219 experts, DSv4 TP2 slice) = 979.6 MiB
+PASS size is monotonic
+PASS size matches the binding
+PASS outputs match per-call
+PASS capture guard
+OK: 0 failure(s)
+PASS run-moe-workspace-tests.sh
+PASS packed gather == reference
+PASS dequant == reference
+      gather transient 16 B per slot above the 68 B output
+      reference transient 1068 B per slot
+PASS gather transient is small
+OK: 0 failure(s)
+PASS hc_combine bf16 input == fp32 input
+OK: 0 failure(s)
+PASS run-prefill-transient-tests.sh
+release-smoke units: all gates passed
+rc=0
