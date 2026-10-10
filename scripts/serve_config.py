@@ -189,7 +189,7 @@ REGISTRY: tuple[Knob, ...] = (
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/b-ii/512k/, evidence/t329/"),
     Knob("CONTEXT_LENGTH", "int", "65536",
          "Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K/1M x 1 are qualified rungs "
-         "(T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962) and 262K x 4 is qualified "
+         "(T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962, guarded) and 262K x 4 is qualified "
          "with the expandable lever (T3.31 idea 8, re-qualified 2026-10-10 at a 110-180 MiB VRAM trough: a per-rung "
          "override, not a default).",
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/, evidence/t329/README.md"),
@@ -484,6 +484,15 @@ def guards(r: dict[str, str]) -> None:
                 "with SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1 (T3.31 idea 8, re-qualified 2026-10-10; without the "
                 "lever it OOMs on the third chunk). Larger multi-slot pools were never run. Set MAX_RUNNING_REQUESTS=1, or "
                 "PROFILE=developer ALLOW_UNTESTED_FIT=1 to try (then stress-kv-full.py at that concurrency, nll-score.py --corpus).")
+        # T3.29: at 0.96 the 512K x 1 pool silently caps at 505,856 tokens (prompts near 512K then 400) and the
+        # 1M x 1 rung was only ever run at 0.962 (E34d-v (ii)); both rungs are single-slot, so the only other
+        # thing 0.962 has to leave room for is the prefill transient, which those serves measured.
+        if ctx > 262144 and abs(float(r["MEM_FRACTION_STATIC"]) - 0.962) > 1e-9:
+            raise ConfigError(
+                f"CONTEXT_LENGTH={ctx} with MEM_FRACTION_STATIC={r['MEM_FRACTION_STATIC']}: the 512K x 1 and 1M x 1 "
+                "rungs were qualified at MEM_FRACTION_STATIC=0.962 (T3.29; E34d-v (ii)) - at 0.96 the pool caps "
+                "below the context. Set MEM_FRACTION_STATIC=0.962, or PROFILE=developer ALLOW_UNTESTED_FIT=1 to try "
+                "another fraction (then stress-kv-full.py at context - 2048).")
         if ctx > 65536 and (chunk != 8192 or experts != 219) and not (chunk == 4096 and experts == 226):
             raise ConfigError(
                 f"CONTEXT_LENGTH={ctx} with KT_NUM_GPU_EXPERTS={experts} CHUNKED_PREFILL_SIZE={chunk}: "

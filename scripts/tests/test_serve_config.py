@@ -174,6 +174,8 @@ def test_guards_match_launcher_messages() -> None:
     for env, needle in (({"KT_MAX_DEFERRED": "5"}, "D>=5 fails the NLL gate"),
                         ({"CONTEXT_LENGTH": "524288", "MAX_RUNNING_REQUESTS": "2", "MEM_FRACTION_STATIC": "0.962"},
                          "Larger multi-slot pools were never run"),
+                        ({"CONTEXT_LENGTH": "1048576", "MAX_RUNNING_REQUESTS": "1"},
+                         "qualified at MEM_FRACTION_STATIC=0.962"),
                         ({"NGRAM": "1", "DSPARK": "1", "KT_NUM_GPU_EXPERTS": "208"}, "two speculative algorithms"),
                         ({"NGRAM": "1", "NGRAM_DRAFT_TOKENS": "13"}, "outside 2..12")):
         try:
