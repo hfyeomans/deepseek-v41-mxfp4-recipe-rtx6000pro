@@ -43,7 +43,7 @@ def launcher(args: list[str], **env: str) -> subprocess.CompletedProcess:
 
 
 def portable(text: str) -> str:
-    return text.replace(BASE_ENV["HOME"], "~")
+    return text.replace(str(ROOT), "<repo>").replace(BASE_ENV["HOME"], "~")
 
 
 def test_goldens() -> None:
@@ -98,15 +98,22 @@ def test_empty_disables() -> None:
 
 
 def test_expert_map_knob() -> None:
-    # T3.8b: a map is mounted at /expert-map.json and named to the overlay; unset, neither appears
-    # (the default launch keeps checkpoint order) and the resolved line says so.
+    # T3.8b: a map is mounted at /expert-map.json and named to the overlay. Default (owner flip
+    # 2026-10-10) = the repo's el8 mix map; KT_EXPERT_MAP="" = checkpoint order, and then neither
+    # the mount nor the server arg appears and the resolved line says `positional`.
     p = launcher(["--print"], KT_EXPERT_MAP="/tmp/some-map.json")
     assert p.returncode == 0, p.stderr
     line, cmd = p.stdout.splitlines()[:2]
     assert " expert_map=some-map.json " in line, line
     assert "-v /tmp/some-map.json:/expert-map.json:ro" in cmd and "--kt-expert-map /expert-map.json" in cmd, cmd
     default = (GOLDEN / "print-default.txt").read_text().splitlines()
-    assert " expert_map=positional " in default[0] and "expert-map" not in default[1]
+    assert " expert_map=expert-map-el8-mix-219.json " in default[0], default[0]
+    assert "-v <repo>/config/expert-map-el8-mix-219.json:/expert-map.json:ro" in default[1], default[1]
+    assert (ROOT / "config/expert-map-el8-mix-219.json").is_file()
+    p = launcher(["--print"], KT_EXPERT_MAP="")
+    assert p.returncode == 0, p.stderr
+    line, cmd = p.stdout.splitlines()[:2]
+    assert " expert_map=positional " in line and "expert-map" not in cmd, (line, cmd)
     r = sc.resolve({"KT_EXPERT_MAP": ""})
     assert r["KT_EXPERT_MAP"] == "" and "expert_map=positional" in sc.resolved_line(r)
 

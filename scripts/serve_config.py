@@ -57,6 +57,10 @@ def _home(p: str) -> str:
     return os.path.join(os.environ.get("HOME", "~"), p)
 
 
+def _repo(p: str) -> str:
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), p)
+
+
 REGISTRY: tuple[Knob, ...] = (
     # ---- image / paths / network --------------------------------------------------------
     Knob("IMAGE", "str", "dsv41-kt:recipe", "Image built by config/Dockerfile.dsv41-kt (dev-dsv41 + pruned kt-kernel)."),
@@ -86,13 +90,14 @@ REGISTRY: tuple[Knob, ...] = (
          "(E34d-ii + T3.28) to afford CHUNKED_PREFILL_SIZE=8192: prefill +38/+47 % at 16K/32K, C1 wall -1.9 %, "
          "pooled NLL +0.00075 +- 0.00098. 226/158 + 4096 is the measured fallback.",
          sink=SERVER_ARG, evidence="evidence/t328/README.md, evidence/t36g-placement/, evidence/t36g2-placement-r2/"),
-    Knob("KT_EXPERT_MAP", "str", "",
+    Knob("KT_EXPERT_MAP", "str", lambda r: _repo("config/expert-map-el8-mix-219.json"),
          "Per-layer expert placement map (T3.8b): host path of a JSON file naming, per MoE layer, the 219 "
          "checkpoint experts that take the GPU slots; the overlay permutes each layer's experts at load so that "
-         "hot set gets ids 0..218 and the rest run on the CPU (an exact permutation, no VRAM; overlay kt_remap.py). "
-         "Bind-mounted at /expert-map.json and passed as --kt-expert-map. Empty: checkpoint order (experts 0..218 "
-         "on GPU), which T3.8 measured at 42-46 % of routes on the CPU tier on real traffic; "
-         "config/expert-map-el8-mix-219.json is the el8 mix map (12-15 %).",
+         "hot set gets ids 0..218 and the rest run on the CPU (a routing-exact permutation, no VRAM; overlay "
+         "kt_remap.py). Bind-mounted at /expert-map.json and passed as --kt-expert-map. Default since 2026-10-10 "
+         "(owner flip after T3.8b): the el8 mix map config/expert-map-el8-mix-219.json, 12-15 % of routes on the "
+         "CPU tier on real traffic, C1 +37 % / C4 +120 % over checkpoint order. KT_EXPERT_MAP=\"\" = checkpoint "
+         "order (experts 0..218 on GPU; T3.8 measured 42-46 % CPU share), the pre-T3.8b profile.",
          sink=SERVER_ARG, empty_disables=True, evidence="evidence/t38/, evidence/t38b/"),
     Knob("KT_CPUINFER", "int", "16",
          "kt-kernel worker threads; one per physical core. E26 A1 on the 16-core 9955WX: 14 and 16 are a plateau, "
