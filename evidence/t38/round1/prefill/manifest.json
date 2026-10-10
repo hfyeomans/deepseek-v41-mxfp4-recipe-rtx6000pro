@@ -1,0 +1,186 @@
+{
+ "schema": 1,
+ "written_utc": "2026-10-10T02:48:34Z",
+ "recipe": {
+  "dir": "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro",
+  "sha": "84c5ede6429c8f87b0e41ce37f2e8e140ada8053",
+  "short": "84c5ede6",
+  "branch": "master",
+  "dirty": true
+ },
+ "overlay": {
+  "dir": "~/dev/src/sglang-dsv41-overlay",
+  "sha": "ad973440ca0812aef9a956be5877622d38abc1c1",
+  "short": "ad973440",
+  "branch": "dsv41-kt-hybrid",
+  "dirty": false
+ },
+ "image": {
+  "tag": "dsv41-kt:recipe",
+  "id": "sha256:0ddb14aa607441738d414def3b7b17e1d308006261a831dffaa4e3e993d9165c"
+ },
+ "container": {
+  "name": "dsv41-kt",
+  "id": "be049f8ca2a980d6b7ce5f311b2afa129b1fd52c30ad3afc051de10a6078e892",
+  "created": "2026-10-10T02:48:34.422781607Z",
+  "image_id": "sha256:0ddb14aa607441738d414def3b7b17e1d308006261a831dffaa4e3e993d9165c"
+ },
+ "config": {
+  "IMAGE": "dsv41-kt:recipe",
+  "CONTAINER_NAME": "dsv41-kt",
+  "SERVED_MODEL_NAME": "dsv41-flash-hybrid",
+  "BIND_ADDRESS": "127.0.0.1",
+  "PORT": "8000",
+  "HF_MODEL_DIR": "~/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash",
+  "SNAPSHOT": "dba1be0a40aa45a94ad051997016db3960a90277",
+  "OVERLAY_DIR": "~/dev/src/sglang-dsv41-overlay",
+  "MANIFEST_DIR": "~/.cache/dsv41-recipe/manifests",
+  "BIOS_SLOT": "3",
+  "KT_NUM_GPU_EXPERTS": "219",
+  "KT_CPUINFER": "16",
+  "KT_MAX_DEFERRED": "4",
+  "KT_GPU_PREFILL_MIN_TOKENS": "1024",
+  "KT_GPU_PREFILL_LOG": "0",
+  "KT_NAN_PROBE_MIN_TOKENS": "0",
+  "DSPARK": "0",
+  "DSPARK_K": "5",
+  "NGRAM": "0",
+  "NGRAM_DRAFT_TOKENS": "5",
+  "NGRAM_BREADTH": "1",
+  "MEM_FRACTION_STATIC": "0.96",
+  "CONTEXT_LENGTH": "65536",
+  "CHUNKED_PREFILL_SIZE": "8192",
+  "MAX_RUNNING_REQUESTS": "4",
+  "SGLANG_LOGPROB_CHUNK_SIZE": "512",
+  "MAX_TOTAL_TOKENS": "278528",
+  "CUDA_GRAPH_MAX_BS": "4",
+  "CUDA_GRAPH_BS": "1 2 3 4",
+  "ENGRAM_FILE_PREFETCH": "ahead",
+  "ENGRAM_FILE_THREADS": "16",
+  "EXTRA_SERVER_ARGS": "--expert-distribution-recorder-mode stat",
+  "EXTRA_DOCKER_ENV": "",
+  "EXTRA_DOCKER_ARGS": "",
+  "SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE": "1",
+  "KT_TIMELINE": "0",
+  "KT_TIMELINE_DIR": "",
+  "KT_TIMELINE_SAMPLE": "0",
+  "KT_TIMELINE_MAX_RECORDS": "0",
+  "KT_TIMELINE_DUMP_MAX": "0",
+  "KT_TIMELINE_DUMP_MAX_TOKENS": "0",
+  "KT_TIMELINE_DUMP_LAYERS": "",
+  "KT_FORCE_SYNC_SUBMIT": "0",
+  "SGLANG_BCG_DEBUG_SYNC": "0",
+  "SGLANG_BCG_DEBUG_EAGER": "0",
+  "SGLANG_BCG_DEBUG_INPUTS": "0",
+  "SGLANG_BCG_DEBUG_LAYER_BREAKS": "0"
+ },
+ "resolved_line": "resolved: experts gpu=219 cpu=165 deferral D=4 cpuinfer=16 chunk=8192 mem_fraction=0.96 context=65536 slots=4 max_total_tokens=278528 capture_bs=[1 2 3 4] dspark=0 dspark_k=5 ngram=0 ngram_draft=5 ngram_breadth=1 gpu_prefill_min=1024 logprob_chunk=512 nan_probe_min=0 expandable_after_capture=1 engram_prefetch=ahead image=dsv41-kt:recipe",
+ "bios": {
+  "slot_declared": "3",
+  "hsmp": {
+   "fclk_mhz": 2100,
+   "mclk_mhz": 3200,
+   "ddr_rate_mts": 6400,
+   "ddr_theoretical_gbps": 410,
+   "ddr_utilised_gbps": 20,
+   "ddr_utilisation_pct": 5,
+   "socket_power_w": 131.349,
+   "cclk_limit_mhz": 5450
+  }
+ },
+ "gpus": [
+  {
+   "index": 0,
+   "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+   "power_limit_w": 325.0,
+   "driver": "615.71.09",
+   "memory_total_mib": 97887
+  },
+  {
+   "index": 1,
+   "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+   "power_limit_w": 325.0,
+   "driver": "615.71.09",
+   "memory_total_mib": 97887
+  }
+ ],
+ "kernel": "7.2.6-070206-generic",
+ "box": {
+  "note": "sampled when docker run returned, before the server loaded weights",
+  "meminfo": {
+   "unit": "kB",
+   "MemTotal": 258789868,
+   "MemFree": 163955208,
+   "MemAvailable": 249189932,
+   "Buffers": 160668,
+   "Cached": 86264996,
+   "Active(file)": 749032,
+   "Inactive(file)": 85645816,
+   "SwapTotal": 8388604,
+   "SwapFree": 5550636,
+   "Dirty": 2008,
+   "Shmem": 31052,
+   "SwapUsed": 2837968
+  },
+  "pressure": {
+   "cpu": {
+    "some": {
+     "avg10": 0.0,
+     "avg60": 0.0,
+     "avg300": 0.0,
+     "total": 406760213
+    },
+    "full": {
+     "avg10": 0.0,
+     "avg60": 0.0,
+     "avg300": 0.0,
+     "total": 0
+    }
+   },
+   "io": {
+    "some": {
+     "avg10": 0.0,
+     "avg60": 0.0,
+     "avg300": 0.02,
+     "total": 1484199937
+    },
+    "full": {
+     "avg10": 0.0,
+     "avg60": 0.0,
+     "avg300": 0.02,
+     "total": 1443684960
+    }
+   },
+   "memory": {
+    "some": {
+     "avg10": 0.0,
+     "avg60": 0.0,
+     "avg300": 0.0,
+     "total": 465835836
+    },
+    "full": {
+     "avg10": 0.0,
+     "avg60": 0.0,
+     "avg300": 0.0,
+     "total": 464679425
+    }
+   }
+  },
+  "engram_residency": [
+   {
+    "shard": "model-00047-of-00048.safetensors",
+    "resident_bytes": 6357233664,
+    "size_bytes": 101535150936,
+    "resident_pct": 6.26
+   },
+   {
+    "shard": "model-00048-of-00048.safetensors",
+    "resident_bytes": 6356930560,
+    "size_bytes": 101537926640,
+    "resident_pct": 6.26
+   }
+  ]
+ },
+ "errors": [],
+ "content_hash": "6a9b638690bcc6794e959bb8990fb8096688a1c3dd441184faa1a7f40bffdc56"
+}
