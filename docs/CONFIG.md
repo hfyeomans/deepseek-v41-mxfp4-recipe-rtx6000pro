@@ -11,7 +11,10 @@ one place; `scripts/tests/test_serve_config.py` pins both to goldens.
 Rules the registry enforces before any docker call:
 
 - an unknown `KT_*` / `DSPARK*` variable in the environment is refused (a mistyped knob used to
-  run the default while the log claimed otherwise); `ALLOW_UNKNOWN_KNOBS=1` passes it through;
+  run the default while the log claimed otherwise); `ALLOW_UNKNOWN_KNOBS=1` under
+  `PROFILE=developer` passes it through;
+- (T3.24b) an `unsafe` knob, an `EXTRA_*` escape hatch or a diagnostic set to a non-default value
+  is refused under every profile but `developer`, with the message naming `PROFILE=developer`;
 - a removed knob is refused with the experiment that removed it;
 - a value that does not parse as its type is refused;
 - the T3.16b / E34d / T3.29 fit and quality refusals apply (each names its override);
@@ -36,9 +39,20 @@ so every evidence file names the profile it was measured on and what was changed
 - A profile is `KNOB=value` lines (`#` comments, optional quotes, `{repo}` = the recipe root).
   Every key must be a non-removed registry knob under its canonical name; a mistyped value, an
   unknown or removed knob, a duplicate, or `PROFILE` itself is refused (rc 2, naming file:line).
-- `unsafe` knobs (`ALLOW_UNTESTED_FIT`, `KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNKNOWN_KNOBS`) and the
-  `EXTRA_*` escape hatches are refused in every profile except one whose file is named
-  `developer.env` (`PROFILE=developer`, or a local copy `PROFILE=/path/to/developer.env`).
+- `unsafe` knobs (`ALLOW_UNTESTED_FIT`, `KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNKNOWN_KNOBS`), the
+  `EXTRA_*` escape hatches and the diagnostics (`diagnostic-env` sink: `KT_NAN_PROBE_MIN_TOKENS`,
+  `KT_NAN_INJECT`, `KT_TIMELINE*`, `SGLANG_BCG_DEBUG_*`, `KT_FORCE_SYNC_SUBMIT`) are refused in
+  every profile except one whose file is named `developer.env` (`PROFILE=developer`, or a local
+  copy `PROFILE=/path/to/developer.env`).
+- **The same rule holds for the environment (T3.24b):** setting one of those knobs to a
+  non-default value under any other profile is refused (rc 2) with a message naming
+  `PROFILE=developer`, so a measured serve under `qualified` can never carry a guard bypass, an
+  injected server flag or a probe, and every experiment that does is recorded as
+  `profile=developer overrides=[...]` in the resolved line and the manifest. A knob set to its
+  default (`ALLOW_UNTESTED_FIT=0`, `KT_TIMELINE=0`, `EXTRA_SERVER_ARGS=`) is not an experiment and
+  is accepted. `KT_NAN_PROBE_MIN_TOKENS` moved from `container-env` to `diagnostic-env` here: the
+  overlay's own default is 0, so the default docker command simply no longer carries it, and
+  `KT_REJECT_NAN_ROWS` (C10) owns NaN handling in a release serve.
 - The guards judge the resolved values, so a profile at 226 / 4096 is held to the same E34d /
   T3.29 refusals as the environment.
 - Shipped: `qualified.env` (the serve shape every headline number was measured on) and
@@ -73,16 +87,16 @@ so every evidence file names the profile it was measured on and what was changed
 | `KT_MAX_DEFERRED` | int | `4` | server-arg | Expert deferral D (E21): each token's D lowest-scored routed experts are computed during the next layer and added one layer late. D=4: +22 % C1 over D=0, NLL within gate (T3.28: +0.00066 +- 0.00103 on the forced CPU path). D=5 fails the NLL gate (+0.00287, T3.15) and greedy consistency; D=6 loses 0.23 nats. 0 disables. | evidence/e21-deferral/, evidence/t315-d5/, evidence/t328/ |
 | `KT_GPU_PREFILL_MIN_TOKENS` | int | `1024` | container-env | Layerwise GPU prefill (E22): chunks with at least this many tokens stream each layer's CPU experts to the GPUs (kt export -> pinned buffer -> H2D -> FlashInfer MoE). 0 keeps every chunk on the CPU path. Streamed prefill is NLL-neutral vs the CPU path (T3.28: -0.00025 +- 0.00104). | evidence/e22-gpu-prefill/, evidence/t328/ |
 | `KT_GPU_PREFILL_LOG` | flag | `0` | container-env | Log per-chunk streamed-prefill timing. |  |
-| `KT_NAN_PROBE_MIN_TOKENS` | int | `0` | container-env | Per-layer non-finite check on forwards of >= N MoE tokens (E22d/E24 diagnosis; 0 = off; 1 in every qualification serve). | evidence/e24-nan/ |
+| `KT_NAN_PROBE_MIN_TOKENS` | int | `0` | diagnostic-env | Per-layer non-finite check on forwards of >= N MoE tokens (E22d/E24 diagnosis; 0 = off). Was 1 in the E24 qualification serves; a diagnostic since T3.24b now that KT_REJECT_NAN_ROWS (C10) owns rejection. | evidence/e24-nan/ |
 | `DSPARK` | flag | `0` | server-arg | DSPARK=1 adds the three MTP draft stages (--speculative-algorithm DSPARK). Off: E23 measured it a net loss under the CPU-bound MoE; drafts cost ~3.85 GB per rank. | evidence/e23-spec-decode/ |
 | `DSPARK_K` | int | `5` | server-arg | DSPARK block size; tested 1..5 (E23 R0-R3). | evidence/e23-spec-decode/ |
 | `NGRAM` | flag | `0` | server-arg | NGRAM=1 turns on SGLang n-gram speculation (--speculative-algorithm NGRAM: drafts come from a suffix cache of the request's own tokens, no draft model, no extra weights). E23 R6: pays only where the output copies spans of the prompt; a verify of N rows routes N rows' worth of CPU experts. Exclusive with DSPARK. | evidence/e23-spec-decode/r6-ngram/ |
 | `NGRAM_DRAFT_TOKENS` | int | `5` | server-arg | --speculative-num-draft-tokens for NGRAM (verify window incl. the root; SGLang's default is 12, which would route 12 rows of CPU experts per step; 5 matches DSpark's K=4 window). | evidence/e23-spec-decode/r6-ngram/ |
 | `NGRAM_BREADTH` | int | `1` | server-arg | --speculative-ngram-max-bfs-breadth for NGRAM (1 = one chain per step; SGLang's default 10 builds a tree, more verify rows). | evidence/e23-spec-decode/r6-ngram/ |
 | `MEM_FRACTION_STATIC` | float | `0.96` | server-arg | SGLang static fraction. 0.92 -> 0.96 at T3.6g (the pool is capped by MAX_TOTAL_TOKENS, so the fraction only has to leave room for prefill transients and capture). 0.962 is the qualified value for the 512K x 1 rung, where 0.96 silently caps the pool at 505,856 tokens and 400s longer inputs. | evidence/e34-indexer-memory/b-ii/512k/, evidence/t329/ |
-| `CONTEXT_LENGTH` | int | `65536` | server-arg | Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K x 1 are qualified rungs (T3.29 on the 219/8192 default; 512K needs MEM_FRACTION_STATIC=0.962); above 64K only one slot fits. | evidence/e34-indexer-memory/, evidence/t329/README.md |
+| `CONTEXT_LENGTH` | int | `65536` | server-arg | Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K/1M x 1 are qualified rungs (T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962) and 262K x 4 is qualified with the expandable lever (T3.31 idea 8, re-qualified 2026-10-10 at a 110-180 MiB VRAM trough: a per-rung override, not a default). | evidence/e34-indexer-memory/, evidence/t329/README.md |
 | `CHUNKED_PREFILL_SIZE` | int | `8192` | server-arg | Prefill chunk. 4096 -> 8192 on 2026-10-08 together with 226 -> 219 experts (E34d-ii, T3.28): first-turn TTFT is what chunk buys for long coding sessions. 16384 is +22 % prefill but costs 14 experts (E34d-iv); 2048 frees ~1.5 GB per rank but costs 40 % of prefill (E29). The fused-MoE prefill workspace scales with the chunk (E34d), so 8192 only fits beside <= 219 experts. | evidence/e34-indexer-memory/d-ii/, evidence/t328/README.md |
-| `MAX_RUNNING_REQUESTS` | int | `4` | server-arg | Decode slots. Above 64K context only 1 is qualified (T3.29). | evidence/t329/README.md |
+| `MAX_RUNNING_REQUESTS` | int | `4` | server-arg | Decode slots. Above 64K context: 1 at any qualified rung (T3.29), up to 4 at 262K with the expandable lever (T3.31 idea 8); 512K / 1M x >1 never run. | evidence/t329/README.md |
 | `SGLANG_LOGPROB_CHUNK_SIZE` | int | `512` | container-env | A return_logprob request materialises chunk x 129,280-vocab fp32 logits (1.06 GB at SGLang's 2048) and a CUDA OOM there kills the server, not the request (E29). 512 is bit-identical and no slower. | evidence/t36g2-placement-r2/ |
 | `MAX_TOTAL_TOKENS` | int | `derived` | server-arg | KV pool cap (T3.6g): slots x context + one 16K chunk. Left to the fraction SGLang sized the pool 15x too large (E26 A4). MAX_TOTAL_TOKENS="" lets the fraction size it again. | evidence/e26-single-user/ |
 | `CUDA_GRAPH_MAX_BS` | int | `4` | server-arg | Largest captured decode batch. |  |

@@ -112,12 +112,15 @@ def test_collect_tildes_paths():
         assert m["recipe"]["dir"] == "~/recipe" and m["overlay"]["dir"] == "~/overlay"
         assert m["config"]["BIOS_SLOT"] == "3" and m["bios"]["slot_declared"] == "3"
         assert "MANIFEST_DIR" in m["config"] and "experts gpu=" in m["resolved_line"]
-        # $HOME embedded in a knob value (E35 EXTRA_DOCKER_ARGS), not only as a string prefix
-        env = {**base_env(home), "EXTRA_DOCKER_ARGS": f"-v {home}/overlay/x.py:/sgl/x.py:ro -v {home}/y:/y:ro"}
+        # $HOME embedded in a knob value (E35 EXTRA_DOCKER_ARGS), not only as a string prefix.
+        # EXTRA_DOCKER_ARGS is an escape hatch, so since T3.24b such a serve runs as PROFILE=developer.
+        env = {**base_env(home), "PROFILE": "developer",
+               "EXTRA_DOCKER_ARGS": f"-v {home}/overlay/x.py:/sgl/x.py:ro -v {home}/y:/y:ro"}
         m = em.collect(env, container=None, collectors=fake_collectors(), now=lambda: FIXED_NOW,
                        recipe_dir=pathlib.Path(home) / "recipe")
         assert home not in json.dumps(m), "a $HOME path inside a knob value leaked into the manifest"
         assert m["config"]["EXTRA_DOCKER_ARGS"] == "-v ~/overlay/x.py:/sgl/x.py:ro -v ~/y:/y:ro"
+        assert m["config"]["PROFILE"] == "developer" and "profile=developer" in m["resolved_line"]
 
 
 def test_rescrub_leaked_manifest():

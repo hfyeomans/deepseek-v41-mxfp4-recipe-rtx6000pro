@@ -73,8 +73,20 @@ def _repo(p: str) -> str:
 
 
 PROFILE_DIR = _repo("config/profiles")
-DEVELOPER_PROFILE = "developer"          # the only profile allowed to carry unsafe knobs / EXTRA_*
+DEVELOPER_PROFILE = "developer"          # the only profile under which unsafe knobs / EXTRA_* / diagnostics may be set
 PROFILE_ONLY_DEVELOPER = ("EXTRA_SERVER_ARGS", "EXTRA_DOCKER_ENV", "EXTRA_DOCKER_ARGS")
+
+
+def developer_only(knob: Knob) -> str:
+    """Why `knob` may only be set under PROFILE=developer ("" when any profile may set it): an `unsafe`
+    guard bypass, an EXTRA_* escape hatch, or a diagnostic (DIAGNOSTIC_ENV sink). T3.24b."""
+    if knob.unsafe:
+        return "unsafe"
+    if knob.name in PROFILE_ONLY_DEVELOPER:
+        return "an escape hatch"
+    if knob.sink == DIAGNOSTIC_ENV:
+        return "a diagnostic"
+    return ""
 # Knobs that never count as an "override" of the profile: they select or describe the launch
 # rather than change what serves.
 NOT_OVERRIDES = ("PROFILE", "PROFILE_OVERRIDES", "DRY_RUN")
@@ -147,8 +159,9 @@ REGISTRY: tuple[Knob, ...] = (
          sink=CONTAINER_ENV, evidence="evidence/e22-gpu-prefill/, evidence/t328/"),
     Knob("KT_GPU_PREFILL_LOG", "flag", "0", "Log per-chunk streamed-prefill timing.", sink=CONTAINER_ENV),
     Knob("KT_NAN_PROBE_MIN_TOKENS", "int", "0",
-         "Per-layer non-finite check on forwards of >= N MoE tokens (E22d/E24 diagnosis; 0 = off; 1 in every "
-         "qualification serve).", sink=CONTAINER_ENV, evidence="evidence/e24-nan/"),
+         "Per-layer non-finite check on forwards of >= N MoE tokens (E22d/E24 diagnosis; 0 = off). Was 1 in the "
+         "E24 qualification serves; a diagnostic since T3.24b now that KT_REJECT_NAN_ROWS (C10) owns rejection.",
+         sink=DIAGNOSTIC_ENV, evidence="evidence/e24-nan/"),
     # ---- speculative decoding -----------------------------------------------------------
     Knob("DSPARK", "flag", "0",
          "DSPARK=1 adds the three MTP draft stages (--speculative-algorithm DSPARK). Off: E23 measured it a net "
@@ -175,8 +188,10 @@ REGISTRY: tuple[Knob, ...] = (
          "rung, where 0.96 silently caps the pool at 505,856 tokens and 400s longer inputs.",
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/b-ii/512k/, evidence/t329/"),
     Knob("CONTEXT_LENGTH", "int", "65536",
-         "Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K x 1 are qualified rungs "
-         "(T3.29 on the 219/8192 default; 512K needs MEM_FRACTION_STATIC=0.962); above 64K only one slot fits.",
+         "Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K/1M x 1 are qualified rungs "
+         "(T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962) and 262K x 4 is qualified "
+         "with the expandable lever (T3.31 idea 8, re-qualified 2026-10-10 at a 110-180 MiB VRAM trough: a per-rung "
+         "override, not a default).",
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/, evidence/t329/README.md"),
     Knob("CHUNKED_PREFILL_SIZE", "int", "8192",
          "Prefill chunk. 4096 -> 8192 on 2026-10-08 together with 226 -> 219 experts (E34d-ii, T3.28): first-turn "
@@ -184,7 +199,8 @@ REGISTRY: tuple[Knob, ...] = (
          "2048 frees ~1.5 GB per rank but costs 40 % of prefill (E29). The fused-MoE prefill workspace scales with "
          "the chunk (E34d), so 8192 only fits beside <= 219 experts.",
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/d-ii/, evidence/t328/README.md"),
-    Knob("MAX_RUNNING_REQUESTS", "int", "4", "Decode slots. Above 64K context only 1 is qualified (T3.29).",
+    Knob("MAX_RUNNING_REQUESTS", "int", "4", "Decode slots. Above 64K context: 1 at any qualified rung (T3.29), "
+         "up to 4 at 262K with the expandable lever (T3.31 idea 8); 512K / 1M x >1 never run.",
          sink=SERVER_ARG, evidence="evidence/t329/README.md"),
     Knob("SGLANG_LOGPROB_CHUNK_SIZE", "int", "512",
          "A return_logprob request materialises chunk x 129,280-vocab fp32 logits (1.06 GB at SGLang's 2048) and "
@@ -285,7 +301,6 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_LOGPROB_CHUNK_SIZE={r['SGLANG_LOGPROB_CHUNK_SIZE']}",
         f"KT_GPU_PREFILL_MIN_TOKENS={r['KT_GPU_PREFILL_MIN_TOKENS']}",
         f"KT_GPU_PREFILL_LOG={r['KT_GPU_PREFILL_LOG']}",
-        f"KT_NAN_PROBE_MIN_TOKENS={r['KT_NAN_PROBE_MIN_TOKENS']}",
         f"SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']}",
         f"SGLANG_DSV41_REJECT_NAN_ROWS={r['KT_REJECT_NAN_ROWS']}",
     ]
@@ -367,8 +382,8 @@ def load_profile(name: str) -> dict[str, str]:
             raise ConfigError(f"{path}:{lineno}: {key} cannot be set from a profile")
         if key in out:
             raise ConfigError(f"{path}:{lineno}: {key} set twice")
-        if (knob.unsafe or key in PROFILE_ONLY_DEVELOPER) and not developer:
-            raise ConfigError(f"{path}:{lineno}: {key} is {'unsafe' if knob.unsafe else 'an escape hatch'}; "
+        if developer_only(knob) and not developer:
+            raise ConfigError(f"{path}:{lineno}: {key} is {developer_only(knob)}; "
                               f"only PROFILE={DEVELOPER_PROFILE} (a file named {DEVELOPER_PROFILE}.env) may carry it")
         out[key] = _parse(knob, value)
     return out
@@ -376,13 +391,8 @@ def load_profile(name: str) -> dict[str, str]:
 
 def resolve(env: dict[str, str]) -> dict[str, str]:
     """Resolve every knob: registry default < profile file < `env`; raise ConfigError on an unknown,
-    removed or mistyped knob, or a profile the registry would not accept."""
-    if env.get("ALLOW_UNKNOWN_KNOBS", "0") != "1":
-        unknown = sorted(n for n in env if n.startswith(OWNED_PREFIXES) and n not in BY_NAME)
-        if unknown:
-            raise ConfigError(
-                f"unknown knob(s) {' '.join(unknown)}: not declared in scripts/serve_config.py "
-                "(declare it there, or ALLOW_UNKNOWN_KNOBS=1 to pass it through unchecked)")
+    removed or mistyped knob, a profile the registry would not accept, or (T3.24b) an unsafe knob,
+    EXTRA_* escape hatch or diagnostic set to a non-default value under any profile but `developer`."""
     for k in REGISTRY:
         if k.removed and any(n in env for n in (k.name, *k.aliases)):
             raise ConfigError(k.removed)
@@ -392,6 +402,22 @@ def resolve(env: dict[str, str]) -> dict[str, str]:
     if not profile_name:
         raise ConfigError("PROFILE='': name a profile (config/profiles/*.env) or leave it unset for `qualified`")
     profile = load_profile(profile_name)
+    if Path(profile_path(profile_name)).stem != DEVELOPER_PROFILE:
+        for k in REGISTRY:
+            if k.removed or not developer_only(k):
+                continue
+            src = next((n for n in (k.name, *k.aliases) if n in env), None)
+            if src is not None and not callable(k.default) and _parse(k, env[src]) != k.default:
+                raise ConfigError(
+                    f"{src}={env[src]}: {k.name} is {developer_only(k)}; PROFILE={profile_name} refuses it. "
+                    f"Run the experiment as PROFILE={DEVELOPER_PROFILE} (config/profiles/{DEVELOPER_PROFILE}.env), "
+                    "which the resolved line and the manifest then record (T3.24b).")
+    if env.get("ALLOW_UNKNOWN_KNOBS", "0") != "1":
+        unknown = sorted(n for n in env if n.startswith(OWNED_PREFIXES) and n not in BY_NAME)
+        if unknown:
+            raise ConfigError(
+                f"unknown knob(s) {' '.join(unknown)}: not declared in scripts/serve_config.py "
+                f"(declare it there, or ALLOW_UNKNOWN_KNOBS=1 under PROFILE={DEVELOPER_PROFILE} to pass it through unchecked)")
     out: dict[str, str] = {}
     overrides: list[str] = []
     for k in REGISTRY:
@@ -446,15 +472,18 @@ def guards(r: dict[str, str]) -> None:
                 f"beside KT_NUM_GPU_EXPERTS<=219 (E22/E28/E34d-ii; at 226 the fused-MoE prefill workspace OOMs on the "
                 "first 16K prefill, E34d, and expandable_segments breaks the custom all-reduce). Set ALLOW_UNTESTED_FIT=1 "
                 "to try, then run stress-kv-full.py followed by nll-score.py --corpus.")
-        # T3.29: above 64K only single-slot rungs are qualified (262K x 4 OOMs in the fused-MoE
-        # prefill workspace at ~190K prefix of the first request: pool-size limit, not concurrency).
-        if ctx > 65536 and slots > 1:
+        # T3.29 / T3.31: above 64K the multi-slot rung that is qualified is 262K x <=4 at 219 / 8192 with the
+        # expandable-segments lever (idea 8; re-qualified on overlay 682fc6a0, 2026-10-10, every gate passed with
+        # a 110-180 MiB free-VRAM trough during the 4 x 253K stress: at the ceiling, a per-rung override, not a
+        # default). Without the lever 262K x 4 OOMs on the third chunk (fragmentation); 512K / 1M x >1 never run.
+        lever = r["SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE"] == "1"
+        if ctx > 65536 and slots > 1 and not (ctx <= 262144 and slots <= 4 and chunk == 8192 and experts == 219 and lever):
             raise ConfigError(
-                f"CONTEXT_LENGTH={ctx} with MAX_RUNNING_REQUESTS={slots}: "
-                "above 64K only single-slot rungs are qualified (262K / 512K x 1 at 219 / 8192, T3.29; 512K needs "
-                "MEM_FRACTION_STATIC=0.962). 262K x 4 OOMs in the fused-MoE prefill workspace at ~190K prefix. "
-                "Set MAX_RUNNING_REQUESTS=1, or ALLOW_UNTESTED_FIT=1 to try (then stress-kv-full.py at that "
-                "concurrency, nll-score.py --corpus).")
+                f"CONTEXT_LENGTH={ctx} with MAX_RUNNING_REQUESTS={slots}: above 64K the qualified rungs are "
+                "262K / 512K x 1 at 219 / 8192 (T3.29; 512K needs MEM_FRACTION_STATIC=0.962) and 262K x <=4 at 219 / 8192 "
+                "with SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1 (T3.31 idea 8, re-qualified 2026-10-10; without the "
+                "lever it OOMs on the third chunk). Larger multi-slot pools were never run. Set MAX_RUNNING_REQUESTS=1, or "
+                "PROFILE=developer ALLOW_UNTESTED_FIT=1 to try (then stress-kv-full.py at that concurrency, nll-score.py --corpus).")
         if ctx > 65536 and (chunk != 8192 or experts != 219) and not (chunk == 4096 and experts == 226):
             raise ConfigError(
                 f"CONTEXT_LENGTH={ctx} with KT_NUM_GPU_EXPERTS={experts} CHUNKED_PREFILL_SIZE={chunk}: "
@@ -486,7 +515,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"max_total_tokens={mtt} capture_bs=[{cap}] dspark={r['DSPARK']} dspark_k={r['DSPARK_K']} "
             f"ngram={r['NGRAM']} ngram_draft={r['NGRAM_DRAFT_TOKENS']} ngram_breadth={r['NGRAM_BREADTH']} "
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
-            f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} reject_nan_rows={r['KT_REJECT_NAN_ROWS']} "
+            f"reject_nan_rows={r['KT_REJECT_NAN_ROWS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
             f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} engram_chunk_ahead={r['ENGRAM_CHUNK_AHEAD']} "
             f"expert_map={emap} image={r['IMAGE']} profile={r['PROFILE']} overrides=[{r['PROFILE_OVERRIDES']}]")

@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 3,
+  "seed": 777,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization; sizes = cold pass",
+  "sizes": [
+    {
+      "target_tokens": 32768,
+      "median_prompt_tokens": 32004,
+      "median_prefill_tps": 3115.186335067364,
+      "median_ttft_s": 10.273542754002847,
+      "runs": [
+        {
+          "prompt_tokens": 32004,
+          "ttft_s": 10.273542754002847,
+          "prefill_tps": 3115.186335067364
+        },
+        {
+          "prompt_tokens": 32025,
+          "ttft_s": 10.314233017968945,
+          "prefill_tps": 3104.932760798368
+        },
+        {
+          "prompt_tokens": 31932,
+          "ttft_s": 9.735218396992423,
+          "prefill_tps": 3280.0496812547117
+        }
+      ]
+    }
+  ],
+  "passes": [
+    {
+      "pass": "cold",
+      "seed": 777,
+      "engram_residency_before": [
+        {
+          "shard": "model-00047-of-00048.safetensors",
+          "resident_bytes": 10672242688,
+          "size_bytes": 101535150936,
+          "resident_pct": 10.51
+        },
+        {
+          "shard": "model-00048-of-00048.safetensors",
+          "resident_bytes": 10678640640,
+          "size_bytes": 101537926640,
+          "resident_pct": 10.52
+        }
+      ],
+      "sizes": [
+        {
+          "target_tokens": 32768,
+          "median_prompt_tokens": 32004,
+          "median_prefill_tps": 3115.186335067364,
+          "median_ttft_s": 10.273542754002847,
+          "runs": [
+            {
+              "prompt_tokens": 32004,
+              "ttft_s": 10.273542754002847,
+              "prefill_tps": 3115.186335067364
+            },
+            {
+              "prompt_tokens": 32025,
+              "ttft_s": 10.314233017968945,
+              "prefill_tps": 3104.932760798368
+            },
+            {
+              "prompt_tokens": 31932,
+              "ttft_s": 9.735218396992423,
+              "prefill_tps": 3280.0496812547117
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-10T15:28:27-0400",
+  "evidence": {
+    "tool": "bench-prefill.py",
+    "recorded_utc": "2026-10-10T19:28:27Z",
+    "manifest_hash": "4da29edb161faaa922c8c38c53f645e7a73d13f46c57cb157bd61e0c0b4636ac",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "bc60d843eb0b666f94b30e6a9d38c2b25dccf6cc22b870bc08a613c33b6cc281"
+  }
+}

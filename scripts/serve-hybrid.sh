@@ -29,6 +29,8 @@ done
 # the knob table (docs/CONFIG.md). PROFILE=<name> (default `qualified`) loads
 # config/profiles/<name>.env under the environment (T3.24a): registry default < profile
 # < environment; the resolved line and the manifest name the profile and every env override.
+# Unsafe knobs (ALLOW_UNTESTED_FIT, KT_ALLOW_UNSAFE_DEFERRAL, ALLOW_UNKNOWN_KNOBS), EXTRA_* and
+# diagnostics are refused under every profile but PROFILE=developer (T3.24b).
 cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || exit $?
 # Assigned by the eval (listed for shellcheck): the knobs this script reads directly plus
 # RESOLVED_LINE, CONTAINER_ENV (fixed + forwarded -e pairs) and DIAG_ENV (set-only diagnostics).

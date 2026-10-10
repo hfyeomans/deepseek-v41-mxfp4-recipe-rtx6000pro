@@ -26,6 +26,8 @@ has *more* headroom on every rung and faster long-prompt TTFT.
 | `../e34-indexer-memory/d-v-ii/1m/` | 1M × 1, fraction 0.962, overlay `1eeb48cd` (E34d-v (ii)), run 2026-10-09 | **1,019,251-token prompt completed**, TTFT **803 s** (≈ 1,269 tok/s averaged over the prompt), min free **547 / 574 MiB** (two earlier serves on the same day OOMed at ≈ 298K and ≈ 860K on the next two chunk-proportional transients, see that README) | 6/6 at 887,387 tokens, TTFT **550 s** | 0 of 65,653 moved | **1,659 / 1,657** | 41.31 / 39.41, TTFT 0.617 s | 2 benign sealed-buffer lines, 0 NaN / Xid, EDAC 0/0 | 3.25 / 3.18 GB, pool 1,064,960 | **pass — ladder top; per-rung override, not a default** |
 | `../e34-indexer-memory/d-v-a/262k-4slot/` | 262K × 4, fraction 0.96, overlay `1eeb48cd`, chunk 8192, run 2026-10-09 | **CUDA OOM on the third 8192-token chunk of the first request** (320 MiB `mhc_post` output, 266 MiB free, 1.05 GiB reserved-but-unallocated — fragmentation) | — | — | — | — | 0 NaN / Xid, EDAC 0/0 | 2.92 / 2.86 GB, pool 1,064,960 | **fail (b)** |
 | `../e34-indexer-memory/d-v-a/262k-4slot-chunk4096/` | 262K × 4, fraction 0.96, overlay `1eeb48cd`, **chunk 4096**, run 2026-10-09 | 4 × ~253K prompts all finished, wall **1,082 s**, TTFT 289 / 810 / 1,064 / 550 s, min free **877 / 738 MiB** | 6/6 at 221,756 tokens, TTFT 216 s | pooled ΔNLL −0.00114 ± 0.00097 (shape change) | **975 / 975** | 41.44 / 39.55, TTFT 0.618 s | 0, EDAC 0/0 | 3.65 / 3.59 GB, pool 1,064,960 | **pass** (first multi-slot rung above 64K) |
+| `../e34-indexer-memory/d-v-a/262k-4slot-idea8/` | 262K × 4, fraction 0.96, overlay `30e8c412`, chunk 8192 + **`SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1`** (idea 8), run 2026-10-09 | 4 × ~253K all finished, wall **678 s**, TTFT 346 / 506 / 184 / 660 s, min free 553 / 552 MiB, **114** allocator mapping retries at 16–20 MiB free | 6/6 at 221,756, TTFT 123 s | 0 of 65,653 moved | 1,532 / 1,541 | 41.31 / 39.42, TTFT 0.616 s | 0, EDAC 0/0 | 5.01 / 4.93 GB, pool 1,064,960 | **pass** at the ceiling (see `../e34-indexer-memory/d-v-a/README.md`) |
+| `262k-4slot-682fc6a0/` | 262K × 4, fraction 0.96, overlay **`682fc6a0`** (C10: T3.20 Engram ahead, T3.39 windows 1b + 2, T3.8b map), chunk 8192 + lever, run 2026-10-10 | 4 × ~253K all finished, wall **349.9 s**, TTFT 342 / 180 / 264 / 100 s, min free 731 / 662 MiB, **0** mapping retries but 130 late Triton loads at 0.11–0.23 GiB free | 6/6 at 221,756, TTFT **54.1 s** | pooled ΔNLL −0.00033 ± 0.00101, z +0.33 (= the T3.8b map reading) | **3,191 / 3,115** | 57.86 / 56.07, TTFT 0.300 s; C4 123.06 / 118.05 | 2 benign sealed lines, Xid 0, EDAC 0/0 | 5.38 / 5.30 GB, pool 1,064,960 | **pass** — second pass on a second overlay; guard now accepts it (below) |
 | `512k-1slot/` | 512K × 1, **fraction 0.962** | 508,445-token prompt, TTFT **369 s** (was 596 s), min free **1,091 / 1,016 MiB** (was 713 / 638) | 6/6 at 443,617 tokens, TTFT **267 s** | 0 of 65,653 moved | **1,650 / 1,669** (9.71 / 9.74 / 9.71 s; 19.17 / 19.28 / 19.11 s) | 41.63 / 39.66, TTFT 0.633 s | 0, EDAC 0/0 | 5.32 GB, pool 540,672 | **pass** |
 
 128K × 1 was not run: its pool (147,456 tokens) is smaller than 262K × 1's and its stress prefix
@@ -60,7 +62,11 @@ on the same default leaves 5.50 GB after capture (E34d-ii).
 
 `scripts/serve-hybrid.sh` above 64K now (1) refuses `MAX_RUNNING_REQUESTS > 1` and (2) accepts only
 219 / 8192 or 226 / 4096, both overridable with `ALLOW_UNTESTED_FIT=1`. The old guard required
-226 / 4096 above 64K. `DRY_RUN=1` prints the resolved line after every guard and exits before any
+226 / 4096 above 64K. **2026-10-10 update (after `262k-4slot-682fc6a0/`):** rule (1) now has one
+exception — `CONTEXT_LENGTH <= 262144` with `MAX_RUNNING_REQUESTS <= 4` is accepted at 219 / 8192
+when `SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1` (the lever-off serve OOMed, idea-8 (a));
+512K / 1M with more than one slot were never run and stay refused, and since T3.24b the override is
+`PROFILE=developer ALLOW_UNTESTED_FIT=1`. `DRY_RUN=1` prints the resolved line after every guard and exits before any
 docker call (added after a guard probe on this task launched a real server, which was removed
 before the first rung). `scripts/tests/test-serve-config.sh` (11 DRY_RUN cases, in `ci.sh`) pins the
 accepted and refused profiles.

@@ -63,7 +63,7 @@ def test_goldens() -> None:
                                          "MEM_FRACTION_STATIC": "0.935"}),
         "resolved-ngram.txt": ([], {"DRY_RUN": "1", "NGRAM": "1"}),
         "print-default.txt": (["--print"], {}),
-        "print-empties-extras.txt": (["--print"], {"CUDA_GRAPH_BS": "", "MAX_TOTAL_TOKENS": "",
+        "print-empties-extras.txt": (["--print"], {"PROFILE": "developer", "CUDA_GRAPH_BS": "", "MAX_TOTAL_TOKENS": "",
                                                    "EXTRA_DOCKER_ENV": "CUDA_LAUNCH_BLOCKING=1 KT_TIMELINE=1",
                                                    "EXTRA_SERVER_ARGS": "--log-level debug"}),
     }
@@ -78,7 +78,7 @@ def test_goldens() -> None:
 def test_unknown_knob_refused() -> None:
     p = launcher([], DRY_RUN="1", KT_FOO="1")
     assert p.returncode == 2 and "FAIL config: unknown knob(s) KT_FOO" in p.stderr, (p.returncode, p.stderr)
-    p = launcher([], DRY_RUN="1", KT_FOO="1", ALLOW_UNKNOWN_KNOBS="1")
+    p = launcher([], DRY_RUN="1", KT_FOO="1", ALLOW_UNKNOWN_KNOBS="1", PROFILE="developer")  # T3.24b: developer-only
     assert p.returncode == 0 and p.stdout.startswith("resolved:"), (p.returncode, p.stderr)
 
 
@@ -125,20 +125,55 @@ def test_expert_map_knob() -> None:
 
 
 def test_diagnostic_forwarded() -> None:
-    p = launcher(["--print"], KT_TIMELINE="1", KT_TIMELINE_DIR="/tmp/tl", SGLANG_BCG_DEBUG_SYNC="1")
+    p = launcher(["--print"], PROFILE="developer", KT_TIMELINE="1", KT_TIMELINE_DIR="/tmp/tl",
+                 SGLANG_BCG_DEBUG_SYNC="1", KT_NAN_PROBE_MIN_TOKENS="1")
     assert p.returncode == 0, p.stderr
     cmd = p.stdout.splitlines()[1]
-    for kv in ("KT_TIMELINE=1", "KT_TIMELINE_DIR=/tmp/tl", "SGLANG_BCG_DEBUG_SYNC=1"):
+    for kv in ("KT_TIMELINE=1", "KT_TIMELINE_DIR=/tmp/tl", "SGLANG_BCG_DEBUG_SYNC=1", "KT_NAN_PROBE_MIN_TOKENS=1"):
         assert f"-e {kv} " in cmd, (kv, cmd)
     # the diagnostics sit after the registry env and before EXTRA_DOCKER_ENV
-    assert cmd.index("KT_NAN_PROBE_MIN_TOKENS=0") < cmd.index("KT_TIMELINE=1")
-    assert "KT_TIMELINE" not in (GOLDEN / "print-default.txt").read_text().splitlines()[1]
+    assert cmd.index("SGLANG_DSV41_REJECT_NAN_ROWS=1") < cmd.index("KT_TIMELINE=1")
+    default_cmd = (GOLDEN / "print-default.txt").read_text().splitlines()[1]
+    # T3.24b: the NaN probe is a diagnostic, forwarded only when set (the default docker command does not carry it)
+    assert "KT_TIMELINE" not in default_cmd and "KT_NAN_PROBE_MIN_TOKENS" not in default_cmd
+
+
+def test_developer_only_knobs_in_the_environment() -> None:
+    # T3.24b: unsafe flags, EXTRA_* and diagnostics set to a non-default value are refused under
+    # any profile but developer, with the message naming PROFILE=developer; at their default they
+    # are not an experiment, and under developer they resolve and are listed as overrides
+    for env, needle in (({"ALLOW_UNTESTED_FIT": "1"}, "ALLOW_UNTESTED_FIT is unsafe"),
+                        ({"KT_ALLOW_UNSAFE_DEFERRAL": "1"}, "KT_ALLOW_UNSAFE_DEFERRAL is unsafe"),
+                        ({"ALLOW_UNKNOWN_KNOBS": "1", "KT_FOO": "1"}, "ALLOW_UNKNOWN_KNOBS is unsafe"),
+                        ({"EXTRA_SERVER_ARGS": "--log-level debug"}, "EXTRA_SERVER_ARGS is an escape hatch"),
+                        ({"KT_NAN_PROBE_MIN_TOKENS": "1"}, "KT_NAN_PROBE_MIN_TOKENS is a diagnostic"),
+                        ({"KT_NAN_INJECT": "row=0,bs=1,step=3,layer=5"}, "KT_NAN_INJECT is a diagnostic"),
+                        ({"KT_TIMELINE": "1"}, "KT_TIMELINE is a diagnostic")):
+        try:
+            sc.resolve(env)
+        except sc.ConfigError as e:
+            assert needle in str(e) and "PROFILE=developer" in str(e), (env, e)
+        else:
+            raise AssertionError(f"{env}: accepted under the qualified profile")
+    r = sc.resolve({"ALLOW_UNTESTED_FIT": "0", "KT_TIMELINE": "0", "EXTRA_SERVER_ARGS": ""})
+    assert r["PROFILE"] == "qualified" and r["PROFILE_OVERRIDES"] == "EXTRA_SERVER_ARGS ALLOW_UNTESTED_FIT KT_TIMELINE", r
+    r = sc.resolve({"PROFILE": "developer", "ALLOW_UNTESTED_FIT": "1", "KT_NAN_PROBE_MIN_TOKENS": "1"})
+    assert r["ALLOW_UNTESTED_FIT"] == "1" and r["KT_NAN_PROBE_MIN_TOKENS"] == "1"
+    assert r["PROFILE_OVERRIDES"] == "KT_NAN_PROBE_MIN_TOKENS ALLOW_UNTESTED_FIT", r
+    # a mistyped value is still a type error, not a profile error
+    try:
+        sc.resolve({"ALLOW_UNTESTED_FIT": "yes"})
+    except sc.ConfigError as e:
+        assert "PROFILE=developer" not in str(e) and "expected flag" in str(e), e
+    else:
+        raise AssertionError("mistyped flag accepted")
 
 
 def test_guards_match_launcher_messages() -> None:
     # the registry raises the exact messages test-serve-config.sh pins; probe two directly
     for env, needle in (({"KT_MAX_DEFERRED": "5"}, "D>=5 fails the NLL gate"),
-                        ({"CONTEXT_LENGTH": "262144"}, "above 64K only single-slot rungs"),
+                        ({"CONTEXT_LENGTH": "524288", "MAX_RUNNING_REQUESTS": "2", "MEM_FRACTION_STATIC": "0.962"},
+                         "Larger multi-slot pools were never run"),
                         ({"NGRAM": "1", "DSPARK": "1", "KT_NUM_GPU_EXPERTS": "208"}, "two speculative algorithms"),
                         ({"NGRAM": "1", "NGRAM_DRAFT_TOKENS": "13"}, "outside 2..12")):
         try:
@@ -204,6 +239,7 @@ def test_profile_refusals() -> None:
         "profile sets PROFILE": ("PROFILE=qualified\n", "PROFILE cannot be set from a profile"),
         "unsafe knob outside developer": ("ALLOW_UNTESTED_FIT=1\n", "only PROFILE=developer (a file named developer.env) may carry it"),
         "escape hatch outside developer": ("EXTRA_SERVER_ARGS=--log-level debug\n", "only PROFILE=developer"),
+        "diagnostic outside developer": ("KT_NAN_PROBE_MIN_TOKENS=1\n", "is a diagnostic; only PROFILE=developer"),
     }
     with tempfile.TemporaryDirectory() as tmp:
         for name, (body, needle) in cases.items():

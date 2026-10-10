@@ -28,9 +28,11 @@ run_case ok "262K x 1 at 219/8192 (T3.29)" "" CONTEXT_LENGTH=262144 MAX_RUNNING_
 run_case ok "512K x 1 at 219/8192, fraction 0.962 (T3.29)" "" CONTEXT_LENGTH=524288 MAX_RUNNING_REQUESTS=1 MEM_FRACTION_STATIC=0.962
 run_case ok "262K x 1 at 226/4096 (E34b-ii)" "" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=1 KT_NUM_GPU_EXPERTS=226 CHUNKED_PREFILL_SIZE=4096
 run_case ok "PROFILE=developer is the qualified shape (T3.24a)" "" PROFILE=developer
+run_case ok "262K x 4 at 219/8192 with the lever (T3.31 idea 8, re-qualified on 682fc6a0)" "" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4
 
 # Refusals
-run_case refuse "262K x 4 refused (T3.29 OOM at ~190K prefix)" "MAX_RUNNING_REQUESTS=4" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4
+run_case refuse "262K x 4 without the expandable lever refused (idea 8 (a) OOM)" "SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4 SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=0
+run_case refuse "512K x 2 refused (never run)" "MAX_RUNNING_REQUESTS=2" CONTEXT_LENGTH=524288 MAX_RUNNING_REQUESTS=2 MEM_FRACTION_STATIC=0.962
 run_case refuse "unqualified placement above 64K refused" "KT_NUM_GPU_EXPERTS=212" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=1 KT_NUM_GPU_EXPERTS=212
 run_case refuse "chunk 8192 beside 226 refused (E34d)" "CHUNKED_PREFILL_SIZE=8192" KT_NUM_GPU_EXPERTS=226 CHUNKED_PREFILL_SIZE=8192
 run_case refuse "230 experts refused (E29)" "KT_NUM_GPU_EXPERTS=230" KT_NUM_GPU_EXPERTS=230
@@ -38,8 +40,12 @@ run_case refuse "D=5 refused without the unsafe flag (T3.15)" "KT_MAX_DEFERRED=5
 run_case refuse "B2 knobs refused (T3.16j)" "KT_B2_UVA_EXPERTS" KT_B2_UVA_EXPERTS=1
 run_case refuse "unknown profile refused (T3.24a)" "profiles in config/profiles/" PROFILE=4gpu-sglang
 
-# Override escape hatch still works
-run_case ok "ALLOW_UNTESTED_FIT=1 lets 262K x 4 through" "" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4 ALLOW_UNTESTED_FIT=1
+run_case refuse "unsafe flag under the qualified profile refused (T3.24b)" "PROFILE=developer" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4 ALLOW_UNTESTED_FIT=1
+run_case refuse "diagnostic under the qualified profile refused (T3.24b)" "KT_NAN_PROBE_MIN_TOKENS is a diagnostic" KT_NAN_PROBE_MIN_TOKENS=1
+
+# Override escape hatch still works under the developer profile
+run_case ok "PROFILE=developer ALLOW_UNTESTED_FIT=1 lets 512K x 2 through" "" PROFILE=developer CONTEXT_LENGTH=524288 MAX_RUNNING_REQUESTS=2 MEM_FRACTION_STATIC=0.962 ALLOW_UNTESTED_FIT=1
+run_case ok "unsafe flag at its default is not an experiment (T3.24b)" "" ALLOW_UNTESTED_FIT=0 KT_TIMELINE=0
 
 echo "$pass/$((pass + fail)) passed"
 [[ $fail -eq 0 ]]
