@@ -88,14 +88,19 @@ PY
   gate "needles at $CONTEXT" python3 "$ROOT/scripts/verify.py" --url "$URL" --model "$MODEL" --context "$CONTEXT" \
     --output "$OUT/verify.json" > "$OUT/verify.txt" 2>&1
   if [[ $FULL -eq 1 ]]; then
-    gate "decode C1" python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency 1 --fixture-offset 6 \
+    # Each bench runs under a 500 ms nvidia-smi sampler (power, clocks, temperature, throttle
+    # reasons); summarize-power.py reduces the CSVs to busy-median watts / max temperature.
+    # shellcheck disable=SC2329  # invoked through gate()
+    sampled() { bash "$ROOT/scripts/gpu-power-sample.sh" "$OUT/power-$1.csv" -- "${@:2}"; }
+    gate "decode C1" sampled decode-c1 python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency 1 --fixture-offset 6 \
       --max-tokens 512 --runs 6 --warmup 1 --distinct-prompts --seed 4242 --output "$OUT/c1.json" > "$OUT/c1.txt" 2>&1
-    gate "decode C$SLOTS" python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency "$SLOTS" --fixture-offset 6 \
+    gate "decode C$SLOTS" sampled "decode-c$SLOTS" python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency "$SLOTS" --fixture-offset 6 \
       --max-tokens 512 --runs 3 --warmup 1 --distinct-prompts --seed 4242 --output "$OUT/c$SLOTS.json" > "$OUT/c$SLOTS.txt" 2>&1
-    gate "prefill 16K" python3 "$ROOT/scripts/bench-prefill.py" --url "$URL" --model "$MODEL" --tokens 16384 --runs 3 --seed 777 \
+    gate "prefill 16K" sampled prefill-16k python3 "$ROOT/scripts/bench-prefill.py" --url "$URL" --model "$MODEL" --tokens 16384 --runs 3 --seed 777 \
       --output "$OUT/prefill-16k.json" > "$OUT/prefill-16k.txt" 2>&1
-    gate "prefill 32K" python3 "$ROOT/scripts/bench-prefill.py" --url "$URL" --model "$MODEL" --tokens 32768 --runs 3 --seed 777 \
+    gate "prefill 32K" sampled prefill-32k python3 "$ROOT/scripts/bench-prefill.py" --url "$URL" --model "$MODEL" --tokens 32768 --runs 3 --seed 777 \
       --output "$OUT/prefill-32k.json" > "$OUT/prefill-32k.txt" 2>&1
+    python3 "$ROOT/scripts/summarize-power.py" --smoke "$OUT" > "$OUT/power.txt" 2>&1 || true
   fi
   docker logs "$CONTAINER" > "$OUT/launch-container.txt" 2>&1 || true
   health="$(grep -iE -e ' nan' -e 'probability tensor' -e 'Xid' -e 'Traceback' -e 'KTContract' -e 'Sealed.*Error' -e 'OutOfMemory' -e 'NonFiniteLogits' \

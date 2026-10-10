@@ -3,7 +3,8 @@
 
 Reads `power-*.csv` (from `nvidia-smi --query-gpu=... --format=csv,nounits -lms`)
 and the matching `decode-c1-*w.json` / `prefill-32k-*w.json` in a directory and
-prints tok/s, per-GPU busy-median power, SM clock and tok/s per watt. Busy =
+prints tok/s, per-GPU busy-median power, SM clock and tok/s per watt.
+`--smoke <dir>` reads the `power-<label>.csv` files release-smoke.sh --full writes. Busy =
 samples with utilization > 50 %, so idle tails between requests do not dilute
 the median. Also works on a single CSV: `summarize-power.py results/x.csv`.
 """
@@ -56,7 +57,29 @@ def summarize_csv(path: Path) -> dict[str, dict]:
     return out
 
 
+def summarize_smoke(out: Path) -> None:
+    """release-smoke.sh --full layout: power-<label>.csv next to c1.json / c4.json /
+    prefill-16k.json; writes power-summary.json and prints one line per bench."""
+    cap = None
+    report: dict[str, dict] = {}
+    for csv_path in sorted(out.glob("power-*.csv")):
+        label = csv_path.stem[len("power-"):]
+        power = summarize_csv(csv_path)
+        total_w = sum(v["power_busy_median_w"] or 0 for v in power.values())
+        temp_max = max((v["temp_max_c"] or 0) for v in power.values())
+        report[label] = {"gpus": power, "total_busy_w": round(total_w, 1), "temp_max_c": temp_max}
+        print(f"{label:14s}: busy {total_w:6.0f} W total {[v['power_busy_median_w'] for v in power.values()]}, "
+              f"clk {[v['sm_clock_busy_median_mhz'] for v in power.values()]} MHz, max {temp_max:.0f} C, "
+              f"thermal-throttle samples {[v.get('thermal_slowdown_samples') for v in power.values()]}, "
+              f"power-cap samples {[v.get('power_cap_samples') for v in power.values()]}")
+    (out / "power-summary.json").write_text(json.dumps(report, indent=2) + "\n")
+    print(f"wrote {out / 'power-summary.json'}")
+
+
 def main() -> None:
+    if sys.argv[1] == "--smoke":
+        summarize_smoke(Path(sys.argv[2]))
+        return
     target = Path(sys.argv[1])
     if target.is_file():
         print(json.dumps({target.name: summarize_csv(target)}, indent=2))
