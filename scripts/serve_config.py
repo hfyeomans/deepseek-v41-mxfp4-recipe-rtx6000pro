@@ -89,8 +89,10 @@ REGISTRY: tuple[Knob, ...] = (
     Knob("KT_CPUINFER", "int", "16",
          "kt-kernel worker threads; one per physical core. E26 A1 on the 16-core 9955WX: 14 and 16 are a plateau, "
          "24 costs -12 %, 30 collapses to 5 tok/s (workers beyond the core count float on SMT siblings and starve "
-         "the two TP-rank launch threads). Never above the physical cores (warned at resolve time).",
-         sink=SERVER_ARG, evidence="evidence/e26-single-user/"),
+         "the two TP-rank launch threads). Never above the physical cores (warned at resolve time). T3.39 window 1: "
+         "14 is +9 % on 16K prefill (the Engram chunk-start gather stops competing with the export threads); not "
+         "flipped, needs the C1 / C4 / stress soak.",
+         sink=SERVER_ARG, evidence="evidence/e26-single-user/, evidence/t339/"),
     Knob("KT_MAX_DEFERRED", "int", "4",
          "Expert deferral D (E21): each token's D lowest-scored routed experts are computed during the next layer "
          "and added one layer late. D=4: +22 % C1 over D=0, NLL within gate (T3.28: +0.00066 +- 0.00103 on the "
