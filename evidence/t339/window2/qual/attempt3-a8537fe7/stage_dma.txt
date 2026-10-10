@@ -1,0 +1,14 @@
+cudaHostRegister 3.40 GiB in 0.23 s
+w13 nibbles (2 x 2D, 1 call each)     928.1 MiB  median    17.08 ms    57.0 GB/s  (min 17.08)
+s13 scales  (2 x 2D, 1 call each)      58.0 MiB  median     1.08 ms    56.2 GB/s  (min 1.08)
+w2 nibbles  (165 x 2D, 576-B rows)    464.1 MiB  median     9.18 ms    53.0 GB/s  (min 9.18)
+s2 scales   (165 x 2D, 36-B rows)      29.0 MiB  median    44.08 ms     0.7 GB/s  (min 43.98)
+-- _stage as issued: 71.4 ms/layer -> 2.86 s per 8192-token chunk per rank
+ALT s2: whole scales 1 call + slice     58.0 MiB  median     1.12 ms    54.3 GB/s  (min 1.12)
+ALT w2: whole down 1 call + slice     928.1 MiB  median    18.04 ms    54.0 GB/s  (min 18.04)
+ALT w2: grouped x16 whole down + slice    928.1 MiB  median    18.15 ms    53.6 GB/s  (min 18.14)
+-- ALT stage (w13 + s13 + ALT s2 + as-issued w2): 28.5 ms/layer -> 1.14 s per chunk
+-- ALT stage (w13 + s13 + ALT s2 + whole w2): 37.3 ms/layer -> 1.49 s per chunk
+-- ALT stage (w13 + s13 + ALT s2 + grouped x16 w2): 37.4 ms/layer -> 1.50 s per chunk
+ALT bit-identical to as-issued: w2 True s2 True
+ALT grouped w2 bit-identical to as-issued: True

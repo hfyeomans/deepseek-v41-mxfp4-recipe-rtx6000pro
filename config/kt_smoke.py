@@ -80,6 +80,15 @@ def main() -> int:
     cfg.weight_arenas = [64]
     if getattr(cfg, "weight_arenas", None) != [64]:
         problems.append(f"MOEConfig.weight_arenas does not round-trip: {getattr(cfg, 'weight_arenas', None)}")
+    # The rebuilt extension must keep the wheel's CUDA host-stream bridge
+    # (cudaLaunchHostFunc behind submit/sync_with_cuda_stream): the hybrid's
+    # decode graphs and layerwise prefill submit through it. A CPUINFER_USE_CUDA=0
+    # build compiles these bindings out (KTRANSFORMERS_CPU_ONLY) and only fails
+    # at CUDA-graph warmup (window 2 qualification attempt 1).
+    cpu_infer = kt_kernel.kt_kernel_ext.CPUInfer
+    for name in ("submit_with_cuda_stream", "sync_with_cuda_stream"):
+        if not hasattr(cpu_infer, name):
+            problems.append(f"CPUInfer lacks {name} (extension built without CPUINFER_USE_CUDA=1)")
 
     # --kt-num-gpu-experts N becomes a [layers, experts] bool mask holding
     # layers*N experts chosen by *global* top-k of activation frequency

@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """E22a: how fast can kt-kernel hand its CPU-resident MXFP4 experts to the GPUs?
 
+HISTORICAL (T3.39 window 2, 2026-10-10): this measures the *export* path
+(`write_weight_scale_to_buffer` -> pinned host slice -> `_StreamedExpertSlots.load`)
+that the overlay replaced with shared weight arenas + side-stream 2D copies. It
+imports `_HostSlice` / `_StreamedExpertSlots.load` from the overlay and so only
+runs against overlay commits <= 9d481b0b; kept for the E22a / T3.39 window 1
+evidence it produced, not maintained.
+
 Layerwise GPU prefill (T3.6b2) re-exports every CPU expert of a layer once per
 prefill chunk: kt-kernel's `write_weight_scale_to_buffer` copies the expert's
 packed FP4 bytes and bf16 scales into pinned host buffers (one TP slice per

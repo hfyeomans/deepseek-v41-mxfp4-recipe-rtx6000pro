@@ -1,0 +1,24 @@
+== qual serve 12:44:58
+== benches 12:49:47
+     16,384      16,063               2934.01          5.475
+-- warm pass (seed 1277)
+     16,384      15,991               3264.43          4.899
+     32,768      31,996               3532.42          9.060
+-- warm pass (seed 1777)
+     32,768      32,067               3507.96          9.141
+  1         57.61     56.92     58.49       55.79       0.303     n/a
+  4        121.03    119.77    122.75      116.18       0.749     n/a
+== nll 12:53:49
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t339/window2/qual/corpus/*.json
+PASS
+wrote evidence/t339/window2/qual/consistency.json
+== stress 12:54:23
+peak gpu0: 95,354 MiB used, min free 2,533 MiB
+peak gpu1: 95,419 MiB used, min free 2,468 MiB
+wall 80.5 s, all finished: True
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 13.01, "total_s": 14.03, "finish_reason": "stop"}
+ALL PASS
+wrote evidence/t339/window2/qual/consistency-post.json
+health=0
+== qual done 12:56:16

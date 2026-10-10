@@ -269,7 +269,7 @@ shape of the work (not the ceiling):
    **in place to uint8 E8M0** after load (`scale_e8_valid` per tensor; a tensor whose scales are not all positive
    powers of two stays FP32). kt copies the loader's tensors into that storage and Python drops them. The export
    (`write_weights_to_buffer`) is one `do_work_stealing_job` per expert — 100 tasks here (cpu_tp 1 < gpu_tp 2):
-   8 chunk memcpys each for gate / up per rank, 32 down tasks of per-row 720-byte `fast_memcpy` (AVX-512
+   8 chunk memcpys each for gate / up per rank, 32 down tasks of per-row ~~720-byte~~ 576-byte (real dims, see the window 2 qualification) `fast_memcpy` (AVX-512
    `loadu`/`storeu`, no non-temporal stores) and a scalar `copy_scale_to_bf16`. That is the 3.2 GB/s-per-thread,
    core-bound 65 ms (E22).
 3. **Rank 1 cannot DMA from rank 0's arena as allocated.** The ranks are separate processes; a private
@@ -282,7 +282,7 @@ shape of the work (not the ceiling):
    shmem arena is neutral for decode (and `shmem_enabled=advise` + `MADV_HUGEPAGE` is a later lever, not a cost).
 4. **Measured on the idle box, in-image (`window2/dma2d.py` → `dma2d.txt`):** today's contiguous w13 slice,
    928.1 MiB, 17.09 ms = 57.0 GB/s; the down column slice as `cudaMemcpy2DAsync` straight from a pinned row-major
-   `[H, I/2]` host layout (720-byte rows at pitch 1,440, 4,096 rows × 165 experts, 464.1 MiB) **9.16 ms one call /
+   `[H, I/2]` host layout (~~720-byte rows at pitch 1,440, 4,096 rows~~ really 576-byte rows at pitch 1,152, 5,120 rows — same 464.1 MiB; `dma2d.py` used H = 4096 / I = 2880 by mistake, corrected in the window 2 qualification × 165 experts, 464.1 MiB) **9.16 ms one call /
    9.36 ms per expert = 52–53 GB/s, bit-identical for both ranks' halves**. Down needs **no host gather**: the
    2D engine runs at 91 % of the contiguous roof, so with a shared arena the host export disappears entirely
    (period = max(copy ≈ 29 ms overlapped, GPU work) rather than the export's 65).
@@ -353,7 +353,7 @@ Owner picked K2 (shared memfd arena + kt-kernel allocator / pybind patch). What 
   round-trip. The Python-patch loops (Dockerfile, `run-kt-{buffer,provider,deferral}-tests.sh`) take
   `000[12]-*.patch` only. `readelf -d` NEEDED of the rebuilt `.so` matches the wheel's (unvendored names).
 - **Smoke (`smoke_arena.py` → `smoke_arena.txt`, in the new image, no GPU):** `AMXFP4_KGroup_MOE` with
-  E = 4, k = 2, H = 4096, I = 2880, g = 32 on an `os.memfd_create` arena vs the stock allocator:
+  E = 4, k = 2, ~~H = 4096, I = 2880~~ (toy dims, not the model's H = 5120 / I = 2304 — see the window 2 qualification), g = 32 on an `os.memfd_create` arena vs the stock allocator:
   `weight_arena_bytes` = 88,473,600 = the BufferB formula; layout offsets 64-aligned, non-overlapping, inside
   the arena; the arena bytes at expert 0's offsets equal the source nibbles and `bf16 bits >> 7` (E8M0) scales;
   **decode (qlen 1 / 4 / 64) and prefill (2048) forwards bit-identical** between the two instances;
@@ -371,6 +371,88 @@ untouched, stress trough ≥ 2 GiB.
 |---|---|
 | `window2/k2-build/smoke_arena.py`, `.txt` | the arena-vs-allocator smoke above, run in `dsv41-kt:recipe` (`sha256:8a7802d2…`) |
 | `window2/k2-build/image-build-excerpt.txt` | `docker build` log, `ktbuild` stage + smoke step (compile lines dropped) |
+
+
+### Window 2 qualification (2026-10-10, `window2/qual/`) — overlay `124ca1de` qualified: 16K prefill +34 / +39 %, 32K +41 / +34 %, every gate held
+
+Four attempts, one serve each; the first three are kept as subdirectories because each taught something.
+
+**Attempt 1 (`qual/attempt1-cpuonly-ext/`): the K2 image lacked the CUDA bindings.** Both ranks loaded and
+page-locked all 40 arenas (136.0 GiB shmem) and died at CUDA-graph warmup with
+`'kt_kernel_ext.CPUInfer' object has no attribute 'submit_with_cuda_stream'`. The `ktbuild` stage had compiled
+with `CPUINFER_USE_CUDA=0`, which the wheel's own release workflow (`kt-kernel/.github/workflows/release-pypi.yml`)
+does not: the wheels are built with `CPUINFER_USE_CUDA=1`, `CPUINFER_CUDA_ARCHS="80;86;89;90;120"`,
+`CPUINFER_CUDA_STATIC_RUNTIME=1` (USE_CUDA only links the static cudart for `cudaLaunchHostFunc`; no device code —
+the K2 build note's "no cudart → CUDA off" read the dynamic NEEDED list and missed the static link). Fixed in
+`config/Dockerfile.dsv41-kt`; `config/kt_smoke.py` now asserts `submit_with_cuda_stream` / `sync_with_cuda_stream`
+and fails (exit 1) on the old image. Rebuilt image `dsv41-kt:recipe` = `sha256:314749b5…` (`k2-build/image-build-2-cuda.log`);
+the arena smoke rerun on it is bit-identical at qlen 1 / 4 / 64 / 2048 (`smoke/smoke_runtime_arena_cuda-image.txt`).
+Tags: `dsv41-kt:pre-k2` = `0ddb14aa` (rollback), `dsv41-kt:k2-cpuonly-ext` = `8a7802d2` (the broken one).
+
+**Attempt 2 (`qual/attempt2-double-run/`): invalid — two drivers.** Attempt 1's backgrounded `qual.sh` was still in
+`wait-ready.py --timeout 1800` when its container was removed by hand; it saw attempt 2's server come up and ran
+the whole bench sequence concurrently into the same directory (each C1 run prefilled two sequences, C4 ran 4 + 4
+queued, all four stress streams got the identical 115.7 s TTFT, verify's arithmetic TTFT was 8 s). The README there
+lists the tells. `qual.sh` now removes any `dsv41-kt` container and refuses to start while a `wait-ready.py` is alive.
+
+**Attempt 3 (`qual/attempt3-a8537fe7/`): clean, overlay `a8537fe7` — correct but slower than the export it replaced.**
+NLL 0 of 65,653 logprobs moved vs the `9d481b0b` corpus, needles 6/6, same-prompt PASS, decode flat, stress 4/4,
+but 16K prefill 2,136 / 2,166 (−3 / −8 %), 32K 2,253 / 2,235 (−10 / −14 %), container log `8192 tokens x 40 layers
+streamed in 3.2–3.8 s` = 80–95 ms per layer-chunk vs the 65 ms export-bound period. The in-image microbench of
+`_stage` as issued (`attempt3-a8537fe7/stage_dma.py` / `.txt`, real dims, memfd + `cudaHostRegister` source) found it:
+w13 / s13 / w2 copies run at 53–57 GB/s, but the **per-expert `cudaMemcpy2DAsync` of this rank's down-scale column
+slice — 165 calls × 5,120 rows of 36 bytes — runs at 0.7 GB/s = 44 of the 71 ms per layer.** The DMA engine pays per
+row; `dma2d.py` had only ever timed the nibble rows. Copying every expert's whole E8M0 down-scale block in one 2D
+call (row = one contiguous 368,640-byte block, 58 MiB, 1.12 ms at 54 GB/s) and slicing this rank's 36 columns on the
+device is bit-identical and brings the stage to 28.5 ms/layer. (Whole-block down nibbles + device slice were also
+measured: 18.0 ms vs 9.2 for the 576-byte rows — twice the bytes, not taken.) Overlay `124ca1de` = `a8537fe7` +
+that change (`_StreamedExpertSlots.s2_rows`, +58 MiB VRAM per rank; GPU staging 1.44 → 1.50 GiB).
+
+**Attempt 4 (`qual/`): overlay `124ca1de`, image `314749b5`, launcher defaults (64K × 4, chunk 8192,
+`KT_CPUINFER=16`, el8 mix map). Against the qualified `9d481b0b` (`evidence/t320-engram-prefetch/chunk-ahead/on/`):**
+
+| gate | `124ca1de` | `9d481b0b` | read |
+|---|---|---|---|
+| 16K prefill cold / warm (tok/s) | **2,934 / 3,264** | 2,195 / 2,345 | **+34 / +39 %** (go ≥ +25 %) |
+| 16K TTFT cold / warm | 5.48 / 4.90 s | 7.32 / 6.82 | −25 / −28 % |
+| 32K prefill cold / warm | **3,532 / 3,508** | 2,499 / 2,612 | **+41 / +34 %** |
+| 32K TTFT cold / warm | 9.06 / 9.14 s | 12.81 / 12.31 | −29 / −26 % |
+| per-chunk host time, 8192 tokens × 40 layers | 1.55–1.86 s at C1, 2.1–2.3 s under the 4-stream stress | 3.2–3.8 (attempt 3); ≈ 2.6 export-bound | |
+| C1 summed / wall | 57.61 / 55.79 | 57.89 / 56.08 | flat |
+| C4 summed / wall | 121.03 / 116.18 | 122.46 / 117.57 | −1 %, noise |
+| NLL vs `9d481b0b` corpus | **0 of 65,653 logprobs moved** | — | bit-identical (`corpus.txt` reports z +0.33 / "changed 65226" vs the positional-map comparator `t328/default-219-8192`, exactly the T3.8b / `9d481b0b` reading) |
+| 4 × 62K stress | 4/4, **wall 80.5 s**, min free **2,533 / 2,468 MiB** | 103.6 s, 2,171 / 2,042 | −22 % wall, +0.4 GiB trough |
+| needles | 6/6 at 55,206, TTFT **13.0 s** | 6/6, 19.1 s | |
+| same-prompt C4 | PASS (290 / 224 post-stress) | PASS | |
+| VRAM after capture | 92,396 / 92,463 MiB | 92,778 / 92,835 | −0.4 GiB (one staging set) |
+| health | 0 | 0 | |
+
+The period is now ≈ 39–46 ms per layer-chunk (1.55–1.86 s / 40), inside the (ii) sizing of 36–40 ms: the copies
+(28.5 ms at the PCIe roof) overlap the next layer's attention / dense / resident MoE on the side stream and the
+streamed GEMM waits on the event. The host has no export at all: 16 cores idle during prefill, 5.8 GB of pinned
+export buffers gone, and the trough rose 0.4 GiB because the double buffer is one set. What is left of the period is
+the copy itself (1.55 GB per layer per rank at 57 GB/s = 27 ms) plus the streamed GEMM; a second staging set (+1.5 GiB
+per rank) would overlap more but 262K × 4 does not have it. **`124ca1de` is the qualified profile; `KT_GPU_PREFILL`
+stays on at the launcher default.** T3.40 (compiler-tuning A/B) is unblocked.
+
+**Dims correction.** The window 2 design notes, `window2/dma2d.*`, `k2-build/smoke_arena.py` and the TASKS T3.39 row
+wrote H = 4096 / I = 2880 ("720-byte down rows"). The model is **H = 5120, I = 2304 (I_tp = 1152)**; the byte totals
+coincide (arena stride 22,118,400 B, 3,649,536,000 B per layer, 136 GiB over 40 layers), the per-row sizes do not: this
+rank's down nibble row slice is 576 B at pitch 1,152 and its down scale slice 36 B at pitch 72. The arena's scale
+regions are sized for FP32 (4 B per group) and compacted in place to E8M0 at the region start (patch 0003
+`scale_e8_valid`), which is why a 1-byte-scale layout formula gives stride 18,800,640, not 22,118,400. The wrong dims
+are struck in place above, not deleted.
+
+| path | what |
+|---|---|
+| `window2/qual/qual.sh`, `qual-log.txt` | the driver (now removes a stale container and refuses to run beside a live `wait-ready.py`) and attempt 4's log |
+| `window2/qual/{launch,ready,pre-serve-state,vram-after-capture,engram-describe,runner-log}.txt`, `manifest.json`, `serve-log-excerpt.txt` | attempt 4's serve: launch, ready (TTFT 17.2 s), VRAM after capture, container-log lines for the arena registration and every `streamed in` |
+| `window2/qual/prefill-{16k,32k}.*`, `c1.*`, `c4.*`, `corpus/` + `corpus.txt`, `consistency*.{json,txt}`, `stress-kv.*`, `verify.*` | attempt 4's gates |
+| `window2/qual/attempt1-cpuonly-ext/` | the CUDA-bindings failure: launch / pre-serve state / container-log excerpt with the traceback |
+| `window2/qual/attempt2-double-run/` | the invalid double-driver run, every artifact kept with a README of the tells |
+| `window2/qual/attempt3-a8537fe7/` | the clean `a8537fe7` qualification (every gate but prefill), `stage_dma.py` / `.txt` copy-class microbench, README with the diagnosis |
+| `window2/k2-build/image-build-2-cuda.log` | the rebuild with `CPUINFER_USE_CUDA=1` |
+| `window2/smoke/smoke_runtime_arena.py`, `.txt`, `smoke_runtime_arena_cuda-image.txt` | runtime arena smoke on a real layer (`SMOKE_LAYER=1`) on the broken and the rebuilt image |
 
 ### Files (window 1b)
 

@@ -1,0 +1,99 @@
+[2026-10-10 15:59:00 TP0] [KT layerwise prefill] rank 0: layer 0 arena 3.40 GiB page-locked in 0.13 s (3.4 GiB total)
+[2026-10-10 15:59:00 TP1] [KT layerwise prefill] rank 1: layer 0 arena 3.40 GiB page-locked in 0.22 s (3.4 GiB total)
+...
+[2026-10-10 16:00:06 TP0] [KT layerwise prefill] rank 0: layer 39 arena 3.40 GiB page-locked in 1.80 s (136.0 GiB total)
+[2026-10-10 16:00:06 TP1] [KT layerwise prefill] rank 1: layer 39 arena 3.40 GiB page-locked in 1.81 s (136.0 GiB total)
+
+[AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/3 [00:00<?, ?profile/s][2026-10-10 16:00:50 TP0] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5687, in run_scheduler_process
+    scheduler = Scheduler(
+                ^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 565, in __init__
+    self.init_model_worker()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1097, in init_model_worker
+    self.init_all_cuda_graphs()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1080, in init_all_cuda_graphs
+    self.tp_worker.init_cuda_graphs()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 443, in init_cuda_graphs
+    self.model_runner.init_cuda_graphs(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1090, in init_cuda_graphs
+    capture = capture_cuda_graphs(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py", line 188, in capture_cuda_graphs
+    eager_runner = EagerRunner(model_runner)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 155, in __init__
+    self.warmup()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/base_runner.py", line 261, in warmup
+    self._flashinfer_autotune(buffers=buffers, batch_size=batch_size)
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/base_runner.py", line 331, in _flashinfer_autotune
+    run_flashinfer_autotune_forward(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/flashinfer_autotune.py", line 299, in run_flashinfer_autotune_forward
+    forward_fn()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/base_runner.py", line 325, in forward_fn
+    self._dummy_run(
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/base_runner.py", line 685, in _dummy_run
+    run_once()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/base_runner.py", line 673, in run_once
+    logits_output_or_pp_proxy_tensors = mr.model.forward(
+                                        ^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4604, in forward
+    hidden_states = self.model.forward(
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4247, in forward
+    hidden_states, last_pre, tail = self._forward_layers_hc_pre_from_prev(
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3930, in _forward_layers_hc_pre_from_prev
+    hidden_states, prev_pre = self.layers[i].forward_hc_pre_from_prev(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3047, in forward_hc_pre_from_prev
+    x = self._run_moe_ffn_dp_sync(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3168, in _run_moe_ffn_dp_sync
+    hidden_states = self.mlp(
+                    ^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 969, in forward
+    return self.forward_normal(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 1275, in forward_normal
+    final_hidden_states = self.experts(
+                          ^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1523, in forward
+    return self.forward_impl(
+           ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1544, in forward_impl
+    combine_input = self.run_moe_core(
+                    ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1615, in run_moe_core
+    return self.quant_method.apply(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_ep_wrapper.py", line 682, in apply
+    self.submit(layer, dispatch_output)
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_ep_wrapper.py", line 552, in submit
+    self._pending = self.provider.submit(
+                    ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_provider.py", line 293, in submit
+    self.wrapper.submit_forward(hidden_states, compact_ids, weights, stream)
+  File "/opt/sglang/lib/python3.12/site-packages/kt_kernel/experts_base.py", line 917, in submit_forward
+    self.cpu_infer.submit_with_cuda_stream(cuda_stream, immediate_task)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'kt_kernel_ext.CPUInfer' object has no attribute 'submit_with_cuda_stream'
+
+[2026-10-10 16:00:50] Received sigquit from a child process. It usually means the child failed.
+[2026-10-10 16:00:50] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-10-10 16:00:50] kill_process_tree called: parent_pid=1, include_parent=False, pid=1

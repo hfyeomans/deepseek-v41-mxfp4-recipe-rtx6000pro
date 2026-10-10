@@ -21,9 +21,15 @@ ARG BASE=lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b0
 # --- stage 1 (T3.39 window 2, K2): rebuild the one C++ extension variant this host
 # uses (avx512_bf16) from the kt-kernel source the wheel was cut from, plus patch
 # 0003 (caller-owned weight arena: MOEConfig.weight_arenas, weight_arena_bytes,
-# weight_arena_layout). Same toolchain family as the wheel (g++ 13, CMake 3.31),
-# CUDA/AMX/oneDNN off like the wheel's avx512_bf16 build; the wheel's other five
-# ISA variants stay as shipped. PROVENANCE.md has the source pin and checks.
+# weight_arena_layout). Same toolchain family as the wheel (g++ 13, CMake 3.31)
+# and the wheel's own flag set (.github/workflows/release-pypi.yml at the pinned
+# commit: CPUINFER_USE_CUDA=1 with static cudart and archs 80;86;89;90;120,
+# cpptrace off, AMX/oneDNN off for the avx512_bf16 variant). USE_CUDA=1 only
+# links cudart into the extension for the cudaLaunchHostFunc bridge
+# (CPUInfer.submit/sync_with_cuda_stream) that decode graphs and layerwise
+# prefill submit through; it compiles no device code of its own (kt-kernel/cuda
+# is a separate package). The wheel's other five ISA variants stay as shipped.
+# PROVENANCE.md has the source pin and checks.
 FROM ${BASE} AS ktbuild
 ARG KT_SOURCE_TAG=v0.7.0.post4
 ARG KT_SOURCE_COMMIT=5632f7197e7a9898f0723755c2fc187a946a85a6
@@ -36,7 +42,9 @@ RUN git clone --quiet --depth 1 --branch "${KT_SOURCE_TAG}" https://github.com/k
  && cd kt-kernel \
  && CPUINFER_CPU_INSTRUCT=AVX512 CPUINFER_ENABLE_AVX512=ON CPUINFER_ENABLE_AVX512_VNNI=ON \
     CPUINFER_ENABLE_AVX512_BF16=ON CPUINFER_ENABLE_AVX512_VBMI=ON CPUINFER_ENABLE_AMX=OFF \
-    CPUINFER_ENABLE_ONEDNN_VNNI=OFF CPUINFER_USE_CUDA=0 CPUINFER_NATIVE=OFF CPUINFER_BUILD_TYPE=Release \
+    CPUINFER_ENABLE_ONEDNN_VNNI=OFF CPUINFER_ENABLE_CPPTRACE=0 \
+    CPUINFER_USE_CUDA=1 CPUINFER_CUDA_ARCHS="80;86;89;90;120" CPUINFER_CUDA_STATIC_RUNTIME=1 \
+    CUDA_HOME=/usr/local/cuda CPUINFER_NATIVE=OFF CPUINFER_BUILD_TYPE=Release \
     python3 setup.py build_ext --inplace \
  && so="$(find /tmp/ktsrc/kt-kernel/build -name 'kt_kernel_ext.cpython-312-x86_64-linux-gnu.so' | head -1)" \
  && test -n "$so" && cp "$so" /tmp/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so

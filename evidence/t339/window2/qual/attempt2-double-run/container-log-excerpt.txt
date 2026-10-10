@@ -1,0 +1,9 @@
+Container log of the double-run serve was not retained in full (the container was removed before
+this directory was assembled). Observations read live from `docker logs dsv41-kt` during the run
+(server clock is UTC, 4 h ahead of the qual-log times):
+  16:14:52  two "Prefill batch, #new-seq: 1, #new-token: 256" lines in the same second (C1 warmup x2)
+  16:15:04..16:16:05  every 12.3 s: "Prefill batch, #new-seq: 2, #new-token: 512" (each C1 run = 2 requests)
+  16:15:xx  "Decode batch ... #running-req: 2" throughout C1
+  16:16:18  C4: "#running-req: 4, #queue-req: 4", gen throughput 120-140 tok/s
+The surviving one-line excerpt below is from the prefill bench (single request, 8192-token chunk):
+[2026-10-10 16:12:17 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.06, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 7871, cuda graph: False, input throughput (token/s): 1134.75

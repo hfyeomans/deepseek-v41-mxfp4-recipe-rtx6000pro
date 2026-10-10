@@ -1,0 +1,192 @@
+{
+ "label": "",
+ "corpus": "scripts/fixtures/nll-corpus",
+ "texts": [
+  {
+   "text": "01-readme-early.txt",
+   "tokens_scored": 4795,
+   "mean_nll": 1.4875254075267395,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/01-readme-early.json",
+    "baseline_mean_nll": 1.4946902664415658,
+    "delta_full_text_nll": -0.007164858914826322,
+    "n": 4795,
+    "delta_mean_nll": -0.007164858914826412,
+    "se": 0.003846352358507887,
+    "z_paired": 1.862767174457691,
+    "max_abs_delta_logp": 6.600217819213867,
+    "mean_abs_delta_logp": 0.12401784672282112,
+    "sd_delta_logp": 0.26634427890140067,
+    "tokens_changed": 4774,
+    "tokens_worse_gt_0p5": 123,
+    "tokens_better_gt_0p5": 128
+   }
+  },
+  {
+   "text": "02-learning.txt",
+   "tokens_scored": 10004,
+   "mean_nll": 1.4081754416104197,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/02-learning.json",
+    "baseline_mean_nll": 1.4064309512318651,
+    "delta_full_text_nll": 0.0017444903785546195,
+    "n": 10004,
+    "delta_mean_nll": 0.001744490378554603,
+    "se": 0.0023307574322391075,
+    "z_paired": -0.7484650073082506,
+    "max_abs_delta_logp": 5.414150238037109,
+    "mean_abs_delta_logp": 0.11765779513996172,
+    "sd_delta_logp": 0.2331223537119727,
+    "tokens_changed": 9941,
+    "tokens_worse_gt_0p5": 241,
+    "tokens_better_gt_0p5": 234
+   }
+  },
+  {
+   "text": "03-experiments.txt",
+   "tokens_scored": 11053,
+   "mean_nll": 1.852347770842362,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/03-experiments.json",
+    "baseline_mean_nll": 1.8474283338707538,
+    "delta_full_text_nll": 0.0049194369716081265,
+    "n": 11053,
+    "delta_mean_nll": 0.0049194369716084,
+    "se": 0.002621651153576451,
+    "z_paired": -1.8764651295796215,
+    "max_abs_delta_logp": 3.567628860473633,
+    "mean_abs_delta_logp": 0.147674933706728,
+    "sd_delta_logp": 0.27562270295532926,
+    "tokens_changed": 11031,
+    "tokens_worse_gt_0p5": 413,
+    "tokens_better_gt_0p5": 380
+   }
+  },
+  {
+   "text": "04-benchmarks.txt",
+   "tokens_scored": 12028,
+   "mean_nll": 1.5745104027100763,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/04-benchmarks.json",
+    "baseline_mean_nll": 1.579102067261238,
+    "delta_full_text_nll": -0.004591664551161667,
+    "n": 12028,
+    "delta_mean_nll": -0.004591664551161608,
+    "se": 0.002592520044610247,
+    "z_paired": 1.771120173480436,
+    "max_abs_delta_logp": 10.337149144615978,
+    "mean_abs_delta_logp": 0.13486692086358784,
+    "sd_delta_logp": 0.28432747785882173,
+    "tokens_changed": 12005,
+    "tokens_worse_gt_0p5": 396,
+    "tokens_better_gt_0p5": 412
+   }
+  },
+  {
+   "text": "05-troubleshooting.txt",
+   "tokens_scored": 9668,
+   "mean_nll": 1.9230989900795932,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/05-troubleshooting.json",
+    "baseline_mean_nll": 1.9261407976056193,
+    "delta_full_text_nll": -0.003041807526026119,
+    "n": 9668,
+    "delta_mean_nll": -0.003041807526026006,
+    "se": 0.0026374052605022892,
+    "z_paired": 1.1533333809483262,
+    "max_abs_delta_logp": 4.42646598815918,
+    "mean_abs_delta_logp": 0.1408766206313205,
+    "sd_delta_logp": 0.2593254791194917,
+    "tokens_changed": 9630,
+    "tokens_worse_gt_0p5": 268,
+    "tokens_better_gt_0p5": 310
+   }
+  },
+  {
+   "text": "06-bios-guide.txt",
+   "tokens_scored": 9546,
+   "mean_nll": 1.584549130171654,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/06-bios-guide.json",
+    "baseline_mean_nll": 1.5813640416004493,
+    "delta_full_text_nll": 0.0031850885712048083,
+    "n": 9546,
+    "delta_mean_nll": 0.00318508857120482,
+    "se": 0.002689305438990359,
+    "z_paired": -1.1843535974108585,
+    "max_abs_delta_logp": 4.017544507980347,
+    "mean_abs_delta_logp": 0.137075226991657,
+    "sd_delta_logp": 0.262754912993025,
+    "tokens_changed": 9523,
+    "tokens_worse_gt_0p5": 308,
+    "tokens_better_gt_0p5": 303
+   }
+  },
+  {
+   "text": "07-serve-hybrid-sh.txt",
+   "tokens_scored": 5938,
+   "mean_nll": 1.2505010617692882,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/07-serve-hybrid-sh.json",
+    "baseline_mean_nll": 1.2513976091152033,
+    "delta_full_text_nll": -0.0008965473459150441,
+    "n": 5938,
+    "delta_mean_nll": -0.0008965473459147247,
+    "se": 0.0028860525237869765,
+    "z_paired": 0.3106483123662306,
+    "max_abs_delta_logp": 4.494929313659668,
+    "mean_abs_delta_logp": 0.0975327970327659,
+    "sd_delta_logp": 0.22239464578042228,
+    "tokens_changed": 5760,
+    "tokens_worse_gt_0p5": 118,
+    "tokens_better_gt_0p5": 133
+   }
+  },
+  {
+   "text": "08-bench-decode-py.txt",
+   "tokens_scored": 2621,
+   "mean_nll": 0.6616777090726438,
+   "compare": {
+    "baseline": "evidence/t328/default-219-8192/corpus/08-bench-decode-py.json",
+    "baseline_mean_nll": 0.6602273670085815,
+    "delta_full_text_nll": 0.0014503420640622489,
+    "n": 2621,
+    "delta_mean_nll": 0.0014503420640622315,
+    "se": 0.00403544322533251,
+    "z_paired": -0.3594009339439355,
+    "max_abs_delta_logp": 3.3432021141052246,
+    "mean_abs_delta_logp": 0.07392888550169183,
+    "sd_delta_logp": 0.20659735261424786,
+    "tokens_changed": 2547,
+    "tokens_worse_gt_0p5": 42,
+    "tokens_better_gt_0p5": 45
+   }
+  }
+ ],
+ "tokens_scored_total": 65653,
+ "mean_nll_token_weighted": 1.5766323259386825,
+ "compare": {
+  "baseline_dir": "evidence/t328/default-219-8192/corpus",
+  "n": 65653,
+  "delta_mean_nll": -0.0002784840353791802,
+  "se": 0.001011635704775405,
+  "z_paired": 0.2752809475432729,
+  "max_abs_delta_logp": 10.337149144615978,
+  "mean_abs_delta_logp": 0.1290051812838753,
+  "sd_delta_logp": 0.25920981190211567,
+  "tokens_changed": 65211,
+  "tokens_worse_gt_0p5": 1909,
+  "tokens_better_gt_0p5": 1945,
+  "se_cluster": 0.0014714892577998853,
+  "z_cluster": 0.18925318951737297,
+  "texts": 8
+ },
+ "evidence": {
+  "tool": "nll-score.py",
+  "recorded_utc": "2026-10-10T16:19:53Z",
+  "manifest_hash": "aedbb512eb21b7f368171ce56f891f3e5fb520c574f9a471e5744928f1b7ef91",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "b04089f418a8a7173793bdd43812c657a2dd09bacdddc6b2c7294ee3390a05b5"
+ }
+}
