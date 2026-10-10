@@ -51,6 +51,16 @@ from openai_client import auth_headers  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parent
 DEFAULT_TEXT = HERE / "fixtures" / "nll-corpus.txt"
+REPO = HERE.parent
+
+
+def portable(path) -> str:
+    """Record paths relative to the repo root so evidence JSON carries no home directory."""
+    p = pathlib.Path(path).resolve()
+    try:
+        return str(p.relative_to(REPO))
+    except ValueError:
+        return str(path)
 
 
 def score(url: str, text: str, timeout: float) -> dict:
@@ -196,7 +206,7 @@ def main() -> int:
 
     if args.compare:
         base = json.loads(args.compare.read_text())
-        out["compare"] = compare_to(res, summ, base, str(args.compare))
+        out["compare"] = compare_to(res, summ, base, portable(args.compare))
         print_compare(out["compare"])
 
     if args.output:
@@ -221,7 +231,7 @@ def run_corpus(args) -> int:
             if not bp.exists():
                 raise SystemExit(f"baseline {bp} missing; score the baseline on the same corpus first")
             base = json.loads(bp.read_text())
-            out["compare"] = compare_to(res, summ, base, str(bp))
+            out["compare"] = compare_to(res, summ, base, portable(bp))
             print_compare(out["compare"])
             row["compare"] = out["compare"]
             pairs.append((res["logprobs"], base["logprobs"], out["compare"]["n"]))
@@ -229,12 +239,12 @@ def run_corpus(args) -> int:
         (args.output_dir / f"{tf.stem}.json").write_text(json.dumps(out, indent=1))
         per_text.append(row)
 
-    pooled = {"label": args.label, "corpus": str(args.corpus), "texts": per_text,
+    pooled = {"label": args.label, "corpus": portable(args.corpus), "texts": per_text,
               "tokens_scored_total": sum(r["tokens_scored"] for r in per_text),
               "mean_nll_token_weighted": sum(r["mean_nll"] * r["tokens_scored"] for r in per_text)
               / sum(r["tokens_scored"] for r in per_text)}
     if args.compare_dir:
-        pooled["compare"] = {"baseline_dir": str(args.compare_dir), **pooled_stats(pairs)}
+        pooled["compare"] = {"baseline_dir": portable(args.compare_dir), **pooled_stats(pairs)}
         c = pooled["compare"]
         print(f"POOLED over {len(per_text)} texts: ΔNLL {c['delta_mean_nll']:+.5f} ± {c['se']:.5f} nats/tok "
               f"(z {c['z_paired']:+.2f}, n {c['n']}; cluster-robust se {c['se_cluster']:.5f}, z {c['z_cluster']:+.2f})  "

@@ -47,7 +47,7 @@ Reading: the two 96 GiB cards are full of weights (86.3 GB per rank before the K
 
 ### Headline progression over the project
 
-Each column is one serve; the evidence directory holds the stamped JSON. C1 / C4 are median per-sequence / wall tok/s (512 forced tokens, distinct prompts); prefill is median tok/s with the client TTFT in brackets. GPU power under hybrid load has only been sampled on the early serves because decode is bound by the CPU tier and the cards idle far below the cap — the next serve with a power trace is T3.35.
+Each column is one serve; the evidence directory holds the stamped JSON. C1 / C4 are median per-sequence / wall tok/s (512 forced tokens, distinct prompts); prefill is median tok/s with the client TTFT in brackets. GPU power under hybrid load was only sampled on the early serves until T3.35's keyed 262K × 4 serve (last column): decode draws 185–218 W per card at 2,280–2,325 MHz, prefill 180–196 W at 2,160–2,200 MHz with a handful of 500 ms samples at the 325 W cap and no thermal throttling; max 83 °C at C1.
 
 | | E19 first serve (2026-09-22) | E21 D=4 (2026-09-23) | E28 + BIOS slot 3 (2026-09-23) | E34b–d tiling, chunk 8192 (2026-10-08) | `1eeb48cd` (2026-10-09) | `9d481b0b` T3.8b map + T3.20 (c) (2026-10-10) | **`124ca1de` 64K × 4 default, window 2 (2026-10-10)** | `682fc6a0` 262K × 4 (2026-10-10) |
 |---|---|---|---|---|---|---|---|---|
@@ -58,7 +58,7 @@ Each column is one serve; the evidence directory holds the stamped JSON. C1 / C4
 | Prefill 16K tok/s (TTFT) | 216 | 837 (E22) | 845 → 1,048 (E34b) | 1,438 → 1,512 | 1,887 | 2,195 (7.3 s) | **2,934 cold (5.5 s) / 3,264 warm (4.9 s)** | 3,191 (5.0 s) |
 | Prefill 32K tok/s (TTFT) | — | — | — | — | 1,901 | 2,499 | **3,532 cold (9.1 s) / 3,508 warm** | 3,115 (10.3 s) |
 | Context × slots qualified | 32K × 4 (pool 15× oversized) | 32K × 4 | 32K × 4 (E27 soak) | 64K × 4; 512K × 1 | 64K × 4; 262K × 4 (chunk 4096); 1M × 1 | 64K × 4 on the map | **64K × 4 (launcher default)** | 262K × 4 at chunk 8192 (guard opened); 512K × 1 and 1M × 1 single-slot |
-| GPU power / temperature under load | C1 144 / 159 W, C4 172 / 189 W; 67–73 °C (300 W cap) | ≤ 129 / 148 W (E23 R1) | 325 W cap (T2.9 policy) | 325 W cap | 325 W cap | 325 W cap | **325 W cap, not sampled** | 325 W cap, not sampled |
+| GPU power / temperature under load | C1 144 / 159 W, C4 172 / 189 W; 67–73 °C (300 W cap) | ≤ 129 / 148 W (E23 R1) | 325 W cap (T2.9 policy) | 325 W cap | 325 W cap | 325 W cap | **325 W cap, not sampled** | **busy-median C1 205 / 218 W (max 83 °C), C4 185 / 198 W (79 °C), prefill 16K 180 / 188 W, 32K 188 / 196 W (80 °C); 0 thermal-throttle samples, 2–5 power-cap samples per card during prefill** (`evidence/t335/smoke-262k/power-summary.json`, same serve shape, 2026-10-10) |
 | FCLK / MCLK | 2000 / 3200 | 2000 / 3200 | **2100 / 3200** (slot 3) | 2100 / 3200 | 2100 / 3200 | 2100 / 3200 | **2100 / 3200** | 2100 / 3200 |
 | Evidence | `evidence/e19-dsv41-first-serve/` | `evidence/e21-kt-fixed-floor/`, `evidence/e23-spec-decode/r3/` | `evidence/t36g-placement/`, `evidence/bios-trials/2026-09-23-boot12-slot3-2nd-cold-boot/` | `evidence/e34-indexer-memory/b/`, `d/` | `evidence/e34-indexer-memory/d-v-ii/` | `evidence/t38b/`, `evidence/t320-engram-prefetch/chunk-ahead/on/` | **`evidence/t339/window2/qual/`** | `evidence/t329/262k-4slot-682fc6a0/` |
 
