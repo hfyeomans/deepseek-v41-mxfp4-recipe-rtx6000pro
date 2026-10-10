@@ -1,6 +1,6 @@
 # T3.22 design record — multi-rank CPU-expert ownership (Stage 3)
 
-Status: **written 2026-10-10 for owner approval (ledger G4). Recommendation: close T3.22 by decision at this topology; do not build it.** The design below is complete enough to build if the owner overrules, and it is the design a third card (T4.1b) would reopen.
+Status: **owner-approved 2026-10-10 — T3.22 closed by decision at this topology (ledger G4 record in the migration roadmap); not built.** Was: written 2026-10-10 for owner approval. Recommendation: close T3.22 by decision at this topology; do not build it. The design below is complete enough to build if the owner overrules, and it is the design a third card (T4.1b) would reopen.
 
 Scope of the record (as the gate ledger requires): partition, reduction order, failure semantics, NUMA/CCD ownership, rollback — plus the premise check that the T3.27 timeline forces. Evidence cited is on the qualified profile (overlay `124ca1de`, image `dsv41-kt:recipe`, el8 map 219 GPU / 165 CPU experts per layer, `KT_CPUINFER=16`).
 

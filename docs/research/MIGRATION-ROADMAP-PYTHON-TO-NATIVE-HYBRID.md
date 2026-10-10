@@ -702,14 +702,51 @@ Entry: G4 exit and G5 done or closed-by-decision. Work items, each with a checkb
 
 Until then the repository is an engineering recipe with an experimental overlay, and README/BENCHMARKS say so.
 
+### Decision records (2026-10-10, owner-approved)
+
+Both Stage 3 and Stage 4 close by decision. The owner approved the T322 design record's
+recommendation on 2026-10-10 ("agree with your recommendations"); C10 / T3.13 closed the same day
+(`evidence/e24-nan/c10/`), so G0 is complete and the G4 entry conditions were all met at the moment
+the stage was closed rather than entered.
+
+```
+Decision record — Stage 3 multi-rank CPU-expert ownership not justified at this topology
+Date / recipe SHA / overlay SHA: 2026-10-10 / 1c6de96 / 682fc6a0 (design written against 124ca1de)
+Evidence: evidence/t327/window1/timeline/report.md (bs 1, bs 4), evidence/t339/window2/, E21, E25
+Host-side work a split could share: kt submit host node, <= 2.51 ms/step (14.6 %) including the duplicated D2H
+Work a split cannot share: CPU compute (fabric-bound at ~120 of 125 GB/s), Engram (already sharded by file layout),
+   prefill export (gone since T3.39 window 2)
+Ceiling: <= 7 % C1, ~0 % C4; realistic 2-4 % C1
+Verdict: below the cost of the change; keep rank-0 ownership. Design kept in docs/research/T322-DESIGN.md section 4.
+What would reopen it: a third card (T4.1b) that adds an expert owner with its own fabric; a CPU with more CCDs
+   (9975WX/9985WX) where per-rank CCD pinning would add bandwidth; a measured submit share > 1.5 ms/step
+Reviewer: owner (approved 2026-10-10)
+```
+
+```
+Decision record — no native migration justified
+Date / recipe SHA / overlay SHA: 2026-10-10 / 1c6de96 / 682fc6a0
+Timeline evidence: evidence/t327/window1/timeline/report.md (bs 1 and bs 4, 255 sampled of 7,278 replays;
+   the T3.22 prototype that would have produced evidence/t322/ was not built, see the record above)
+Hottest Python coordination loop: between_replays (scheduler + runner Python between two captured decode replays),
+   0.082 ms/step, 0.5 % of the 17.26 ms C1 step; the other host-side buckets are CUDA memcpy + one kt C++ call
+   (export 2.51 ms) and the Engram file-row wait (engram_break GPU gap 0.77 ms, I/O not Python)
+Threshold: 5 % of step wall or 1 ms/step
+Verdict: below threshold; native consolidation not justified at this topology
+What would reopen it: third-card EP (T4.1b) adds a dispatch owner; a speculation mode that changes the CPU work
+   shape per step (DSpark/MTP are closed, E23); a between_replays or submit bucket that crosses 1 ms/step in a
+   later timeline
+Reviewer: owner (approved 2026-10-10)
+```
+
 ### Ledger status table
 
 | Gate | Task rows | Owner | Status | Evidence |
 |---|---|---|---|---|
-| G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | open: **C4, C5, C3-rest, T3.16e(3) done** (2026-09-24 / 2026-10-07); only C10/T3.13 remains, gated before G4 not G1 | review §10a, §10f; `evidence/t319/b/` |
+| G0 | T3.16e(3), C3-rest, C4, C5, C10/T3.13 | agent | ~~open: **C4, C5, C3-rest, T3.16e(3) done** (2026-09-24 / 2026-10-07); only C10/T3.13 remains, gated before G4 not G1~~ **done 2026-10-10** (C10 / T3.13: overlay `682fc6a0`, injected NaN row fails one request of four, `evidence/e24-nan/c10/`) | review §10a, §10f; `evidence/t319/b/` |
 | G1 | T3.19 a..f | agent | **entered 2026-09-24** (8/8); **T3.19a done 2026-09-24**; **T3.19b done 2026-10-07** (overlay `9fc14817`; parity 14/14, C3 closed); **T3.19c done 2026-10-08** (overlay `095789db`; runner-owned state, explicit loader; comparators are now the T3.28 numbers, the pin file is superseded); **T3.16j done 2026-10-08** (G2); **T3.19d done 2026-10-08** (overlay `bc73ef8d`; `PrefillPipeline` state machine, prefill comparator settled by A/B + clean-box retest); **T3.19e / T3.19f done 2026-10-08** (recipe-side: `serve_config.py` registry, `evidence_manifest.py`); **G1 done 2026-10-08** (exit checklist all ticked: harnesses refreshed off the removed monkey-patch and re-run, `evidence/t319/g1-exit/harness/`; soak on `bc73ef8d` clean, `evidence/t319/g1-exit/soak/`; review pass 2 = §11, which corrects the T3.19c note here: R2/R3 are half closed, their SGLang-side halves wait for T3.23/T3.24). Final Stage 1 overlay commit `bc73ef8d`; G3 (T3.20 / T3.21) may start | `evidence/t319/baseline-pin.json` (soak as `confirmations_after_pin`), `evidence/t319/{a,b,c,d}/`, `evidence/t319/g1-exit/` |
 | G2 | T3.16j | agent | ~~triggered 2026-10-08~~ **done 2026-10-08** (overlay `b6c76738`, +14/-314; stream/UVA primitives removed with the rest, no T3.20 design note existed; launcher refuses the knobs; consistency PASS, C1 39.21 wall, C4 53.93, NLL 0 moved) | review §10c; `evidence/t316j/` |
-| G3 | T3.20, T3.21 | agent | waits for G1 exit | E26 A3, E20 |
-| G4 | T3.22 | **owner approval** + agent | waits for G1 exit, G2, C10, design record | `evidence/t322/` (to be created) |
-| G5 | T3.23 | agent | waits for G4 timeline | decision record or units |
-| G6 | T3.24 | owner + agent | waits for G4 exit and G5 | OPEN-SOURCE-PLAN |
+| G3 | T3.20, T3.21 | agent | ~~waits for G1 exit~~ **done 2026-10-10**: T3.20 promoted (rounds 1, 2 and (c): `ahead` prefetch, host-side hashing, chunk-ahead gather; `evidence/t320-engram-prefetch/`), T3.21 closed on its stop clause (dense GEMM 4 % of a 16K TTFT, cuTile slower than Triton; `evidence/t321/`) | E26 A3, E20, `evidence/t320-engram-prefetch/`, `evidence/t321/` |
+| G4 | T3.22 | **owner approval** + agent | ~~waits for G1 exit, G2, C10, design record~~ **closed-by-decision 2026-10-10** (owner approved the design record's recommendation; record above) | `docs/research/T322-DESIGN.md`, `evidence/t327/window1/timeline/` |
+| G5 | T3.23 | agent | ~~waits for G4 timeline~~ **closed-by-decision 2026-10-10** (hottest Python loop 0.082 ms/step = 0.5 %; record above) | decision record above |
+| G6 | T3.24 | owner + agent | ~~waits for G4 exit and G5~~ **entered 2026-10-10** (G0–G5 all done or closed-by-decision) | OPEN-SOURCE-PLAN |
