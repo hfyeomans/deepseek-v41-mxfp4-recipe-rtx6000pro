@@ -140,6 +140,22 @@ def test_compact_loader_loads_cpu_complement() -> None:
         assert full.loaded_cpu_experts == N_EXPERTS and [int(w[0, 0]) for w in out["gate"]] == [16 * e + 1 for e in range(N_EXPERTS)]
         full.close_all_handles()
 
+        # T3.8b remap: an explicit order names the checkpoint expert of each compact id
+        # (here compact 0 = expert 4, compact 1 = expert 1: not the mask complement, not ascending)
+        remapped = CompactMXFP4Loader(d, mask, cpu_checkpoint_ids=[4, 1])
+        out = remapped.load_experts("model.layers.0")
+        assert remapped.loaded_cpu_experts == 2
+        assert [int(w[0, 0]) for w in out["gate"]] == [16 * 4 + 1, 16 * 1 + 1]
+        assert [float(s[0, 0]) for s in out["gate_scale"]] == [2.0 ** -3, 2.0 ** -6]
+        remapped.close_all_handles()
+        for bad in ([4], [4, 4], [4, N_EXPERTS]):
+            try:
+                CompactMXFP4Loader(d, mask, cpu_checkpoint_ids=bad)
+            except ValueError as e:
+                assert "cpu_checkpoint_ids must name 2 distinct experts" in str(e), (bad, e)
+            else:
+                raise AssertionError(f"cpu_checkpoint_ids={bad} accepted")
+
 
 def _kt_like_wrapper(path: str, *, load_weights) -> NativeMoEWrapper:
     """A NativeMoEWrapper without its C++ side: method/weight_path/layer_idx plus a scripted load_weights."""

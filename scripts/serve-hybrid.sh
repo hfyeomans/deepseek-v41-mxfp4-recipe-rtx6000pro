@@ -30,7 +30,7 @@ done
 cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || exit $?
 # Assigned by the eval (listed for shellcheck): the knobs this script reads directly plus
 # RESOLVED_LINE, CONTAINER_ENV (fixed + forwarded -e pairs) and DIAG_ENV (set-only diagnostics).
-declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K NGRAM NGRAM_DRAFT_TOKENS NGRAM_BREADTH \
+declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_EXPERT_MAP KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K NGRAM NGRAM_DRAFT_TOKENS NGRAM_BREADTH \
   MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS \
   CUDA_GRAPH_BS MAX_TOTAL_TOKENS EXTRA_SERVER_ARGS EXTRA_DOCKER_ENV EXTRA_DOCKER_ARGS DRY_RUN \
   CONTAINER_NAME BIND_ADDRESS PORT HF_MODEL_DIR OVERLAY_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
@@ -63,6 +63,12 @@ server_args=(
   --reasoning-parser deepseek-v41
   --tool-call-parser deepseekv41
 )
+# Expert placement map (T3.8b): mounted read-only, named to the overlay's kt_remap.py.
+expert_map_mount=()
+if [[ -n "$KT_EXPERT_MAP" ]]; then
+  server_args+=(--kt-expert-map /expert-map.json)
+  expert_map_mount=(-v "${KT_EXPERT_MAP}:/expert-map.json:ro")
+fi
 if [[ "$DSPARK" == "1" ]]; then
   server_args+=(--speculative-algorithm DSPARK --speculative-dspark-block-size "$DSPARK_K")
 fi
@@ -114,6 +120,7 @@ docker_cmd=(
   -p "${BIND_ADDRESS}:${PORT}:30000"
   -v "${HF_MODEL_DIR}:/hfm:ro"
   -v "${OVERLAY_DIR}/python/sglang:/sgl-workspace/sglang/python/sglang:ro"
+  "${expert_map_mount[@]}"
   "${container_env_flags[@]}"
   "${extra_env_flags[@]}"
   "${extra_docker_args[@]}"
@@ -129,6 +136,9 @@ fi
 for path in "$HF_MODEL_DIR/snapshots/$SNAPSHOT" "$OVERLAY_DIR/python/sglang"; do
   [[ -d "$path" ]] || { echo "FAIL missing $path"; exit 1; }
 done
+if [[ -n "$KT_EXPERT_MAP" && ! -f "$KT_EXPERT_MAP" ]]; then
+  echo "FAIL KT_EXPERT_MAP=$KT_EXPERT_MAP is not a file"; exit 1
+fi
 if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
   echo "FAIL container $CONTAINER_NAME already exists; docker rm -f $CONTAINER_NAME first"; exit 1
 fi

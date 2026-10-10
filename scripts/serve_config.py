@@ -86,6 +86,14 @@ REGISTRY: tuple[Knob, ...] = (
          "(E34d-ii + T3.28) to afford CHUNKED_PREFILL_SIZE=8192: prefill +38/+47 % at 16K/32K, C1 wall -1.9 %, "
          "pooled NLL +0.00075 +- 0.00098. 226/158 + 4096 is the measured fallback.",
          sink=SERVER_ARG, evidence="evidence/t328/README.md, evidence/t36g-placement/, evidence/t36g2-placement-r2/"),
+    Knob("KT_EXPERT_MAP", "str", "",
+         "Per-layer expert placement map (T3.8b): host path of a JSON file naming, per MoE layer, the 219 "
+         "checkpoint experts that take the GPU slots; the overlay permutes each layer's experts at load so that "
+         "hot set gets ids 0..218 and the rest run on the CPU (an exact permutation, no VRAM; overlay kt_remap.py). "
+         "Bind-mounted at /expert-map.json and passed as --kt-expert-map. Empty: checkpoint order (experts 0..218 "
+         "on GPU), which T3.8 measured at 42-46 % of routes on the CPU tier on real traffic; "
+         "config/expert-map-el8-mix-219.json is the el8 mix map (12-15 %).",
+         sink=SERVER_ARG, empty_disables=True, evidence="evidence/t38/, evidence/t38b/"),
     Knob("KT_CPUINFER", "int", "16",
          "kt-kernel worker threads; one per physical core. E26 A1 on the 16-core 9955WX: 14 and 16 are a plateau, "
          "24 costs -12 %, 30 collapses to 5 tok/s (workers beyond the core count float on SMT siblings and starve "
@@ -355,6 +363,7 @@ def resolved_line(r: dict[str, str]) -> str:
     """The one line a launch log carries so every knob that decides the result is named."""
     mtt = r["MAX_TOTAL_TOKENS"] or "fraction-sized"
     cap = r["CUDA_GRAPH_BS"] or f"derived<={r['CUDA_GRAPH_MAX_BS']}"
+    emap = os.path.basename(r["KT_EXPERT_MAP"]) if r["KT_EXPERT_MAP"] else "positional"
     return (f"resolved: experts gpu={r['KT_NUM_GPU_EXPERTS']} cpu={EXPERTS_PER_LAYER - int(r['KT_NUM_GPU_EXPERTS'])} "
             f"deferral D={r['KT_MAX_DEFERRED']} cpuinfer={r['KT_CPUINFER']} chunk={r['CHUNKED_PREFILL_SIZE']} "
             f"mem_fraction={r['MEM_FRACTION_STATIC']} context={r['CONTEXT_LENGTH']} slots={r['MAX_RUNNING_REQUESTS']} "
@@ -363,7 +372,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
             f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
-            f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} image={r['IMAGE']}")
+            f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} expert_map={emap} image={r['IMAGE']}")
 
 
 def diagnostic_env(r: dict[str, str], env: dict[str, str]) -> list[str]:

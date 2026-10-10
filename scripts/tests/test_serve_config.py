@@ -97,6 +97,20 @@ def test_empty_disables() -> None:
     assert r["MAX_TOTAL_TOKENS"] == str(262144 + 16384)
 
 
+def test_expert_map_knob() -> None:
+    # T3.8b: a map is mounted at /expert-map.json and named to the overlay; unset, neither appears
+    # (the default launch keeps checkpoint order) and the resolved line says so.
+    p = launcher(["--print"], KT_EXPERT_MAP="/tmp/some-map.json")
+    assert p.returncode == 0, p.stderr
+    line, cmd = p.stdout.splitlines()[:2]
+    assert " expert_map=some-map.json " in line, line
+    assert "-v /tmp/some-map.json:/expert-map.json:ro" in cmd and "--kt-expert-map /expert-map.json" in cmd, cmd
+    default = (GOLDEN / "print-default.txt").read_text().splitlines()
+    assert " expert_map=positional " in default[0] and "expert-map" not in default[1]
+    r = sc.resolve({"KT_EXPERT_MAP": ""})
+    assert r["KT_EXPERT_MAP"] == "" and "expert_map=positional" in sc.resolved_line(r)
+
+
 def test_diagnostic_forwarded() -> None:
     p = launcher(["--print"], KT_TIMELINE="1", KT_TIMELINE_DIR="/tmp/tl", SGLANG_BCG_DEBUG_SYNC="1")
     assert p.returncode == 0, p.stderr

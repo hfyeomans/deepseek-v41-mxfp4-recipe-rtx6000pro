@@ -1,0 +1,5 @@
+resolved: experts gpu=219 cpu=165 deferral D=4 cpuinfer=16 chunk=8192 mem_fraction=0.96 context=65536 slots=4 max_total_tokens=278528 capture_bs=[1 2 3 4] dspark=0 dspark_k=5 ngram=0 ngram_draft=5 ngram_breadth=1 gpu_prefill_min=1024 logprob_chunk=512 nan_probe_min=0 expandable_after_capture=1 engram_prefetch=ahead expert_map=expert-map-el8-mix-219.json image=dsv41-kt:recipe
+542b47046d3da9d130146ae68f7cb903d8fc9c0d79ed0df45a3457ed46f2dbf6
+manifest ~/.cache/dsv41-recipe/manifests/20261010T060955Z-dsv41-kt.json
+started dsv41-kt (about 4 min to ready); follow with: docker logs -f dsv41-kt
+then: scripts/wait-ready.py --url http://127.0.0.1:8000 && scripts/verify.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid

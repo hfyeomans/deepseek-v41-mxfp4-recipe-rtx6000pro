@@ -1,0 +1,65 @@
+== qual serve 02:09:55
+45 evidence/t38b/qual-el8-mix/remap-log.txt
+== benches 02:14:13
+     16,384      16,063               2013.41          7.978
+-- warm pass (seed 1277)
+     16,384      15,991               2173.31          7.358
+     32,768      31,996               2270.27         14.096
+-- warm pass (seed 1777)
+     32,768      32,067               2329.95         13.763
+  1         57.97     57.09     58.70       56.18       0.302     n/a
+  4        123.91    121.78    124.14      118.84       0.736     n/a
+== kt cpu/step 02:18:54
+  2      200        6.2        85.79       0.4289       0.0316        13.93
+      bench:   2         83.67     83.67     83.67       65.72       1.328     n/a
+  4      200        9.2       139.30       0.6965       0.0472        15.10
+      bench:   4        102.35    102.35    102.35       87.43       1.383     n/a
+== nll 02:19:16
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t38b/qual-el8-mix/corpus/*.json
+PASS
+wrote evidence/t38b/qual-el8-mix/consistency.json
+== stress 02:20:05
+peak gpu0: 95,698 MiB used, min free 2,189 MiB
+peak gpu1: 95,825 MiB used, min free 2,062 MiB
+wall 108.7 s, all finished: True
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 20.04, "total_s": 21.1, "finish_reason": "stop"}
+ALL PASS
+wrote evidence/t38b/qual-el8-mix/consistency-post.json
+health=0
+== qual done 02:22:29
+== histogram serve 02:22:29
+  1         60.04     60.04     60.04       42.13       0.469     n/a
+== set humaneval-c4 02:27:12: python3 scripts/bench-humaneval.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --phase generate --limit 40 --concurrency 4 --max-tokens 2048 --output-dir evidence/t38b/histogram-el8-mix/humaneval-c4/bench
+generated 40 in 83 s: decode median 24.18 tok/s (min 8.00), TTFT median 0.521 s, finish {'stop': 40}, modes {'full-function': 40, 'completion': 0}
+21
+== set decode-distinct 02:28:45: python3 scripts/bench-decode.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --concurrency 1,4 --runs 3 --warmup 0 --max-tokens 256 --distinct-prompts --fixture-set distinct --output evidence/t38b/histogram-el8-mix/decode-distinct/bench.json
+model=dsv41-flash-hybrid  runs=3 warmup=0 max_tokens=256  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         56.69     55.79     56.74       50.91       0.461     n/a
+  4        121.21    120.14    123.34      112.02       0.727     n/a
+15
+== set prefill-random 02:29:38: python3 scripts/bench-prefill.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --tokens 16384 --runs 1 --seed 777 --output evidence/t38b/histogram-el8-mix/prefill-random/bench-16k.json
+ target tok  actual tok  median prefill tok/s  median TTFT s
+     16,384      15,978               1957.98          8.160
+9
+== set prefill-text 02:29:50: python3 scripts/nll-score.py --url http://127.0.0.1:8000 --corpus scripts/fixtures/nll-corpus --output-dir evidence/t38b/histogram-el8-mix/prefill-text/bench
+01-readme-early.txt: tokens scored 4795  mean NLL 1.48753 nats/tok  ppl 4.426  cached_tokens 0  latency 3.4 s
+02-learning.txt: tokens scored 10004  mean NLL 1.40773 nats/tok  ppl 4.087  cached_tokens 0  latency 7.5 s
+03-experiments.txt: tokens scored 11053  mean NLL 1.85217 nats/tok  ppl 6.374  cached_tokens 0  latency 6.9 s
+04-benchmarks.txt: tokens scored 12028  mean NLL 1.57457 nats/tok  ppl 4.829  cached_tokens 0  latency 6.8 s
+05-troubleshooting.txt: tokens scored 9668  mean NLL 1.92534 nats/tok  ppl 6.857  cached_tokens 0  latency 6.7 s
+06-bios-guide.txt: tokens scored 9546  mean NLL 1.58252 nats/tok  ppl 4.867  cached_tokens 0  latency 6.5 s
+07-serve-hybrid-sh.txt: tokens scored 5938  mean NLL 1.25050 nats/tok  ppl 3.492  cached_tokens 0  latency 3.2 s
+08-bench-decode-py.txt: tokens scored 2621  mean NLL 0.66168 nats/tok  ppl 1.938  cached_tokens 0  latency 2.9 s
+corpus: 8 texts, 65653 tokens, token-weighted mean NLL 1.57658
+wrote evidence/t38b/histogram-el8-mix/prefill-text/bench/*.json
+13
+== histogram done 02:30:43
+== positional serve 02:30:43
+  2      200        9.9       144.91       0.7245       0.0504        14.59
+      bench:   2         50.60     50.60     50.60       40.63       1.979     n/a
+  4      200       15.9       249.21       1.2461       0.0806        15.71
+      bench:   4         56.72     56.72     56.72       50.69       1.777     n/a
+  1         42.15     42.09     42.37       40.16       0.619     n/a
+== all done 02:37:09
