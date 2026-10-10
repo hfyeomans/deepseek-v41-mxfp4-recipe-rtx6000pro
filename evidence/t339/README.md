@@ -246,6 +246,87 @@ lateness grows (at a 36 ms period layer 14 is needed ≈ 0.5 s after the chunk s
 land with or before window 2**, and on a cold box it is worth ≈ 2 s of today's 7.5 s by itself, more than (i);
 and the two ranks' exports share the 16 cores, so (i)'s host saving counts twice.
 
+### Window 2 design (2026-10-10, `window2/`) — (ii) cannot be built on the wheel as shipped; the fix is a kt-kernel allocator patch, not a kernel
+
+The (ii) row above assumed the overlay could `cudaHostRegister` kt-kernel's resident expert arena and DMA from it.
+Four findings from reading the overlay, the wheel and upstream kt-kernel source, plus one measurement, change the
+shape of the work (not the ceiling):
+
+1. **The overlay already joins the export at the streamed-MoE call.** `KTEPWrapperMethod.apply` runs the resident
+   FlashInfer MoE first and only then `PrefillPipeline.run_layer()`: rank 0 `sync_write_weight_scale_to_buffer()`
+   + gloo barrier → `_StreamedExpertSlots.load()` (4 H2D copies on the **compute** stream, gate / up half swap,
+   `e8m0_from_bf16_bits_`, `block_scale_interleave`) → CUTLASS MoE → `_submit_export(next)` (waits
+   `dma_done[buf]`, barrier, one `submit_write_weight_scale_to_buffer(tp_size, e, ptrs)` per expert). The host
+   buffers are a POSIX shm of 2 × tp × slice (5.8 GB), `cudaHostRegister`ed by each rank. So (ii)'s "join late"
+   requirement is already met; what is missing is the side-stream copy and an export that fits under ≈ 36 ms.
+2. **kt-kernel 0.7.0.post4 is a binary wheel (PyPI, uploaded 2026-09-13) with no C++ source in the image, and its
+   pybind surface has no accessor for the resident weights**: `kt_kernel_ext.moe.AMXFP4_KGroup_MOE` exposes only
+   `forward[_task]`, `load_weights[_task]`, `warm_up[_task]`, `run_layerwise_fp8_batch`,
+   `write_weight_scale_to_buffer_task`. There is no pointer to register. Upstream source at `3a19fd6` (2026-09-01,
+   `kt-kernel/operators/amx/fp4-moe.hpp`, `moe_base.hpp`, `la/amx_buffers.hpp`): the resident storage is three
+   separate `std::aligned_alloc(64, buffer_b_required_size(n, k))` per expert (gate, up `[I, H/2]` nibble-packed
+   row-major; down `[H, I/2]`), each followed by its FP32 `[N, K/32]` scales, which `finalize_scale_e8()` compacts
+   **in place to uint8 E8M0** after load (`scale_e8_valid` per tensor; a tensor whose scales are not all positive
+   powers of two stays FP32). kt copies the loader's tensors into that storage and Python drops them. The export
+   (`write_weights_to_buffer`) is one `do_work_stealing_job` per expert — 100 tasks here (cpu_tp 1 < gpu_tp 2):
+   8 chunk memcpys each for gate / up per rank, 32 down tasks of per-row 720-byte `fast_memcpy` (AVX-512
+   `loadu`/`storeu`, no non-temporal stores) and a scalar `copy_scale_to_bf16`. That is the 3.2 GB/s-per-thread,
+   core-bound 65 ms (E22).
+3. **Rank 1 cannot DMA from rank 0's arena as allocated.** The ranks are separate processes; a private
+   `aligned_alloc` arena is not mappable by another process (`/proc/<pid>/mem` cannot be `mmap`ed, and
+   `cudaHostRegister` needs a mapping in the registering process). Any arena-DMA design puts the arena in
+   shareable memory mapped by both ranks. `/dev/shm` on this host is tmpfs at 50 % of RAM ≈ 123 GiB < the 132 GB
+   arena, so the right primitive is `os.memfd_create` in rank 0 (not bounded by `/dev/shm`'s size, bounded by
+   RAM + swap) opened by rank 1 through `/proc/<pid0>/fd/<n>` (same container, same user). Host THP is
+   `enabled=madvise`, `shmem_enabled=never`, `AnonHugePages 0`: kt's arena already lives on 4 KiB pages, so a
+   shmem arena is neutral for decode (and `shmem_enabled=advise` + `MADV_HUGEPAGE` is a later lever, not a cost).
+4. **Measured on the idle box, in-image (`window2/dma2d.py` → `dma2d.txt`):** today's contiguous w13 slice,
+   928.1 MiB, 17.09 ms = 57.0 GB/s; the down column slice as `cudaMemcpy2DAsync` straight from a pinned row-major
+   `[H, I/2]` host layout (720-byte rows at pitch 1,440, 4,096 rows × 165 experts, 464.1 MiB) **9.16 ms one call /
+   9.36 ms per expert = 52–53 GB/s, bit-identical for both ranks' halves**. Down needs **no host gather**: the
+   2D engine runs at 91 % of the contiguous roof, so with a shared arena the host export disappears entirely
+   (period = max(copy ≈ 29 ms overlapped, GPU work) rather than the export's 65).
+
+**Design (ii′) — shared arena, export-free streaming.**
+
+- *kt-kernel patch (allocator + pybind, ≈ 40–60 lines C++, no kernel code):* a `MOEConfig.weight_arena` pointer
+  (+ byte count); when set, the `AMX_MOE_BASE` constructor carves gate_e / up_e / down_e BufferB storage
+  sequentially (64-aligned) from the arena instead of `aligned_alloc`; a static
+  `weight_arena_bytes(expert_num, hidden, inter, group)` so Python can size it before construction; and a
+  post-load `weight_arena_layout()` returning per-expert `(gate_off, up_off, down_off)` and the three
+  `scale_e8_valid` flags. Load, forward and the existing export are untouched (same bytes, same addresses modulo
+  base). Built from source at the commit matching the wheel (pin by diffing the wheel's `experts.py` /
+  `utils/amx.py` against upstream between 2026-09-01 and 09-13), `avx512_bf16` variant only, added to
+  `config/Dockerfile.dsv41-kt` next to the existing `config/kt-kernel-patches/` (image has cmake, g++ 13.3,
+  `numa.h`, `hwloc.h`).
+- *Overlay:* rank 0 creates one memfd per MoE layer sized by `weight_arena_bytes`, maps it, passes
+  `weight_arena` into the wrapper, and `cudaHostRegister`s it; rank 1 opens the same memfds, maps and registers
+  them. `PrefillPipeline` loses the export, the 5.8 GB shm staging (back to the Engram page cache), the gloo
+  barriers and `sync_write_weight_scale_to_buffer`; per layer, on one side stream after an event recorded at the
+  end of layer L−1's streamed MoE: up rows → `w13[:, :I_tp]`, gate rows → `w13[:, I_tp:]` (the half swap folds
+  into the copy destination), E8M0 uint8 scales straight (an FP32 → E8M0 GPU fallback when a flag is false),
+  down via the 2D copy, down scales via a 2D copy (45-byte rows, ≈ 30 MB) or a full copy + GPU slice; the
+  compute stream waits on the copy event before the streamed MoE. The `test_kt_prefill.py` pipeline tests are
+  rewritten for the event-only protocol.
+- *Expected:* period ≈ copy 29 ms overlapping ≈ 20 ms of attention / dense / resident MoE, plus ≈ 7 ms streamed
+  MoE → **≈ 36 ms (65 today), i.e. the (ii) row's ≈ +40 % on 16K prefill**, and the 16 cores are idle during
+  prefill (the Engram chunk-0 gather no longer competes with 16 export threads — a second, unsized gain).
+  Decode unchanged by construction (same resident bytes, same kt forward). No VRAM change (one staging set).
+
+**Alternatives.** (K1) a getter + rank-mask export patch instead of the shared arena: rank 0 DMAs from its own
+registered arena, the host exports rank 1's slice only (≈ half the tasks) → period ≈ max(29 overlapped, ≈ 42
+export) ≈ 42 ms, ≈ +25 % — at the go bar, still a kt rebuild, and leaves the barrier / shm / 8 cores busy.
+(0) stop window 2 here at 2,195 / 2,499. Side-stream copies alone (no kt change) give nothing: the period is
+export-bound, not copy-bound.
+
+**Risks to carry into the decision.** The wheel ↔ source commit match (a mismatch shows up at load, not at
+run; the pin is verifiable by diff); `cudaHostRegister` of 132 GB in each rank at startup (pin rate ≈ 1–3 GB/s →
+≈ 1–2 min per rank, concurrent; `--ulimit memlock=-1` is already set); memfd-backed shmem counts as shared
+memory in cgroup accounting (same total as today's anonymous arena + 5.8 GB less); and the policy point —
+**this is a kt-kernel allocator / pybind change, not CUDA kernel work (T3.21 stays closed), but it adds a
+from-source kt-kernel build to the image**, which the recipe has avoided so far. Go / no-go is the owner's call
+before the build starts.
+
 ### Files (window 1b)
 
 | path | what |
@@ -259,6 +340,7 @@ and the two ranks' exports share the 16 cores, so (i)'s host saving counts twice
 | `window1b/pyspy-fixed.raw.gz`, `record-pyspy.txt` | py-spy raw on the fixed serve |
 | `window1b/c1*`, `c4*`, `verify.*` | decode and correctness sanity |
 | `cpuinfer14-soak/` | the `KT_CPUINFER=14` soak on `99128a7e`, same layout as `qual-99128a7e/` plus `soak14.sh` / `soak-log.txt` |
+| `window2/dma2d.py`, `dma2d.txt` | in-image, idle-box microbench of the H2D copies window 2 needs: contiguous w13 slice vs `cudaMemcpy2DAsync` of the down column slice from a row-major host layout (per expert and one call), bit-identity of both ranks' halves |
 | `qual-99128a7e/` | the qualification serve: `qual.sh` driver + `qual-log.txt`, launch / ready / manifest / `pre-serve-state`, `prefill-{16k,32k}.*`, `c1.*`, `c4.*`, `corpus/` + `corpus.txt` (NLL), `consistency*.{json,txt}`, `stress-kv.*`, `verify.*`, `vram-after-capture.txt`, `runner-log.txt` (dedicated-runner lines) |
 
 ## Files
