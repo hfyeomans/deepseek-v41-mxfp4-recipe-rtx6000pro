@@ -143,4 +143,14 @@ Evidence in this repository was gathered on Ubuntu 26.04.1, kernel 7.0.0-31, dri
 
 ## Status
 
+**Where the model lives at the shipped default (T3.30 snapshot, 2026-10-10; full tables with evidence in [docs/BENCHMARKS.md § Deployment snapshot](docs/BENCHMARKS.md#deployment-snapshot-t330-2026-10-10)):**
+
+| Tier | Contents | Size |
+|---|---|---|
+| 2 × RTX PRO 6000 (TP2) | FP8 dense stack + **219 of 384 routed experts per layer, MXFP4**, chosen per layer by the hot-expert map | 86.3 GB per rank at load (≈ 153 GiB of experts across both cards); KV pool 0.45 GB per rank at 64K × 4, 1.74 GB at 262K × 4 / 1M × 1 (FP8, 1,630 B per token per rank) |
+| Host DRAM (246.8 GiB) | **165 of 384 routed experts per layer, MXFP4**, computed by kt-kernel (16 threads, D=4) | ≈ 115 GiB, one shared copy for both ranks |
+| NVMe (page cache) | **Engram tables** (layers 1 and 14), FP8, read in place with ahead-prefetch | 188.83 GiB; the first 16K prefill after a serve runs at ~600 tok/s while rows are faulted in |
+
+Progression: C1 **14 → 58 tok/s**, C4 **— → 118 wall**, 16K prefill **216 → 2,934–3,264 tok/s**, qualified context **32K × 4 → 64K × 4 default + 262K × 4 / 512K × 1 / 1M × 1** over 2026-09-22 → 2026-10-10 (same hardware; FCLK 2000 → 2100).
+
 **2026-10-10: the recipe is out of experimental-overlay form** — the six-point completion definition of the migration roadmap's gate ledger (G6, T3.24) holds: typed profiles, no unsafe flag in a release profile, the overlay as a 50-patch series on upstream `da64c5cb` re-applied and tree-hashed by `ci.sh`, every CPU suite in `ci.sh` plus the GPU smoke in `release-smoke.sh`, provenance for every artefact, and a generated headline table whose every number is read from manifest-stamped evidence ([docs/BENCHMARKS.md](docs/BENCHMARKS.md#headline--qualified-rungs-of-the-v41-flash-hybrid-generated-2026-10-10)). Qualified rungs: 64K × 4 (launcher default), 262K × 4 and 512K × 1 / 1M × 1 as per-rung overrides. The overlay is tagged `recipe-2026-10` at `682fc6a0`. What remains is throughput work and strengthening (T3.30 onwards in [plan/TASKS.md](plan/TASKS.md)); the earlier phase history is in [plan/README.md](plan/README.md).
