@@ -1,0 +1,126 @@
+{
+  "label": "T3.13 C10 injected row=1,bs=4,step=3,layer=20",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 64,
+  "seed": 0,
+  "expect_aborted": 1,
+  "gibberish_slack": 0.05,
+  "pass": true,
+  "aborted_slots": [
+    2
+  ],
+  "health_after": 200,
+  "references": [
+    {
+      "status": 200,
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Although violet light scatters even more",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.03773584905660377,
+      "wall_s": 1.918688865029253
+    },
+    {
+      "status": 200,
+      "text": "# Iterative Fibonacci Function\n\n```python\ndef fibonacci(n):\n    \"\"\"\n    Return the n-th Fibonacci number using an iterative approach.\n    \n    The sequence is defined as:\n        F(0) = 0\n        F(1) = 1\n        F(n) = F(n-1) +",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.21875,
+      "wall_s": 2.0820092210778967
+    },
+    {
+      "status": 200,
+      "text": "Mercury - It has the shortest year of any planet, orbiting the Sun in just 88 Earth days.\nVenus - It rotates backwards compared to most planets, and its day is longer than its year.\nEarth - It is the only known planet with liquid water on its surface and life.\nMars - It is home",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.07142857142857142,
+      "wall_s": 1.1620489259948954
+    },
+    {
+      "status": 200,
+      "text": "In Verona, two young people from feuding families meet and fall instantly in love. They secretly marry with the help of a friar, hoping to unite their households. A violent street brawl leads to the exile of Romeo, while Juliet is pressured to marry another man. A desperate plan involving a sleeping potion",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.0,
+      "wall_s": 1.5440407750429586
+    }
+  ],
+  "injected": [
+    {
+      "status": 200,
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer ones like red and orange. Although violet light scatters even more",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.03773584905660377,
+      "wall_s": 2.888157491921447
+    },
+    {
+      "status": 200,
+      "text": "# Iterative Fibonacci Function\n\nHere's a Python function that computes the n-th Fibonacci number iteratively:\n\n```python\ndef fibonacci(n):\n    \"\"\"\n    Return the n-th Fibonacci number using an iterative approach.\n    \n    The sequence is defined as:\n        F(0) = 0\n        F(1)",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.10810810810810811,
+      "wall_s": 2.8877687780186534
+    },
+    {
+      "status": 500,
+      "text": "",
+      "finish_reason": null,
+      "completion_tokens": null,
+      "gibberish": null,
+      "error": "{\"object\":\"error\",\"message\":\"non-finite logits (NaN/Inf) were produced for this request; it was aborted, the server keeps serving\",\"type\":\"500\",\"param\":null,\"code\":500}",
+      "wall_s": 1.3965640229871497
+    },
+    {
+      "status": 200,
+      "text": "In Verona, two young people from feuding families meet and fall instantly in love. They secretly marry with the help of a friar, hoping to unite their households. A violent street brawl leads to the exile of Romeo, while Juliet is pressured to wed another man. A desperate plan involving a sleeping potion",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.0,
+      "wall_s": 2.886977590038441
+    }
+  ],
+  "clean": [
+    {
+      "status": 200,
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer wavelengths like red and orange. Because blue light is scattered in all",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.037037037037037035,
+      "wall_s": 2.287833329057321
+    },
+    {
+      "status": 200,
+      "text": "# Iterative Fibonacci Function\n\nHere's a Python function that computes the n-th Fibonacci number iteratively:\n\n```python\ndef fibonacci(n):\n    \"\"\"\n    Return the n-th Fibonacci number using an iterative approach.\n    \n    The sequence is defined as:\n        F(0) = 0\n        F(1)",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.10810810810810811,
+      "wall_s": 2.287813088973053
+    },
+    {
+      "status": 200,
+      "text": "Mercury - It has the shortest year of any planet, orbiting the Sun in just 88 Earth days.\nVenus - It rotates backwards compared to most planets, and its day is longer than its year.\nEarth - It is the only known planet with liquid water on its surface and life.\nMars - It is home",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.07142857142857142,
+      "wall_s": 2.287444326095283
+    },
+    {
+      "status": 200,
+      "text": "In the city of Verona, two young people from feuding families fall in love at first sight and secretly marry with the help of a friar. A violent street brawl leads to the exile of Romeo after he kills Juliet's cousin in revenge for his friend's death. To avoid a forced marriage to another man",
+      "finish_reason": "length",
+      "completion_tokens": 64,
+      "gibberish": 0.0,
+      "wall_s": 2.287384085007943
+    }
+  ],
+  "evidence": {
+    "tool": "verify-nan-rejection.py",
+    "recorded_utc": "2026-10-10T18:35:39Z",
+    "manifest_hash": "66cc221e3cb8f98f4a5fad562c0c6768bfc71551e132401cc49ff8105ab34eaf",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "a0cf4aaf138e98b3015b2ba756acc6ac0bbd1ecfbdb289f4e3e04bd8364fe28b"
+  }
+}

@@ -45,6 +45,10 @@ fi
 if bash "$ROOT/scripts/tests/run-kt-runtime-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt runtime tests (exit $rc)"; exit 1; fi
 fi
+# T3.13 / C10 NaN rejection (kt_nan_inject.py, sampler flag+sanitize, per-row abort; CPU torch): in-image; skipped without it.
+if bash "$ROOT/scripts/tests/run-kt-nan-inject-tests.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt nan-inject tests (exit $rc)"; exit 1; fi
+fi
 # T3.8b per-layer expert remap (kt_remap.py, CPU torch): in-image against the overlay checkout; skipped without it.
 if bash "$ROOT/scripts/tests/run-kt-remap-tests.sh"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL kt remap tests (exit $rc)"; exit 1; fi

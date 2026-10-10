@@ -203,7 +203,17 @@ REGISTRY: tuple[Knob, ...] = (
          "Default since 2026-10-09 on the T3.31 64K x 4 soak (NLL 0 moved, C1/C4/prefill within noise, "
          "+390 MiB min free under stress); set 0 for the pre-flip allocator.",
          sink=CONTAINER_ENV, evidence="evidence/t331/64k4-lever-soak/, evidence/e34-indexer-memory/d-v-a/262k-4slot-idea8/"),
+    Knob("KT_REJECT_NAN_ROWS", "flag", "1",
+         "T3.13 / C10: a batch row whose next-token logits hold NaN/+Inf fails that request alone (HTTP 500, "
+         "err_type NonFiniteLogits, streamed as an error chunk) while the other rows keep decoding and the server "
+         "stays up. Well-formed rows are bit-identical (-Inf masks are kept). 0 = stock SGLang: sample from "
+         "sanitized logits / finish silently on an out-of-vocab id.",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_REJECT_NAN_ROWS", evidence="evidence/e24-nan/c10/"),
     # ---- overlay diagnostics (forwarded into the container only when set) ---------------
+    Knob("KT_NAN_INJECT", "str", "",
+         "T3.13 / C10 test hook: row=<r>,bs=<b>,step=<n>,layer=<l> adds NaN to row r's hidden state after MoE "
+         "layer l on rank 0's n-th bs=b decode replay (kt_nan_inject.py). Never set in a serve that is measured.",
+         sink=DIAGNOSTIC_ENV, evidence="evidence/e24-nan/c10/"),
     Knob("KT_TIMELINE", "flag", "0", "T3.19a per-layer decode timeline recorder (kt_timeline.py).", sink=DIAGNOSTIC_ENV,
          evidence="evidence/t319/a/"),
     Knob("KT_TIMELINE_DIR", "str", "", "Where the timeline recorder writes (container path).", sink=DIAGNOSTIC_ENV),
@@ -249,6 +259,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"KT_GPU_PREFILL_LOG={r['KT_GPU_PREFILL_LOG']}",
         f"KT_NAN_PROBE_MIN_TOKENS={r['KT_NAN_PROBE_MIN_TOKENS']}",
         f"SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']}",
+        f"SGLANG_DSV41_REJECT_NAN_ROWS={r['KT_REJECT_NAN_ROWS']}",
     ]
 
 
@@ -382,7 +393,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"max_total_tokens={mtt} capture_bs=[{cap}] dspark={r['DSPARK']} dspark_k={r['DSPARK_K']} "
             f"ngram={r['NGRAM']} ngram_draft={r['NGRAM_DRAFT_TOKENS']} ngram_breadth={r['NGRAM_BREADTH']} "
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
-            f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} "
+            f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} reject_nan_rows={r['KT_REJECT_NAN_ROWS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
             f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} engram_chunk_ahead={r['ENGRAM_CHUNK_AHEAD']} "
             f"expert_map={emap} image={r['IMAGE']}")

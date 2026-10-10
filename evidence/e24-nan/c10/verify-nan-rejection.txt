@@ -1,0 +1,18 @@
+== bs=1 references (4 prompts, 64 tok, greedy)
+  ref 'Explain, in three short paragraphs, why the sky ': HTTP 200 64 tok
+  ref 'Write a Python function that returns the n-th Fi': HTTP 200 64 tok
+  ref 'List the planets of the solar system in order fr': HTTP 200 64 tok
+  ref 'Summarize the plot of Romeo and Juliet in five s': HTTP 200 64 tok
+== injected group (C=4; expect 1 aborted)
+  slot 0: HTTP 200 prefix=290/363 gib=0.04 (ref 0.04) tok=64 OK
+  slot 1: HTTP 200 prefix=32/228 gib=0.11 (ref 0.22) tok=64 OK
+  slot 2: ABORTED HTTP 500 '{"object":"error","message":"non-finite logits (NaN/Inf) were produced for this request; it was aborted, the server keep'
+  slot 3: HTTP 200 prefix=244/307 gib=0.00 (ref 0.00) tok=64 OK
+== clean group (C=4; expect all 200)
+  slot 0: HTTP 200 prefix=323/363 gib=0.04 (ref 0.04) tok=64 OK
+  slot 1: HTTP 200 prefix=32/228 gib=0.11 (ref 0.22) tok=64 OK
+  slot 2: HTTP 200 prefix=278/278 gib=0.07 (ref 0.07) tok=64 OK
+  slot 3: HTTP 200 prefix=3/307 gib=0.00 (ref 0.00) tok=64 OK
+== /health after: HTTP 200
+PASS
+wrote evidence/e24-nan/c10/verify-nan-rejection.json

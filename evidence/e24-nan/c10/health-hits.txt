@@ -1,0 +1,4 @@
+530:[2026-10-10 18:35:34 TP0] [KT_NAN_INJECT] poisoning row 1 of the bs=4 decode replay #3 after MoE layer 20
+531:[2026-10-10 18:35:34 TP1] [non-finite-logits] rid=c0ea223e1f714ec4a5dc7c06692b7187 row=1 mode=decode: NaN/Inf in next-token logits; aborting this request only (err_type=NonFiniteLogits)
+532:[2026-10-10 18:35:34 TP0] [non-finite-logits] rid=c0ea223e1f714ec4a5dc7c06692b7187 row=1 mode=decode: NaN/Inf in next-token logits; aborting this request only (err_type=NonFiniteLogits)
+535:[2026-10-10 18:35:34] INFO:     <docker-bridge-ip>:50268 - "POST /v1/chat/completions HTTP/1.1" 500 Internal Server Error
