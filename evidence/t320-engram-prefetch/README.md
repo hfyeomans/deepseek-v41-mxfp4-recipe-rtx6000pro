@@ -1,4 +1,4 @@
-# T3.20 / E36 — Engram rows fetched ahead of use (2026-10-09)
+# T3.20 / E36 — Engram rows fetched ahead of use (2026-10-09; round 2 below)
 
 Three serves on the launcher default (219 / 165, D=4, chunk 8192, 64K × 4, `MEM_FRACTION_STATIC=0.96`,
 expandable-after-capture on), one per value of the new knob `ENGRAM_FILE_PREFETCH`
@@ -73,7 +73,92 @@ Default-profile stress on the committed overlay `ff516964` (`ahead-stress/`, lau
 5. `ahead_hit` / `ahead_miss` counters exist in `_FileTable.stats` but are not logged; the layer-14 gap
    (0.45 vs 0.66 ms for a sync fetch of warm rows) is the indirect evidence that decode steps hit.
 
-## What is left (T3.20 round 2, not started)
+## Round 2 (2026-10-09, overlay `ad973440`; `ahead-r2/`, `ahead-r2b/`, `ahead-r2-stress/`)
+
+Round 1's remaining cost was the layer-1 break paying its own fetch. Round 2 moves the issue to **one eager break
+right after the hasher** (`bcg_engram_file_prefetch`, in `DeepseekV4Model` before layer 0, skipped for `cp_extend`):
+one D2H of both layers' ids, then each table's rows are advised and gathered while layer 0 (first table) and
+layers 2–13 (second table) run on the GPU; both layer breaks only join (owned mask computed on the GPU, so the
+pageable H2D that drained the stream in round 1 is gone; `torch.equal` on the ids, sync fallback on a miss; the
+old `next_*` hint between the two layers is removed). The hit / miss / dropped counters are now logged
+(`ahead-stats.txt`: every lookup hit, nothing dropped, in every serve). Same driver as round 1
+(`.amp/in/t320/r2.sh`, timeline on, C1 6 runs / C4 3 runs, 16K + 32K `--warm-pass`, NLL, needles) plus the
+default-profile stress (`stress-r2.sh`, timeline off).
+
+Three serves were needed:
+
+1. **`53714776` failed at decode graph capture** (bs 4, `cudaErrorStreamCaptureInvalidated` at layer 0's norm,
+   right after the new break): the worker thread allocated its pinned staging (`torch.empty(pin_memory=True)`
+   → `cudaHostAlloc` / event queries in the pinned allocator) while the launch thread was capturing the next
+   segment in global capture mode. Fix (`88b2f081`): the launch thread allocates the staging in `submit()`;
+   the worker only advises and `index_select`s (CPU only). No evidence kept (capture traceback only).
+2. **`88b2f081`, `ahead-r2/`** (one worker thread per table, as in round 1): decode bs 1 Engram break
+   **1.663 → 1.269 ms** (prefetch 0.36 + joins 0.50 + 0.41), step 23.74 → 23.53, C1 41.79 / 39.86, C4 56.47 /
+   54.24, NLL 0 moved, needles 6/6, same-prompt PASS (310) — **but prefill 16K / 32K cold 1,770 / 1,773, warm
+   1,800 / 1,780 (−4 to −8 % vs round 1 at a warmer page cache)**. Both tables now start their WILLNEED stream +
+   gather at the same instant on two threads: layer 1's I/O shares the NVMe queue with layer 14's (which has
+   layers 2–13 of slack anyway) and two threads contend with the launch thread for the GIL
+   (`_pages().tolist()` + ≈ 400K ctypes `madvise` calls per layer per 8192-token chunk).
+   A first serve of this commit was discarded: every decode batch carried one extra row (bs 2 graph during C1,
+   25 tok/s, cpu_wait 23 ms; bs 1 never replayed) and the driver had not kept the container log, so the extra
+   request could not be named; the rerun above (driver now saves the container log and samples `ss` on :8000 —
+   only the driver's own python connected) was clean. Scratch copy in `.amp/in/t320/ahead-r2-run1-bs2-anomaly/`.
+3. **`ad973440`, `ahead-r2b/` — one worker shared by every table, fetches in layer order.** This is the
+   round-2 result and the qualified profile:
+
+| | round 1 `ff516964` (`ahead/`) | round 2 `ad973440` (`ahead-r2b/`) | r2 vs r1 | vs `pool` (E18 path) |
+|---|---|---|---|---|
+| decode bs 1: Engram break per step (GPU gap, rank 0) | 1.663 ms (layer 1 1.235 + layer 14 0.448) | **1.249 (prefetch 0.368 + joins 0.467 + 0.411)** | **−25 %** | **−43 %** (2.200) |
+| decode bs 4: Engram break per step | 2.149 | **1.521** | −29 % | −52 % (3.191) |
+| decode bs 1 step (tick median) | 23.742 ms | **23.461** | −1.2 % | −2.9 % (24.160) |
+| decode bs 4 step | 71.171 | 70.238 | −1.3 % | CPU-tier bound |
+| C1 median / **wall** tok/s (6 runs, 512 tokens, offset 6) | 41.47 / 39.55 | **41.94 / 39.96** | **+1.0 %** wall | +2.8 % (38.87) |
+| C4 median / wall (3 runs) | 55.90 / 53.77 | **56.66 / 54.46** | +1.3 % | +1.7 % (53.55) |
+| prefill 16K cold (seed 777) / warm (seed 1277), tok/s | 1,844 / 1,875 (TTFT 8.7 s) | 1,811 / 1,870 (8.9 s) | −2 % / 0 (one serve each) | +14 % / +26 % |
+| prefill 32K cold (seed 1277) / warm (seed 1777) | 1,915 / 1,942 (16.7 s) | 1,910 / 1,929 (16.8 s) | 0 / −1 % | +20 % / +23 % |
+| first-ever 16K cold prefill of the serve (run 1, ≈ 1.5 % residency) | 614 | **1,250** | layer 1's I/O now starts before layer 0 | 1 serve, not a gate |
+| Engram shard residency before the 16K cold pass | 1.48 % | 1.47 % | same cold state | |
+| per-chunk steady state, 32K prompts (8192-token chunks) | 1,947–2,026 | **1,969–2,144** | | |
+| same-prompt C4 consistency | PASS, 290 | **PASS, 310** | gate ≥ 40 | |
+| corpus NLL vs `evidence/t328/default-219-8192/corpus/` | 0 of 65,653 moved | **0 of 65,653 moved** | bit-identical | |
+| needles 64K (55,206 tokens) | 6/6, TTFT 27.4 s | **6/6, 27.4 s** | | |
+| `ahead` hit / miss / dropped | not logged | 8192 / 0 / 0 per table at the last log line | | |
+| health | 0 | 0 | | |
+
+Default-profile stress on `ad973440` (`ahead-r2-stress/`, launcher defaults, timeline off): 4 × ~62K prompts
+(seed 31, 256 tokens each) **4/4 finished by length**, wall 165.2 s (round 1 167.3), **min free 2,161 / 2,122 MiB**
+(round 1 2,203 / 2,144; T3.31 soak 2,179 / 2,122 — same band); VRAM after capture 92,778 / 92,835 MiB (round 1
+92,776 / 92,835); needles **6/6 at 55,206 tokens** (TTFT 27.65 s); same-prompt C4 **PASS, 225**; health 0.
+
+Gates. Everything round 1 measured is equal or better and NLL stays bit-identical, so `ad973440` is the
+qualified profile. **T3.20 (a)'s decode bar is still not met** (break −43 % vs pool against the −50 % bar;
+C1 wall +2.8 % against +3 %) and the stop clause (< +1 % after a tuning round) is met this time (+1.0 % over
+round 1): T3.20 closes here. What remains is three host-work gaps after three stream drains (the D2H of the
+ids, then each join's `torch.equal` + non-blocking H2D + dequant + segment relaunch, ≈ 0.37–0.47 ms each); the
+host runs ≈ 10.5 ms ahead of the GPU, so every `.to("cpu")` in a break drains that lead and the GPU idles for the
+host work that follows. Removing them needs a join that does not sync (an event the worker waits on, or the
+ids hashed on the host from the sampled token) — registered as the T3.20 residue, not scheduled.
+
+### Round-2 readings
+
+1. **Capture safety is a thread property.** Under PyTorch's default global capture mode any CUDA call from any
+   thread — including the pinned allocator's `cudaHostAlloc` / `cudaEventQuery` behind
+   `torch.empty(pin_memory=True)` — invalidates a capture in progress on the launch thread. Round 1 escaped
+   because its worker fetch was never issued during a capture window of a fresh pinned size; round 2's
+   post-hasher issue was. Rule: worker threads touch CPU tensors only; anything CUDA is allocated on the
+   launch thread inside the break.
+2. **Two worker threads cost 4–8 % of prefill, one costs nothing.** The fetch work per 8192-token chunk is
+   ≈ 786K distinct pages per layer; two threads issuing it at once share the NVMe queue and the GIL with the
+   launch thread. In layer order on one worker, layer 1's fetch owns the box until it is done (it has layer 0
+   plus the host lead to hide in) and layer 14's starts right after with layers 2–13 of slack.
+3. **The break gap is the host work after the drain, not the fetch.** With the fetch fully hidden, each
+   break's GPU gap equals its post-sync host time (0.37 / 0.47 / 0.41 ms) — the floor round 1 estimated at
+   ≈ 0.45 ms. The fetch itself (0.8 ms cold in round 1) is gone from the step.
+4. A serve whose C1 runs on the bs-2 graph is a contaminated serve, not a slower build: 25 tok/s and cpu_wait
+   23 ms are the bs-2 shape. The timeline's per-graph replay counts (`decode:N` keys) show it; the driver now
+   keeps the container log so the extra request can be named next time.
+
+## What was left after round 1 (round 2 plan as written then; superseded above)
 
 The layer-1 break's ≈ 0.8 ms over the floor is the next step's fetch latency. Both layers' ids are
 `EngramHasher(input_ids)`; in decode the next step's input id is the token just sampled, which the host already
@@ -97,3 +182,6 @@ the committed overlay (`stress-kv.{txt,json}`, `verify.*`, `consistency.*`, `vra
 driver `.amp/in/t320/stress.sh`). `io/` is the E36 (1) microbench
 (`scripts/bench-engram-advise.py`, idle box, no manifest). Timeline tensor dumps were not kept.
 Driver: `.amp/in/t320/ab2.sh` (not committed; the pool run used its predecessor without `--same-prompt`).
+Round 2: `ahead-r2/`, `ahead-r2b/` (same files as `ahead/` plus `ahead-stats.txt` — the table's hit / miss /
+dropped log lines — and `prefill-log.txt`; driver `.amp/in/t320/r2.sh`), `ahead-r2-stress/` (same files as
+`ahead-stress/`; driver `.amp/in/t320/stress-r2.sh`). Timeline tensor dumps were not kept.

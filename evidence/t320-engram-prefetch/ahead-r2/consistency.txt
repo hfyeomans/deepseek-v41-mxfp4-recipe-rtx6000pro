@@ -1,0 +1,10 @@
+== bs=1 references (1 prompts, 96 tok, greedy)
+  ref 'Explain, in three short paragraphs, why the sky ': 96 tok, gib 0.03
+== concurrent run (C=4)
+  slot 0: exact=True prefix=519/519 gib=0.03 tok=96 OK
+  slot 1: exact=False prefix=310/519 gib=0.03 tok=96 OK
+  slot 2: exact=True prefix=519/519 gib=0.03 tok=96 OK
+  slot 3: exact=True prefix=519/519 gib=0.03 tok=96 OK
+  rows identical: False; min pairwise row prefix 310 chars (gate >= 40)
+PASS
+wrote evidence/t320-engram-prefetch/ahead-r2/consistency.json
