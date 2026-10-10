@@ -37,7 +37,7 @@ cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || ex
 declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_EXPERT_MAP KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K NGRAM NGRAM_DRAFT_TOKENS NGRAM_BREADTH \
   MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS \
   CUDA_GRAPH_BS MAX_TOTAL_TOKENS EXTRA_SERVER_ARGS EXTRA_DOCKER_ENV EXTRA_DOCKER_ARGS DRY_RUN \
-  CONTAINER_NAME BIND_ADDRESS PORT HF_MODEL_DIR OVERLAY_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
+  CONTAINER_NAME BIND_ADDRESS API_KEY_FILE PORT HF_MODEL_DIR OVERLAY_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
 eval "$cfg"
 
 snapshot_dir="/hfm/snapshots/${SNAPSHOT}"
@@ -67,6 +67,14 @@ server_args=(
   --reasoning-parser deepseek-v41
   --tool-call-parser deepseekv41
 )
+# API key (T3.35): the file's content, never the path, reaches the server; `--print` shows it
+# redacted so a pasted launch line cannot leak it.
+if [[ -n "$API_KEY_FILE" ]]; then
+  [[ -r "$API_KEY_FILE" ]] || { echo "FAIL API_KEY_FILE=$API_KEY_FILE is not readable"; exit 1; }
+  api_key="$(tr -d '[:space:]' < "$API_KEY_FILE")"
+  [[ -n "$api_key" ]] || { echo "FAIL API_KEY_FILE=$API_KEY_FILE is empty"; exit 1; }
+  server_args+=(--api-key "$api_key")
+fi
 # Expert placement map (T3.8b): mounted read-only, named to the overlay's kt_remap.py.
 expert_map_mount=()
 if [[ -n "$KT_EXPERT_MAP" ]]; then
@@ -133,7 +141,7 @@ docker_cmd=(
 )
 
 if [[ $print_only -eq 1 ]]; then
-  printf '%q ' "${docker_cmd[@]}"; echo
+  printf '%q ' "${docker_cmd[@]}" | sed "s/--api-key [^ ]*/--api-key <redacted>/"; echo
   exit 0
 fi
 

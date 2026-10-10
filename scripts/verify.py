@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evidence_manifest import stamp_or_exit  # noqa: E402
-from openai_client import chat_stream, get_json  # noqa: E402
+from openai_client import auth_headers, chat_stream, get_json  # noqa: E402
 
 FILLER_WORDS = ("ledger", "granite", "harbor", "signal", "meadow", "copper", "lantern", "orbit", "timber", "quartz",
                 "velvet", "canyon", "pixel", "saffron", "anchor", "glacier", "marble", "cobalt", "ember", "willow")
@@ -93,7 +93,7 @@ def main() -> int:
                 "chat_template_kwargs": {"thinking": False}}
         import urllib.request
         req = urllib.request.Request(f"{args.url}/v1/chat/completions", data=json.dumps(body).encode(),
-                                     headers={"Content-Type": "application/json"})
+                                     headers={"Content-Type": "application/json", **auth_headers()})
         resp = json.loads(urllib.request.urlopen(req, timeout=300).read())
         calls = resp["choices"][0]["message"].get("tool_calls") or []
         arg_ok = any(c["function"]["name"] == "get_weather" and "lisbon" in c["function"]["arguments"].lower() for c in calls)

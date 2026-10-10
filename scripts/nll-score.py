@@ -47,6 +47,7 @@ import urllib.request
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from evidence_manifest import stamp_or_exit  # noqa: E402
+from openai_client import auth_headers  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parent
 DEFAULT_TEXT = HERE / "fixtures" / "nll-corpus.txt"
@@ -61,7 +62,7 @@ def score(url: str, text: str, timeout: float) -> dict:
         "top_logprobs_num": 0,
     }
     req = urllib.request.Request(f"{url.rstrip('/')}/generate", data=json.dumps(body).encode(),
-                                 headers={"content-type": "application/json"})
+                                 headers={"content-type": "application/json", **auth_headers()})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         r = json.load(resp)
     meta = r["meta_info"]

@@ -27,6 +27,10 @@ import pathlib
 import sys
 import urllib.request
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from evidence_manifest import stamp_or_exit  # noqa: E402
+from openai_client import auth_headers  # noqa: E402
+
 PROMPTS = [
     "Explain how a CPU cache hierarchy (L1, L2, L3) works and why it matters for performance.",
     "Write a Python function that returns the n-th Fibonacci number iteratively, then explain its complexity.",
@@ -56,7 +60,7 @@ def ask(url: str, model: str, prompt: str, n: int, logprobs: bool, timeout: int)
     }
     body = {k: v for k, v in body.items() if v is not None}
     req = urllib.request.Request(url + "/v1/chat/completions", data=json.dumps(body).encode(),
-                                 headers={"content-type": "application/json"})
+                                 headers={"content-type": "application/json", **auth_headers()})
     r = json.load(urllib.request.urlopen(req, timeout=timeout))
     ch = r["choices"][0]
     if not logprobs or not ch.get("logprobs"):
@@ -103,6 +107,7 @@ def main() -> int:
                     f.result()
     out = {"label": a.label, "model": a.model, "max_tokens": a.max_tokens, "batch": a.batch, "results": results}
     pathlib.Path(a.output).parent.mkdir(parents=True, exist_ok=True)
+    stamp_or_exit(out, pathlib.Path(a.output), "greedy-logprobs.py")
     pathlib.Path(a.output).write_text(json.dumps(out, indent=1))
 
     for p, toks in results.items():

@@ -42,7 +42,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from evidence_manifest import stamp_or_exit  # noqa: E402
-from openai_client import chat_stream, get_json  # noqa: E402
+from openai_client import auth_headers, chat_stream, get_json  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("stress_kv_full", HERE / "stress-kv-full.py")
 _skf = importlib.util.module_from_spec(_spec)
@@ -160,7 +160,7 @@ def load_snapshots(local_dir: Path) -> dict[str, dict]:
 
 def post(url: str, body: dict | None = None, timeout: float = 600) -> dict:
     data = json.dumps(body or {}).encode()
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json", **auth_headers()}, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as r:
         txt = r.read()
     try:

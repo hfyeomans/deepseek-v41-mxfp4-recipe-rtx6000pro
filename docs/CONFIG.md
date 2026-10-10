@@ -75,6 +75,7 @@ so every evidence file names the profile it was measured on and what was changed
 | `CONTAINER_NAME` | str | `dsv41-kt` | launcher | docker container name; `docker rm -f` it to stop. |  |
 | `SERVED_MODEL_NAME` | str | `dsv41-flash-hybrid` | server-arg | Name the OpenAI-compatible API serves. |  |
 | `BIND_ADDRESS` | str | `127.0.0.1` | launcher | Host interface the port is published on. |  |
+| `API_KEY_FILE` | str | `""` | launcher | Path to a file holding one bearer token; non-empty passes its content as --api-key, after which every endpoint but /health* and /metrics needs `Authorization: Bearer`. A path, not the key, so the manifest and the resolved line never carry the secret. The evidence scripts read the same variable (openai_client.auth_headers). Set it whenever the port is exposed beyond this host (T3.35: tailscale funnel). |  |
 | `PORT` | int | `8000` | launcher | Host port mapped to the container's 30000. |  |
 | `HF_MODEL_DIR` | str | `derived` | launcher | HF hub model dir (bind-mounted read-only at /hfm). |  |
 | `SNAPSHOT` | str | `dba1be0a40aa45a94ad051997016db3960a90277` | launcher | Checkpoint snapshot under HF_MODEL_DIR/snapshots. | PROVENANCE.md |

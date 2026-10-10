@@ -10,9 +10,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from openai_client import StreamResult, chat_stream  # noqa: E402
+from openai_client import StreamResult, auth_headers, chat_stream  # noqa: E402
 
 RECEIVED: list[dict] = []
+RECEIVED_AUTH: list[str | None] = []
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -22,6 +23,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         RECEIVED.append(body)
+        RECEIVED_AUTH.append(self.headers.get("Authorization"))
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.end_headers()
@@ -65,6 +67,32 @@ def test_stream_parsing_and_request_shape():
     assert body["min_tokens"] == 8 and body["max_tokens"] == 8
 
 
+def test_api_key_file_sets_bearer_on_every_request():
+    """T3.35: a serve launched with API_KEY_FILE answers 401 to bare calls, so the evidence
+    scripts must send the file's token (whitespace-stripped); a literal API_KEY wins over the
+    file; with neither set no Authorization header is sent."""
+    import os
+    import tempfile
+    key_file = Path(tempfile.mkdtemp()) / "key"
+    key_file.write_text("sk-local-test \n")
+    srv = HTTPServer(("127.0.0.1", 0), Handler)
+    t = threading.Thread(target=srv.serve_forever, daemon=True)
+    t.start()
+    url = f"http://127.0.0.1:{srv.server_address[1]}"
+    try:
+        os.environ["API_KEY_FILE"] = str(key_file)
+        assert auth_headers() == {"Authorization": "Bearer sk-local-test"}
+        chat_stream(url, "m", [{"role": "user", "content": "hi"}], max_tokens=1)
+        assert RECEIVED_AUTH[-1] == "Bearer sk-local-test", RECEIVED_AUTH[-1]
+        os.environ["API_KEY"] = "literal-wins"
+        assert auth_headers() == {"Authorization": "Bearer literal-wins"}
+    finally:
+        os.environ.pop("API_KEY_FILE", None)
+        os.environ.pop("API_KEY", None)
+        srv.shutdown()
+    assert auth_headers() == {}
+
+
 def test_decode_tps_uses_usage_and_excludes_ttft():
     r = StreamResult(text="", ttft_s=1.0, total_s=3.0, completion_tokens=201, prompt_tokens=1, finish_reason="length", stream_token_events=50)
     # 200 inter-token intervals over 2.0 s of decode
@@ -76,6 +104,7 @@ def test_decode_tps_uses_usage_and_excludes_ttft():
 
 
 if __name__ == "__main__":
-    for fn in (test_stream_parsing_and_request_shape, test_decode_tps_uses_usage_and_excludes_ttft):
+    for fn in (test_stream_parsing_and_request_shape, test_api_key_file_sets_bearer_on_every_request,
+               test_decode_tps_uses_usage_and_excludes_ttft):
         fn()
         print(f"ok {fn.__name__}")

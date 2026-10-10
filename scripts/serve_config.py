@@ -107,6 +107,11 @@ REGISTRY: tuple[Knob, ...] = (
     Knob("CONTAINER_NAME", "str", "dsv41-kt", "docker container name; `docker rm -f` it to stop."),
     Knob("SERVED_MODEL_NAME", "str", "dsv41-flash-hybrid", "Name the OpenAI-compatible API serves.", sink=SERVER_ARG),
     Knob("BIND_ADDRESS", "str", "127.0.0.1", "Host interface the port is published on."),
+    Knob("API_KEY_FILE", "str", "",
+         "Path to a file holding one bearer token; non-empty passes its content as --api-key, after which every "
+         "endpoint but /health* and /metrics needs `Authorization: Bearer`. A path, not the key, so the manifest "
+         "and the resolved line never carry the secret. The evidence scripts read the same variable "
+         "(openai_client.auth_headers). Set it whenever the port is exposed beyond this host (T3.35: tailscale funnel)."),
     Knob("PORT", "int", "8000", "Host port mapped to the container's 30000."),
     Knob("HF_MODEL_DIR", "str", lambda r: _home(".cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash"),
          "HF hub model dir (bind-mounted read-only at /hfm)."),

@@ -39,6 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evidence_manifest import stamp_or_exit  # noqa: E402
+from openai_client import auth_headers  # noqa: E402
 
 DEFAULT_PROMPTS = [
     "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
@@ -76,7 +77,7 @@ def chat_once(url: str, model: str, prompt: str, max_tokens: int, seed: int, tim
         "chat_template_kwargs": {"thinking": False},
     }
     req = urllib.request.Request(f"{url.rstrip('/')}/v1/chat/completions", data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"}, method="POST")
+                                 headers={"Content-Type": "application/json", **auth_headers()}, method="POST")
     t0 = time.perf_counter()
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:

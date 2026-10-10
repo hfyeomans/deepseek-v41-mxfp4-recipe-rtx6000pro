@@ -46,7 +46,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evidence_manifest import stamp_or_exit  # noqa: E402
-from openai_client import chat_stream  # noqa: E402
+from openai_client import auth_headers, chat_stream  # noqa: E402
 
 DEFAULT_PROMPTS = [
     "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
@@ -79,7 +79,7 @@ def flush_cache(url: str) -> None:
     import urllib.error
     import urllib.request
 
-    req = urllib.request.Request(f"{url.rstrip('/')}/flush_cache", data=b"", method="POST")
+    req = urllib.request.Request(f"{url.rstrip('/')}/flush_cache", data=b"", headers=auth_headers(), method="POST")
     # SGLang answers 400 ("not flushed, requests pending") while the scheduler
     # still holds a request, e.g. the previous stream's final bookkeeping.
     for attempt in range(10):

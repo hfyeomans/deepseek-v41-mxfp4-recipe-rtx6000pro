@@ -6,10 +6,24 @@ of them time the same way: request send -> first content token -> last token.
 from __future__ import annotations
 
 import json
+import os
 import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+from pathlib import Path
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer header for a serve launched with API_KEY_FILE (T3.35): the same env the launcher
+    reads, so one `export API_KEY_FILE=...` covers the serve and every evidence script. API_KEY
+    (literal) is accepted for one-off shells. Empty when neither is set; SGLang exempts only
+    /health* and /metrics from the key, so every other request site must send this."""
+    key = os.environ.get("API_KEY", "")
+    path = os.environ.get("API_KEY_FILE", "")
+    if not key and path:
+        key = Path(os.path.expanduser(path)).read_text().strip()
+    return {"Authorization": f"Bearer {key}"} if key else {}
 
 
 @dataclass
@@ -43,7 +57,7 @@ class StreamResult:
 
 
 def get_json(url: str, timeout: float = 10.0) -> dict:
-    with urllib.request.urlopen(urllib.request.Request(url), timeout=timeout) as r:
+    with urllib.request.urlopen(urllib.request.Request(url, headers=auth_headers()), timeout=timeout) as r:
         return json.loads(r.read())
 
 
@@ -65,7 +79,7 @@ def chat_stream(base_url: str, model: str, messages: list[dict], *, max_tokens: 
     if extra:
         body.update(extra)
     req = urllib.request.Request(f"{base_url.rstrip('/')}/v1/chat/completions", data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"}, method="POST")
+                                 headers={"Content-Type": "application/json", **auth_headers()}, method="POST")
     t0 = time.perf_counter()
     ttft = None
     text_parts: list[str] = []
