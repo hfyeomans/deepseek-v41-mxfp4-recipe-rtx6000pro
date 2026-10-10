@@ -1,0 +1,77 @@
+From 16260ad3ef97b5ab626682e64b8702a4c8be3fe7 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 14:02:58 -0400
+Subject: [PATCH 36/50] overlap gate: force multi-stream overlap off for NGRAM
+ speculation too on SM120 (Bug A is verify-graph replay; T3.9h)
+
+---
+ .../srt/arg_groups/dspark_overlap_gate.py     | 29 ++++++++++++-------
+ 1 file changed, 19 insertions(+), 10 deletions(-)
+
+diff --git a/python/sglang/srt/arg_groups/dspark_overlap_gate.py b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
+index 517efa59..35e403ee 100644
+--- a/python/sglang/srt/arg_groups/dspark_overlap_gate.py
++++ b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
+@@ -1,9 +1,12 @@
+-"""Forward-mode gate for multi-stream overlap under DSpark on SM120 (recipe review C4).
++"""Forward-mode gate for multi-stream overlap under speculative verify on SM120
++(recipe review C4).
+ 
+ Bug A (recipe docs/TROUBLESHOOTING.md, E23 R1): with DSpark speculative decoding the
+ model's multi-stream overlap (`alt_streams`) runs inside the captured verify graph,
+ and under the breakable CUDA graph the side-stream work is not ordered against the
+-main stream at replay. Symptoms were wrong tokens and acceptance 0.26-0.57 in graph
++main stream at replay. The defect is in the verify-graph replay, not in the drafter,
++so the n-gram family (`--speculative-algorithm NGRAM`, which verifies K+1 rows through
++the same captured target forward) is gated the same way (recipe T3.9h, 2026-10-09). Symptoms were wrong tokens and acceptance 0.26-0.57 in graph
+ mode against 0.77 eager. Until 2026-09-24 the only protection was the operator
+ remembering to pass SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0 on every DSpark launch.
+ 
+@@ -16,6 +19,10 @@ from __future__ import annotations
+ from typing import NamedTuple, Optional
+ 
+ 
++# Speculative families whose verify step replays the captured target forward on SM120.
++GATED_ALGORITHMS = frozenset({"DSPARK", "NGRAM"})
++
++
+ class OverlapGateError(ValueError):
+     """The operator explicitly asked for a combination Bug A condemned."""
+ 
+@@ -35,26 +42,28 @@ def decide_multi_stream_overlap(
+     """Decide whether SGLANG_OPT_USE_MULTI_STREAM_OVERLAP must be forced off.
+ 
+     Rules (all other combinations leave the env untouched):
+-      - DSPARK on SM120, env unset or already False  -> force off, log once.
+-      - DSPARK on SM120, env explicitly True          -> OverlapGateError: the
++      - DSPARK / NGRAM on SM120, env unset or already False -> force off, log once.
++      - DSPARK / NGRAM on SM120, env explicitly True         -> OverlapGateError: the
+         operator asked for the known-corrupting combination; refuse rather than
+         silently override an explicit choice.
+       - no speculation, or not SM120                 -> untouched (plain decode is
+         qualified with the overlap on: consistency PASS at bs 1..4).
+     """
+     algo = (speculative_algorithm or "").upper()
+-    if algo != "DSPARK" or not is_sm120:
+-        return OverlapDecision(False, "not DSpark on SM120; overlap setting untouched")
++    if algo not in GATED_ALGORITHMS or not is_sm120:
++        return OverlapDecision(
++            False, "not DSpark / n-gram on SM120; overlap setting untouched"
++        )
+     if env_is_set and env_value:
+         raise OverlapGateError(
+-            "SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=1 with --speculative-algorithm DSPARK "
++            f"SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=1 with --speculative-algorithm {algo} "
+             "on SM120 reproduces Bug A (side-stream work unordered at verify-graph "
+-            "replay: wrong tokens, acceptance 0.26-0.57). Unset the variable; the "
+-            "overlay forces it off for DSpark launches."
++            "replay: wrong tokens, acceptance 0.26-0.57 under DSpark). Unset the "
++            f"variable; the overlay forces it off for {algo} launches."
+         )
+     return OverlapDecision(
+         True,
+-        "DSpark on SM120: multi-stream overlap forced off in code (Bug A, recipe "
++        f"{algo} on SM120: multi-stream overlap forced off in code (Bug A, recipe "
+         "TROUBLESHOOTING); SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0 in the launch env is "
+         "no longer required",
+     )

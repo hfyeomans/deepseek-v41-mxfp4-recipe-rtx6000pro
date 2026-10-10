@@ -1,0 +1,420 @@
+From ff516964238ab2c3d7aef49205194f9a028eb3db Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 18:29:22 -0400
+Subject: [PATCH 40/50] engram file layout: ahead-of-use row fetch for the
+ second Engram layer (recipe T3.20 / E36, SGLANG_DSV41_ENGRAM_FILE_PREFETCH)
+
+The two Engram layers' hash ids are a pure function of the input ids and
+are both known before layer 0, so the first layer's eager break now does
+one D2H of both layers' ids and hands the later layer's ids to its
+_FileTable, whose single worker thread issues MADV_WILLNEED per distinct
+page through libc (GIL released) and index_selects the rows into pinned
+memory while layers 2-13 run. The later break only joins (ids compared
+with torch.equal; a mismatch falls back to a synchronous fetch and is
+counted in stats). H2D copies now come from pinned staging, non_blocking.
+
+Modes (SGLANG_DSV41_ENGRAM_FILE_PREFETCH): ahead (default), sync (serial
+WILLNEED per distinct page in the break), pool (the E18 per-row thread
+pool, kept as the A/B comparator; SGLANG_DSV41_ENGRAM_FILE_THREADS now
+applies to it only). The pool was the cost, not the help: CPython's
+mmap.madvise holds the GIL, so 16 threads serialise on it and pay
+0.65 ms warm for 48 rows against 0.02 ms on one thread (recipe E36).
+
+Measured on the launcher default (219/165, chunk 8192, 64K x 4), one
+serve per mode, KT timeline on: decode Engram break bs1 2.20 -> 1.80 ->
+1.66 ms (pool / sync / ahead; the layer-14 break 0.94 -> 0.45), bs4 3.19
+-> 2.15; C1 40.72/38.87 -> 41.47/39.55 wall; prefill 16K cold 1,592 ->
+1,844 tok/s, 32K 1,596 -> 1,915 at the same ~1.5 % Engram residency;
+NLL 0 of 65,653 moved, needles 6/6 at 55K, same-prompt C4 PASS.
+Standalone GPU test: all three modes bit-identical to a plain
+index_select reference at T = 1 / 4 / 300, hit and miss paths.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py            |   8 +-
+ python/sglang/srt/layers/engram.py      | 219 +++++++++++++++++++-----
+ python/sglang/srt/models/deepseek_v4.py |  24 +++
+ 3 files changed, 205 insertions(+), 46 deletions(-)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 2c7547e7..eba9a2b8 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1431,7 +1431,13 @@ class Envs:
+     # the served model path is not the snapshot directory.
+     SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT = EnvStr("auto")
+     SGLANG_DSV41_ENGRAM_FILE_DIR = EnvStr("")
+-    # Threads issuing MADV_WILLNEED for the file layout's lookups (NVMe queue depth).
++    # How the file layout fetches rows (recipe T3.20 / E36): "ahead" advises and
++    # gathers the later Engram layer's rows on one worker thread from the first
++    # layer's break (the ids of both layers are known before layer 0), "sync"
++    # issues MADV_WILLNEED per distinct page from the break itself, "pool" is the
++    # E18 per-row thread pool kept as the A/B comparator.
++    SGLANG_DSV41_ENGRAM_FILE_PREFETCH = EnvStr("ahead")
++    # Threads of the "pool" issue path only.
+     SGLANG_DSV41_ENGRAM_FILE_THREADS = EnvInt(16)
+     # With the host table on, drop the checkpoint's page cache (posix_fadvise
+     # DONTNEED on the safetensors) before pre-faulting the table and again after
+diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
+index 44bd3b0c..79908d85 100644
+--- a/python/sglang/srt/layers/engram.py
++++ b/python/sglang/srt/layers/engram.py
+@@ -681,13 +681,23 @@ class _FileTable:
+     views are the whole table. Nothing is copied, nothing is pinned; the page
+     cache is the row cache and its size is whatever DRAM the experts leave.
+ 
+-    Lookups run on the CPU (an eager break in the CUDA graph): the rows' pages
+-    are advised with MADV_WILLNEED from a small thread pool so a cold miss
+-    costs one NVMe queue-depth-N round trip (~1 ms for 48 rows, ~0.5 s for a
+-    4K-token prefill chunk on the 9100 PRO) instead of serialised page faults
+-    (6x slower). Every TP rank maps the same file and owns its row range, so
+-    the existing sharded all-reduce path reassembles the lookup and the two
+-    ranks share one page cache."""
++    Lookups run on the CPU (an eager break in the CUDA graph). The pages the
++    rows touch are advised with MADV_WILLNEED first, one call per distinct page
++    from one thread, so a cold miss costs one NVMe queue-depth-N round trip
++    (~0.4 ms for 48 rows, ~0.5 s per 8K-token prefill chunk on the 9100 PRO)
++    instead of serialised page faults (6x slower). The kernel-side cost of
++    WILLNEED is per page (~0.25 us warm, ~0.5 us cold), so neither a thread
++    pool (CPython's mmap.madvise holds the GIL: 16 threads cost 2-25x more
++    than one) nor process_madvise batching makes issue cheaper (recipe E36).
++
++    Ahead-of-use fetch (recipe T3.20): the first Engram layer's break knows the
++    later layer's hash ids too (both come out of the hasher before layer 0), so
++    it hands them to that layer's table, whose single worker thread advises and
++    gathers the rows into pinned memory while layers 2-13 run; the later break
++    only joins. The worker issues madvise through libc (GIL released), so the
++    launch thread keeps enqueuing. Every TP rank maps the same file and owns its
++    row range, so the existing sharded all-reduce path reassembles the lookup
++    and the two ranks share one page cache."""
+ 
+     def __init__(self, model_dir: str, layer_id: int, row_start: int, rows: int):
+         snapshot = envs.SGLANG_DSV41_ENGRAM_FILE_DIR.get() or model_dir
+@@ -719,60 +729,140 @@ class _FileTable:
+         self.mm = mmap.mmap(self.fd, 0, flags=mmap.MAP_SHARED, prot=mmap.PROT_READ)
+         self.mm.madvise(mmap.MADV_RANDOM)  # 48-row lookups must not pull readahead windows
+         raw = torch.frombuffer(self.mm, dtype=torch.uint8)
+-        scale_cols = self.dim // FP8_BLOCK_SIZE
++        self.base_addr = raw.data_ptr()
++        self.scale_cols = self.dim // FP8_BLOCK_SIZE
+         w_lo = self.w_off + row_start * self.dim
+-        s_lo = self.s_off + row_start * scale_cols
++        s_lo = self.s_off + row_start * self.scale_cols
++        self.w_lo, self.s_lo = w_lo, s_lo
+         self.weight = raw[w_lo : w_lo + rows * self.dim].view(torch.float8_e4m3fn).view(rows, self.dim)
+-        self.scale = raw[s_lo : s_lo + rows * scale_cols].view(torch.float8_e8m0fnu).view(rows, scale_cols)
++        self.scale = raw[s_lo : s_lo + rows * self.scale_cols].view(torch.float8_e8m0fnu).view(rows, self.scale_cols)
++        self.mode = envs.SGLANG_DSV41_ENGRAM_FILE_PREFETCH.get()
++        if self.mode not in ("ahead", "sync", "pool"):
++            raise ValueError(
++                "SGLANG_DSV41_ENGRAM_FILE_PREFETCH must be ahead, sync or pool, "
++                f"got {self.mode!r}"
++            )
+         self.threads = max(1, envs.SGLANG_DSV41_ENGRAM_FILE_THREADS.get())
+-        self.pool = ThreadPoolExecutor(self.threads, thread_name_prefix="engram-willneed")
+-        self.stats = {"lookups": 0, "rows": 0, "ms": 0.0}
++        self.pool = (
++            ThreadPoolExecutor(self.threads, thread_name_prefix="engram-willneed")
++            if self.mode == "pool"
++            else None
++        )
++        self.worker = (
++            ThreadPoolExecutor(1, thread_name_prefix="engram-ahead")
++            if self.mode == "ahead"
++            else None
++        )
++        self._libc = ctypes.CDLL(None, use_errno=True)
++        self._libc.madvise.argtypes = (ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int)
++        self._pending: Optional[tuple[torch.Tensor, object]] = None
++        self.stats = {"lookups": 0, "rows": 0, "ms": 0.0, "ahead_hit": 0, "ahead_miss": 0}
++
++    # -- WILLNEED issue -----------------------------------------------------------
++    def _pages(self, local: torch.Tensor) -> list[int]:
++        """Distinct page offsets (into the mapping) the owned rows' weight and
++        scale bytes touch. Unowned rows were masked to row 0 by the caller and
++        add nothing worth a syscall."""
++        page = mmap.PAGESIZE
++        w = (self.w_lo + local * self.dim).div_(page, rounding_mode="floor").mul_(page)
++        s = (self.s_lo + local * self.scale_cols).div_(page, rounding_mode="floor").mul_(page)
++        return torch.unique(torch.cat([w, s])).tolist()
+ 
+-    def prefetch(self, local_rows: list[int]) -> None:
+-        """MADV_WILLNEED every page the rows touch, from `threads` workers."""
++    def _advise(self, pages: list[int], release_gil: bool) -> None:
+         page = mmap.PAGESIZE
+-        scale_cols = self.dim // FP8_BLOCK_SIZE
+-        w_base = self.w_off + self.row_start * self.dim
+-        s_base = self.s_off + self.row_start * scale_cols
+-        mm, dim = self.mm, self.dim
++        if release_gil:
++            # libc through ctypes drops the GIL around each call: a worker
++            # thread can issue ~400K pages without stalling the launch thread.
++            adv, base, will = self._libc.madvise, self.base_addr, mmap.MADV_WILLNEED
++            for p in pages:
++                adv(base + p, page, will)
++        else:
++            mm = self.mm
++            for p in pages:
++                mm.madvise(mmap.MADV_WILLNEED, p, page)
++
++    def prefetch(self, local: torch.Tensor, *, release_gil: bool = False) -> None:
++        """MADV_WILLNEED every distinct page the rows touch."""
++        pages = self._pages(local)
++        if not pages:
++            return
++        if self.mode != "pool":
++            self._advise(pages, release_gil)
++            return
++        # Legacy E18 path (SGLANG_DSV41_ENGRAM_FILE_PREFETCH=pool): per-row
++        # calls from `threads` workers, kept as the A/B comparator.
++        page, n = mmap.PAGESIZE, len(pages)
++        mm = self.mm
+ 
+         def advise(lo: int, hi: int) -> None:
+-            for r in local_rows[lo:hi]:
+-                a = (w_base + r * dim) // page * page
+-                mm.madvise(mmap.MADV_WILLNEED, a, page)
+-                b = (s_base + r * scale_cols) // page * page
+-                mm.madvise(mmap.MADV_WILLNEED, b, page)
+-
+-        n = len(local_rows)
+-        if n == 0:
+-            return
++            for p in pages[lo:hi]:
++                mm.madvise(mmap.MADV_WILLNEED, p, page)
++
+         step = max(1, (n + self.threads - 1) // self.threads)
+         list(self.pool.map(lambda k: advise(k, min(n, k + step)), range(0, n, step)))
+ 
++    # -- gather --------------------------------------------------------------------
++    def _fetch(self, local: torch.Tensor, release_gil: bool) -> tuple[torch.Tensor, torch.Tensor]:
++        self.prefetch(local, release_gil=release_gil)
++        pin = torch.cuda.is_available()
++        w = torch.empty(local.numel(), self.dim, dtype=torch.float8_e4m3fn, pin_memory=pin)
++        s = torch.empty(local.numel(), self.scale_cols, dtype=torch.float8_e8m0fnu, pin_memory=pin)
++        torch.index_select(self.weight, 0, local, out=w)
++        torch.index_select(self.scale, 0, local, out=s)
++        return w, s
++
++    def submit(self, local: torch.Tensor) -> None:
++        """Start fetching `local` (0-based, in-range row ids, CPU) on the worker;
++        `gather` of the same ids later only joins. A pending fetch that was never
++        taken is dropped: the ids no longer match the step being replayed."""
++        if self.worker is None:
++            return
++        local = local.clone()
++        self._pending = (local, self.worker.submit(self._fetch, local, True))
++
+     def gather(self, local: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+-        """fp8 rows and e8m0 scales for local (0-based, in-range) row ids, on CPU."""
++        """fp8 rows and e8m0 scales for local (0-based, in-range row ids), on
++        pinned CPU memory."""
+         t = time.perf_counter()
+-        self.prefetch(local.tolist())
+-        w = self.weight.index_select(0, local)
+-        s = self.scale.index_select(0, local)
++        pending, self._pending = self._pending, None
++        if pending is not None and torch.equal(pending[0], local):
++            w, s = pending[1].result()
++            self.stats["ahead_hit"] += 1
++        else:
++            if pending is not None:
++                pending[1].result()  # never leave the worker racing a sync fetch
++                self.stats["ahead_miss"] += 1
++            w, s = self._fetch(local, release_gil=False)
+         self.stats["lookups"] += 1
+         self.stats["rows"] += local.numel()
+         self.stats["ms"] += (time.perf_counter() - t) * 1e3
+         return w, s
+ 
+     def describe(self) -> str:
++        how = {
++            "ahead": "WILLNEED + gather ahead of use on one worker",
++            "sync": "serial WILLNEED in the break",
++            "pool": f"{self.threads} WILLNEED threads in the break",
++        }[self.mode]
+         return (
+             f"layout=file, {os.path.basename(self.path)} rows [{self.row_start}, "
+             f"{self.row_start + self.rows}) of {self.total_rows}, "
+             f"{self.rows * (self.dim + self.dim // FP8_BLOCK_SIZE) / 2**30:.1f} GiB mapped read-only, "
+-            f"{self.threads} prefetch threads, page cache is the row cache"
++            f"{how}, page cache is the row cache"
+         )
+ 
+ 
+-def _engram_file_rows(embed: "EngramEmbedding", indices: torch.Tensor) -> torch.Tensor:
++def _engram_file_rows(
++    embed: "EngramEmbedding",
++    indices: torch.Tensor,
++    next_embed: Optional["EngramEmbedding"] = None,
++    next_indices: Optional[torch.Tensor] = None,
++) -> torch.Tensor:
+     """The CPU lookup for the file layout, as one graph break. Returns bf16
+     (*indices.shape, dim) on indices.device with unowned rows zeroed, for the
+-    sharded all-reduce."""
++    sharded all-reduce. With `next_embed`/`next_indices` (the later Engram
++    layer and its ids for the same tokens) the break also starts that layer's
++    fetch, so its own break finds the rows ready (T3.20)."""
+     if torch.cuda.is_available() and torch.cuda.is_current_stream_capturing():
+         raise RuntimeError(
+             "engram file layout: lookup reached a live CUDA graph capture. It is a "
+@@ -781,14 +871,26 @@ def _engram_file_rows(embed: "EngramEmbedding", indices: torch.Tensor) -> torch.
+             "for prefill), or disable CUDA graphs."
+         )
+     tbl = embed.file_table
+-    ids = indices.reshape(-1).to("cpu", dtype=torch.int64)
++    dev = indices.device
++    flat = indices.reshape(-1)
++    if next_indices is not None and next_embed is not None and next_embed.file_table is not None:
++        # One D2H for both layers' ids; the later layer's fetch starts now.
++        both = torch.cat([flat, next_indices.reshape(-1)]).to("cpu", dtype=torch.int64)
++        ids, next_ids = both[: flat.numel()], both[flat.numel() :]
++        ntbl = next_embed.file_table
++        nlocal = next_ids - ntbl.row_start
++        nowned = (nlocal >= 0) & (nlocal < ntbl.rows)
++        ntbl.submit(nlocal.masked_fill(~nowned, 0))
++    else:
++        ids = flat.to("cpu", dtype=torch.int64)
+     local = ids - tbl.row_start
+     owned = (local >= 0) & (local < tbl.rows)
+     local = local.masked_fill(~owned, 0)
+     w, s = tbl.gather(local)
+-    dev = indices.device
+-    rows = w.to(dev, non_blocking=False).float().unflatten(-1, (-1, FP8_BLOCK_SIZE))
+-    values = (rows * s.to(dev, non_blocking=False).float().unsqueeze(-1)).flatten(-2)
++    # Pinned staging: the caching host allocator keeps the blocks until the
++    # copies have run, so the launch thread does not wait for them.
++    rows = w.to(dev, non_blocking=True).float().unflatten(-1, (-1, FP8_BLOCK_SIZE))
++    values = (rows * s.to(dev, non_blocking=True).float().unsqueeze(-1)).flatten(-2)
+     values = values.to(torch.bfloat16).masked_fill(~owned.to(dev).unsqueeze(-1), 0)
+     return values.view(*indices.shape, embed.dim)
+ 
+@@ -907,6 +1009,8 @@ class EngramEmbedding(nn.Module):
+         forward_batch: Optional[ForwardBatch] = None,
+         *,
+         cp_all_tokens: bool = False,
++        next_embed: Optional["EngramEmbedding"] = None,
++        next_indices: Optional[torch.Tensor] = None,
+     ) -> torch.Tensor:
+         if self._shared:
+             if indices.shape[0] == 0:
+@@ -934,14 +1038,21 @@ class EngramEmbedding(nn.Module):
+             return self._lookup(all_indices)[start : start + local_rows]
+         if self.tp_size > 1 and get_attention_dp_size() > 1:
+             return self._dp_sharded_lookup(indices, forward_batch)
+-        return self._lookup(indices)
++        # The ahead-of-use hint only applies when both layers' ids are the
++        # plain per-rank tensors (the CP/DP paths above reshape them).
++        return self._lookup(indices, next_embed, next_indices)
+ 
+-    def _lookup(self, indices: torch.Tensor) -> torch.Tensor:
++    def _lookup(
++        self,
++        indices: torch.Tensor,
++        next_embed: Optional["EngramEmbedding"] = None,
++        next_indices: Optional[torch.Tensor] = None,
++    ) -> torch.Tensor:
+         """Lookup when every TP rank holds the same indices: the device and
+         private host shards zero unowned rows and the all-reduce reassembles."""
+         if indices.shape[0] == 0:
+             return self._empty(indices)
+-        values = self._owned_rows(indices)
++        values = self._owned_rows(indices, next_embed, next_indices)
+         if self.tp_size > 1:
+             values = tensor_model_parallel_all_reduce(values)
+         return values
+@@ -951,12 +1062,19 @@ class EngramEmbedding(nn.Module):
+             *indices.shape, self.dim, dtype=torch.bfloat16, device=indices.device
+         )
+ 
+-    def _owned_rows(self, indices: torch.Tensor) -> torch.Tensor:
++    def _owned_rows(
++        self,
++        indices: torch.Tensor,
++        next_embed: Optional["EngramEmbedding"] = None,
++        next_indices: Optional[torch.Tensor] = None,
++    ) -> torch.Tensor:
+         """Rows of `indices` this rank's shard holds, zero for the rest."""
+         if self.rows == 0:
+             return self._empty(indices).zero_()
+         if self.file_table is not None:
+-            return bcg_engram_file_rows(self, indices)
++            if next_embed is not None and next_embed.file_table is None:
++                next_embed = next_indices = None
++            return bcg_engram_file_rows(self, indices, next_embed, next_indices)
+         if self.host_table is None and (
+             not indices.is_cuda or torch.version.cuda is None
+         ):
+@@ -1092,11 +1210,22 @@ class Engram(nn.Module):
+         forward_batch: Optional[ForwardBatch] = None,
+         *,
+         cp_all_tokens: bool = False,
++        next_layer: Optional["Engram"] = None,
++        next_hash_ids: Optional[torch.Tensor] = None,
+     ) -> torch.Tensor:
+-        """x [T, hc_mult, dim]; hash_ids [T, n_hash_cols] for this layer."""
++        """x [T, hc_mult, dim]; hash_ids [T, n_hash_cols] for this layer.
++        `next_layer`/`next_hash_ids`: the later Engram layer and its ids for
++        the same tokens, so a file-layout lookup can fetch its rows ahead of
++        use (T3.20)."""
+         # The lookup runs first even for an idle DP-attention batch: under DP
+         # attention it is a collective every rank has to join.
+-        emb = self.embed(hash_ids, forward_batch, cp_all_tokens=cp_all_tokens)
++        emb = self.embed(
++            hash_ids,
++            forward_batch,
++            cp_all_tokens=cp_all_tokens,
++            next_embed=None if next_layer is None else next_layer.embed,
++            next_indices=next_hash_ids,
++        )
+         if x.shape[0] == 0:
+             # Nothing to gate, and the MXFP8 quantize behind wkv rejects an
+             # empty M.
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index 0855918b..5a66504d 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -3671,6 +3671,17 @@ class DeepseekV4Model(nn.Module):
+                 sorted(self._debug_layer_breaks),
+             )
+ 
++        # The second Engram layer in this PP stage, for the file layout's
++        # ahead-of-use fetch from the first layer's break (T3.20).
++        self.engram_next_layer = None
++        if self.engram_layout is not None and len(self.engram_layout.layer_ids) > 1:
++            second = self.engram_layout.layer_ids[1]
++            if (
++                self.start_layer <= self.engram_layout.layer_ids[0]
++                and second < self.end_layer
++                and self.layers[second].engram is not None
++            ):
++                self.engram_next_layer = self.layers[second].engram
+         self.engram_prefetch_stream = None
+         if (
+             _is_cuda
+@@ -3871,11 +3882,24 @@ class DeepseekV4Model(nn.Module):
+                     )
+                     prefetched_engram_kv = None
+                 else:
++                    # The first Engram layer's lookup also starts the later
++                    # layer's row fetch (file layout, T3.20): both layers' ids
++                    # are in hash_ids already.
++                    next_layer = next_hash_ids = None
++                    if (
++                        engram.layer_hash_index == 0
++                        and not cp_extend
++                        and self.engram_next_layer is not None
++                    ):
++                        next_layer = self.engram_next_layer
++                        next_hash_ids = hash_ids[:, next_layer.layer_hash_index]
+                     hidden_states = engram(
+                         hidden_states,
+                         hash_ids[:, engram.layer_hash_index],
+                         forward_batch,
+                         cp_all_tokens=cp_extend,
++                        next_layer=next_layer,
++                        next_hash_ids=next_hash_ids,
+                     )
+                 if (
+                     self.config.model_type == "deepseek_v41"

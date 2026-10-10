@@ -1,0 +1,113 @@
+From b457c4e62a19bedfa7421eba29396ccfef1c7a7a Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Tue, 22 Sep 2026 21:50:47 -0400
+Subject: [PATCH 13/50] E23 diag: breakable graph replay attributes faults to a
+ segment/break (SGLANG_BCG_DEBUG_SYNC), nested breaks inside an eager break
+ run eagerly (--debug-cuda-graph with Engram breaks)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../breakable_cuda_graph.py                   | 56 ++++++++++++++++++-
+ 1 file changed, 54 insertions(+), 2 deletions(-)
+
+diff --git a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
+index 6bda4fbc..4dc83362 100644
+--- a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
++++ b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
+@@ -22,12 +22,21 @@ tensors remain valid across replays — we don't need Python-managed bridge
+ buffers to keep break-point tensors at stable addresses.
+ """
+ 
++import logging
++import os
+ import threading
+ from contextvars import ContextVar
+ from typing import Any, Callable, Optional
+ 
+ import torch
+ 
++logger = logging.getLogger(__name__)
++
++# SGLANG_BCG_DEBUG_SYNC=1: synchronize the device after every replayed segment
++# and break so an asynchronous CUDA fault is attributed to the segment that
++# raised it instead of the next host sync (E23 diagnostics). Off by default.
++_DEBUG_SYNC = os.environ.get("SGLANG_BCG_DEBUG_SYNC", "0") not in ("", "0", "false")
++
+ try:
+     from cuda.bindings import runtime as rt
+ except ImportError:
+@@ -223,6 +232,12 @@ def eager_on_graph(enable: bool, capture_stub: Optional[Callable] = None):
+             if capture is None:
+                 return inner(*args, **kwargs)
+ 
++            # A break reached from inside another break's eager body (e.g. the
++            # Engram lookup under --debug-cuda-graph, whose outer break is the
++            # whole forward) has no open segment to end: it is already eager.
++            if capture._current_graph is None:
++                return inner(*args, **kwargs)
++
+             # End the segment that captured up to this break point.
+             capture._end_current_segment()
+ 
+@@ -258,6 +273,10 @@ def eager_on_graph(enable: bool, capture_stub: Optional[Callable] = None):
+                 new_out = captured_inner(*captured_args, **captured_kwargs)
+                 return _copy_output(captured_output, new_out)
+ 
++            # Name the break for replay fault attribution.
++            replay_fn.bcg_break_name = getattr(
++                inner, "__qualname__", getattr(inner, "__name__", repr(inner))
++            )
+             capture.cuda_graph._break_fns.append(replay_fn)
+ 
+             # Start a fresh CUDAGraph segment for the remainder of the forward.
+@@ -281,14 +300,47 @@ class BreakableCUDAGraph:
+     def replay(self) -> None:
+         stream = get_device_module().current_stream()
+         token = _current_stream_var.set(stream)
++        n = len(self._segments)
+         try:
+             for i, seg in enumerate(self._segments):
+-                seg.replay()
++                try:
++                    seg.replay()
++                    if _DEBUG_SYNC:
++                        get_device_module().synchronize()
++                except Exception:
++                    logger.error(
++                        "BreakableCUDAGraph.replay: fault surfaced in segment %d of %d"
++                        " (breaks so far: %s; debug_sync=%s)",
++                        i,
++                        n,
++                        [self._break_name(j) for j in range(i)],
++                        _DEBUG_SYNC,
++                    )
++                    raise
+                 if i < len(self._break_fns):
+-                    self._break_fns[i]()
++                    try:
++                        self._break_fns[i]()
++                        if _DEBUG_SYNC:
++                            get_device_module().synchronize()
++                    except Exception:
++                        logger.error(
++                            "BreakableCUDAGraph.replay: fault surfaced in break %d of %d"
++                            " (%s) after segment %d of %d (debug_sync=%s)",
++                            i,
++                            len(self._break_fns),
++                            self._break_name(i),
++                            i,
++                            n,
++                            _DEBUG_SYNC,
++                        )
++                        raise
+         finally:
+             _current_stream_var.reset(token)
+ 
++    def _break_name(self, i: int) -> str:
++        fn = self._break_fns[i]
++        return getattr(fn, "bcg_break_name", getattr(fn, "__qualname__", repr(fn)))
++
+     def _append_segment(self, graph, needs_instantiate: bool) -> None:
+         if self._deduped_cuda_graph is not None:
+             self._segments.append(self._deduped_cuda_graph.register(graph))

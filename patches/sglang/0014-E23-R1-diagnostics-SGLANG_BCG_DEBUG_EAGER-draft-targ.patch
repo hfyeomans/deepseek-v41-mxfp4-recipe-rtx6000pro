@@ -1,0 +1,116 @@
+From 4685955e4c69605683868e300691497eb6bb33bc Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Tue, 22 Sep 2026 22:42:04 -0400
+Subject: [PATCH 14/50] E23 R1 diagnostics:
+ SGLANG_BCG_DEBUG_EAGER=draft|target, verify skips mm-embedding path, DSPARK
+ verify POST_REPLAY under breakable backend
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../layers/attention/deepseek_v4_backend.py   | 20 +++++++++++++++++--
+ .../model_executor/runner_backend/utils.py    | 19 +++++++++++++++++-
+ python/sglang/srt/models/deepseek_v4.py       |  9 ++++++++-
+ 3 files changed, 44 insertions(+), 4 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index f4c00d9f..f2d6d84f 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -99,6 +99,11 @@ from sglang.srt.layers.dp_attention import (
+ )
+ from sglang.srt.mem_cache.deepseek_v4_compress_state import KVAndScore
+ from sglang.srt.mem_cache.deepseek_v4_memory_pool import DeepSeekV4TokenToKVPool
++from sglang.srt.model_executor.cuda_graph_config import (
++    Backend,
++    Phase,
++    check_cuda_graph_backend,
++)
+ from sglang.srt.model_executor.forward_batch_info import ForwardBatch, ForwardMode
+ from sglang.srt.runtime_context import (
+     get_parallel,
+@@ -1073,9 +1078,20 @@ class DeepseekV4AttnBackend(
+     def shared_read_ends(self, fm: ForwardMode) -> SharedReadEnds:
+         # Breakable-graph verify rereads shared state across segments.
+         # DSPARK verify replays one full (non-breakable) graph that honors the
+-        # out-graph/in-graph init contract, so the base IN_REPLAY bound holds.
++        # out-graph/in-graph init contract, so the base IN_REPLAY bound holds
++        # -- but only when the decode graph really is one full graph. With
++        # --cuda-graph-backend-decode breakable (needed here for the Engram
++        # graph break) the DSPARK verify replays segment by segment through
++        # the breakable backend and rereads shared state after the in-graph
++        # marker, exactly like the non-DSPARK case; publishing IN_REPLAY then
++        # lets the overlap scheduler overwrite req_to_token / KV metadata
++        # while the tail segments still read them (wrong draft acceptance on
++        # short prompts, illegal memory access once a long prompt's stale
++        # indices leave the pool).
+         if fm.is_target_verify():
+-            if self.model_runner.spec_algorithm.is_dspark():
++            if self.model_runner.spec_algorithm.is_dspark() and not (
++                check_cuda_graph_backend(Phase.DECODE, Backend.BREAKABLE)
++            ):
+                 return SharedReadEnds.IN_REPLAY
+             return SharedReadEnds.POST_REPLAY
+         metadata = self.forward_metadata
+diff --git a/python/sglang/srt/model_executor/runner_backend/utils.py b/python/sglang/srt/model_executor/runner_backend/utils.py
+index 63c98b45..c3ec8e76 100644
+--- a/python/sglang/srt/model_executor/runner_backend/utils.py
++++ b/python/sglang/srt/model_executor/runner_backend/utils.py
+@@ -22,6 +22,7 @@ live in :mod:`.cuda_graph_config`.
+ from __future__ import annotations
+ 
+ import logging
++import os
+ from typing import TYPE_CHECKING
+ 
+ from sglang.srt.model_executor.cuda_graph_config import Backend
+@@ -86,10 +87,26 @@ def resolve_decode_backend(
+         return FullXPUGraphBackend(cuda_graph_runner)
+ 
+     if backend_name == Backend.BREAKABLE:
++        # Diagnostic: SGLANG_BCG_DEBUG_EAGER=draft|target runs only that
++        # runner's forward eagerly on the graph's static buffers (the other
++        # runner keeps real captured graphs). Localizes a graph-only
++        # miscompute to one side of a speculative-decoding pair.
++        debug_eager_side = os.environ.get("SGLANG_BCG_DEBUG_EAGER", "").strip()
++        is_draft = bool(getattr(model_runner, "is_draft_worker", False))
++        side_eager = (debug_eager_side == "draft" and is_draft) or (
++            debug_eager_side == "target" and not is_draft
++        )
++        if side_eager:
++            logger.info(
++                "Breakable CUDA graph: debug-eager forced for %s runner "
++                "(SGLANG_BCG_DEBUG_EAGER=%s).",
++                "draft" if is_draft else "target",
++                debug_eager_side,
++            )
+         return BreakableCudaGraphBackend(
+             cuda_graph_runner,
+             enable_memory_saver=enable_memory_saver,
+-            debug_eager=get_exec().graph.debug_cuda_graph,
++            debug_eager=get_exec().graph.debug_cuda_graph or side_eager,
+         )
+     if backend_name == Backend.TC_PIECEWISE:
+         global _TC_PIECEWISE_DECODE_FALLBACK_LOGGED
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index 80756c4a..c754fe72 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -4360,9 +4360,16 @@ class DeepseekV4ForCausalLM(nn.Module):
+         input_embeds: Optional[torch.Tensor] = None,
+         pp_proxy_tensors: Optional[PPProxyTensors] = None,
+     ) -> torch.Tensor:
++        # Speculative target-verify feeds draft text tokens with no extend
++        # metadata (extend_prefix_lens_cpu is None), so it must skip the
++        # multimodal embedding path exactly like decode does; image
++        # placeholders can only occur in the prompt (extend) pass.
+         if (
+             self.vision is not None
+-            and not forward_batch.forward_mode.is_decode()
++            and not (
++                forward_batch.forward_mode.is_decode_or_idle()
++                or forward_batch.forward_mode.is_target_verify()
++            )
+             and forward_batch.mm_inputs is not None
+             and any(x is not None for x in forward_batch.mm_inputs)
+         ):

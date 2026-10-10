@@ -1,0 +1,39 @@
+From 07f4aef069cc298cfad3bc0fcabffa53faf16fc6 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Wed, 23 Sep 2026 01:44:40 -0400
+Subject: [PATCH 16/50] BCG debug sync: synchronize before segment 0 so a fault
+ inherited from the preceding eager step is attributed correctly (E23 R3
+ discriminator)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../breakable_cuda_graph/breakable_cuda_graph.py  | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
+index 4dc83362..42d6077b 100644
+--- a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
++++ b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
+@@ -302,6 +302,21 @@ class BreakableCUDAGraph:
+         token = _current_stream_var.set(stream)
+         n = len(self._segments)
+         try:
++            if _DEBUG_SYNC:
++                # Drain work enqueued before this replay (prefill, draft step,
++                # overlap-scheduler launches) so an async fault inherited from
++                # it is attributed here instead of to segment 0.
++                try:
++                    get_device_module().synchronize()
++                except Exception:
++                    logger.error(
++                        "BreakableCUDAGraph.replay: fault surfaced BEFORE segment 0"
++                        " of %d, i.e. inherited from work enqueued before replay"
++                        " (debug_sync=%s)",
++                        n,
++                        _DEBUG_SYNC,
++                    )
++                    raise
+             for i, seg in enumerate(self._segments):
+                 try:
+                     seg.replay()

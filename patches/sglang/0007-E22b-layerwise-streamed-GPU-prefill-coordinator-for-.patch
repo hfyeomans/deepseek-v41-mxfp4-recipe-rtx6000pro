@@ -1,0 +1,429 @@
+From 0138c6adbcdbce84d4e740ff5b336f888de10558 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Tue, 22 Sep 2026 13:18:29 -0400
+Subject: [PATCH 07/50] E22b: layerwise streamed GPU prefill coordinator for
+ CPU experts (KT_GPU_PREFILL_MIN_TOKENS); known NaN on 1024-token multi-seq
+ batch (E22d bisect)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py | 360 +++++++++++++++++-
+ 1 file changed, 354 insertions(+), 6 deletions(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index 09a49083..0abe1c86 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -7,10 +7,15 @@ for any MoE quantization method. It coordinates parallel execution of GPU expert
+ (using any quantization method) and CPU experts (using AMX/AVX instructions).
+ """
+ 
++import logging
++import os
++import time
+ import types
+ from dataclasses import dataclass
+-from typing import TYPE_CHECKING, Optional, Tuple
++from multiprocessing import shared_memory
++from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+ 
++import numpy as np
+ import torch
+ 
+ from sglang.srt.arg_groups.overrides import model_config_of
+@@ -37,6 +42,329 @@ try:
+ except ImportError:
+     KTRANSFORMERS_AVAILABLE = False
+ 
++logger = logging.getLogger(__name__)
++
++
++# ---------------------------------------------------------------------------
++# Layerwise GPU prefill (recipe E22 / T3.6b2).
++#
++# The CPU tier is ~50x slower than the GPUs on a prefill chunk (216 tok/s vs
++# ~8K tok/s all-GPU), so for chunks of at least KT_GPU_PREFILL_MIN_TOKENS
++# tokens the CPU experts are *streamed* to the GPUs instead of computed on the
++# CPU: kt-kernel exports each CPU expert's packed MXFP4 bytes and bf16 scales
++# (write_weight_scale_to_buffer, one TP slice per rank) into a pinned host
++# buffer shared by both TP ranks, each rank DMAs its slice into a per-rank
++# staging set of expert slots laid out for the FlashInfer SM120 CUTLASS MoE,
++# and the layer runs the fused kernel twice: once over the resident GPU
++# experts and once over the staged CPU experts. The export of layer L+1 is
++# submitted while layer L computes (host double buffer), so per layer the
++# cost is ~max(export, H2D + GEMM). Measured on this host (E22a): export
++# 68 ms/layer at 52 GB/s (core-bound, scales with KT_CPUINFER), H2D 37 ms
++# to both cards, pipelined ~87 ms/layer; vs ~19 s/layer-chunk on the CPU path
++# at 4096 tokens.
++#
++# Decode and short chunks keep the CPU path untouched. Ranks coordinate via
++# the TP group's gloo cpu_group: one barrier when the host buffer is filled
++# and one before it is overwritten. 0 (default) disables the feature.
++# ---------------------------------------------------------------------------
++KT_GPU_PREFILL_MIN_TOKENS = int(os.environ.get("KT_GPU_PREFILL_MIN_TOKENS", "0"))
++KT_GPU_PREFILL_LOG = os.environ.get("KT_GPU_PREFILL_LOG", "0") == "1"
++
++
++class _StreamedExpertSlots:
++    """Per-rank GPU staging for one layer's CPU experts, in SGLang's layout.
++
++    w13 = [up; gate] rows (FlashInfer CUTLASS order), scales E8M0 uint8 after
++    flashinfer.block_scale_interleave -- exactly what
++    Mxfp4FlashinferCutlassMoEMethod.process_weights_after_loading leaves in
++    the resident layer tensors.
++    """
++
++    def __init__(self, n: int, hidden: int, inter_tp: int, device: torch.device):
++        self.inter_tp = inter_tp
++        self.w13 = torch.empty((n, 2 * inter_tp, hidden // 2), dtype=torch.int8, device=device)
++        self.s13 = torch.empty((n, 2 * inter_tp, hidden // 32), dtype=torch.uint8, device=device)
++        self.w2 = torch.empty((n, hidden, inter_tp // 2), dtype=torch.int8, device=device)
++        self.s2 = torch.empty((n, hidden, inter_tp // 32), dtype=torch.uint8, device=device)
++        # bf16 landing zone for kt-kernel's scales (bits = e8m0 << 7).
++        self.s13_raw = torch.empty((n, 2 * inter_tp, hidden // 32), dtype=torch.bfloat16, device=device)
++        self.s2_raw = torch.empty((n, hidden, inter_tp // 32), dtype=torch.bfloat16, device=device)
++        # scratch for the on-device gate/up half swap (one half of w13 / s13)
++        self._half_w = torch.empty((n, inter_tp, hidden // 2), dtype=torch.int8, device=device)
++        self._half_s = torch.empty((n, inter_tp, hidden // 32), dtype=torch.bfloat16, device=device)
++        self.tensors = (self.w13, self.s13, self.w2, self.s2, self.s13_raw, self.s2_raw, self._half_w, self._half_s)
++
++    @property
++    def nbytes(self) -> int:
++        return sum(t.numel() * t.element_size() for t in self.tensors)
++
++    def load(self, host: "_HostSlice") -> None:
++        """H2D on the current stream (4 bulk copies), then fix the layout up."""
++        from flashinfer import block_scale_interleave
++
++        it = self.inter_tp
++        self.w13.view(torch.uint8).copy_(host.w13, non_blocking=True)
++        self.s13_raw.copy_(host.s13, non_blocking=True)
++        self.w2.view(torch.uint8).copy_(host.w2, non_blocking=True)
++        self.s2_raw.copy_(host.s2, non_blocking=True)
++        # kt-kernel writes [gate; up]; the kernel wants [up; gate].
++        for t, tmp in ((self.w13, self._half_w), (self.s13_raw, self._half_s)):
++            tmp.copy_(t[:, :it])
++            t[:, :it].copy_(t[:, it:])
++            t[:, it:].copy_(tmp)
++        # bf16 (e8m0 << 7) -> E8M0 uint8, then FlashInfer's SM120 interleave,
++        # applied to the whole [E, N, K/32] tensor like the resident loader does.
++        for raw, dst in ((self.s13_raw, self.s13), (self.s2_raw, self.s2)):
++            dst.copy_((raw.view(torch.int16).to(torch.int32) >> 7).to(torch.uint8))
++            dst.copy_(block_scale_interleave(dst).reshape_as(dst))
++
++
++class _HostSlice:
++    """One TP rank's view of one host buffer: kt-kernel's export layout."""
++
++    def __init__(self, raw: torch.Tensor, n: int, hidden: int, inter_tp: int):
++        self.n = n
++        sizes = (
++            ("w13", torch.uint8, (n, 2 * inter_tp, hidden // 2)),
++            ("s13", torch.bfloat16, (n, 2 * inter_tp, hidden // 32)),
++            ("w2", torch.uint8, (n, hidden, inter_tp // 2)),
++            ("s2", torch.bfloat16, (n, hidden, inter_tp // 32)),
++        )
++        off = 0
++        for name, dtype, shape in sizes:
++            numel = int(np.prod(shape))
++            nbytes = numel * torch.empty(0, dtype=dtype).element_size()
++            setattr(self, name, raw[off : off + nbytes].view(dtype).view(*shape))
++            off += nbytes
++        assert off == raw.numel(), (off, raw.numel())
++
++    @staticmethod
++    def nbytes(n: int, hidden: int, inter_tp: int) -> int:
++        return n * (2 * inter_tp * hidden // 2 + 2 * (2 * inter_tp * hidden // 32) + hidden * inter_tp // 2 + 2 * (hidden * inter_tp // 32))
++
++    def ptrs(self, e: int) -> Tuple[int, int, int, int]:
++        return (
++            self.w13[e].data_ptr(),
++            self.s13[e].data_ptr(),
++            self.w2[e].data_ptr(),
++            self.s2[e].data_ptr(),
++        )
++
++
++class _LayerwisePrefillCoordinator:
++    """Streams each layer's CPU experts to the GPUs for large prefill chunks.
++
++    One instance per TP-rank process, shared by every layer's
++    KTEPWrapperMethod. Rank 0 owns the kt-kernel wrappers and does the export;
++    every rank DMAs its own TP slice out of the shared pinned buffer.
++    """
++
++    _instance: Optional["_LayerwisePrefillCoordinator"] = None
++
++    @classmethod
++    def get(cls, method: "KTEPWrapperMethod") -> Optional["_LayerwisePrefillCoordinator"]:
++        if KT_GPU_PREFILL_MIN_TOKENS <= 0:
++            return None
++        if cls._instance is None:
++            cls._instance = cls(method)
++        return cls._instance
++
++    def __init__(self, method: "KTEPWrapperMethod"):
++        from sglang.srt.distributed import get_tp_group
++
++        tp = get_tp_group()
++        self.tp_rank = tp.rank_in_group
++        self.tp_size = tp.world_size
++        self.cpu_group = tp.cpu_group
++        self.n_cpu = method.num_cpu_experts
++        self.hidden = method.hidden_size
++        self.inter_tp = method.intermediate_size_per_partition
++        self.device = torch.device("cuda", torch.cuda.current_device())
++        self.min_tokens = KT_GPU_PREFILL_MIN_TOKENS
++        self.layers: Dict[int, "KTEPWrapperMethod"] = {}
++
++        # Host: 2 buffers x tp_size rank slices, one POSIX shm segment created
++        # by rank 0, mapped by every rank, page-locked in every process
++        # (same recipe as sglang.srt.utils.host_shared_memory).
++        slice_bytes = _HostSlice.nbytes(self.n_cpu, self.hidden, self.inter_tp)
++        total = 2 * self.tp_size * slice_bytes
++        name = [f"kt_lw_prefill_{os.getpid()}" if self.tp_rank == 0 else None]
++        if self.tp_rank == 0:
++            self._shm = shared_memory.SharedMemory(name=name[0], create=True, size=total)
++        torch.distributed.broadcast_object_list(name, src=tp.ranks[0], group=self.cpu_group)
++        if self.tp_rank != 0:
++            self._shm = shared_memory.SharedMemory(name=name[0])
++        self._np = np.ndarray((total,), dtype=np.uint8, buffer=self._shm.buf)
++        raw = torch.from_numpy(self._np)
++        self._register_pinned(raw.data_ptr(), total)
++        torch.distributed.barrier(group=self.cpu_group)
++        if self.tp_rank == 0:
++            self._shm.unlink()  # mappings survive; nothing left in /dev/shm on exit
++
++        self.host: List[List[_HostSlice]] = []
++        for b in range(2):
++            ranks = []
++            for r in range(self.tp_size):
++                off = (b * self.tp_size + r) * slice_bytes
++                ranks.append(_HostSlice(raw[off : off + slice_bytes], self.n_cpu, self.hidden, self.inter_tp))
++            self.host.append(ranks)
++        # Per-buffer, per-expert pointer lists for kt-kernel (rank-major lists).
++        self._ptrs: List[List[Tuple[List[int], List[int], List[int], List[int]]]] = []
++        for b in range(2):
++            per_expert = []
++            for e in range(self.n_cpu):
++                p = [self.host[b][r].ptrs(e) for r in range(self.tp_size)]
++                per_expert.append(tuple([q[i] for q in p] for i in range(4)))
++            self._ptrs.append(per_expert)
++
++        # Device: one staging set (DMA of layer L waits for GEMM of layer L-1 on
++        # the same stream), plus the per-expert kernel side tensors.
++        self.slots = _StreamedExpertSlots(self.n_cpu, self.hidden, self.inter_tp, self.device)
++        self.global_scale = torch.ones(self.n_cpu, dtype=torch.float32, device=self.device)
++        self.swiglu_limit: Optional[torch.Tensor] = None
++        self.dma_done = [torch.cuda.Event(), torch.cuda.Event()]
++        for ev in self.dma_done:
++            ev.record()
++
++        self._buf = 0
++        self._pending: Optional["KTEPWrapperMethod"] = None
++        self._expect_layer: Optional[int] = None
++        self._t_forward = 0.0
++        logger.info(
++            "[KT layerwise prefill] enabled: min_tokens=%d, %d CPU experts/layer, host pinned %.2f GiB (shared), "
++            "GPU staging %.2f GiB/rank, tp=%d",
++            self.min_tokens,
++            self.n_cpu,
++            total / 2**30,
++            self.slots.nbytes / 2**30,
++            self.tp_size,
++        )
++
++    @staticmethod
++    def _register_pinned(ptr: int, nbytes: int) -> None:
++        try:
++            import cuda.bindings.runtime as cuda_rt
++
++            from sglang.srt.utils import check_cuda_result
++
++            check_cuda_result(cuda_rt.cudaHostRegister(ptr, nbytes, cuda_rt.cudaHostRegisterPortable))
++        except ImportError:
++            err = torch.cuda.cudart().cudaHostRegister(ptr, nbytes, 1)  # 1 = cudaHostRegisterPortable
++            if int(err) != 0:
++                raise RuntimeError(f"cudaHostRegister failed: {err}")
++
++    # -- per-layer registry --------------------------------------------------
++    def register(self, method: "KTEPWrapperMethod") -> None:
++        self.layers[method.kt_config.layer_idx] = method
++
++    def _swiglu_limit_for(self, gpu_method) -> Optional[torch.Tensor]:
++        """[n_cpu] copy of the GPU method's per-expert clamp (created by create_moe_runner)."""
++        lim = getattr(gpu_method, "_swiglu_limit_tensor", None)
++        if lim is None:
++            return None
++        if self.swiglu_limit is None:
++            self.swiglu_limit = torch.full(
++                (self.n_cpu,), float(lim[0].item()), dtype=torch.float32, device=self.device
++            )
++        return self.swiglu_limit
++
++    def _next_layer(self, layer_idx: int) -> Optional[int]:
++        later = [k for k in self.layers if k > layer_idx]
++        return min(later) if later else None
++
++    def wants(self, num_tokens: int) -> bool:
++        return num_tokens >= self.min_tokens
++
++    # -- pipeline --------------------------------------------------------------
++    def _barrier(self) -> None:
++        torch.distributed.barrier(group=self.cpu_group)
++
++    def _submit_export(self, layer_idx: int, buf: int) -> None:
++        """Export layer `layer_idx`'s CPU experts into host buffer `buf`.
++
++        The buffer was last read by a DMA two layers ago: wait for this rank's
++        copy, then for every rank's, before kt-kernel overwrites it.
++        """
++        self.dma_done[buf].synchronize()
++        self._barrier()
++        if self.tp_rank == 0:
++            m = self.layers[layer_idx]
++            for e, (w13, s13, w2, s2) in enumerate(self._ptrs[buf]):
++                m.wrapper.submit_write_weight_scale_to_buffer(self.tp_size, e, w13, s13, w2, s2)
++            self._pending = m
++
++    def run_layer(
++        self,
++        method: "KTEPWrapperMethod",
++        layer: torch.nn.Module,
++        dispatch_output: "StandardDispatchOutput",
++        streamed_topk_ids: torch.Tensor,
++    ) -> torch.Tensor:
++        """Return this rank's TP slice of the CPU experts' output for one layer."""
++        from sglang.srt.layers.moe.moe_runner.flashinfer_cutlass import (
++            FlashInferCutlassMxfp4MoeQuantInfo,
++        )
++
++        layer_idx = method.kt_config.layer_idx
++        first = min(self.layers)
++        if layer_idx == first:
++            self._t_forward = time.perf_counter()
++            self._buf = 0
++            self._submit_export(layer_idx, 0)
++        elif self._expect_layer != layer_idx:
++            raise RuntimeError(
++                f"[KT layerwise prefill] layer {layer_idx} streamed out of order (expected {self._expect_layer}); "
++                "chunk size must be the same for every layer of a forward"
++            )
++        buf = self._buf
++
++        # 1. host buffer `buf` holds layer_idx (rank 0 waits for its export)
++        if self.tp_rank == 0:
++            self._pending.wrapper.sync_write_weight_scale_to_buffer()
++        self._barrier()
++
++        # 2. DMA this rank's slice + scale fix-up, on the compute stream
++        self.slots.load(self.host[buf][self.tp_rank])
++        self.dma_done[buf].record()
++
++        # 3. fused MoE over the staged experts (ids already compact 0..n_cpu-1, -1 = resident)
++        gm = method.gpu_method
++        quant_info = FlashInferCutlassMxfp4MoeQuantInfo(
++            w13_weight=self.slots.w13,
++            w2_weight=self.slots.w2,
++            w13_weight_scale=self.slots.s13,
++            w2_weight_scale=self.slots.s2,
++            mxfp4_weight_global_scale=self.global_scale,
++            w13_bias=None,
++            w2_bias=None,
++            swiglu_alpha=None,
++            swiglu_beta=None,
++            swiglu_limit=self._swiglu_limit_for(gm),
++            use_swiglu_step=gm._use_swiglu_step,
++            moe_tp_size=layer.moe_tp_size,
++            moe_tp_rank=layer.moe_tp_rank,
++            moe_ep_size=layer.moe_ep_size,
++            moe_ep_rank=layer.moe_ep_rank,
++            padded_hidden=None,
++        )
++        topk_output = dispatch_output.topk_output._replace(topk_ids=streamed_topk_ids)
++        out = gm.runner.run(dispatch_output._replace(topk_output=topk_output), quant_info).hidden_states
++
++        # 4. prefetch the next layer into the other buffer
++        nxt = self._next_layer(layer_idx)
++        self._expect_layer = nxt
++        if nxt is not None:
++            self._buf = 1 - buf
++            self._submit_export(nxt, self._buf)
++        elif KT_GPU_PREFILL_LOG:
++            logger.info(
++                "[KT layerwise prefill] %d tokens x %d layers streamed in %.2f s (host side)",
++                dispatch_output.hidden_states.shape[0],
++                len(self.layers),
++                time.perf_counter() - self._t_forward,
++            )
++        return out
++
+ 
+ # ---------------------------------------------------------------------------
+ # Compact CPU-expert view for kt-kernel.
+@@ -308,6 +636,9 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+ 
+         # KT wrapper will be initialized in create_weights
+         self.wrapper: Optional[KTMoEWrapper] = None
++        # Layerwise GPU prefill coordinator (process_weights_after_loading);
++        # None when KT_GPU_PREFILL_MIN_TOKENS is 0.
++        self.streamer: Optional[_LayerwisePrefillCoordinator] = None
+         # Layer's GPU-expert mask (bool[num_experts]); set in create_weights.
+         self.gpu_experts_mask: Optional[torch.Tensor] = None
+ 
+@@ -465,6 +796,13 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             finally:
+                 _KT_LOADER_GPU_MASK = None
+ 
++        # 3. Layerwise GPU prefill: every rank joins (shared host buffer,
++        # gloo barriers), so this runs on all ranks in the same layer order.
++        if self.gpu_experts_mask is not None:
++            self.streamer = _LayerwisePrefillCoordinator.get(self)
++            if self.streamer is not None:
++                self.streamer.register(self)
++
+     def create_moe_runner(
+         self, layer: torch.nn.Module, moe_runner_config: "MoeRunnerConfig"
+     ):
+@@ -561,9 +899,15 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         x = dispatch_output.hidden_states
+         topk_output = dispatch_output.topk_output
+ 
+-        # Step 1: Submit CPU expert computation (non-blocking)
+-        if self.tp_rank == 0:
+-            self.submit(layer, dispatch_output)
++        # Large prefill chunk: stream this layer's CPU experts to the GPUs and
++        # run them there (E22). Same decision on every rank (same token count).
++        streamed = self.streamer is not None and self.streamer.wants(x.shape[0])
++        if streamed:
++            streamed_ids = remap_topk_ids_for_cpu(topk_output.topk_ids, self.num_gpu_experts)
++        else:
++            # Step 1: Submit CPU expert computation (non-blocking)
++            if self.tp_rank == 0:
++                self.submit(layer, dispatch_output)
+ 
+         # Step 2: Prepare GPU computation by masking CPU expert IDs
+         # CPU expert IDs (>= num_gpu_experts) are set to -1 so GPU kernel skips them
+@@ -582,7 +926,11 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+ 
+         # Step 4: Synchronize CPU results and merge with GPU results
+         output = gpu_combine_input.hidden_states
+-        if self.tp_rank == 0:
++        if streamed:
++            # Each rank adds its own TP slice of the streamed experts; the
++            # layer's TP all-reduce sums the slices like the resident ones.
++            output = output + self.streamer.run_layer(self, layer, dispatch_output, streamed_ids)
++        elif self.tp_rank == 0:
+             cpu_output = self.sync(x)
+             output = output + cpu_output
+ 
+@@ -601,7 +949,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             Attribute value from gpu_method
+         """
+         # Avoid infinite recursion for internal attributes
+-        if name in ("gpu_method", "wrapper", "kt_config"):
++        if name in ("gpu_method", "wrapper", "kt_config", "streamer"):
+             raise AttributeError(
+                 f"'{type(self).__name__}' object has no attribute '{name}'"
+             )

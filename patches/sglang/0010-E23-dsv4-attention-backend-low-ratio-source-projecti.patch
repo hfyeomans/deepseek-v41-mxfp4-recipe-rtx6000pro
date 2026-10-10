@@ -1,0 +1,43 @@
+From 3b1fedce1bb2ac9055d9f8ce640176b9b05e4077 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Tue, 22 Sep 2026 14:16:57 -0400
+Subject: [PATCH 10/50] =?UTF-8?q?E23:=20dsv4=20attention=20backend=20?=
+ =?UTF-8?q?=E2=80=94=20low-ratio=20source=20projections=20break=20is=20pre?=
+ =?UTF-8?q?fill-graph=20only,=20not=20TARGET=5FVERIFY?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../sglang/srt/layers/attention/deepseek_v4_backend.py   | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index e660c2b5..f4c00d9f 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -2571,7 +2571,10 @@ class DeepseekV4AttnBackend(
+             max_seq_len_override=self.MAX_SEQ_LEN_FOR_CAPTURE,
+             use_prefill_cuda_graph=True,
+         )
+-        if self.low_ratio_prefill_graph and forward_batch.forward_mode.is_extend():
++        if (
++            self.low_ratio_prefill_graph
++            and forward_batch.forward_mode.is_extend_without_speculative()
++        ):
+             for ratio in self.low_ratios:
+                 self._source_projection_buffers(
+                     forward_batch.out_cache_loc.shape[0], ratio
+@@ -2752,7 +2755,9 @@ class DeepseekV4AttnBackend(
+             req = token_req_indices(forward_batch, num_tokens=positions.shape[0])
+             pos = positions.to(torch.int64)
+         if (
+-            forward_batch.forward_mode.is_extend()
++            # TARGET_VERIFY is also is_extend() but is captured by the decode
++            # graph, where the tc-piecewise context this break reads is None.
++            forward_batch.forward_mode.is_extend_without_speculative()
+             and self._low_ratio_in_prefill_graph()
+         ):
+             bufs = self._source_projection_buffers(x.shape[0], layer.compress_ratio)

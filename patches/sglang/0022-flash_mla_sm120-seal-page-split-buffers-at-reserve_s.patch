@@ -1,0 +1,96 @@
+From 9ecd54a67da895148a1d11e2b3dbd2b893d5cf3e Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Thu, 24 Sep 2026 13:33:38 -0400
+Subject: [PATCH 22/50] flash_mla_sm120: seal page-split buffers at
+ reserve_split_buffers(); a later grow raises SM120SplitBufferSealedError
+ instead of retiring (recipe review C5)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../kernels/ops/attention/flash_mla_sm120.py  | 40 ++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/kernels/ops/attention/flash_mla_sm120.py b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
+index 76b46c0f..6c258db4 100644
+--- a/python/sglang/kernels/ops/attention/flash_mla_sm120.py
++++ b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
+@@ -518,6 +518,19 @@ def _guard_indices(idx: torch.Tensor, bound: int) -> torch.Tensor:
+ 
+ 
+ _RETIRED_KEY = "flash_mla_sm120_retired"
++_SEALED_KEY_PREFIX = "flash_mla_sm120_sealed:"
++
++
++class SM120SplitBufferSealedError(RuntimeError):
++    """A page-split buffer would have to grow after ``reserve_split_buffers`` sealed it.
++
++    Reservation sizes the mask and split buffers from the full KV-pool geometry
++    before any CUDA graph is captured, so a later request for a bigger buffer
++    means either the geometry passed to ``reserve_split_buffers`` was wrong or a
++    pool changed size after init. Both are bugs; growing here would retire a
++    buffer that captured graphs still write (E23 R1 bug B). Fail loudly instead
++    (recipe review C5).
++    """
+ 
+ 
+ def _dev_key(dev) -> str:
+@@ -538,6 +551,10 @@ def _mask_key(dev) -> str:
+     return f"flash_mla_sm120_mask:{_dev_key(dev)}"
+ 
+ 
++def _sealed_key(buffer_key: str) -> str:
++    return _SEALED_KEY_PREFIX + buffer_key
++
++
+ def _grow_persistent(buffers: dict, key: str, prev, make, what: str):
+     """Replace ``buffers[key]`` with a bigger tensor without freeing the old one.
+ 
+@@ -555,6 +572,13 @@ def _grow_persistent(buffers: dict, key: str, prev, make, what: str):
+     bug worth shouting about rather than the normal path.
+     """
+     capturing = torch.cuda.is_current_stream_capturing()
++    if prev is not None and buffers.get(_sealed_key(key), False):
++        raise SM120SplitBufferSealedError(
++            f"[sm120-split] {what}: {key} is sealed at {tuple(prev.shape)} by "
++            "reserve_split_buffers() and may not grow; a captured graph holds its "
++            "pointer. Pass the full KV-pool geometry to reserve_split_buffers() "
++            "before capture instead of growing on demand."
++        )
+     # The first allocation can happen under inference mode (autotune), but the
+     # buffer is written again during CUDA graph capture outside inference mode,
+     # where an inference tensor cannot be mutated.
+@@ -629,7 +653,10 @@ def reserve_split_buffers(pools, device) -> None:
+     for every KV pool that ``_split_kv_pages_to_64`` may be asked to re-page
+     (SWA pool with tag "", compressed pools with tag "extra"). Pools whose page
+     size is already 64 (or 2) are ignored. Sizing from the largest pool means
+-    no later call can grow (and retire) a buffer that a captured graph uses.
++    no later call can grow (and retire) a buffer that a captured graph uses;
++    the reserved keys are *sealed*, so such a grow raises
++    ``SM120SplitBufferSealedError`` instead of retiring the old buffer
++    (recipe review C5: reject post-capture growth, do not survive it).
+     """
+     max_mask = 0
+     max_dst = {}
+@@ -638,10 +665,21 @@ def reserve_split_buffers(pools, device) -> None:
+             continue
+         max_mask = max(max_mask, num_src_pages)
+         max_dst[tag] = max(max_dst.get(tag, 0), num_src_pages * (src_pbs // _PBS_DST))
++    from sglang.srt.runtime_context import get_resources
++
++    buffers = get_resources().buffers
+     if max_mask:
+         _ensure_mask(device, max_mask)
++        buffers[_sealed_key(_mask_key(device))] = True
+     for tag, pages in max_dst.items():
+         _ensure_split_buffer(device, tag, pages)
++        buffers[_sealed_key(_split_buffer_key(device, tag))] = True
++    logger.info(
++        "[sm120-split] sealed page-split buffers: mask N=%d, split pages=%s "
++        "(any later grow raises SM120SplitBufferSealedError)",
++        max_mask,
++        dict(max_dst),
++    )
+ 
+ 
+ def _split_kv_pages_to_64(

@@ -68,6 +68,11 @@ if python3 "$ROOT/scripts/serve_config.py" check-profiles >/dev/null; then :; el
 if ! diff -q <(python3 "$ROOT/scripts/serve_config.py" markdown) <(sed -n '/<!-- generated: python3 scripts\/serve_config.py markdown -->/,$p' "$ROOT/docs/CONFIG.md" | tail -n +2) >/dev/null; then
   echo "FAIL docs/CONFIG.md is stale: regenerate the table with python3 scripts/serve_config.py markdown"; exit 1
 fi
+# T3.24c overlay patch series: git-am patches/sglang/ onto a clean base in a temp clone, compare tree hashes, and
+# refuse an overlay branch that moved without a re-export; skipped (3) where no checkout holds the base commit.
+if bash "$ROOT/scripts/tests/check-sglang-patch-series.sh"; then :; else
+  rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL sglang patch series check (exit $rc)"; exit 1; fi
+fi
 # T3.19f immutable evidence manifests: hash round-trip, null-on-failure collectors, tilde'd paths, sibling/stale/none
 # stamping rules; then every stamped JSON under evidence/ must match its sibling manifest.json (pre-cut-over files exempt).
 if python3 "$ROOT/scripts/tests/test_evidence_manifest.py" >/dev/null; then :; else echo "FAIL evidence manifest tests"; exit 1; fi

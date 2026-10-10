@@ -1,0 +1,154 @@
+From 99128a7e4cbdd625461c418c2ffd368881726853 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 23:34:13 -0400
+Subject: [PATCH 44/50] flashinfer moe: one C++ FusedMoeRunner per
+ routed-expert count
+
+The hybrid prefill alternates the streamed (165) and resident (219) expert
+counts on FlashInfer's single runner per dtype key; its workspace-size cache
+holds one count, so every call recomputed the size by probing every TMA
+warp-specialized config and catching a TllmException (with a symbolized
+backtrace) per unsupported one: 14 ms per call in isolation, 27-42 ms per
+call in the serve. Keep one runner per (instance_key, num_experts_total)
+and swap it into MoERunner.runner_dict before each call. Outputs
+bit-identical; 16K prefill 1,659 -> 2,059 tok/s, 32K 1,620 -> 2,192 (T3.39
+window 1b). SGLANG_FLASHINFER_MOE_RUNNER_PER_EXPERT_COUNT=0 restores the
+shared runner.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                  |  5 +
+ .../moe/moe_runner/flashinfer_cutlass.py      | 96 +++++++++++++++++++
+ 2 files changed, 101 insertions(+)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 14e66433..50d1bc96 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -984,6 +984,11 @@ class Envs:
+     # sized for the prefill-chunk ceiling unless MAX_ROWS overrides it.
+     SGLANG_FLASHINFER_MOE_PERSISTENT_WORKSPACE = EnvBool(True)
+     SGLANG_FLASHINFER_MOE_WORKSPACE_MAX_ROWS = EnvInt(None)
++    # One FlashInfer C++ FusedMoeRunner per routed-expert count. The runner's
++    # workspace-size cache holds a single count; the hybrid prefill alternates
++    # the streamed and resident counts every layer, and each miss costs tens of
++    # milliseconds of host time (unsupported-config exceptions with backtraces).
++    SGLANG_FLASHINFER_MOE_RUNNER_PER_EXPERT_COUNT = EnvBool(True)
+     # Master switch for the experimental TRT-LLM LoRA fast path; when OFF (default) every
+     # fine-grained opt switch reads False, keeping non-experimental paths byte-identical.
+     SGLANG_EXPERIMENTAL_LORA_OPTI = EnvBool(False)
+diff --git a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
+index 3d2d4351..38c77644 100644
+--- a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
++++ b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
+@@ -151,6 +151,91 @@ class _MoeWorkspace:
+ 
+ _MOE_WORKSPACES: dict[torch.device, _MoeWorkspace] = {}
+ 
++# (FlashInfer MoERunner instance_key, num_experts_total) -> C++ FusedMoeRunner.
++_MOE_RUNNERS_BY_EXPERT_COUNT: dict[tuple, object] = {}
++_MOE_RUNNER_SPLIT_DISABLED: set[str] = set()
++
++
++def _pin_moe_runner_for_expert_count(
++    *,
++    device: torch.device,
++    num_experts_total: int,
++    x_dtype: torch.dtype,
++    weight_dtype: torch.dtype,
++    output_dtype: torch.dtype,
++    use_w4_group_scaling: bool,
++    use_mxfp8_act_scaling: bool,
++    use_fused_finalize: bool,
++    use_wfp4afp8_humming: bool,
++) -> None:
++    """Give each routed-expert count its own FlashInfer C++ ``FusedMoeRunner``.
++
++    FlashInfer keeps one C++ runner per dtype/quant-mode key and
++    ``MoeGemmRunner::getMaxWorkspaceSize`` inside it caches the workspace size
++    for a single expert count. The hybrid prefill alternates the streamed
++    CPU-set call and the resident call (165 then 219 experts at the default
++    split) on that one runner, so every call recomputed the size: it tries each
++    TMA warp-specialized config and catches one ``TllmException``, with a
++    symbolized backtrace, per config the GPU does not support. On SM120 that
++    is 14 ms per call in isolation and 27-42 ms of host stall per call in the
++    serve process (T3.39 window 1b). Swapping a per-count runner into
++    ``MoERunner.runner_dict`` before the call keeps the cache warm; the runners
++    share nothing but the loaded module, and the forward is single-threaded.
++    """
++    if not envs.SGLANG_FLASHINFER_MOE_RUNNER_PER_EXPERT_COUNT.get():
++        return
++    from flashinfer.fused_moe import core as fi_core
++    from flashinfer.utils import get_compute_capability
++
++    major, minor = get_compute_capability(device)
++    device_arch = f"{major * 10 + minor}"
++    if device_arch in _MOE_RUNNER_SPLIT_DISABLED:
++        return
++    # Mirrors MoERunner.__init__'s instance_key (cutlass_fused_moe passes
++    # use_deepseek_fp8_block_scale=False and use_packed_weights=False here).
++    instance_key = (
++        x_dtype,
++        weight_dtype,
++        output_dtype,
++        False,
++        use_w4_group_scaling,
++        use_mxfp8_act_scaling,
++        False,
++        use_fused_finalize,
++        use_wfp4afp8_humming,
++    )
++    runner_dict = fi_core.get_cutlass_fused_moe_module(device_arch).MoERunner.runner_dict
++    runner = _MOE_RUNNERS_BY_EXPERT_COUNT.get((instance_key, num_experts_total))
++    if runner is None:
++        shared = runner_dict.get(instance_key)
++        if shared is not None and not any(
++            r is shared for r in _MOE_RUNNERS_BY_EXPERT_COUNT.values()
++        ):
++            # First count seen keeps the runner FlashInfer already built.
++            runner = shared
++        else:
++            from flashinfer.jit import fused_moe as fi_jit_moe
++
++            gen = getattr(fi_jit_moe, f"gen_cutlass_fused_moe_sm{device_arch}_module", None)
++            if gen is None:
++                _MOE_RUNNER_SPLIT_DISABLED.add(device_arch)
++                logger.warning(
++                    "FlashInfer MoE: no module generator for SM%s; the shared "
++                    "runner serves every expert count (host recomputes the "
++                    "workspace size whenever the count changes).",
++                    device_arch,
++                )
++                return
++            runner = gen(False).build_and_load().init(*instance_key)
++            logger.info(
++                "FlashInfer MoE: dedicated runner for %d experts on %s",
++                num_experts_total,
++                device,
++            )
++        _MOE_RUNNERS_BY_EXPERT_COUNT[(instance_key, num_experts_total)] = runner
++    if runner_dict.get(instance_key) is not runner:
++        runner_dict[instance_key] = runner
++
+ 
+ def _moe_workspace_row_ceiling(rows: int) -> int:
+     override = envs.SGLANG_FLASHINFER_MOE_WORKSPACE_MAX_ROWS.get()
+@@ -611,6 +696,17 @@ def fused_experts_none_to_flashinfer_mxfp4(
+         use_fused_finalize=use_fused_finalize,
+         use_wfp4afp8_humming=use_wfp4afp8_humming,
+     )
++    _pin_moe_runner_for_expert_count(
++        device=x.device,
++        num_experts_total=fc2_expert_weights.shape[0] * quant_info.moe_ep_size,
++        x_dtype=x.dtype,
++        weight_dtype=fc1_expert_weights.dtype,
++        output_dtype=output_dtype,
++        use_w4_group_scaling=not use_mxfp8_act_scaling,
++        use_mxfp8_act_scaling=use_mxfp8_act_scaling,
++        use_fused_finalize=use_fused_finalize,
++        use_wfp4afp8_humming=use_wfp4afp8_humming,
++    )
+ 
+     flashinfer_cutlass_fused_moe(
+         input=x,

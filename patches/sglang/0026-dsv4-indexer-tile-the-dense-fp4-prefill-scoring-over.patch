@@ -1,0 +1,195 @@
+From c639cbeed31ec34c4ed32c8edeefa5aa1dc5b793 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Wed, 7 Oct 2026 22:36:29 -0400
+Subject: [PATCH 26/50] dsv4 indexer: tile the dense fp4 prefill scoring over
+ query rows under the score budget (recipe E34b)
+
+_low_ratio_index_topk_dense scored a whole prefill chunk in one [rows, width] fp32
+logits tensor (4 B x prefix per row: 1 GiB at 64K, 1.75 GiB at 110K), which OOMed the
+128K ladder step. Every kernel on the path (fp8_fp4_mqa_logits, select_candidate_blocks,
+topk_transform_ragged_v2, _mask_topk_scores) is per query row, so _dense_index_topk_rows
+walks the rows in tiles whose logits fit _TORCH_INDEXER_SCORE_BUDGET_BYTES (the bound the
+torch path already uses), publishing / consuming candidate masks per request segment
+inside each tile. Bit-exact vs the single-tile path (recipe
+scripts/tests/test_indexer_row_tiling.py: logits identical, top-k sets identical; the
+fused top-k's intra-row order is launch-shape dependent and the caller sorts).
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../layers/attention/deepseek_v4_backend.py   | 149 ++++++++++++------
+ 1 file changed, 100 insertions(+), 49 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index 347430c6..eea0b341 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -3258,26 +3258,18 @@ class DeepseekV4AttnBackend(
+             q_lens.to(torch.int64),
+             output_size=num_tokens,
+         )
+-        logits = _dense_fp4_mqa_logits(
++        selected = self._dense_index_topk_rows(
++            indexer,
+             (q_fp4, q_sf),
+             (k_fp4, k_sf),
+             weights,
+             ks,
+-            ks + compress_lens,
+-            # the fused top-k reads score rows through 16-byte vectors
+-            ceil_align(max(lc_per_req), 4),
++            compress_lens,
++            lc_per_req,
++            q_lens_cpu,
++            empty_mask,
+         )
+-        if indexer.is_candidate_source or indexer.uses_candidates:
+-            self._publish_or_consume_candidates(
+-                indexer, logits, compress_lens, lc_per_req, q_lens_cpu, empty_mask
+-            )
+-        topk = indexer.index_topk
+-        selected = torch.empty((num_tokens, topk), dtype=torch.int32, device=device)
+-        topk_transform_ragged_v2(
+-            logits, compress_lens, out_offsets=ks, out_indices=selected
+-        )
+-        if indexer.uses_candidates and not indexer.is_candidate_source:
+-            selected = _mask_topk_scores(logits, selected, ks)
++        topk = selected.shape[1]
+         # ascending positions, padding last: the layout the consumers expect
+         unselected = torch.iinfo(torch.int32).max
+         selected = selected.masked_fill(selected < 0, unselected).sort(dim=-1).values
+@@ -3290,41 +3282,100 @@ class DeepseekV4AttnBackend(
+                 chosen, selected - ks[:, None], -1
+             )
+ 
+-    def _publish_or_consume_candidates(
+-        self, indexer, logits, compress_lens, lc_per_req, q_lens_cpu, empty_mask
+-    ) -> None:
+-        """Level one of the two-level top-k: publish block masks, or sink non-candidates."""
+-        publish = [] if indexer.is_candidate_source else None
+-        j = torch.arange(logits.shape[1], device=logits.device)
+-        tok_start = 0
+-        for b, (lc, t_len) in enumerate(zip(lc_per_req, q_lens_cpu)):
+-            rows = slice(tok_start, tok_start + t_len)
+-            tok_start += t_len
+-            if lc == 0 or t_len == 0:
+-                if publish is not None:
+-                    publish.append(empty_mask)
+-                continue
+-            scores = logits[rows, :lc]
+-            if publish is None:
+-                scores.masked_fill_(~self.candidate_masks[b], -torch.inf)
+-                continue
+-            lens = compress_lens[rows, None]
+-            # the block selection tells unreachable positions apart by -inf
+-            scores.masked_fill_(j[None, :lc] >= lens, -torch.inf)
+-            # the block selection pads and pools a copy of its rows; bound that copy
+-            step = max(1, _TORCH_INDEXER_SCORE_BUDGET_BYTES // (lc * 4))
+-            masks = [
+-                select_candidate_blocks(
+-                    scores[start : start + step],
+-                    lens[start : start + step],
+-                    topk_blocks=indexer.candidate_topk_blocks,
+-                    block_size=indexer.candidate_block_size,
+-                )
+-                for start in range(0, t_len, step)
+-            ]
+-            publish.append(masks[0] if len(masks) == 1 else torch.cat(masks))
++    def _dense_index_topk_rows(
++        self,
++        indexer,
++        q_fp4: Tuple[torch.Tensor, torch.Tensor],
++        kv_fp4: Tuple[torch.Tensor, torch.Tensor],
++        weights: torch.Tensor,
++        ks: torch.Tensor,
++        compress_lens: torch.Tensor,
++        lc_per_req: List[int],
++        q_lens_cpu: List[int],
++        empty_mask: torch.Tensor,
++    ) -> torch.Tensor:
++        """Score, (publish | consume) candidates and top-k the query rows in tiles.
++
++        Everything here is per query row: the fp4 MQA logits kernel, the block
++        selection and the fused ragged top-k each read one row and write one row.
++        The only thing the row count changes is the size of the `[rows, width]`
++        fp32 logits (and the bool masks derived from them), which at ratio 1 is
++        4 B x prefix per row: 1 GiB for a 4096-token chunk at 64K of prefix, 16 GiB
++        at 1M (recipe E33 / E34). So the rows are walked in tiles whose logits fit
++        `_TORCH_INDEXER_SCORE_BUDGET_BYTES`, the same bound the torch path already
++        applies to its `[rows, heads, lc]` scores. Returns `[num_tokens, topk]`
++        int32 batch-flattened KV columns, -1 where the row selected fewer than topk.
++        """
++        num_tokens = ks.shape[0]
++        device = ks.device
++        # the fused top-k reads score rows through 16-byte vectors
++        width = ceil_align(max(lc_per_req), 4)
++        rows_per_tile = max(1, _TORCH_INDEXER_SCORE_BUDGET_BYTES // (width * 4))
++        topk = indexer.index_topk
++        selected = torch.empty((num_tokens, topk), dtype=torch.int32, device=device)
++        source = indexer.is_candidate_source
++        consume = indexer.uses_candidates and not source
++        # per request: first row in the flattened layout, for the tile <-> request map
++        req_starts = []
++        start = 0
++        for t_len in q_lens_cpu:
++            req_starts.append(start)
++            start += t_len
++        assert start == num_tokens, (start, num_tokens)
++        publish: Optional[List[List[torch.Tensor]]] = (
++            [[] for _ in lc_per_req] if source else None
++        )
++        j = torch.arange(width, device=device)
++        for r0 in range(0, num_tokens, rows_per_tile):
++            r1 = min(r0 + rows_per_tile, num_tokens)
++            rows = slice(r0, r1)
++            lens = compress_lens[rows]
++            logits = _dense_fp4_mqa_logits(
++                (q_fp4[0][rows], q_fp4[1][rows]),
++                kv_fp4,
++                weights[rows],
++                ks[rows],
++                ks[rows] + lens,
++                width,
++            )
++            if source or consume:
++                for b, (lc, t_len) in enumerate(zip(lc_per_req, q_lens_cpu)):
++                    # the request's rows inside this tile, and their offset in the request
++                    a = max(req_starts[b], r0)
++                    z = min(req_starts[b] + t_len, r1)
++                    if lc == 0 or z <= a:
++                        continue
++                    seg = slice(a - r0, z - r0)
++                    scores = logits[seg, :lc]
++                    if consume:
++                        mask = self.candidate_masks[b]
++                        scores.masked_fill_(
++                            ~mask[a - req_starts[b] : z - req_starts[b]], -torch.inf
++                        )
++                        continue
++                    seg_lens = lens[seg, None]
++                    # the block selection tells unreachable positions apart by -inf
++                    scores.masked_fill_(j[None, :lc] >= seg_lens, -torch.inf)
++                    publish[b].append(
++                        select_candidate_blocks(
++                            scores,
++                            seg_lens,
++                            topk_blocks=indexer.candidate_topk_blocks,
++                            block_size=indexer.candidate_block_size,
++                        )
++                    )
++            topk_transform_ragged_v2(
++                logits, lens, out_offsets=ks[rows], out_indices=selected[rows]
++            )
++            if consume:
++                selected[rows] = _mask_topk_scores(logits, selected[rows], ks[rows])
++            del logits
+         if publish is not None:
+-            self.candidate_masks = publish
++            self.candidate_masks = [
++                empty_mask if not parts else parts[0] if len(parts) == 1 else torch.cat(parts)
++                for parts in publish
++            ]
++        return selected
+ 
+     def _low_ratio_index_topk_prefill_graph(self, layer, pos, q, w) -> None:
+         """q/w come from live rows; metadata fixes the graph's context width."""

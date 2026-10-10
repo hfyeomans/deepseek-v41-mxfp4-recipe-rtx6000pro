@@ -1,0 +1,187 @@
+From d681172827499f10ca05769e9776933431fe9f84 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Wed, 7 Oct 2026 23:26:37 -0400
+Subject: [PATCH 27/50] dsv4 indexer: publish prefill candidate masks at block
+ granularity (E34b-ii)
+
+select_candidate_block_keep returns the [rows, ceil(width/block_size)] keep mask;
+expand_candidate_blocks is the old repeat_interleave(block_size)[..., :width].
+select_candidate_blocks (decode) is the composition, unchanged in output.
+Both prefill paths (_dense_index_topk_rows, _low_ratio_index_topk_torch) publish
+the block form and expand only the consumer's own row tile. The per-position
+mask was 1 GiB per 4096-row chunk at 262K prefix and, doubled by torch.cat,
+the OOM at 184K (recipe E34b). Consumers assert the published block count
+matches their lc.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../layers/attention/deepseek_v4_backend.py   | 42 +++++++++++++++----
+ .../srt/layers/attention/dsv4/indexer.py      | 37 +++++++++++++---
+ 2 files changed, 64 insertions(+), 15 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index eea0b341..52bbe242 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -68,6 +68,8 @@ from sglang.srt.layers.attention.dsv4.dsv41_sparse import (
+ )
+ from sglang.srt.layers.attention.dsv4.indexer import (
+     C4IndexerBackendMixin,
++    expand_candidate_blocks,
++    select_candidate_block_keep,
+     select_candidate_blocks,
+ )
+ from sglang.srt.layers.attention.dsv4.metadata import (
+@@ -1148,9 +1150,13 @@ class DeepseekV4AttnBackend(
+         )
+         self.has_c4: bool = 4 in self.present_ratios
+         self.has_c128: bool = 128 in self.present_ratios
+-        # Per-request candidate masks the candidate_source layer publishes for the
+-        # index_source layers after it (torch indexer scratch).
+-        self.candidate_masks: Optional[List[torch.Tensor]] = None
++        # Candidate masks the candidate_source layer publishes for the index_source
++        # layers after it (torch indexer scratch). Decode: one `[bs, lmax]` bool
++        # tensor over positions. Prefill: a list per request of block-level
++        # `[rows, ceil(lc / candidate_block_size)]` bool masks (the per-position form
++        # is 1 GiB per 4096-row chunk at 262K of prefix; the consumers expand one
++        # row tile at a time, recipe E34b-ii).
++        self.candidate_masks: Optional[Union[torch.Tensor, List[torch.Tensor]]] = None
+         self.MAX_SEQ_LEN_FOR_CAPTURE = self.req_to_token.shape[1]
+ 
+         assert isinstance(self.token_to_kv_pool, DeepSeekV4TokenToKVPool)
+@@ -3305,6 +3311,12 @@ class DeepseekV4AttnBackend(
+         `_TORCH_INDEXER_SCORE_BUDGET_BYTES`, the same bound the torch path already
+         applies to its `[rows, heads, lc]` scores. Returns `[num_tokens, topk]`
+         int32 batch-flattened KV columns, -1 where the row selected fewer than topk.
++
++        Candidate masks are published and consumed at block granularity
++        (`select_candidate_block_keep`): the per-position mask of one request is
++        `rows x prefix` bytes, 1 GiB for a 4096-row chunk at 262K (recipe E34b-ii);
++        the block form is `candidate_block_size` x smaller and each consumer tile
++        expands only its own rows.
+         """
+         num_tokens = ks.shape[0]
+         device = ks.device
+@@ -3315,6 +3327,7 @@ class DeepseekV4AttnBackend(
+         selected = torch.empty((num_tokens, topk), dtype=torch.int32, device=device)
+         source = indexer.is_candidate_source
+         consume = indexer.uses_candidates and not source
++        block_size = indexer.candidate_block_size
+         # per request: first row in the flattened layout, for the tile <-> request map
+         req_starts = []
+         start = 0
+@@ -3348,20 +3361,24 @@ class DeepseekV4AttnBackend(
+                     seg = slice(a - r0, z - r0)
+                     scores = logits[seg, :lc]
+                     if consume:
+-                        mask = self.candidate_masks[b]
++                        keep = self.candidate_masks[b][a - req_starts[b] : z - req_starts[b]]
++                        # the source published this request at the same lc
++                        assert keep.shape == (z - a, -(-lc // block_size)), (
++                            keep.shape, z - a, lc, block_size
++                        )
+                         scores.masked_fill_(
+-                            ~mask[a - req_starts[b] : z - req_starts[b]], -torch.inf
++                            ~expand_candidate_blocks(keep, block_size, lc), -torch.inf
+                         )
+                         continue
+                     seg_lens = lens[seg, None]
+                     # the block selection tells unreachable positions apart by -inf
+                     scores.masked_fill_(j[None, :lc] >= seg_lens, -torch.inf)
+                     publish[b].append(
+-                        select_candidate_blocks(
++                        select_candidate_block_keep(
+                             scores,
+                             seg_lens,
+                             topk_blocks=indexer.candidate_topk_blocks,
+-                            block_size=indexer.candidate_block_size,
++                            block_size=block_size,
+                         )
+                     )
+             topk_transform_ragged_v2(
+@@ -3694,7 +3711,7 @@ class DeepseekV4AttnBackend(
+                 s = s.masked_fill(j[None, :] >= lens_c[:, None], -torch.inf)
+                 if masks is not None:
+                     masks.append(
+-                        select_candidate_blocks(
++                        select_candidate_block_keep(
+                             s,
+                             lens_c[:, None],
+                             topk_blocks=indexer.candidate_topk_blocks,
+@@ -3702,7 +3719,14 @@ class DeepseekV4AttnBackend(
+                         )
+                     )
+                 elif consume is not None:
+-                    s = s.masked_fill(~consume[b][rows], -torch.inf)
++                    keep = consume[b][rows]
++                    assert keep.shape[-1] == -(-lc // indexer.candidate_block_size), (
++                        keep.shape, lc
++                    )
++                    keep = expand_candidate_blocks(
++                        keep, indexer.candidate_block_size, lc
++                    )
++                    s = s.masked_fill(~keep, -torch.inf)
+                 idx = s.topk(k, dim=-1, sorted=False).indices
+                 if consume is not None and masks is None:
+                     idx = _mask_topk_scores(s, idx)
+diff --git a/python/sglang/srt/layers/attention/dsv4/indexer.py b/python/sglang/srt/layers/attention/dsv4/indexer.py
+index d817ee71..57786c30 100644
+--- a/python/sglang/srt/layers/attention/dsv4/indexer.py
++++ b/python/sglang/srt/layers/attention/dsv4/indexer.py
+@@ -1129,16 +1129,19 @@ class C4Indexer(nn.Module):
+         )
+ 
+ 
+-def select_candidate_blocks(
++def select_candidate_block_keep(
+     logits: torch.Tensor,
+     compress_lens: torch.Tensor | int,
+     topk_blocks: int,
+     block_size: int,
+ ) -> torch.Tensor:
+-    """Level one of the two-level top-k: a bool mask over positions keeping the
+-    topk_blocks best-scoring blocks per query. Unreachable positions are already -inf
+-    in logits, so an all -inf block means not reachable yet; the block holding the
+-    query's newest position is always kept."""
++    """Level one of the two-level top-k at block granularity: a bool
++    `[rows, ceil(width / block_size)]` mask keeping the topk_blocks best-scoring
++    blocks per query. Unreachable positions are already -inf in logits, so an all
++    -inf block means not reachable yet; the block holding the query's newest position
++    is always kept. `expand_candidate_blocks` turns it into the per-position mask;
++    prefill publishes this form because the per-position mask is block_size x larger
++    (1 GiB for a 4096-row chunk at 262K of prefix, recipe E34b-ii)."""
+     width = logits.size(-1)
+     scores = F.pad(logits, (0, -width % block_size), value=-torch.inf)
+     scores = scores.unflatten(-1, (-1, block_size)).amax(dim=-1)
+@@ -1150,7 +1153,29 @@ def select_candidate_blocks(
+     )
+ 
+     top = scores.topk(min(topk_blocks, num_blocks), dim=-1)
+-    keep = torch.zeros_like(scores, dtype=torch.bool).scatter_(
++    return torch.zeros_like(scores, dtype=torch.bool).scatter_(
+         -1, top.indices, top.values > -torch.inf
+     )
++
++
++def expand_candidate_blocks(
++    keep: torch.Tensor, block_size: int, width: int
++) -> torch.Tensor:
++    """Per-position bool mask `[rows, width]` from a block-level keep mask."""
++    assert keep.shape[-1] * block_size >= width, (keep.shape, block_size, width)
+     return keep.repeat_interleave(block_size, dim=-1)[..., :width]
++
++
++def select_candidate_blocks(
++    logits: torch.Tensor,
++    compress_lens: torch.Tensor | int,
++    topk_blocks: int,
++    block_size: int,
++) -> torch.Tensor:
++    """The per-position form of `select_candidate_block_keep` (decode, where the
++    mask is `[bs, lmax]` and small)."""
++    return expand_candidate_blocks(
++        select_candidate_block_keep(logits, compress_lens, topk_blocks, block_size),
++        block_size,
++        logits.size(-1),
++    )

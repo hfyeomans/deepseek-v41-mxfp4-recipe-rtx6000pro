@@ -1,0 +1,773 @@
+From 095789db0be8b7f1b32299bfda4c96171caa7053 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Thu, 8 Oct 2026 13:25:32 -0400
+Subject: [PATCH 28/50] kt runtime: runner-owned kt state (KtRuntime), explicit
+ CompactMXFP4Loader, no module registry (recipe T3.19c)
+
+- new layers/moe/kt_runtime.py: KtRuntime per ModelRunner owns providers,
+  leases, ForwardLedger, prefill coordinator slot, timeline, side streams;
+  reserve_capture_sizes; load_cpu_experts installs a CompactMXFP4Loader
+  into kt's NativeMoEWrapper loader slot per layer and asserts kt used it
+  (kt's constructor-made plain loader is released; a stale compact loader
+  is refused). Scoped activate()/current() handle around load_model only.
+- new layers/moe/kt_loader.py: CompactMXFP4Loader subclass replaces the
+  process-wide load_experts monkey-patch and the _KT_LOADER_GPU_MASK global.
+- kt_provider.py: module registry removed; KtKernelProvider takes
+  ledger=/leases=. kt_timeline.py: _TIMELINE/get_timeline removed.
+- kt_ep_wrapper.py: coordinator via KTConfig.runtime; _B2_STREAMS removed
+  (runtime.side_stream); loader patch block deleted.
+- model_runner / cuda_graph_setup / decode_cuda_graph_runner /
+  breakable_cuda_graph_backend read model_runner.kt_runtime.
+
+Gate (recipe evidence/t319/c): NLL bit-identical vs T3.28 corpus
+(0/65,653 moved), consistency PASS, C1 41.56/39.58 wall, C4 56.05/53.85,
+prefill 16K 1,471 tok/s, 0 health hits, EDAC 0/0.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py | 140 +++---------
+ python/sglang/srt/layers/moe/kt_loader.py     |  67 ++++++
+ python/sglang/srt/layers/moe/kt_provider.py   |  52 +----
+ python/sglang/srt/layers/moe/kt_runtime.py    | 199 ++++++++++++++++++
+ python/sglang/srt/layers/moe/kt_timeline.py   |  19 +-
+ .../sglang/srt/model_executor/model_runner.py |   9 +-
+ .../cuda_graph_setup.py                       |   6 +-
+ .../runner/decode_cuda_graph_runner.py        |   6 +-
+ .../breakable_cuda_graph_backend.py           |   6 +-
+ 9 files changed, 323 insertions(+), 181 deletions(-)
+ create mode 100644 python/sglang/srt/layers/moe/kt_loader.py
+ create mode 100644 python/sglang/srt/layers/moe/kt_runtime.py
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index f2867393..f623e54b 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -25,7 +25,7 @@ from sglang.srt.layers.moe.kt_provider import (
+     ExpertSubmission,
+     KtKernelProvider,
+ )
+-from sglang.srt.layers.moe.kt_timeline import get_timeline
++from sglang.srt.layers.moe import kt_runtime
+ from sglang.srt.layers.quantization.base_config import FusedMoEMethodBase
+ from sglang.srt.runtime_context import (
+     get_exec,
+@@ -193,20 +193,20 @@ class _HostSlice:
+ class _LayerwisePrefillCoordinator:
+     """Streams each layer's CPU experts to the GPUs for large prefill chunks.
+ 
+-    One instance per TP-rank process, shared by every layer's
++    One instance per TP-rank process, owned by the runner's KtRuntime
++    (``runtime.prefill_coordinator``) and shared by every layer's
+     KTEPWrapperMethod. Rank 0 owns the kt-kernel wrappers and does the export;
+     every rank DMAs its own TP slice out of the shared pinned buffer.
+     """
+ 
+-    _instance: Optional["_LayerwisePrefillCoordinator"] = None
+-
+-    @classmethod
+-    def get(cls, method: "KTEPWrapperMethod") -> Optional["_LayerwisePrefillCoordinator"]:
++    @staticmethod
++    def for_method(method: "KTEPWrapperMethod") -> Optional["_LayerwisePrefillCoordinator"]:
+         if KT_GPU_PREFILL_MIN_TOKENS <= 0:
+             return None
+-        if cls._instance is None:
+-            cls._instance = cls(method)
+-        return cls._instance
++        rt = method.kt_config.runtime
++        if rt.prefill_coordinator is None:
++            rt.prefill_coordinator = _LayerwisePrefillCoordinator(method)
++        return rt.prefill_coordinator
+ 
+     def __init__(self, method: "KTEPWrapperMethod"):
+         from sglang.srt.distributed import get_tp_group
+@@ -419,85 +419,14 @@ class _LayerwisePrefillCoordinator:
+ # This recipe cannot afford a full CPU copy, so the wrapper below shows
+ # kt-kernel a smaller MoE that contains only the CPU experts, renumbered
+ # 0..n_cpu-1 in ascending original id:
+-#   * the patched MXFP4SafeTensorLoader.load_experts() returns only the CPU
+-#     experts' tensors (mask published in _KT_LOADER_GPU_MASK during load),
++#   * CompactMXFP4Loader (kt_loader.py) returns only the CPU experts' tensors;
++#     KtRuntime.load_cpu_experts hands one to kt per layer (no class patching),
+ #   * KTMoEWrapper is created with num_experts = n_cpu and no GPU mask,
+ #   * submit() rewrites routed ids: GPU-expert slots become -1 (kt-kernel's
+ #     own "skip this slot" marker, used by its deferred-expert path) and CPU
+ #     ids become id - num_gpu_experts (contiguous split).
+-# Only the MXFP4 loader is patched (the method this recipe uses).
++# Only the MXFP4 method is supported (the one this recipe uses).
+ # ---------------------------------------------------------------------------
+-_KT_LOADER_GPU_MASK: Optional[torch.Tensor] = None
+-_KT_LOADER_PATCHED = False
+-
+-
+-def _install_kt_mxfp4_loader_compact() -> None:
+-    global _KT_LOADER_PATCHED
+-    if _KT_LOADER_PATCHED or not KTRANSFORMERS_AVAILABLE:
+-        return
+-    try:
+-        from kt_kernel.utils.loader import MXFP4SafeTensorLoader
+-    except ImportError:
+-        return
+-
+-    orig_load_experts = MXFP4SafeTensorLoader.load_experts
+-
+-    def load_experts(self, base_key: str, device: str = "cpu"):
+-        mask = _KT_LOADER_GPU_MASK
+-        if mask is None or not bool(mask.any()):
+-            return orig_load_experts(self, base_key, device)
+-
+-        gate_name, up_name, down_name = self.PROJ_NAMES
+-        prefix = None
+-        expert_count = 0
+-        for cand in self._experts_prefix_candidates(base_key):
+-            expert_count = 0
+-            while self.has_tensor(f"{cand}.{expert_count}.{gate_name}.weight"):
+-                expert_count += 1
+-            if expert_count > 0:
+-                prefix = cand
+-                break
+-        if prefix is None:
+-            raise ValueError(
+-                f"No MXFP4 experts found under any of: "
+-                f"{self._experts_prefix_candidates(base_key)}"
+-            )
+-        if mask.numel() != expert_count:
+-            raise ValueError(
+-                f"gpu_experts_mask has {mask.numel()} entries but {prefix} "
+-                f"holds {expert_count} experts"
+-            )
+-
+-        cpu_ids = torch.nonzero(~mask, as_tuple=False).flatten().tolist()
+-        out = {
+-            k: []
+-            for k in ("gate", "up", "down", "gate_scale", "up_scale", "down_scale")
+-        }
+-        for exp_id in cpu_ids:
+-            for proj, dst in (
+-                (gate_name, "gate"),
+-                (up_name, "up"),
+-                (down_name, "down"),
+-            ):
+-                w = self.load_tensor(f"{prefix}.{exp_id}.{proj}.weight", device)
+-                w = w.contiguous()
+-                if w.dtype != torch.uint8:
+-                    w = w.view(torch.uint8)
+-                out[dst].append(w)
+-                out[dst + "_scale"].append(
+-                    self._ue8m0_to_bf16(
+-                        self.load_tensor(f"{prefix}.{exp_id}.{proj}.scale", device)
+-                    )
+-                )
+-        print(
+-            f"[MXFP4SafeTensorLoader] Loaded {len(cpu_ids)} CPU experts from "
+-            f"{prefix} as compact ids 0..{len(cpu_ids) - 1} "
+-            f"({expert_count - len(cpu_ids)} GPU experts not loaded)"
+-        )
+-        return out
+-
+-    MXFP4SafeTensorLoader.load_experts = load_experts
+-    _KT_LOADER_PATCHED = True
+ 
+ 
+ @dataclass
+@@ -512,6 +441,7 @@ class KTConfig:
+         weight_path: Path to CPU quantized weights
+         chunked_prefill_size: Chunk size for prefill computation
+         method: CPU computation method (e.g., "int4")
++        runtime: The KtRuntime of the ModelRunner that owns this layer
+         num_layers: Total number of layers in the model (optional)
+     """
+ 
+@@ -523,6 +453,7 @@ class KTConfig:
+     chunked_prefill_size: int
+     max_deferred_experts_per_token: int
+     method: str
++    runtime: "kt_runtime.KtRuntime"
+     num_layers: Optional[int] = None
+ 
+ 
+@@ -540,6 +471,12 @@ def create_kt_config_from_server_args(
+     """
+     if get_exec().moe.kt_weight_path is None:
+         return None
++    runtime = kt_runtime.current()
++    if runtime is None:
++        raise RuntimeError(
++            f"MoE layer {layer_idx} built outside ModelRunner.load_model: no KtRuntime "
++            "is active (kt_runtime.activate)."
++        )
+ 
+     num_layers = getattr(
+         model_config_of(server_args).hf_config, "num_hidden_layers", None
+@@ -554,6 +491,7 @@ def create_kt_config_from_server_args(
+         chunked_prefill_size=get_schedule().chunked_prefill_size,
+         method=get_exec().moe.kt_method,
+         max_deferred_experts_per_token=get_exec().moe.kt_max_deferred_experts_per_token,
++        runtime=runtime,
+         num_layers=num_layers,
+     )
+ 
+@@ -817,12 +755,12 @@ class _B2UvaExperts:
+         concurrent call on another stream shares no device state with the
+         resident tier's call.
+         """
+-        side = _b2_stream(self.device)
++        side = method.kt_config.runtime.side_stream(self.device)
+         side.wait_stream(torch.cuda.current_stream(self.device))
+         with torch.cuda.stream(side):
+             return self.run(method, layer, dispatch_output, b2_topk_ids)
+ 
+-    def join(self, out: torch.Tensor) -> torch.Tensor:
++    def join(self, method: "KTEPWrapperMethod", out: torch.Tensor) -> torch.Tensor:
+         """Make the current stream wait for fork()'s work before using ``out``.
+ 
+         Allocator safety without record_stream(): ``out`` lives in the side
+@@ -832,22 +770,10 @@ class _B2UvaExperts:
+         side-stream kernel can overwrite the block while main still reads it.
+         The same ordering holds inside a CUDA graph's private pool.
+         """
+-        torch.cuda.current_stream(self.device).wait_stream(_b2_stream(self.device))
++        torch.cuda.current_stream(self.device).wait_stream(method.kt_config.runtime.side_stream(self.device))
+         return out
+ 
+ 
+-_B2_STREAMS: Dict[int, torch.cuda.Stream] = {}
+-
+-
+-def _b2_stream(device: torch.device) -> torch.cuda.Stream:
+-    """One side stream per device for B2 (layers run sequentially, so shared)."""
+-    s = _B2_STREAMS.get(device.index)
+-    if s is None:
+-        s = torch.cuda.Stream(device=device)
+-        _B2_STREAMS[device.index] = s
+-    return s
+-
+-
+ class KTEPWrapperMethod(FusedMoEMethodBase):
+     """Wrapper for any MoE quantization method to enable CPU-GPU expert parallelism.
+ 
+@@ -1024,7 +950,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 self.wrapper.select_deferred_experts = types.MethodType(
+                     _select_deferred_experts_compact, self.wrapper
+                 )
+-            self.provider = KtKernelProvider(
++            self.provider = self.kt_config.runtime.new_provider(
+                 self.wrapper,
+                 layer_idx=self.kt_config.layer_idx,
+                 hidden=hidden_size,
+@@ -1070,18 +996,14 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                     "KTEPWrapperMethod compact CPU experts require the identity "
+                     "physical->logical expert map (EPLB rebalancing unsupported)."
+                 )
+-            global _KT_LOADER_GPU_MASK
+-            _install_kt_mxfp4_loader_compact()
+-            _KT_LOADER_GPU_MASK = self.gpu_experts_mask
+-            try:
+-                self.wrapper.load_weights(torch.arange(self.num_cpu_experts))
+-            finally:
+-                _KT_LOADER_GPU_MASK = None
++            self.kt_config.runtime.load_cpu_experts(
++                self.wrapper, torch.arange(self.num_cpu_experts), self.gpu_experts_mask
++            )
+ 
+         # 3. Layerwise GPU prefill: every rank joins (shared host buffer,
+         # gloo barriers), so this runs on all ranks in the same layer order.
+         if self.gpu_experts_mask is not None:
+-            self.streamer = _LayerwisePrefillCoordinator.get(self)
++            self.streamer = _LayerwisePrefillCoordinator.for_method(self)
+             if self.streamer is not None:
+                 self.streamer.register(self)
+             # 4. B2 direct-UVA experts: same all-rank, same-order property.
+@@ -1276,7 +1198,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # Opt-in timeline (KT_TIMELINE=1, recipe T3.19a): external CUDA events
+         # baked into the captured graph at start/export/gpu/sync/h2d/end; None
+         # when off or not capturing. Log-only.
+-        timeline = get_timeline(self.tp_rank)
++        timeline = self.kt_config.runtime.timeline
+         mark = None
+         if timeline is not None and not streamed:
+             mark = timeline.layer_marker(self.kt_config.layer_idx)
+@@ -1357,7 +1279,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 cpu_output = self.sync(x)
+                 output = output + cpu_output
+             if b2_out is not None:
+-                output = output + self.b2.join(b2_out)
++                output = output + self.b2.join(self, b2_out)
+             if (
+                 self.provider is not None
+                 and self.kt_config.num_layers is not None
+diff --git a/python/sglang/srt/layers/moe/kt_loader.py b/python/sglang/srt/layers/moe/kt_loader.py
+new file mode 100644
+index 00000000..8f53d3d8
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/kt_loader.py
+@@ -0,0 +1,67 @@
++"""Compact MXFP4 expert loader for the hybrid's CPU tier (recipe T3.19c).
++
++The hybrid shows kt-kernel a *compact* MoE: only the CPU-resident experts, as
++ids 0..num_cpu-1. kt's own ``MXFP4SafeTensorLoader.load_experts`` loads every
++expert of the layer (GPU ones included, ~2x the host RAM and load time), so
++this subclass loads the complement of ``gpu_experts_mask`` and nothing else.
++The mask is a constructor argument; ``KtRuntime.load_cpu_experts`` builds one
++loader per layer and hands it to kt explicitly (no class-wide patching).
++"""
++
++from __future__ import annotations
++
++import torch
++from kt_kernel.utils.loader import MXFP4SafeTensorLoader
++
++class CompactMXFP4Loader(MXFP4SafeTensorLoader):
++    def __init__(self, file_path: str, gpu_experts_mask: torch.Tensor):
++        super().__init__(file_path)
++        if gpu_experts_mask.dtype != torch.bool or gpu_experts_mask.dim() != 1:
++            raise ValueError(f"gpu_experts_mask must be a 1-D bool tensor, got {gpu_experts_mask.dtype} {tuple(gpu_experts_mask.shape)}")
++        self.gpu_experts_mask = gpu_experts_mask.cpu()
++        self.loaded_cpu_experts = 0
++
++    def load_experts(self, base_key: str, device: str = "cpu"):
++        mask = self.gpu_experts_mask
++        if not bool(mask.any()):
++            out = super().load_experts(base_key, device)
++            self.loaded_cpu_experts = len(out["gate"])
++            return out
++
++        gate_name, up_name, down_name = self.PROJ_NAMES
++        prefix = None
++        expert_count = 0
++        for cand in self._experts_prefix_candidates(base_key):
++            expert_count = 0
++            while self.has_tensor(f"{cand}.{expert_count}.{gate_name}.weight"):
++                expert_count += 1
++            if expert_count > 0:
++                prefix = cand
++                break
++        if prefix is None:
++            raise ValueError(
++                f"No MXFP4 experts found under any of: {self._experts_prefix_candidates(base_key)}"
++            )
++        if mask.numel() != expert_count:
++            raise ValueError(
++                f"gpu_experts_mask has {mask.numel()} entries but {prefix} holds {expert_count} experts"
++            )
++
++        cpu_ids = torch.nonzero(~mask, as_tuple=False).flatten().tolist()
++        out = {k: [] for k in ("gate", "up", "down", "gate_scale", "up_scale", "down_scale")}
++        for exp_id in cpu_ids:
++            for proj, dst in ((gate_name, "gate"), (up_name, "up"), (down_name, "down")):
++                w = self.load_tensor(f"{prefix}.{exp_id}.{proj}.weight", device).contiguous()
++                if w.dtype != torch.uint8:
++                    w = w.view(torch.uint8)
++                out[dst].append(w)
++                out[dst + "_scale"].append(
++                    self._ue8m0_to_bf16(self.load_tensor(f"{prefix}.{exp_id}.{proj}.scale", device))
++                )
++        self.loaded_cpu_experts = len(cpu_ids)
++        # print, like kt's own loaders: the launch log is the record (evidence READMEs).
++        print(
++            f"[MXFP4SafeTensorLoader] Loaded {len(cpu_ids)} CPU experts from {prefix} as compact "
++            f"ids 0..{len(cpu_ids) - 1} ({expert_count - len(cpu_ids)} GPU experts not loaded)"
++        )
++        return out
+diff --git a/python/sglang/srt/layers/moe/kt_provider.py b/python/sglang/srt/layers/moe/kt_provider.py
+index 982af347..c785a461 100644
+--- a/python/sglang/srt/layers/moe/kt_provider.py
++++ b/python/sglang/srt/layers/moe/kt_provider.py
+@@ -199,42 +199,11 @@ def _capturing() -> bool:
+ 
+ 
+ # --------------------------------------------------------------------------- registry
+-
+-_PROVIDERS: List["KtKernelProvider"] = []
+-_LEASES: Dict[int, BufferLease] = {}
+-_LEDGER = ForwardLedger()
+-
+-
+-def ledger() -> ForwardLedger:
+-    return _LEDGER
+-
+-
+-def providers() -> List["KtKernelProvider"]:
+-    return list(_PROVIDERS)
+-
+-
+-def reset_registry() -> None:
+-    """Tests only: forget providers, leases and the ledger."""
+-    _PROVIDERS.clear()
+-    _LEASES.clear()
+-    _LEDGER.reset()
+-
+-
+-def reserve_capture_sizes(batch_sizes: Sequence[int]) -> None:
+-    """Runner entry point: register the token counts the graphs will capture.
+-
+-    Calls kt's own registration (accumulating, T3.16a) exactly as the runner did
+-    before, then hands every provider its contract. Safe to call when kt is not
+-    installed (no-op) and before any provider exists (kt registration only).
+-    """
+-    try:
+-        from kt_kernel import KTMoEWrapper
+-    except ImportError:
+-        return
+-    KTMoEWrapper.set_capture_batch_sizes(list(batch_sizes))
+-    registered = tuple(KTMoEWrapper.get_capture_batch_sizes())
+-    for p in _PROVIDERS:
+-        p.reserve(CaptureContract(registered, p.hidden, p.top_k))
++#
++# There is no module registry (recipe T3.19c). The providers, their leases
++# and the ForwardLedger belong to the KtRuntime of the ModelRunner that built
++# the layers (kt_runtime.py); kt's own class-wide registration of capture
++# sizes is called from KtRuntime.reserve_capture_sizes().
+ 
+ 
+ # --------------------------------------------------------------------------- adapter
+@@ -251,9 +220,8 @@ class KtKernelProvider:
+         hidden: int,
+         top_k: int,
+         max_deferred: int,
+-        ledger: Optional[ForwardLedger] = None,
+-        leases: Optional[Dict[int, BufferLease]] = None,
+-        register: bool = True,
++        ledger: ForwardLedger,
++        leases: Dict[int, BufferLease],
+     ) -> None:
+         self.wrapper = wrapper
+         self.layer_idx = int(layer_idx)
+@@ -261,8 +229,8 @@ class KtKernelProvider:
+         self.top_k = int(top_k)
+         self.max_deferred = int(max_deferred)
+         self.contract: Optional[CaptureContract] = None
+-        self._ledger = ledger if ledger is not None else _LEDGER
+-        self._leases = leases if leases is not None else _LEASES
++        self._ledger = ledger
++        self._leases = leases
+         if int(getattr(wrapper, "layer_idx", layer_idx)) != self.layer_idx:
+             raise KTContractError(
+                 f"provider for layer {self.layer_idx} given a kt wrapper for layer {wrapper.layer_idx}"
+@@ -280,8 +248,6 @@ class KtKernelProvider:
+                 f"layer {self.layer_idx}: kt wrapper max_deferred_experts_per_token="
+                 f"{wrapper.max_deferred_experts_per_token} != {self.max_deferred}"
+             )
+-        if register:
+-            _PROVIDERS.append(self)
+ 
+     # -- protocol ----------------------------------------------------------------
+ 
+diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
+new file mode 100644
+index 00000000..81573374
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/kt_runtime.py
+@@ -0,0 +1,199 @@
++"""Runner-owned state of the CPU expert tier (recipe T3.19c).
++
++Everything the hybrid used to keep in module or class globals lives on one
++``KtRuntime`` per ``ModelRunner``:
++
++  providers / leases / ledger   the CpuExpertProvider registry (kt_provider.py)
++  prefill_coordinator           the layerwise streamed-prefill coordinator
++                                (kt_ep_wrapper.py), one per TP-rank process
++  timeline                      the opt-in KT_TIMELINE recorder (kt_timeline.py)
++  side streams                  one per device, for work forked off the
++                                forward stream (B2; retired by T3.16j)
++  load_cpu_experts()            the compact MXFP4 load: an explicit
++                                CompactMXFP4Loader handed to kt-kernel per
++                                layer instead of a class-wide monkey-patch
++
++Two runtimes in one process share nothing (``test_kt_runtime.py``).
++
++How a layer gets its runtime
++----------------------------
++SGLang builds the MoE layers deep inside ``ModelRunner.load_model`` through
++the model's constructor, which has no runner parameter; the layers resolve
++``get_server_args()`` from the process the same way. ``ModelRunner`` therefore
++``activate()``s its runtime for the duration of ``load_model`` and
++``create_kt_config_from_server_args`` copies ``current()`` into ``KTConfig``.
++That one scoped handle is the only process-level state left; after
++``load_model`` returns it is gone and every layer, graph runner and backend
++reaches the runtime through the object that owns it (``kt_config.runtime``,
++``model_runner.kt_runtime``).
++"""
++
++from __future__ import annotations
++
++import contextlib
++import logging
++from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence
++
++import torch
++
++from sglang.srt.layers.moe.kt_contract import KTContractError
++from sglang.srt.layers.moe.kt_provider import (
++    BufferLease,
++    CaptureContract,
++    ForwardLedger,
++    KtKernelProvider,
++)
++
++if TYPE_CHECKING:
++    from sglang.srt.layers.moe.kt_timeline import StepTimeline
++    from sglang.srt.model_executor.model_runner import ModelRunner
++
++logger = logging.getLogger(__name__)
++
++
++class KtRuntime:
++    def __init__(self, *, tp_rank: int, timeline: Optional["StepTimeline"] = None) -> None:
++        self.tp_rank = int(tp_rank)
++        self.providers: List[KtKernelProvider] = []
++        self.leases: Dict[int, BufferLease] = {}
++        self.ledger = ForwardLedger()
++        # Set by the first KTEPWrapperMethod that wants streamed prefill
++        # (KT_GPU_PREFILL_MIN_TOKENS > 0); every later layer registers with it.
++        self.prefill_coordinator: Optional[Any] = None
++        self.timeline = timeline
++        self._side_streams: Dict[int, torch.cuda.Stream] = {}
++
++    # -- construction --------------------------------------------------------------
++
++    @classmethod
++    def for_runner(cls, model_runner: "ModelRunner") -> Optional["KtRuntime"]:
++        """The runner's runtime, or None when this runner has no CPU expert tier."""
++        from sglang.srt.runtime_context import get_exec
++
++        if model_runner.device != "cuda" or get_exec().moe.kt_weight_path is None:
++            return None
++        from sglang.srt.layers.moe.kt_timeline import KT_TIMELINE, StepTimeline
++
++        tp_rank = model_runner.ps.tp_rank
++        timeline = StepTimeline(tp_rank) if KT_TIMELINE else None
++        return cls(tp_rank=tp_rank, timeline=timeline)
++
++    # -- providers -----------------------------------------------------------------
++
++    def new_provider(
++        self, wrapper: Any, *, layer_idx: int, hidden: int, top_k: int, max_deferred: int
++    ) -> KtKernelProvider:
++        p = KtKernelProvider(
++            wrapper,
++            layer_idx=layer_idx,
++            hidden=hidden,
++            top_k=top_k,
++            max_deferred=max_deferred,
++            ledger=self.ledger,
++            leases=self.leases,
++        )
++        self.providers.append(p)
++        return p
++
++    def reserve_capture_sizes(self, batch_sizes: Sequence[int]) -> None:
++        """Runner entry point: register the token counts the graphs will capture.
++
++        Calls kt's own registration (accumulating, T3.16a) exactly as the runner
++        did before, then hands every provider its contract. Safe before any
++        provider exists (kt registration only) and when kt is not installed.
++        """
++        try:
++            from kt_kernel import KTMoEWrapper
++        except ImportError:
++            return
++        KTMoEWrapper.set_capture_batch_sizes(list(batch_sizes))
++        registered = tuple(KTMoEWrapper.get_capture_batch_sizes())
++        for p in self.providers:
++            p.reserve(CaptureContract(registered, p.hidden, p.top_k))
++
++    # -- streams -------------------------------------------------------------------
++
++    def side_stream(self, device: torch.device) -> torch.cuda.Stream:
++        """One side stream per device (layers run sequentially, so shared)."""
++        s = self._side_streams.get(device.index)
++        if s is None:
++            s = torch.cuda.Stream(device=device)
++            self._side_streams[device.index] = s
++        return s
++
++    # -- weights -------------------------------------------------------------------
++
++    def load_cpu_experts(
++        self, wrapper: Any, cpu_ids: torch.Tensor, gpu_experts_mask: torch.Tensor
++    ) -> None:
++        """Load one layer's CPU experts into kt-kernel as a compact MoE.
++
++        kt's ``NativeMoEWrapper`` keeps its loader in the class slot
++        ``_native_loader_instance``: the first wrapper's ``__init__`` fills it
++        with a plain ``MXFP4SafeTensorLoader``, ``load_weights`` reads the slot
++        (refilling it when empty) and releases it at the end of every layer.
++        That slot is the injection point kt offers, so a ``CompactMXFP4Loader``
++        built for this layer's mask goes in just before the call (kt's own
++        pre-created plain loader, present only before the first layer, is
++        released), and the wrapper is checked to have used it: a plain loader
++        would hand kt all experts under shifted ids and nothing downstream
++        would notice until the sums were wrong.
++        """
++        from kt_kernel.utils.amx import NativeMoEWrapper
++        from kt_kernel.utils.loader import MXFP4SafeTensorLoader
++
++        from sglang.srt.layers.moe.kt_loader import CompactMXFP4Loader
++
++        if not isinstance(wrapper, NativeMoEWrapper) or wrapper.method != "MXFP4":
++            raise KTContractError(
++                f"layer {wrapper.layer_idx}: compact CPU experts need kt's NativeMoEWrapper "
++                f"with method MXFP4, got {type(wrapper).__name__} / {getattr(wrapper, 'method', None)}"
++            )
++        slot = NativeMoEWrapper._native_loader_instance
++        if slot is not None:
++            if isinstance(slot, CompactMXFP4Loader) or not isinstance(slot, MXFP4SafeTensorLoader):
++                raise KTContractError(
++                    f"layer {wrapper.layer_idx}: kt still holds a {type(slot).__name__} from a previous "
++                    "layer; it releases the slot after every load_weights, so this is a kt-kernel change."
++                )
++            NativeMoEWrapper._release_loader()  # kt's constructor-made plain loader
++        loader = CompactMXFP4Loader(wrapper.weight_path, gpu_experts_mask)
++        NativeMoEWrapper._native_loader_instance = loader
++        try:
++            wrapper.load_weights(cpu_ids)
++        finally:
++            if NativeMoEWrapper._native_loader_instance is loader:
++                NativeMoEWrapper._release_loader()
++        if wrapper.loader is not loader:
++            raise KTContractError(
++                f"layer {wrapper.layer_idx}: kt loaded the experts through "
++                f"{type(wrapper.loader).__name__}, not the compact loader it was handed."
++            )
++        if loader.loaded_cpu_experts != int(cpu_ids.numel()):
++            raise KTContractError(
++                f"layer {wrapper.layer_idx}: compact loader produced {loader.loaded_cpu_experts} "
++                f"experts for {int(cpu_ids.numel())} compact ids."
++            )
++
++
++# --------------------------------------------------------------------------- scoped handle
++
++_ACTIVE: Optional[KtRuntime] = None
++
++
++def current() -> Optional[KtRuntime]:
++    """The runtime of the ModelRunner currently inside ``load_model``, else None."""
++    return _ACTIVE
++
++
++@contextlib.contextmanager
++def activate(runtime: Optional[KtRuntime]) -> Iterator[None]:
++    """Make ``runtime`` visible to the layers ``load_model`` is about to build."""
++    global _ACTIVE
++    if _ACTIVE is not None:
++        raise KTContractError("KtRuntime.activate() nested: two ModelRunners loading at once in one process.")
++    _ACTIVE = runtime
++    try:
++        yield
++    finally:
++        _ACTIVE = None
+diff --git a/python/sglang/srt/layers/moe/kt_timeline.py b/python/sglang/srt/layers/moe/kt_timeline.py
+index d27f6025..8cd37465 100644
+--- a/python/sglang/srt/layers/moe/kt_timeline.py
++++ b/python/sglang/srt/layers/moe/kt_timeline.py
+@@ -384,19 +384,6 @@ class StepTimeline:
+             self._save_dump(key, layer_idx, bufs, x.shape[0] if x is not None else -1)
+ 
+ 
+-_TIMELINE: Optional[StepTimeline] = None
+-_TIMELINE_RANK: Optional[int] = None
+-
+-
+-def get_timeline(rank: Optional[int] = None) -> Optional[StepTimeline]:
+-    """The rank's recorder, or None when KT_TIMELINE is off. The first call
+-    must pass ``rank``; later calls may omit it."""
+-    global _TIMELINE, _TIMELINE_RANK
+-    if not KT_TIMELINE:
+-        return None
+-    if _TIMELINE is None:
+-        if rank is None:
+-            return None
+-        _TIMELINE = StepTimeline(rank)
+-        _TIMELINE_RANK = rank
+-    return _TIMELINE
++# The recorder is owned by the runner's KtRuntime (kt_runtime.py, T3.19c):
++# ``KtRuntime.for_runner`` builds one StepTimeline(tp_rank) when KT_TIMELINE
++# is on; layers and the graph backend read ``runtime.timeline``.
+diff --git a/python/sglang/srt/model_executor/model_runner.py b/python/sglang/srt/model_executor/model_runner.py
+index cd539390..7a36a27d 100644
+--- a/python/sglang/srt/model_executor/model_runner.py
++++ b/python/sglang/srt/model_executor/model_runner.py
+@@ -345,6 +345,7 @@ class ModelRunner:
+         self.dist_port = nccl_port
+         self.server_args = server_args
+         self.is_draft_worker = is_draft_worker
++        self.kt_runtime = None  # set in initialize() (recipe T3.19c)
+         # The process entry published; a draft runner is not one (it must not
+         # clobber the target's config), so only the target checks.
+         if not is_draft_worker:
+@@ -658,7 +659,13 @@ class ModelRunner:
+         self.maybe_init_elastic_ep()
+         self.init_token_oracle()
+         self.sampler = create_sampler()
+-        self.load_model()
++        # Runner-owned state of the CPU expert tier (recipe T3.19c): the MoE
++        # layers built inside load_model() pick it up through kt_runtime.current().
++        from sglang.srt.layers.moe import kt_runtime  # lazy: layers -> runner cycle
++
++        self.kt_runtime = kt_runtime.KtRuntime.for_runner(self)
++        with kt_runtime.activate(self.kt_runtime):
++            self.load_model()
+         prepare_moe_topk(
+             model=self.model,
+             model_config=self.model_config,
+diff --git a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
+index 347236c9..506e365a 100644
+--- a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
++++ b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
+@@ -545,12 +545,10 @@ def register_kt_capture_sizes(model_runner: ModelRunner) -> None:
+         from kt_kernel import KTMoEWrapper  # noqa: F401
+     except ImportError:
+         return
+-    if _decode_graph_capture_disabled(model_runner):
++    if _decode_graph_capture_disabled(model_runner) or model_runner.kt_runtime is None:
+         return
+     # kt registration plus the per-layer CaptureContract (recipe T3.19b seam).
+-    from sglang.srt.layers.moe.kt_provider import reserve_capture_sizes
+-
+-    reserve_capture_sizes(kt_capture_token_sizes(model_runner))
++    model_runner.kt_runtime.reserve_capture_sizes(kt_capture_token_sizes(model_runner))
+ 
+ 
+ def capture_decode_graph(*, model_runner: ModelRunner) -> GraphCapture:
+diff --git a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
+index c1ef4b66..1cdf8258 100644
+--- a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
++++ b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
+@@ -365,16 +365,14 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):
+             model_runner, self.captured_req_width
+         )
+         self.max_bs = max(self.capture_bs)
+-        if KTRANSFORMERS_AVAILABLE:
++        if KTRANSFORMERS_AVAILABLE and self.model_runner.kt_runtime is not None:
+             # kt-kernel keys its pinned CPU buffers on hidden_states.shape[0],
+             # i.e. the token count, which under speculative decoding is
+             # bs * tokens_per_request (DFlash: K+1). Sizes not in this list
+             # fall back to a single reusable temp buffer, whose address a
+             # captured graph would then bake in and later see overwritten.
+             # kt registration plus the per-layer CaptureContract (recipe T3.19b seam).
+-            from sglang.srt.layers.moe.kt_provider import reserve_capture_sizes
+-
+-            reserve_capture_sizes(
++            self.model_runner.kt_runtime.reserve_capture_sizes(
+                 sorted({bs * self.captured_req_width for bs in self.capture_bs})
+             )
+ 
+diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+index 95093c07..cf02027c 100644
+--- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
++++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+@@ -147,10 +147,8 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+         # Opt-in step timeline (KT_TIMELINE=1, recipe T3.19a): tag the graph
+         # so its replay loop records per-segment / per-break timings, and let
+         # the MoE layers bake their external events into this capture.
+-        from sglang.srt.layers.moe.kt_timeline import get_timeline  # lazy: layers -> runner cycle
+-        from sglang.srt.runtime_context import get_parallel
+-
+-        timeline = get_timeline(get_parallel().tp_rank)
++        kt_runtime = getattr(self._model_runner, "kt_runtime", None)
++        timeline = kt_runtime.timeline if kt_runtime is not None else None
+         timeline_key = self._timeline_key(shape_key) if timeline is not None else None
+         if timeline is not None:
+             timeline.begin_capture(timeline_key)

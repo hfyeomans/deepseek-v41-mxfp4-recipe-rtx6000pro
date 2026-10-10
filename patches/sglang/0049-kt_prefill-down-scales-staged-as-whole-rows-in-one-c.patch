@@ -1,0 +1,72 @@
+From 124ca1de87ce109e9a1e848550de92bb769d9f4d Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Sat, 10 Oct 2026 12:44:21 -0400
+Subject: [PATCH 49/50] kt_prefill: down scales staged as whole rows in one
+ copy, sliced on device (recipe T3.39 window 2 qual: 36-byte-row 2D copies ran
+ at 0.7 GB/s)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_prefill.py | 25 +++++++++++++++-------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_prefill.py b/python/sglang/srt/layers/moe/kt_prefill.py
+index 23029a49..59aecec4 100644
+--- a/python/sglang/srt/layers/moe/kt_prefill.py
++++ b/python/sglang/srt/layers/moe/kt_prefill.py
+@@ -250,13 +250,18 @@ class _StreamedExpertSlots:
+     the resident layer tensors.
+     """
+ 
+-    def __init__(self, n: int, hidden: int, inter_tp: int, device: torch.device):
++    def __init__(self, n: int, hidden: int, inter_tp: int, inter: int, device: torch.device):
+         self.inter_tp = inter_tp
+         self.w13 = torch.empty((n, 2 * inter_tp, hidden // 2), dtype=torch.int8, device=device)
+         self.s13 = torch.empty((n, 2 * inter_tp, hidden // MXFP4_GROUP), dtype=torch.uint8, device=device)
+         self.w2 = torch.empty((n, hidden, inter_tp // 2), dtype=torch.int8, device=device)
+         self.s2 = torch.empty((n, hidden, inter_tp // MXFP4_GROUP), dtype=torch.uint8, device=device)
+-        self.tensors = (self.w13, self.s13, self.w2, self.s2)
++        # Every rank's down scales, landed with one 2D copy and sliced on the
++        # device: a 2D copy of this rank's 36-byte row slice runs at 0.7 GB/s
++        # (44 ms per layer, T3.39 window 2 qualification), the whole rows at
++        # 54 GB/s (1.1 ms). 58 MiB per rank at 165 experts.
++        self.s2_rows = torch.empty((n, hidden, inter // MXFP4_GROUP), dtype=torch.uint8, device=device)
++        self.tensors = (self.w13, self.s13, self.w2, self.s2, self.s2_rows)
+ 
+     @property
+     def nbytes(self) -> int:
+@@ -383,7 +388,7 @@ class LayerwisePrefillCoordinator:
+         self.pipeline: Optional[PrefillPipeline] = None
+ 
+         # Device: one staging set per rank plus the per-expert kernel side tensors.
+-        self.slots = _StreamedExpertSlots(self.n_cpu, self.hidden, self.inter_tp, self.device)
++        self.slots = _StreamedExpertSlots(self.n_cpu, self.hidden, self.inter_tp, self.inter, self.device)
+         self.global_scale = torch.ones(self.n_cpu, dtype=torch.float32, device=self.device)
+         self.swiglu_limit: Optional[torch.Tensor] = None
+         # Copies run on their own stream; the GEMM of layer L (compute stream)
+@@ -540,15 +545,19 @@ class LayerwisePrefillCoordinator:
+                     arena.base + off + I * nib_rows + r * It * e8_rows, lay.stride,
+                     It * e8_rows, E, st,
+                 )
+-            # down: this rank's columns of every row, per expert (row pitch I/2 in
+-            # the arena, It/2 on the device; scales likewise with /32).
++            # down nibbles: this rank's columns of every row, per expert (row
++            # pitch I/2 in the arena, It/2 on the device; 576-byte rows copy at
++            # the PCIe roof).
+             w2_pitch, s2_pitch = It // 2, It // MXFP4_GROUP
+             for e in range(E):
+                 blk = arena.base + lay.down0 + e * lay.stride
+                 self._copy2d(s.w2[e].data_ptr(), w2_pitch, blk + r * w2_pitch, I // 2, w2_pitch, H, st)
+-                self._copy2d(
+-                    s.s2[e].data_ptr(), s2_pitch, blk + H * (I // 2) + r * s2_pitch, I // MXFP4_GROUP, s2_pitch, H, st
+-                )
++            # down scales: whole rows of every expert in one call (one expert's
++            # scale block is contiguous, so a row of the 2D copy is one expert),
++            # then this rank's columns on the device.
++            s2_row = H * (I // MXFP4_GROUP)
++            self._copy2d(s.s2_rows.data_ptr(), s2_row, arena.base + lay.down0 + H * (I // 2), lay.stride, s2_row, E, st)
++            s.s2.copy_(s.s2_rows[:, :, r * s2_pitch : (r + 1) * s2_pitch])
+             # FlashInfer's SM120 scale interleave, applied to the whole [E, N, K/32]
+             # tensor like the resident loader does.
+             for sc in (s.s13, s.s2):

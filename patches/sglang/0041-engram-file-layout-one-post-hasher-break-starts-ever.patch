@@ -1,0 +1,409 @@
+From 5371477603fb017668e53caf103cd7f717ef32b1 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 19:04:24 -0400
+Subject: [PATCH 41/50] engram file layout: one post-hasher break starts every
+ Engram layer's row fetch; the layer breaks only join (recipe T3.20 round 2)
+
+The ahead-of-use fetch moved from the first Engram layer's break to a break
+right after the hasher: one D2H of both layers' ids, then each table's
+worker advises and gathers while layer 0 (first table) and layers 2-13
+(second table) run on the GPU. The layer breaks compute the owned mask on
+the device instead of a pageable H2D that drained the stream (the ~0.45 ms
+GPU gap of a break whose rows were already there). Stale pending fetches
+are drained in submit and counted; hit/miss/dropped counts are logged at
+power-of-two lookup counts.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py            |   9 +-
+ python/sglang/srt/layers/engram.py      | 177 ++++++++++++++----------
+ python/sglang/srt/models/deepseek_v4.py |  45 +++---
+ 3 files changed, 127 insertions(+), 104 deletions(-)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index eba9a2b8..14e66433 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1432,10 +1432,11 @@ class Envs:
+     SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT = EnvStr("auto")
+     SGLANG_DSV41_ENGRAM_FILE_DIR = EnvStr("")
+     # How the file layout fetches rows (recipe T3.20 / E36): "ahead" advises and
+-    # gathers the later Engram layer's rows on one worker thread from the first
+-    # layer's break (the ids of both layers are known before layer 0), "sync"
+-    # issues MADV_WILLNEED per distinct page from the break itself, "pool" is the
+-    # E18 per-row thread pool kept as the A/B comparator.
++    # gathers every Engram layer's rows on that table's worker thread from one
++    # break right after the hasher (the ids are known before layer 0), so each
++    # layer's own break only joins; "sync" issues MADV_WILLNEED per distinct
++    # page from the layer's break itself; "pool" is the E18 per-row thread pool
++    # kept as the A/B comparator.
+     SGLANG_DSV41_ENGRAM_FILE_PREFETCH = EnvStr("ahead")
+     # Threads of the "pool" issue path only.
+     SGLANG_DSV41_ENGRAM_FILE_THREADS = EnvInt(16)
+diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
+index 79908d85..a22ae7f7 100644
+--- a/python/sglang/srt/layers/engram.py
++++ b/python/sglang/srt/layers/engram.py
+@@ -690,14 +690,16 @@ class _FileTable:
+     pool (CPython's mmap.madvise holds the GIL: 16 threads cost 2-25x more
+     than one) nor process_madvise batching makes issue cheaper (recipe E36).
+ 
+-    Ahead-of-use fetch (recipe T3.20): the first Engram layer's break knows the
+-    later layer's hash ids too (both come out of the hasher before layer 0), so
+-    it hands them to that layer's table, whose single worker thread advises and
+-    gathers the rows into pinned memory while layers 2-13 run; the later break
+-    only joins. The worker issues madvise through libc (GIL released), so the
+-    launch thread keeps enqueuing. Every TP rank maps the same file and owns its
+-    row range, so the existing sharded all-reduce path reassembles the lookup
+-    and the two ranks share one page cache."""
++    Ahead-of-use fetch (recipe T3.20): every Engram layer's hash ids come out
++    of the hasher before layer 0, so a break right after the hasher does one
++    D2H of all of them and hands each layer its rows to fetch; each table's
++    single worker thread advises and gathers into pinned memory while the
++    layers in front run (layer 0 for the first table, layers 2-13 for the
++    second), and the layer's own break only joins. The worker issues madvise
++    through libc (GIL released), so the launch thread keeps enqueuing. Every
++    TP rank maps the same file and owns its row range, so the existing
++    sharded all-reduce path reassembles the lookup and the two ranks share
++    one page cache."""
+ 
+     def __init__(self, model_dir: str, layer_id: int, row_start: int, rows: int):
+         snapshot = envs.SGLANG_DSV41_ENGRAM_FILE_DIR.get() or model_dir
+@@ -756,7 +758,14 @@ class _FileTable:
+         self._libc = ctypes.CDLL(None, use_errno=True)
+         self._libc.madvise.argtypes = (ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int)
+         self._pending: Optional[tuple[torch.Tensor, object]] = None
+-        self.stats = {"lookups": 0, "rows": 0, "ms": 0.0, "ahead_hit": 0, "ahead_miss": 0}
++        self.stats = {
++            "lookups": 0,
++            "rows": 0,
++            "ms": 0.0,
++            "ahead_hit": 0,
++            "ahead_miss": 0,
++            "ahead_dropped": 0,
++        }
+ 
+     # -- WILLNEED issue -----------------------------------------------------------
+     def _pages(self, local: torch.Tensor) -> list[int]:
+@@ -814,9 +823,14 @@ class _FileTable:
+     def submit(self, local: torch.Tensor) -> None:
+         """Start fetching `local` (0-based, in-range row ids, CPU) on the worker;
+         `gather` of the same ids later only joins. A pending fetch that was never
+-        taken is dropped: the ids no longer match the step being replayed."""
++        taken is drained and dropped: the ids no longer match the step being
++        replayed."""
+         if self.worker is None:
+             return
++        if self._pending is not None:
++            self._pending[1].result()
++            self._pending = None
++            self.stats["ahead_dropped"] += 1
+         local = local.clone()
+         self._pending = (local, self.worker.submit(self._fetch, local, True))
+ 
+@@ -833,14 +847,28 @@ class _FileTable:
+                 pending[1].result()  # never leave the worker racing a sync fetch
+                 self.stats["ahead_miss"] += 1
+             w, s = self._fetch(local, release_gil=False)
+-        self.stats["lookups"] += 1
+-        self.stats["rows"] += local.numel()
+-        self.stats["ms"] += (time.perf_counter() - t) * 1e3
++        st = self.stats
++        st["lookups"] += 1
++        st["rows"] += local.numel()
++        st["ms"] += (time.perf_counter() - t) * 1e3
++        if self.worker is not None and st["lookups"] >= 1024 and (
++            st["lookups"] & (st["lookups"] - 1) == 0
++        ):
++            logger.info(
++                "engram file table %s: %d lookups, ahead hit %d / miss %d / dropped %d, "
++                "%.3f ms per lookup in the break",
++                os.path.basename(self.path),
++                st["lookups"],
++                st["ahead_hit"],
++                st["ahead_miss"],
++                st["ahead_dropped"],
++                st["ms"] / st["lookups"],
++            )
+         return w, s
+ 
+     def describe(self) -> str:
+         how = {
+-            "ahead": "WILLNEED + gather ahead of use on one worker",
++            "ahead": "WILLNEED + gather ahead of use on one worker from the post-hasher break",
+             "sync": "serial WILLNEED in the break",
+             "pool": f"{self.threads} WILLNEED threads in the break",
+         }[self.mode]
+@@ -852,49 +880,61 @@ class _FileTable:
+         )
+ 
+ 
+-def _engram_file_rows(
+-    embed: "EngramEmbedding",
+-    indices: torch.Tensor,
+-    next_embed: Optional["EngramEmbedding"] = None,
+-    next_indices: Optional[torch.Tensor] = None,
+-) -> torch.Tensor:
+-    """The CPU lookup for the file layout, as one graph break. Returns bf16
+-    (*indices.shape, dim) on indices.device with unowned rows zeroed, for the
+-    sharded all-reduce. With `next_embed`/`next_indices` (the later Engram
+-    layer and its ids for the same tokens) the break also starts that layer's
+-    fetch, so its own break finds the rows ready (T3.20)."""
++def _engram_file_local_rows(tbl: "_FileTable", ids: torch.Tensor) -> torch.Tensor:
++    """0-based row ids into `tbl` for CPU `ids`, unowned rows masked to 0."""
++    local = ids - tbl.row_start
++    owned = (local >= 0) & (local < tbl.rows)
++    return local.masked_fill_(~owned, 0)
++
++
++def _no_capture(what: str) -> None:
+     if torch.cuda.is_available() and torch.cuda.is_current_stream_capturing():
+         raise RuntimeError(
+-            "engram file layout: lookup reached a live CUDA graph capture. It is a "
+-            "CPU lookup and must run as an eager break: use "
++            f"engram file layout: {what} reached a live CUDA graph capture. It is "
++            "CPU work and must run as an eager break: use "
+             "--cuda-graph-backend-decode breakable (and tc_piecewise/breakable "
+             "for prefill), or disable CUDA graphs."
+         )
++
++
++def _engram_file_prefetch(engrams: tuple["Engram", ...], hash_ids: torch.Tensor) -> None:
++    """Start every listed Engram layer's row fetch for `hash_ids` [T, L, cols]
++    (the hasher's output for the whole forward), as one graph break right after
++    the hasher: one D2H of all layers' ids, then each table's worker advises
++    and gathers while the layers in front run (T3.20 round 2). The layer's own
++    break (`_engram_file_rows`) then only joins."""
++    if hash_ids.shape[0] == 0:
++        return
++    _no_capture("prefetch")
++    ids = hash_ids.to("cpu", dtype=torch.int64)
++    for engram in engrams:
++        tbl = engram.embed.file_table
++        tbl.submit(_engram_file_local_rows(tbl, ids[:, engram.layer_hash_index].reshape(-1)))
++
++
++def _engram_file_rows(embed: "EngramEmbedding", indices: torch.Tensor) -> torch.Tensor:
++    """The CPU lookup for the file layout, as one graph break. Returns bf16
++    (*indices.shape, dim) on indices.device with unowned rows zeroed, for the
++    sharded all-reduce. Joins the fetch `_engram_file_prefetch` started for
++    the same ids, or fetches now."""
++    _no_capture("lookup")
+     tbl = embed.file_table
+     dev = indices.device
+     flat = indices.reshape(-1)
+-    if next_indices is not None and next_embed is not None and next_embed.file_table is not None:
+-        # One D2H for both layers' ids; the later layer's fetch starts now.
+-        both = torch.cat([flat, next_indices.reshape(-1)]).to("cpu", dtype=torch.int64)
+-        ids, next_ids = both[: flat.numel()], both[flat.numel() :]
+-        ntbl = next_embed.file_table
+-        nlocal = next_ids - ntbl.row_start
+-        nowned = (nlocal >= 0) & (nlocal < ntbl.rows)
+-        ntbl.submit(nlocal.masked_fill(~nowned, 0))
+-    else:
+-        ids = flat.to("cpu", dtype=torch.int64)
+-    local = ids - tbl.row_start
+-    owned = (local >= 0) & (local < tbl.rows)
+-    local = local.masked_fill(~owned, 0)
++    local = _engram_file_local_rows(tbl, flat.to("cpu", dtype=torch.int64))
+     w, s = tbl.gather(local)
+     # Pinned staging: the caching host allocator keeps the blocks until the
+-    # copies have run, so the launch thread does not wait for them.
++    # copies have run, so the launch thread does not wait for them. The owned
++    # mask is recomputed on the device: a pageable H2D here would drain the
++    # stream and idle the GPU for the break's whole host time.
++    owned = (flat >= tbl.row_start) & (flat < tbl.row_start + tbl.rows)
+     rows = w.to(dev, non_blocking=True).float().unflatten(-1, (-1, FP8_BLOCK_SIZE))
+     values = (rows * s.to(dev, non_blocking=True).float().unsqueeze(-1)).flatten(-2)
+-    values = values.to(torch.bfloat16).masked_fill(~owned.to(dev).unsqueeze(-1), 0)
++    values = values.to(torch.bfloat16).masked_fill(~owned.unsqueeze(-1), 0)
+     return values.view(*indices.shape, embed.dim)
+ 
+ 
++bcg_engram_file_prefetch = eager_on_graph(True)(_engram_file_prefetch)
+ bcg_engram_file_rows = eager_on_graph(True)(_engram_file_rows)
+ 
+ 
+@@ -912,6 +952,7 @@ class EngramEmbedding(nn.Module):
+     def __init__(self, num_embeddings: int, dim: int, layer_id: int):
+         super().__init__()
+         self.dim = dim
++        self.layer_id = layer_id
+         self.tp_size = get_parallel().tp_size
+         tp_rank = get_parallel().tp_rank
+         self.row_start = num_embeddings * tp_rank // self.tp_size
+@@ -1009,8 +1050,6 @@ class EngramEmbedding(nn.Module):
+         forward_batch: Optional[ForwardBatch] = None,
+         *,
+         cp_all_tokens: bool = False,
+-        next_embed: Optional["EngramEmbedding"] = None,
+-        next_indices: Optional[torch.Tensor] = None,
+     ) -> torch.Tensor:
+         if self._shared:
+             if indices.shape[0] == 0:
+@@ -1038,21 +1077,25 @@ class EngramEmbedding(nn.Module):
+             return self._lookup(all_indices)[start : start + local_rows]
+         if self.tp_size > 1 and get_attention_dp_size() > 1:
+             return self._dp_sharded_lookup(indices, forward_batch)
+-        # The ahead-of-use hint only applies when both layers' ids are the
+-        # plain per-rank tensors (the CP/DP paths above reshape them).
+-        return self._lookup(indices, next_embed, next_indices)
++        return self._lookup(indices)
+ 
+-    def _lookup(
+-        self,
+-        indices: torch.Tensor,
+-        next_embed: Optional["EngramEmbedding"] = None,
+-        next_indices: Optional[torch.Tensor] = None,
+-    ) -> torch.Tensor:
++    def ahead_of_use(self) -> bool:
++        """Whether `_engram_file_prefetch` can start this table's rows before
++        the layer: file layout with a worker, on the plain per-rank lookup path
++        (the CP / DP paths above reshape the ids the layer looks up)."""
++        return (
++            self.rows > 0
++            and self.file_table is not None
++            and self.file_table.worker is not None
++            and not (self.tp_size > 1 and get_attention_dp_size() > 1)
++        )
++
++    def _lookup(self, indices: torch.Tensor) -> torch.Tensor:
+         """Lookup when every TP rank holds the same indices: the device and
+         private host shards zero unowned rows and the all-reduce reassembles."""
+         if indices.shape[0] == 0:
+             return self._empty(indices)
+-        values = self._owned_rows(indices, next_embed, next_indices)
++        values = self._owned_rows(indices)
+         if self.tp_size > 1:
+             values = tensor_model_parallel_all_reduce(values)
+         return values
+@@ -1062,19 +1105,12 @@ class EngramEmbedding(nn.Module):
+             *indices.shape, self.dim, dtype=torch.bfloat16, device=indices.device
+         )
+ 
+-    def _owned_rows(
+-        self,
+-        indices: torch.Tensor,
+-        next_embed: Optional["EngramEmbedding"] = None,
+-        next_indices: Optional[torch.Tensor] = None,
+-    ) -> torch.Tensor:
++    def _owned_rows(self, indices: torch.Tensor) -> torch.Tensor:
+         """Rows of `indices` this rank's shard holds, zero for the rest."""
+         if self.rows == 0:
+             return self._empty(indices).zero_()
+         if self.file_table is not None:
+-            if next_embed is not None and next_embed.file_table is None:
+-                next_embed = next_indices = None
+-            return bcg_engram_file_rows(self, indices, next_embed, next_indices)
++            return bcg_engram_file_rows(self, indices)
+         if self.host_table is None and (
+             not indices.is_cuda or torch.version.cuda is None
+         ):
+@@ -1210,22 +1246,11 @@ class Engram(nn.Module):
+         forward_batch: Optional[ForwardBatch] = None,
+         *,
+         cp_all_tokens: bool = False,
+-        next_layer: Optional["Engram"] = None,
+-        next_hash_ids: Optional[torch.Tensor] = None,
+     ) -> torch.Tensor:
+-        """x [T, hc_mult, dim]; hash_ids [T, n_hash_cols] for this layer.
+-        `next_layer`/`next_hash_ids`: the later Engram layer and its ids for
+-        the same tokens, so a file-layout lookup can fetch its rows ahead of
+-        use (T3.20)."""
++        """x [T, hc_mult, dim]; hash_ids [T, n_hash_cols] for this layer."""
+         # The lookup runs first even for an idle DP-attention batch: under DP
+         # attention it is a collective every rank has to join.
+-        emb = self.embed(
+-            hash_ids,
+-            forward_batch,
+-            cp_all_tokens=cp_all_tokens,
+-            next_embed=None if next_layer is None else next_layer.embed,
+-            next_indices=next_hash_ids,
+-        )
++        emb = self.embed(hash_ids, forward_batch, cp_all_tokens=cp_all_tokens)
+         if x.shape[0] == 0:
+             # Nothing to gate, and the MXFP8 quantize behind wkv rejects an
+             # empty M.
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index 5a66504d..9564ad1b 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -103,6 +103,7 @@ from sglang.srt.layers.engram import (
+     Engram,
+     EngramHasher,
+     EngramLayout,
++    bcg_engram_file_prefetch,
+     build_engram_layout,
+ )
+ from sglang.srt.layers.layernorm import RMSNorm
+@@ -3671,17 +3672,22 @@ class DeepseekV4Model(nn.Module):
+                 sorted(self._debug_layer_breaks),
+             )
+ 
+-        # The second Engram layer in this PP stage, for the file layout's
+-        # ahead-of-use fetch from the first layer's break (T3.20).
+-        self.engram_next_layer = None
+-        if self.engram_layout is not None and len(self.engram_layout.layer_ids) > 1:
+-            second = self.engram_layout.layer_ids[1]
+-            if (
+-                self.start_layer <= self.engram_layout.layer_ids[0]
+-                and second < self.end_layer
+-                and self.layers[second].engram is not None
+-            ):
+-                self.engram_next_layer = self.layers[second].engram
++        # Engram layers of this PP stage whose file-layout rows are fetched
++        # ahead of use from one break right after the hasher (T3.20).
++        self.engram_ahead_layers: tuple = ()
++        if self.engram_layout is not None:
++            self.engram_ahead_layers = tuple(
++                self.layers[i].engram
++                for i in self.engram_layout.layer_ids
++                if self.start_layer <= i < self.end_layer
++                and self.layers[i].engram is not None
++                and self.layers[i].engram.embed.ahead_of_use()
++            )
++            if self.engram_ahead_layers:
++                logger.info(
++                    "Engram file layout: rows of layers %s fetched ahead of use",
++                    [e.embed.layer_id for e in self.engram_ahead_layers],
++                )
+         self.engram_prefetch_stream = None
+         if (
+             _is_cuda
+@@ -3829,6 +3835,10 @@ class DeepseekV4Model(nn.Module):
+                 )
+             else:
+                 hash_ids = self.engram_hasher(input_ids, forward_batch)
++            if self.engram_ahead_layers and not cp_extend:
++                # Every Engram layer's ids are known here: start their row
++                # fetches now so each layer's own break only joins (T3.20).
++                bcg_engram_file_prefetch(self.engram_ahead_layers, hash_ids)
+         prefetched_engram_kv = None
+         if (
+             self.engram_prefetch_stream is not None
+@@ -3882,24 +3892,11 @@ class DeepseekV4Model(nn.Module):
+                     )
+                     prefetched_engram_kv = None
+                 else:
+-                    # The first Engram layer's lookup also starts the later
+-                    # layer's row fetch (file layout, T3.20): both layers' ids
+-                    # are in hash_ids already.
+-                    next_layer = next_hash_ids = None
+-                    if (
+-                        engram.layer_hash_index == 0
+-                        and not cp_extend
+-                        and self.engram_next_layer is not None
+-                    ):
+-                        next_layer = self.engram_next_layer
+-                        next_hash_ids = hash_ids[:, next_layer.layer_hash_index]
+                     hidden_states = engram(
+                         hidden_states,
+                         hash_ids[:, engram.layer_hash_index],
+                         forward_batch,
+                         cp_all_tokens=cp_extend,
+-                        next_layer=next_layer,
+-                        next_hash_ids=next_hash_ids,
+                     )
+                 if (
+                     self.config.model_type == "deepseek_v41"

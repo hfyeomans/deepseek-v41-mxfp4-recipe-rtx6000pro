@@ -1,0 +1,38 @@
+From 1d6a98d38ab457d2f4c8dd68e066020013c3ae6f Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Mon, 21 Sep 2026 22:18:55 -0400
+Subject: [PATCH 05/50] T3.6d2 probe: zero-fill the SM120 page-split buffers so
+ unmarked dst pages cannot decode to FP8 NaN
+
+Third occurrence of 'probability tensor contains inf/nan' on the first
+decode after a mixed distinct-prompt prefill (attempts 5 and 7; attempt 6
+passed the same batch pattern). The persistent split output buffer was
+torch.empty, so any kernel read of a dst page the mask never marked saw
+stale VRAM bytes; e4m3 0x7F/0xFF are NaN. Zero bytes decode to 0.0.
+
+Co-authored-by: Amp <amp@ampcode.com>
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+---
+ python/sglang/kernels/ops/attention/flash_mla_sm120.py | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/kernels/ops/attention/flash_mla_sm120.py b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
+index 77015515..c5c5c7be 100644
+--- a/python/sglang/kernels/ops/attention/flash_mla_sm120.py
++++ b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
+@@ -497,8 +497,14 @@ def _split_kv_pages_to_64(
+         # The first allocation can happen under inference mode (autotune), but
+         # the buffer is written again during CUDA graph capture outside
+         # inference mode, where an inference tensor cannot be mutated.
++        #
++        # Zero-filled, not torch.empty: dst pages the mask never marks keep
++        # whatever bytes were in that VRAM, and in FP8 e4m3 0x7F/0xFF decode
++        # to NaN. A kernel read of an unmarked page (padding rows of a mixed
++        # batch, a -1 index) then poisons the logits non-deterministically.
++        # Zero bytes decode to 0.0 with scale 0 -- finite. (T3.6d2 probe.)
+         with torch.inference_mode(False):
+-            buf = torch.empty(
++            buf = torch.zeros(
+                 num_dst_pages,
+                 _BYTES_PER_DST_PAGE_PADDED,
+                 dtype=torch.uint8,

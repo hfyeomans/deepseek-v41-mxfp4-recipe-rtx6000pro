@@ -1,0 +1,120 @@
+From 30e8c41220e775144900410e4f8d5f1eb85a4da1 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 15:17:13 -0400
+Subject: [PATCH 39/50] post-capture allocator: optional expandable_segments
+ after CUDA-graph capture (recipe T3.31 idea 8,
+ SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                  |  5 ++
+ python/sglang/srt/managers/scheduler.py       |  7 +++
+ .../model_executor/post_capture_allocator.py  | 57 +++++++++++++++++++
+ 3 files changed, 69 insertions(+)
+ create mode 100644 python/sglang/srt/model_executor/post_capture_allocator.py
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 309cf5b7..2c7547e7 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1438,6 +1438,11 @@ class Envs:
+     # loading: cached checkpoint pages fragment host memory and starve the 512 MiB
+     # huge-page faults. Costs the next restart its warm page cache.
+     SGLANG_ENABLE_DSV41_ENGRAM_DROP_PAGE_CACHE = EnvBool(True)
++    # Recipe T3.31 idea 8: after CUDA-graph capture, empty the cache and switch the
++    # caching allocator to expandable segments so chunk-sized prefill temporaries
++    # stop fragmenting into "reserved but unallocated" blocks. Graph pools, weights
++    # and the KV pool stay ordinary segments. Per-serve lever, off by default.
++    SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE = EnvBool(False)
+     SGLANG_FP8_PAGED_MQA_LOGITS_TORCH = EnvBool(False)
+     SGLANG_OPT_FLASHMLA_SPARSE_PREFILL = EnvBool(True)
+ 
+diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
+index a81aaa10..cc81fbe1 100644
+--- a/python/sglang/srt/managers/scheduler.py
++++ b/python/sglang/srt/managers/scheduler.py
+@@ -284,6 +284,9 @@ from sglang.srt.mem_cache.common import (
+     retraction_discard,
+ )
+ from sglang.srt.model_executor.forward_batch_info import PPProxyTensors
++from sglang.srt.model_executor.post_capture_allocator import (
++    maybe_enable_expandable_segments_after_capture,
++)
+ from sglang.srt.model_loader.utils import get_resolved_model_impl
+ from sglang.srt.multiplex.multiplexing_mixin import SchedulerMultiplexMixin
+ from sglang.srt.observability.metrics_collector import SchedulerMetricsCollector
+@@ -1105,6 +1108,10 @@ class Scheduler(
+             tic = time.perf_counter()
+             model_runner.post_capture_resize_kv_pool()
+             self.kv_cache_allocation_time += time.perf_counter() - tic
++        # Recipe T3.31 idea 8: everything captured or sized above stays in ordinary
++        # segments; only the segments created from here on (prefill transients)
++        # become expandable.
++        maybe_enable_expandable_segments_after_capture(model_runner.device)
+ 
+         if self.server_args.is_startup_weight_load_overlap:
+             self.tp_worker.finalize_startup_weight_load()
+diff --git a/python/sglang/srt/model_executor/post_capture_allocator.py b/python/sglang/srt/model_executor/post_capture_allocator.py
+new file mode 100644
+index 00000000..2dd0e346
+--- /dev/null
++++ b/python/sglang/srt/model_executor/post_capture_allocator.py
+@@ -0,0 +1,57 @@
++# SPDX-License-Identifier: Apache-2.0
++"""Switch the CUDA caching allocator to expandable segments once CUDA graphs exist.
++
++Recipe T3.31 idea 8. Long-context prefill on the hybrid churns chunk-sized
++temporaries (hundreds of MiB each, a different mix per layer); with the
++default allocator the freed pieces end up as split blocks inside segments the
++allocator cannot release, and the next request OOMs with ~1 GiB "reserved but
++unallocated" (262K x 4 at chunk 8192: a 320 MiB request fails with 1.05 GiB
++cached). Expandable segments map physical pages into one growing virtual
++range instead, so freed pages can be unmapped and later requests of any size
++land in the same range.
++
++The setting is applied after graph capture, not at process start: the graph
++pools, weights and the KV pool stay in ordinary segments (cudaIpc-shareable,
++exactly what the captured graphs replay against) and only the segments created
++afterwards -- the prefill transients -- are expandable. `torch.cuda.empty_cache`
++runs first so the non-split cached segments from profiling and capture are
++released rather than reused, which is what makes the change bite.
++"""
++
++from __future__ import annotations
++
++import logging
++
++import torch
++
++from sglang.srt.environ import envs
++
++logger = logging.getLogger(__name__)
++
++
++def _set_allocator_settings(settings: str) -> None:
++    setter = getattr(torch._C, "_accelerator_setAllocatorSettings", None)
++    if setter is None:  # torch < 2.9
++        setter = torch.cuda.memory._set_allocator_settings
++    setter(settings)
++
++
++def maybe_enable_expandable_segments_after_capture(device: str) -> bool:
++    """Enable expandable segments for all future allocations; returns True when applied."""
++    if not envs.SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE.get():
++        return False
++    if not device.startswith("cuda"):
++        return False
++    torch.cuda.synchronize()
++    before = torch.cuda.memory_stats()
++    torch.cuda.empty_cache()
++    _set_allocator_settings("expandable_segments:True")
++    after = torch.cuda.memory_stats()
++    logger.info(
++        "expandable_segments enabled after graph capture (idea 8): reserved "
++        f"{before.get('reserved_bytes.all.current', 0) / 2**20:.0f} -> "
++        f"{after.get('reserved_bytes.all.current', 0) / 2**20:.0f} MiB, allocated "
++        f"{after.get('allocated_bytes.all.current', 0) / 2**20:.0f} MiB; segments "
++        "created from now on are expandable, existing ones are not"
++    )
++    return True

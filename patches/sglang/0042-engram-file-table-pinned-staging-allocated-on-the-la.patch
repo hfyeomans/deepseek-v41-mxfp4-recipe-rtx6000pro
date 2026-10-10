@@ -1,0 +1,70 @@
+From 88b2f0810364e9ad372c9d52e9a583333a51dde6 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 19:11:31 -0400
+Subject: [PATCH 42/50] engram file table: pinned staging allocated on the
+ launch thread; the worker is CPU-only (capture-safe)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/engram.py | 30 ++++++++++++++++++++++--------
+ 1 file changed, 22 insertions(+), 8 deletions(-)
+
+diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
+index a22ae7f7..622e06c1 100644
+--- a/python/sglang/srt/layers/engram.py
++++ b/python/sglang/srt/layers/engram.py
+@@ -811,15 +811,28 @@ class _FileTable:
+         list(self.pool.map(lambda k: advise(k, min(n, k + step)), range(0, n, step)))
+ 
+     # -- gather --------------------------------------------------------------------
+-    def _fetch(self, local: torch.Tensor, release_gil: bool) -> tuple[torch.Tensor, torch.Tensor]:
+-        self.prefetch(local, release_gil=release_gil)
++    def _staging(self, n: int) -> tuple[torch.Tensor, torch.Tensor]:
++        """Pinned rows + scales for n lookups. Allocated on the launch thread
++        only: the pinned allocator's cudaHostAlloc / event queries from the
++        worker would invalidate a CUDA graph segment the launch thread is
++        capturing meanwhile (global capture mode)."""
+         pin = torch.cuda.is_available()
+-        w = torch.empty(local.numel(), self.dim, dtype=torch.float8_e4m3fn, pin_memory=pin)
+-        s = torch.empty(local.numel(), self.scale_cols, dtype=torch.float8_e8m0fnu, pin_memory=pin)
+-        torch.index_select(self.weight, 0, local, out=w)
+-        torch.index_select(self.scale, 0, local, out=s)
++        w = torch.empty(n, self.dim, dtype=torch.float8_e4m3fn, pin_memory=pin)
++        s = torch.empty(n, self.scale_cols, dtype=torch.float8_e8m0fnu, pin_memory=pin)
+         return w, s
+ 
++    def _fetch(
++        self,
++        local: torch.Tensor,
++        release_gil: bool,
++        out: tuple[torch.Tensor, torch.Tensor],
++    ) -> tuple[torch.Tensor, torch.Tensor]:
++        """Advise, then gather the rows into `out` (CPU work only)."""
++        self.prefetch(local, release_gil=release_gil)
++        torch.index_select(self.weight, 0, local, out=out[0])
++        torch.index_select(self.scale, 0, local, out=out[1])
++        return out
++
+     def submit(self, local: torch.Tensor) -> None:
+         """Start fetching `local` (0-based, in-range row ids, CPU) on the worker;
+         `gather` of the same ids later only joins. A pending fetch that was never
+@@ -832,7 +845,8 @@ class _FileTable:
+             self._pending = None
+             self.stats["ahead_dropped"] += 1
+         local = local.clone()
+-        self._pending = (local, self.worker.submit(self._fetch, local, True))
++        out = self._staging(local.numel())
++        self._pending = (local, self.worker.submit(self._fetch, local, True, out))
+ 
+     def gather(self, local: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+         """fp8 rows and e8m0 scales for local (0-based, in-range row ids), on
+@@ -846,7 +860,7 @@ class _FileTable:
+             if pending is not None:
+                 pending[1].result()  # never leave the worker racing a sync fetch
+                 self.stats["ahead_miss"] += 1
+-            w, s = self._fetch(local, release_gil=False)
++            w, s = self._fetch(local, False, self._staging(local.numel()))
+         st = self.stats
+         st["lookups"] += 1
+         st["rows"] += local.numel()

@@ -1,0 +1,60 @@
+From ad973440ca0812aef9a956be5877622d38abc1c1 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 20:08:42 -0400
+Subject: [PATCH 43/50] engram file table: one ahead worker shared by every
+ table (fetches run in layer order)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/engram.py | 23 +++++++++++++++++------
+ 1 file changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
+index 622e06c1..f74cbe73 100644
+--- a/python/sglang/srt/layers/engram.py
++++ b/python/sglang/srt/layers/engram.py
+@@ -672,6 +672,16 @@ class _HostTable:
+             logger.info(msg)
+ 
+ 
++_AHEAD_WORKER: Optional[ThreadPoolExecutor] = None
++
++
++def _shared_ahead_worker() -> ThreadPoolExecutor:
++    global _AHEAD_WORKER
++    if _AHEAD_WORKER is None:
++        _AHEAD_WORKER = ThreadPoolExecutor(1, thread_name_prefix="engram-ahead")
++    return _AHEAD_WORKER
++
++
+ class _FileTable:
+     """`file` layout (recipe overlay, E6-DESIGN 4.3 A-min): the Engram table
+     stays in the checkpoint shard. V4.1-Flash stores each layer's table as one
+@@ -750,11 +760,12 @@ class _FileTable:
+             if self.mode == "pool"
+             else None
+         )
+-        self.worker = (
+-            ThreadPoolExecutor(1, thread_name_prefix="engram-ahead")
+-            if self.mode == "ahead"
+-            else None
+-        )
++        # One worker shared by every table in the process: the fetches run
++        # in submission order (first Engram layer, then the next), so one
++        # layer's WILLNEED stream owns the NVMe queue at a time and only one
++        # thread contends with the launch thread for the GIL. Two per-table
++        # workers cost 4-8 % of prefill (T3.20 round 2, `ahead-r2`).
++        self.worker = _shared_ahead_worker() if self.mode == "ahead" else None
+         self._libc = ctypes.CDLL(None, use_errno=True)
+         self._libc.madvise.argtypes = (ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int)
+         self._pending: Optional[tuple[torch.Tensor, object]] = None
+@@ -882,7 +893,7 @@ class _FileTable:
+ 
+     def describe(self) -> str:
+         how = {
+-            "ahead": "WILLNEED + gather ahead of use on one worker from the post-hasher break",
++            "ahead": "WILLNEED + gather ahead of use on the shared worker from the post-hasher break",
+             "sync": "serial WILLNEED in the break",
+             "pool": f"{self.threads} WILLNEED threads in the break",
+         }[self.mode]

@@ -1,0 +1,91 @@
+From 11e7f74505ebf1ba6230972c3cc622bf8cb94483 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Mon, 21 Sep 2026 23:56:18 -0400
+Subject: [PATCH 06/50] E21: make kt expert deferral work with the compact CPU
+ view
+
+kt-kernel's select_deferred_experts scatters protected expert ids into a
+[num_experts] flag tensor; the compact view passes -1 for GPU-resident slots,
+which trips the scatter bounds assert on the first dummy forward whenever
+--kt-max-deferred-experts-per-token > 0. Bind a -1-tolerant version with the
+same batch-level semantics (spare flag slot for -1, masked back to -1 on both
+outputs; no data-dependent shapes so it stays CUDA-graph capturable).
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py | 46 ++++++++++++++++++-
+ 1 file changed, 45 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index b3650580..09a49083 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -7,8 +7,9 @@ for any MoE quantization method. It coordinates parallel execution of GPU expert
+ (using any quantization method) and CPU experts (using AMX/AVX instructions).
+ """
+ 
++import types
+ from dataclasses import dataclass
+-from typing import TYPE_CHECKING, Optional
++from typing import TYPE_CHECKING, Optional, Tuple
+ 
+ import torch
+ 
+@@ -221,6 +222,40 @@ def remap_topk_ids_for_cpu(topk_ids: torch.Tensor, num_gpu_experts: int) -> torc
+     return torch.where(topk_ids >= num_gpu_experts, shifted, torch.full_like(topk_ids, -1))
+ 
+ 
++def _select_deferred_experts_compact(
++    self,
++    expert_ids: torch.Tensor,
++    expert_scores: torch.Tensor,
++    protected_k: int,
++) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
++    """-1-tolerant replacement for kt-kernel BaseMoEWrapper.select_deferred_experts.
++
++    Same rule as upstream: per token, the ``protected_k`` highest-scored routed
++    slots are "protected"; an expert protected for any token in the batch is
++    computed immediately for every token that routes to it, everything else is
++    deferred to the next layer's CPU pass. The compact CPU view marks GPU-resident
++    slots with -1, which upstream's ``scatter_`` into a ``[num_experts]`` flag
++    tensor rejects; here -1 goes to a spare flag slot and is masked back to -1
++    on both outputs. No data-dependent shapes, so it is CUDA-graph capturable.
++    """
++    batch, topk = expert_ids.shape
++    protected_k = max(0, min(int(protected_k), topk))
++    if protected_k == 0:
++        return torch.full_like(expert_ids, -1), expert_ids.clone()
++
++    protected_slots = torch.topk(expert_scores, k=protected_k, dim=-1, largest=True, sorted=False).indices
++    protected_ids = torch.gather(expert_ids, -1, protected_slots).reshape(-1)
++    spare = self.num_experts  # flag slot for -1 (GPU-resident) entries
++    flags = torch.zeros((self.num_experts + 1,), dtype=torch.int32, device=expert_ids.device)
++    flags.scatter_(0, torch.where(protected_ids >= 0, protected_ids, spare), 1)
++
++    flat = expert_ids.reshape(-1)
++    protected_mask = torch.gather(flags, 0, torch.where(flat >= 0, flat, spare)).ne(0).view(batch, topk)
++    immediate_ids = expert_ids.masked_fill(~protected_mask, -1)
++    deferred_ids = expert_ids.masked_fill(protected_mask, -1)
++    return immediate_ids, deferred_ids
++
++
+ class KTEPWrapperMethod(FusedMoEMethodBase):
+     """Wrapper for any MoE quantization method to enable CPU-GPU expert parallelism.
+ 
+@@ -374,6 +409,15 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 max_deferred_experts_per_token=layer_max_deferred,
+                 swiglu_limit=float(swiglu_limit or 0.0),
+             )
++            if layer_max_deferred > 0:
++                # kt-kernel's select_deferred_experts scatters the protected
++                # expert ids into a [num_experts] flag tensor; the compact CPU
++                # view hands it -1 for GPU-resident slots, which trips the
++                # scatter bounds assert during the first dummy forward. Bind a
++                # -1-tolerant version with the same batch-level semantics.
++                self.wrapper.select_deferred_experts = types.MethodType(
++                    _select_deferred_experts_compact, self.wrapper
++                )
+ 
+     def process_weights_after_loading(self, layer: torch.nn.Module) -> None:
+         """Process weights after loading from checkpoint.

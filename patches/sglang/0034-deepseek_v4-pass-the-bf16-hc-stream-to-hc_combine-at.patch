@@ -1,0 +1,36 @@
+From f18dc961719bdb9016810a82a6aa32710b7f86d6 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 08:34:50 -0400
+Subject: [PATCH 34/50] deepseek_v4: pass the bf16 hc stream to hc_combine at
+ the model tail (E34d-v (ii))
+
+The kernel casts each load to fp32; the explicit .float() copy of the
+[rows, hc_mult * hidden] stream was a 640 MiB per-8192-row-chunk transient and
+the allocation the 1M x 1 prefill OOMed on at a ~300K prefix (2.09 GiB reserved
+but unallocated) after the indexer gather fix. Bit-equal (recipe
+scripts/tests/test_hc_combine_input.py); the other hc_combine callers already
+pass bf16.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/models/deepseek_v4.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index c8f3585e..0855918b 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -4300,8 +4300,11 @@ class DeepseekV4Model(nn.Module):
+         if self.hc_pre_from_prev_sublayer:
+             from sglang.kernels.ops.layernorm.mhc import hc_combine
+ 
++            # bf16 in: the kernel casts each load to fp32, so the fp32 copy
++            # (hc_mult * hidden * 4 B per row: 640 MiB per 8192-row chunk) was a
++            # redundant per-chunk transient (recipe E34d-v (ii), 1M x 1 OOM here).
+             hidden_states = hc_combine(
+-                pre_hc_head.float(), last_pre, self.hc_mult, hidden_states.dtype
++                pre_hc_head, last_pre, self.hc_mult, hidden_states.dtype
+             )
+         else:
+             hidden_states = self.hc_head(

@@ -36,7 +36,7 @@ Recorded in [`evidence/hardware-inventory.json`](evidence/hardware-inventory.jso
 
 ## Overlay commits (`~/dev/src/sglang-dsv41-overlay`, branch `dsv41-kt-hybrid`, local only)
 
-Base: upstream `sgl-project/sglang` commit `da64c5cb` ("[DSV4.1] Support raw-index output in TopK v2 (port of #33672) (#39098)"), the commit the `dev-dsv41` image above was built from. Nothing is pushed; no fork or tag exists. Series on top of the base, oldest first (state 2026-09-22; per-commit upstream candidacy in [docs/research/OPEN-SOURCE-PLAN.md](docs/research/OPEN-SOURCE-PLAN.md)):
+Base: upstream `sgl-project/sglang` commit `da64c5cb` ("[DSV4.1] Support raw-index output in TopK v2 (port of #33672) (#39098)"), the commit the `dev-dsv41` image above was built from. Nothing is pushed; no fork or tag exists. **Since 2026-10-10 (T3.24c) the complete series is in this repository as [`patches/sglang/`](patches/sglang/README.md): 50 patches, head `682fc6a0`, tree `73ed0bd4333144bc8dfdb512b82b145baf32a654` (`patches/sglang/SERIES.env`); `scripts/ci.sh` re-applies them onto `da64c5cb` and checks the tree hash, and fails if the overlay branch moves without `scripts/export-sglang-series.sh`. The README's index maps every patch to its recipe task; the narrative list below stops at E34a and is kept as written.** Series on top of the base, oldest first (state 2026-09-22; per-commit upstream candidacy in [docs/research/OPEN-SOURCE-PLAN.md](docs/research/OPEN-SOURCE-PLAN.md)):
 
 - `3805730e` compact CPU expert view in the kt-kernel loader (E17).
 - `a1ca246a` Engram `file` layout (E18).

@@ -1,0 +1,107 @@
+From 5b53173262156b7f3a087c6dfa3e7694e3ab2a31 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Thu, 24 Sep 2026 13:20:44 -0400
+Subject: [PATCH 21/50] arg_groups: force multi-stream overlap off in code for
+ DSpark on SM120, refuse an explicit =1 (Bug A; recipe review C4)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../srt/arg_groups/dspark_overlap_gate.py     | 60 +++++++++++++++++++
+ python/sglang/srt/arg_groups/model_hook.py    | 16 +++++
+ 2 files changed, 76 insertions(+)
+ create mode 100644 python/sglang/srt/arg_groups/dspark_overlap_gate.py
+
+diff --git a/python/sglang/srt/arg_groups/dspark_overlap_gate.py b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
+new file mode 100644
+index 00000000..517efa59
+--- /dev/null
++++ b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
+@@ -0,0 +1,60 @@
++"""Forward-mode gate for multi-stream overlap under DSpark on SM120 (recipe review C4).
++
++Bug A (recipe docs/TROUBLESHOOTING.md, E23 R1): with DSpark speculative decoding the
++model's multi-stream overlap (`alt_streams`) runs inside the captured verify graph,
++and under the breakable CUDA graph the side-stream work is not ordered against the
++main stream at replay. Symptoms were wrong tokens and acceptance 0.26-0.57 in graph
++mode against 0.77 eager. Until 2026-09-24 the only protection was the operator
++remembering to pass SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0 on every DSpark launch.
++
++This module makes the decision in code, once, at model-hook time. It is pure and
++import-light so the recipe's CPU tests can exercise it without torch or a model.
++"""
++
++from __future__ import annotations
++
++from typing import NamedTuple, Optional
++
++
++class OverlapGateError(ValueError):
++    """The operator explicitly asked for a combination Bug A condemned."""
++
++
++class OverlapDecision(NamedTuple):
++    force_off: bool
++    reason: str
++
++
++def decide_multi_stream_overlap(
++    *,
++    speculative_algorithm: Optional[str],
++    is_sm120: bool,
++    env_is_set: bool,
++    env_value: bool,
++) -> OverlapDecision:
++    """Decide whether SGLANG_OPT_USE_MULTI_STREAM_OVERLAP must be forced off.
++
++    Rules (all other combinations leave the env untouched):
++      - DSPARK on SM120, env unset or already False  -> force off, log once.
++      - DSPARK on SM120, env explicitly True          -> OverlapGateError: the
++        operator asked for the known-corrupting combination; refuse rather than
++        silently override an explicit choice.
++      - no speculation, or not SM120                 -> untouched (plain decode is
++        qualified with the overlap on: consistency PASS at bs 1..4).
++    """
++    algo = (speculative_algorithm or "").upper()
++    if algo != "DSPARK" or not is_sm120:
++        return OverlapDecision(False, "not DSpark on SM120; overlap setting untouched")
++    if env_is_set and env_value:
++        raise OverlapGateError(
++            "SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=1 with --speculative-algorithm DSPARK "
++            "on SM120 reproduces Bug A (side-stream work unordered at verify-graph "
++            "replay: wrong tokens, acceptance 0.26-0.57). Unset the variable; the "
++            "overlay forces it off for DSpark launches."
++        )
++    return OverlapDecision(
++        True,
++        "DSpark on SM120: multi-stream overlap forced off in code (Bug A, recipe "
++        "TROUBLESHOOTING); SGLANG_OPT_USE_MULTI_STREAM_OVERLAP=0 in the launch env is "
++        "no longer required",
++    )
+diff --git a/python/sglang/srt/arg_groups/model_hook.py b/python/sglang/srt/arg_groups/model_hook.py
+index cbb896b6..563c374c 100644
+--- a/python/sglang/srt/arg_groups/model_hook.py
++++ b/python/sglang/srt/arg_groups/model_hook.py
+@@ -361,6 +361,22 @@ def handle_model_specific_adjustments(server_args: Any):
+             # DeepGEMM or require >99KB SMEM (topk_v2).
+             envs.SGLANG_OPT_FP8_WO_A_GEMM.set(False)
+             envs.SGLANG_OPT_USE_TOPK_V2.set(False)
++            # Bug A (recipe TROUBLESHOOTING, review C4): the alt_streams overlap
++            # inside the captured DSpark verify graph is unordered at replay.
++            # Decide in code instead of relying on the launch env.
++            from sglang.srt.arg_groups.dspark_overlap_gate import (
++                decide_multi_stream_overlap,
++            )
++
++            overlap = decide_multi_stream_overlap(
++                speculative_algorithm=resolved_view(server_args).speculative_algorithm,
++                is_sm120=True,
++                env_is_set=envs.SGLANG_OPT_USE_MULTI_STREAM_OVERLAP.is_set(),
++                env_value=bool(envs.SGLANG_OPT_USE_MULTI_STREAM_OVERLAP.get()),
++            )
++            if overlap.force_off:
++                envs.SGLANG_OPT_USE_MULTI_STREAM_OVERLAP.set(False)
++                logger.warning(overlap.reason)
+             if not envs.SGLANG_OPT_USE_TILELANG_MHC_PRE.is_set():
+                 envs.SGLANG_OPT_USE_TILELANG_MHC_PRE.set(False)
+             if not envs.SGLANG_OPT_FUSE_MHC_POST_PRE.is_set():

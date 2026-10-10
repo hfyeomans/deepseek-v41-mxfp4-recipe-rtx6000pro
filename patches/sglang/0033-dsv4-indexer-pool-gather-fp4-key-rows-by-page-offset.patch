@@ -1,0 +1,82 @@
+From e5f60f5426fb63943b07381a7cfdfc4181814483 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 08:23:49 -0400
+Subject: [PATCH 33/50] dsv4 indexer pool: gather fp4 key rows by page/offset,
+ not per-byte column grids (E34d-v (ii))
+
+get_index_k_fp4 / get_index_k_dequant built [n, 64] + [n, 4] int64 column grids
+(544 B per slot) to gather the packed rows at slots; the low-ratio dense indexer
+passes the whole prefix, so at a ~680K prefix that was the 332 MiB tensor that
+OOMed the 1M x 1 prefill. Index [pages, page_size, 64] / [pages, page_size, 4]
+views with the [n] page and offset tensors instead (16 B per slot). Bit-equal to
+the old gather (recipe scripts/tests/test_indexer_k_gather.py).
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../srt/mem_cache/deepseek_v4_memory_pool.py  | 37 ++++++++++---------
+ 1 file changed, 20 insertions(+), 17 deletions(-)
+
+diff --git a/python/sglang/srt/mem_cache/deepseek_v4_memory_pool.py b/python/sglang/srt/mem_cache/deepseek_v4_memory_pool.py
+index b2284e41..fc2f1017 100644
+--- a/python/sglang/srt/mem_cache/deepseek_v4_memory_pool.py
++++ b/python/sglang/srt/mem_cache/deepseek_v4_memory_pool.py
+@@ -464,16 +464,26 @@ class DeepSeekV4IndexerPool(KVCache):
+         [page_size * 64 payload | page_size * 4 scale bytes]."""
+         assert self.use_fp4_indexer, "packed readback only applies to the fp4 layout"
+         buf = self.index_k_with_scale_buffer[layer_id - self.start_layer]
++        payload, scale_bytes = self._gather_fp4_index_k_rows(buf, slots)
++        return payload.view(torch.int8), scale_bytes.view(torch.int32).squeeze(-1)
++
++    def _gather_fp4_index_k_rows(
++        self, buf: torch.Tensor, slots: torch.Tensor
++    ) -> Tuple[torch.Tensor, torch.Tensor]:
++        """Rows at `slots` of a `[pages, page_size * 64 + page_size * 4]` uint8 page
++        buffer: (payload uint8 [n, 64], scale bytes uint8 [n, 4]), both contiguous.
++        Indexes `[pages, page_size, 64]` / `[pages, page_size, 4]` views of the two
++        page regions with the `[n]` page and in-page offset tensors (16 B per slot).
++        The previous per-byte column grids ([n, 64] + [n, 4] int64 = 544 B per slot)
++        were the 332 MiB allocation that OOMed the 1M x 1 prefill at a ~680K prefix
++        (recipe E34d-v (ii)); the low-ratio dense path passes the whole prefix here."""
+         slots = slots.to(torch.int64)
+         p = self.page_size
+-        page, off = (slots // p).unsqueeze(-1), slots % p
+-        payload_cols = (off * 64).unsqueeze(-1) + torch.arange(64, device=buf.device)
+-        scale_cols = (p * 64 + off * 4).unsqueeze(-1) + torch.arange(
+-            4, device=buf.device
+-        )
+-        payload = buf[page, payload_cols].view(torch.int8)  # [n, 64]
+-        scales = buf[page, scale_cols].contiguous().view(torch.int32).squeeze(-1)
+-        return payload, scales
++        page, off = slots // p, slots % p
++        pages = buf.shape[0]
++        payload = buf[:, : p * 64].view(pages, p, 64)[page, off]
++        scale_bytes = buf[:, p * 64 :].view(pages, p, 4)[page, off]
++        return payload, scale_bytes
+ 
+     def get_index_k_dequant(
+         self, layer_id: int, slots: Optional[torch.Tensor] = None
+@@ -486,21 +496,14 @@ class DeepSeekV4IndexerPool(KVCache):
+         buf = self.index_k_with_scale_buffer[layer_id - self.start_layer]
+         if slots is None:
+             slots = torch.arange(self.size, device=buf.device)
+-        slots = slots.to(torch.int64)
+         # A page is [page_size * 64 payload bytes | page_size * 4 scale bytes]
+         # (store_fp4_index_k_cache layout).
+-        p = self.page_size
+-        page, off = (slots // p).unsqueeze(-1), slots % p
+-        payload_cols = (off * 64).unsqueeze(-1) + torch.arange(64, device=buf.device)
+-        scale_cols = (p * 64 + off * 4).unsqueeze(-1) + torch.arange(
+-            4, device=buf.device
+-        )
+-        u = buf[page, payload_cols].view(torch.uint8)  # [n, 64]
++        u, scale_bytes = self._gather_fp4_index_k_rows(buf, slots)  # [n, 64], [n, 4]
+         codes = torch.stack([u & 0x0F, (u >> 4) & 0x0F], dim=-1)  # [n, 64, 2]
+         vals = DSV4_DEQUANT_FP4_TABLE.to(buf.device)[codes.long()].flatten(
+             1
+         )  # [n, 128]
+-        exps = buf[page, scale_cols].to(torch.int32) & 0xFF  # [n, 4]
++        exps = scale_bytes.to(torch.int32) & 0xFF  # [n, 4]
+         scales = torch.exp2(exps.float() - 127).repeat_interleave(32, dim=-1)
+         return (vals * scales).to(torch.bfloat16)
+ 

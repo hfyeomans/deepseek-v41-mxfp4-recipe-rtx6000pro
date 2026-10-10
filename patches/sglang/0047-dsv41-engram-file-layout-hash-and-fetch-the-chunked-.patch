@@ -1,0 +1,406 @@
+From 9d481b0b2f80532835975b47c5e77d8307fc88a6 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Sat, 10 Oct 2026 09:45:16 -0400
+Subject: [PATCH 47/50] dsv41 engram file layout: hash and fetch the chunked
+ request's next prefill chunk from the post-hasher break (recipe T3.20 (c))
+
+SGLANG_DSV41_ENGRAM_CHUNK_AHEAD (default on): the scheduler hands each extend
+batch that continues a chunked request its next chunk's tokens and n-1
+predecessors (ForwardBatch.engram_next_chunk); the post-hasher break hashes
+them with the same extend kernel (no history commit) and queues both tables'
+rows behind the current chunk's on the shared worker. _FileTable keeps the
+chunk-ahead fetch in its own slot so interleaved decode steps do not evict it,
+adopts it on the next chunk's submit when its ids are a prefix (the last chunk
+is shorter), and reports chunk-ahead hit/dropped in the stats line.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                  |   5 +
+ python/sglang/srt/layers/engram.py            | 115 ++++++++++++++++--
+ python/sglang/srt/managers/schedule_batch.py  |   4 +
+ .../srt/model_executor/forward_batch_info.py  |  18 +++
+ .../ngram_embedding_manager.py                |  42 ++++++-
+ python/sglang/srt/models/deepseek_v4.py       |  11 +-
+ 6 files changed, 177 insertions(+), 18 deletions(-)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 50d1bc96..067812a7 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1443,6 +1443,11 @@ class Envs:
+     # page from the layer's break itself; "pool" is the E18 per-row thread pool
+     # kept as the A/B comparator.
+     SGLANG_DSV41_ENGRAM_FILE_PREFETCH = EnvStr("ahead")
++    # With "ahead": also hash and fetch the chunked request's *next* prefill
++    # chunk from the same break (recipe T3.20 (c)). The hash ids depend only on
++    # the prompt tokens, so chunk k+1's rows ride the worker while chunk k's
++    # 40 layers run instead of landing 0.3-0.6 s late on a cold page cache.
++    SGLANG_DSV41_ENGRAM_CHUNK_AHEAD = EnvBool(True)
+     # Threads of the "pool" issue path only.
+     SGLANG_DSV41_ENGRAM_FILE_THREADS = EnvInt(16)
+     # With the host table on, drop the checkpoint's page cache (posix_fadvise
+diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
+index f74cbe73..fe610cfe 100644
+--- a/python/sglang/srt/layers/engram.py
++++ b/python/sglang/srt/layers/engram.py
+@@ -49,7 +49,7 @@ from sglang.srt.layers.dp_attention import (
+ from sglang.srt.layers.linear import ReplicatedLinear
+ from sglang.srt.layers.quantization.base_config import QuantizationConfig
+ from sglang.srt.managers.schedule_batch import MM_PAD_SHIFT_VALUE
+-from sglang.srt.model_executor.forward_batch_info import ForwardBatch
++from sglang.srt.model_executor.forward_batch_info import EngramNextChunk, ForwardBatch
+ from sglang.srt.model_executor.runner_backend_utils.breakable_cuda_graph.breakable_cuda_graph import (
+     eager_on_graph,
+ )
+@@ -362,6 +362,44 @@ class EngramHasher(nn.Module):
+             )
+         return hash_ids
+ 
++    def hash_chunk(self, chunk: EngramNextChunk) -> torch.Tensor:
++        """Hash ids [T, L, cols] of one request's upcoming extend chunk, without
++        touching `self.history` (the chunk's own forward commits). Same kernel
++        and inputs as the extend path, so the ids equal the ones that forward
++        will compute for the same tokens (recipe T3.20 (c))."""
++        tokens, history, start = chunk.tokens, chunk.history, chunk.start
++        num_tokens = tokens.shape[0]
++        device = tokens.device
++        positions = torch.arange(
++            start, start + num_tokens, dtype=torch.int64, device=device
++        )
++        row = torch.zeros(num_tokens, dtype=torch.int64, device=device)
++        starts = torch.zeros(1, dtype=torch.int64, device=device)
++        if tokens.is_cuda and torch.version.cuda is not None:
++            hash_ids, _ = engram_hash_ids(
++                tokens,
++                positions,
++                mode=MODE_EXTEND,
++                history=history,
++                token_map=self.token_map,
++                multipliers=self.multipliers,
++                primes=self.primes,
++                offsets=self.offsets,
++                pad_id=self.pad_id,
++                num_real=num_tokens,
++                req_slots=None,
++                block=1,
++                row=row,
++                starts=starts,
++                image_token_id=self.image_token_id,
++                mm_pad_shift=MM_PAD_SHIFT_VALUE,
++            )
++        else:
++            hash_ids, _ = self._torch_hash_ids(
++                tokens, positions, MODE_EXTEND, history, num_tokens, 1, row, starts
++            )
++        return hash_ids
++
+     def _torch_hash_ids(
+         self,
+         input_ids: torch.Tensor,
+@@ -768,7 +806,12 @@ class _FileTable:
+         self.worker = _shared_ahead_worker() if self.mode == "ahead" else None
+         self._libc = ctypes.CDLL(None, use_errno=True)
+         self._libc.madvise.argtypes = (ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int)
++        # (ids, future) of the fetch for the forward in flight ...
+         self._pending: Optional[tuple[torch.Tensor, object]] = None
++        # ... and for the chunked request's next prefill chunk (T3.20 (c)). A
++        # separate slot: decode steps between two chunks submit and take
++        # `_pending` without evicting the chunk that is still a step away.
++        self._ahead_chunk: Optional[tuple[torch.Tensor, object]] = None
+         self.stats = {
+             "lookups": 0,
+             "rows": 0,
+@@ -776,6 +819,8 @@ class _FileTable:
+             "ahead_hit": 0,
+             "ahead_miss": 0,
+             "ahead_dropped": 0,
++            "chunk_hit": 0,
++            "chunk_dropped": 0,
+         }
+ 
+     # -- WILLNEED issue -----------------------------------------------------------
+@@ -844,28 +889,59 @@ class _FileTable:
+         torch.index_select(self.scale, 0, local, out=out[1])
+         return out
+ 
+-    def submit(self, local: torch.Tensor) -> None:
++    @staticmethod
++    def _covers(
++        pending: Optional[tuple[torch.Tensor, object]], local: torch.Tensor
++    ) -> bool:
++        """Whether a fetch's ids start with `local` (row-major [tokens x cols],
++        so a chunk-ahead fetch of a longer guess covers the shorter chunk)."""
++        return (
++            pending is not None
++            and pending[0].numel() >= local.numel()
++            and torch.equal(pending[0][: local.numel()], local)
++        )
++
++    def _start(self, local: torch.Tensor) -> tuple[torch.Tensor, object]:
++        local = local.clone()
++        out = self._staging(local.numel())
++        return local, self.worker.submit(self._fetch, local, True, out)
++
++    def submit(self, local: torch.Tensor, *, chunk_ahead: bool = False) -> None:
+         """Start fetching `local` (0-based, in-range row ids, CPU) on the worker;
+         `gather` of the same ids later only joins. A pending fetch that was never
+         taken is drained and dropped: the ids no longer match the step being
+-        replayed."""
++        replayed. `chunk_ahead` fetches for a later forward (the chunked
++        request's next chunk) into its own slot; a forward's submit whose ids
++        that slot covers adopts it instead of fetching again."""
+         if self.worker is None:
+             return
++        if chunk_ahead:
++            if self._ahead_chunk is not None:
++                self._ahead_chunk[1].result()
++                self._ahead_chunk = None
++                self.stats["chunk_dropped"] += 1
++            self._ahead_chunk = self._start(local)
++            return
+         if self._pending is not None:
+             self._pending[1].result()
+             self._pending = None
+             self.stats["ahead_dropped"] += 1
+-        local = local.clone()
+-        out = self._staging(local.numel())
+-        self._pending = (local, self.worker.submit(self._fetch, local, True, out))
++        if self._covers(self._ahead_chunk, local):
++            self._pending, self._ahead_chunk = self._ahead_chunk, None
++            self.stats["chunk_hit"] += 1
++            return
++        self._pending = self._start(local)
+ 
+     def gather(self, local: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+         """fp8 rows and e8m0 scales for local (0-based, in-range row ids), on
+         pinned CPU memory."""
+         t = time.perf_counter()
+         pending, self._pending = self._pending, None
+-        if pending is not None and torch.equal(pending[0], local):
++        if self._covers(pending, local):
+             w, s = pending[1].result()
++            n = local.numel()
++            if w.shape[0] != n:
++                w, s = w[:n], s[:n]
+             self.stats["ahead_hit"] += 1
+         else:
+             if pending is not None:
+@@ -881,12 +957,14 @@ class _FileTable:
+         ):
+             logger.info(
+                 "engram file table %s: %d lookups, ahead hit %d / miss %d / dropped %d, "
+-                "%.3f ms per lookup in the break",
++                "chunk-ahead hit %d / dropped %d, %.3f ms per lookup in the break",
+                 os.path.basename(self.path),
+                 st["lookups"],
+                 st["ahead_hit"],
+                 st["ahead_miss"],
+                 st["ahead_dropped"],
++                st["chunk_hit"],
++                st["chunk_dropped"],
+                 st["ms"] / st["lookups"],
+             )
+         return w, s
+@@ -922,12 +1000,20 @@ def _no_capture(what: str) -> None:
+         )
+ 
+ 
+-def _engram_file_prefetch(engrams: tuple["Engram", ...], hash_ids: torch.Tensor) -> None:
++def _engram_file_prefetch(
++    engrams: tuple["Engram", ...],
++    hash_ids: torch.Tensor,
++    next_chunk: Optional[EngramNextChunk] = None,
++    hasher: Optional["EngramHasher"] = None,
++) -> None:
+     """Start every listed Engram layer's row fetch for `hash_ids` [T, L, cols]
+     (the hasher's output for the whole forward), as one graph break right after
+     the hasher: one D2H of all layers' ids, then each table's worker advises
+     and gathers while the layers in front run (T3.20 round 2). The layer's own
+-    break (`_engram_file_rows`) then only joins."""
++    break (`_engram_file_rows`) then only joins. With `next_chunk` (the chunked
++    request's next prefill chunk) the same break also hashes those tokens and
++    queues their rows behind this forward's on the worker, so they land while
++    this chunk's layers run instead of after the next chunk's hasher (T3.20 (c))."""
+     if hash_ids.shape[0] == 0:
+         return
+     _no_capture("prefetch")
+@@ -935,6 +1021,15 @@ def _engram_file_prefetch(engrams: tuple["Engram", ...], hash_ids: torch.Tensor)
+     for engram in engrams:
+         tbl = engram.embed.file_table
+         tbl.submit(_engram_file_local_rows(tbl, ids[:, engram.layer_hash_index].reshape(-1)))
++    if next_chunk is None or hasher is None:
++        return
++    ids = hasher.hash_chunk(next_chunk).to("cpu", dtype=torch.int64)
++    for engram in engrams:
++        tbl = engram.embed.file_table
++        tbl.submit(
++            _engram_file_local_rows(tbl, ids[:, engram.layer_hash_index].reshape(-1)),
++            chunk_ahead=True,
++        )
+ 
+ 
+ def _engram_file_rows(embed: "EngramEmbedding", indices: torch.Tensor) -> torch.Tensor:
+diff --git a/python/sglang/srt/managers/schedule_batch.py b/python/sglang/srt/managers/schedule_batch.py
+index 5894208e..9ef3c172 100755
+--- a/python/sglang/srt/managers/schedule_batch.py
++++ b/python/sglang/srt/managers/schedule_batch.py
+@@ -123,6 +123,7 @@ from sglang.srt.mem_cache.memory_pool import HybridReqToTokenPool, ReqToTokenPoo
+ from sglang.srt.mem_cache.radix_cache import RadixKey
+ from sglang.srt.model_executor.forward_batch_info import (
+     CaptureHiddenMode,
++    EngramNextChunk,
+     ForwardBatch,
+     ForwardMode,
+ )
+@@ -2257,6 +2258,9 @@ class ScheduleBatch(ScheduleBatchDisaggregationDecodeMixin):
+     # DeepSeek-V4.1 engram, extend batches only: [bs, n - 1] int32 predecessors
+     # of each request's first extend token (NgramEmbeddingManager).
+     ne_history: Optional[torch.Tensor] = None
++    # The chunked request's next chunk (EngramNextChunk) when it is in this
++    # extend batch, for the Engram file layout's chunk-ahead fetch (T3.20 (c)).
++    ne_next_chunk: Optional[EngramNextChunk] = None
+     encoder_swa_reset: Optional[List[bool]] = None
+ 
+     req_pool_indices: torch.Tensor = None  # shape: [b], int64
+diff --git a/python/sglang/srt/model_executor/forward_batch_info.py b/python/sglang/srt/model_executor/forward_batch_info.py
+index 7e0fc7db..e4e9dc16 100644
+--- a/python/sglang/srt/model_executor/forward_batch_info.py
++++ b/python/sglang/srt/model_executor/forward_batch_info.py
+@@ -390,6 +390,20 @@ class NgramEmbeddingInfo:
+         )
+ 
+ 
++@dataclass(frozen=True)
++class EngramNextChunk:
++    """The chunked request's next prefill chunk, for DeepSeek-V4.1's Engram
++    file layout to hash and fetch ahead of that chunk (recipe T3.20 (c)).
++    `tokens` [T] int32 and `history` [1, n - 1] int32 (the n - 1 tokens before
++    `tokens[0]`, oldest first) live on the hasher's device; `start` is the
++    position of `tokens[0]`. T is the scheduler's chunk-size guess: the chunk
++    that runs may be shorter (last chunk, KV budget), never longer."""
++
++    tokens: torch.Tensor
++    history: torch.Tensor
++    start: int
++
++
+ @dataclass
+ class ForwardBatch(ForwardBatchDeepSeekMHAMixin):
+     """Store all inputs of a forward pass."""
+@@ -591,6 +605,9 @@ class ForwardBatch(ForwardBatchDeepSeekMHAMixin):
+     encoder_swa_replay: bool = False
+ 
+     ngram_history: Optional[torch.Tensor] = None
++    # Extend batches that continue a chunked request: its next chunk, so the
++    # Engram file layout can fetch chunk k + 1's rows during chunk k.
++    engram_next_chunk: Optional[EngramNextChunk] = None
+ 
+     # For dumper: int-hashed request / bootstrap-room IDs (derived from rids)
+     rids_int: Optional[torch.Tensor] = None
+@@ -794,6 +811,7 @@ class ForwardBatch(ForwardBatchDeepSeekMHAMixin):
+             orig_seq_lens=batch.orig_seq_lens,
+             out_cache_loc_dsv4=batch.out_cache_loc_dsv4,
+             ngram_history=batch.ne_history,
++            engram_next_chunk=batch.ne_next_chunk,
+             mamba_track_indices=batch.mamba_track_indices,
+             mamba_track_mask=batch.mamba_track_mask,
+             mamba_track_seqlens=batch.mamba_track_seqlens,
+diff --git a/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py b/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py
+index 97fbfb15..f275f890 100644
+--- a/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py
++++ b/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py
+@@ -9,7 +9,9 @@ import torch
+ 
+ from sglang.kernels.ops.speculative.ngram_embedding import update_token_table
+ from sglang.srt.configs.model_config import ModelConfig
++from sglang.srt.environ import envs
+ from sglang.srt.managers.schedule_batch import ForwardMode
++from sglang.srt.model_executor.forward_batch_info import EngramNextChunk
+ from sglang.srt.mem_cache.memory_pool import ReqToTokenPool
+ from sglang.srt.runtime_context import get_schedule
+ 
+@@ -112,7 +114,7 @@ class NgramEmbeddingManager:
+         if batch is None:
+             return batch
+         if self.engram_hasher is not None:
+-            self._prepare_engram_history(batch)
++            self._prepare_engram_history(batch, chunked_req)
+         if not self.enabled:
+             return batch
+         batch.ne_token_table = self.table
+@@ -165,9 +167,12 @@ class NgramEmbeddingManager:
+                 )
+         return batch
+ 
+-    def _prepare_engram_history(self, batch: ScheduleBatch) -> None:
++    def _prepare_engram_history(
++        self, batch: ScheduleBatch, chunked_req: Optional[Req]
++    ) -> None:
+         """Refresh extend predecessors after prefix hits, retraction, or slot reuse,
+-        and seed the history row of a request whose prefill ran on another server."""
++        and seed the history row of a request whose prefill ran on another server.
++        Also hand the forward the chunked request's next chunk (T3.20 (c))."""
+         n1 = self.engram_hasher.max_ngram_size - 1
+         if batch.forward_mode.is_prebuilt():
+             # PD decode runs no EXTEND for this request, so the row its first
+@@ -197,9 +202,34 @@ class NgramEmbeddingManager:
+             lo = max(0, start - n1)
+             ids = req.full_untruncated_fill_ids[lo:start]
+             rows.append([0] * (n1 - len(ids)) + list(ids))
+-        batch.ne_history = torch.tensor(
+-            rows, dtype=torch.int32, device=self.engram_hasher.history.device
+-        ).view(len(rows), n1)
++        device = self.engram_hasher.history.device
++        batch.ne_history = torch.tensor(rows, dtype=torch.int32, device=device).view(
++            len(rows), n1
++        )
++        batch.ne_next_chunk = None
++        if (
++            chunked_req is None
++            or not envs.SGLANG_DSV41_ENGRAM_CHUNK_AHEAD.get()
++            or not any(req is chunked_req for req in batch.reqs)
++        ):
++            return
++        # The chunk after this one: the scheduler admits min(remaining, chunk
++        # size) of it next time unless the KV budget shortens it (the file
++        # table matches a prefix, so a shorter chunk still hits).
++        fill = chunked_req.full_untruncated_fill_ids
++        end = chunked_req.extend_range.end
++        size = get_schedule().chunked_prefill_size
++        tokens = fill[end : end + (size if size and size > 0 else len(fill))]
++        if len(tokens) == 0:
++            return
++        ids = fill[max(0, end - n1) : end]
++        batch.ne_next_chunk = EngramNextChunk(
++            tokens=torch.tensor(list(tokens), dtype=torch.int32, device=device),
++            history=torch.tensor(
++                [0] * (n1 - len(ids)) + list(ids), dtype=torch.int32, device=device
++            ).view(1, n1),
++            start=end,
++        )
+ 
+ 
+ def update_ngram_token_table_after_sampling(
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index bef1955b..c10c82e2 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -3838,8 +3838,15 @@ class DeepseekV4Model(nn.Module):
+                 hash_ids = self.engram_hasher(input_ids, forward_batch)
+             if self.engram_ahead_layers and not cp_extend:
+                 # Every Engram layer's ids are known here: start their row
+-                # fetches now so each layer's own break only joins (T3.20).
+-                bcg_engram_file_prefetch(self.engram_ahead_layers, hash_ids)
++                # fetches now so each layer's own break only joins (T3.20),
++                # and the chunked request's next chunk's right behind them
++                # (T3.20 (c); the scheduler only sets it when the env is on).
++                bcg_engram_file_prefetch(
++                    self.engram_ahead_layers,
++                    hash_ids,
++                    forward_batch.engram_next_chunk,
++                    self.engram_hasher,
++                )
+         prefetched_engram_kv = None
+         if (
+             self.engram_prefetch_stream is not None

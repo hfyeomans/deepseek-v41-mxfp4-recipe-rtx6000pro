@@ -1,0 +1,954 @@
+From 32a25f379015b09ee25eb5c9ae97c2cd41d5ab2b Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Mon, 21 Sep 2026 22:03:16 -0400
+Subject: [PATCH 04/50] E20: tuned W8A8 block-FP8 [32,32] configs for RTX PRO
+ 6000 Max-Q (7 V4.1-Flash TP2 dense shapes) and let SM120 use the
+ SPLIT_K/SWAP_AB kernel
+
+Default config ran the dense GEMMs at 60-80 GB/s (3 % occupancy, 40 ms of a 70 ms
+decode step). Tuned by kernels/e20/tune_w8a8_block32.py in the recipe repo:
+M=1 5.6-12x faster, M=4 2.7-5.6x, M=4096 2.2-3.0x; every config checked against
+an FP32 dequantised reference.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 115 +++++++++++++++
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 131 ++++++++++++++++++
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 127 +++++++++++++++++
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 117 ++++++++++++++++
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 125 +++++++++++++++++
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 124 +++++++++++++++++
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 124 +++++++++++++++++
+ .../kernels/ops/quantization/fp8_kernel.py    |   6 +-
+ 8 files changed, 868 insertions(+), 1 deletion(-)
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+
+diff --git a/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 00000000..eb66611a
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,115 @@
++{
++    "1": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "2": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "3": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "4": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4,
++        "SWAP_AB": true
++    },
++    "8": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5
++    },
++    "16": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5
++    },
++    "32": {
++        "BLOCK_SIZE_M": 32,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "64": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "128": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "256": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "512": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "1024": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    },
++    "2048": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    },
++    "4096": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    }
++}
+diff --git a/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 00000000..0a6a4262
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,131 @@
++{
++    "1": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "2": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 4,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "3": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 4,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "4": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 16
++    },
++    "8": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "16": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 8
++    },
++    "32": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "64": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 8
++    },
++    "128": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 4
++    },
++    "256": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "512": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "1024": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "2048": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 2
++    },
++    "4096": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 3
++    }
++}
+diff --git a/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 00000000..145231be
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,127 @@
++{
++    "1": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 16
++    },
++    "2": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 16
++    },
++    "3": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 16
++    },
++    "4": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 3,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "8": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 3,
++        "SPLIT_K": 16
++    },
++    "16": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 4,
++        "SPLIT_K": 8
++    },
++    "32": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 4,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "64": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 8
++    },
++    "128": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 4
++    },
++    "256": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "512": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "1024": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "2048": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 2
++    },
++    "4096": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    }
++}
+diff --git a/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 00000000..00b8f66b
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,117 @@
++{
++    "1": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "2": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "3": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "4": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "8": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 3,
++        "SWAP_AB": true
++    },
++    "16": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 3,
++        "SWAP_AB": true
++    },
++    "32": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 3,
++        "SWAP_AB": true
++    },
++    "64": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "128": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "256": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "512": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "1024": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    },
++    "2048": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    },
++    "4096": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    }
++}
+diff --git a/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 00000000..77272096
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,125 @@
++{
++    "1": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 16
++    },
++    "2": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 3,
++        "SPLIT_K": 8
++    },
++    "3": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 8
++    },
++    "4": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4,
++        "SPLIT_K": 8
++    },
++    "8": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4,
++        "SWAP_AB": true,
++        "SPLIT_K": 8
++    },
++    "16": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 4,
++        "SPLIT_K": 16
++    },
++    "32": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 8
++    },
++    "64": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 4,
++        "SWAP_AB": true,
++        "SPLIT_K": 8
++    },
++    "128": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5
++    },
++    "256": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "512": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "1024": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "2048": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "4096": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    }
++}
+diff --git a/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 00000000..d967e53b
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,124 @@
++{
++    "1": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 32,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 8
++    },
++    "2": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 8
++    },
++    "3": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 8
++    },
++    "4": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4,
++        "SPLIT_K": 8
++    },
++    "8": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 8
++    },
++    "16": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SPLIT_K": 4
++    },
++    "32": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 5,
++        "SPLIT_K": 4
++    },
++    "64": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 4
++    },
++    "128": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5
++    },
++    "256": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "512": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "1024": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "2048": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "4096": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    }
++}
+diff --git a/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 00000000..a6edc8b6
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,124 @@
++{
++    "1": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 2,
++        "SPLIT_K": 8
++    },
++    "2": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 2,
++        "SPLIT_K": 8
++    },
++    "3": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 2,
++        "SPLIT_K": 8
++    },
++    "4": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 2,
++        "SPLIT_K": 8
++    },
++    "8": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 2,
++        "SPLIT_K": 8
++    },
++    "16": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2,
++        "SWAP_AB": true,
++        "SPLIT_K": 8
++    },
++    "32": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 3,
++        "SPLIT_K": 8
++    },
++    "64": {
++        "BLOCK_SIZE_M": 16,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 2,
++        "num_stages": 5,
++        "SWAP_AB": true,
++        "SPLIT_K": 4
++    },
++    "128": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "256": {
++        "BLOCK_SIZE_M": 64,
++        "BLOCK_SIZE_N": 64,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "512": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 4
++    },
++    "1024": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "2048": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 1,
++        "num_warps": 4,
++        "num_stages": 3
++    },
++    "4096": {
++        "BLOCK_SIZE_M": 128,
++        "BLOCK_SIZE_N": 128,
++        "BLOCK_SIZE_K": 32,
++        "GROUP_SIZE_M": 32,
++        "num_warps": 4,
++        "num_stages": 2
++    }
++}
+diff --git a/python/sglang/kernels/ops/quantization/fp8_kernel.py b/python/sglang/kernels/ops/quantization/fp8_kernel.py
+index da92c781..1319c86e 100644
+--- a/python/sglang/kernels/ops/quantization/fp8_kernel.py
++++ b/python/sglang/kernels/ops/quantization/fp8_kernel.py
+@@ -1713,7 +1713,11 @@ def w8a8_block_fp8_matmul_triton(
+     else:
+         kernel = select_w8a8_block_fp8_matmul_kernel(M, N, config)
+ 
+-    hopper_tuned = get_platform().is_sm90 and (
++    # The SWAP_AB / SPLIT_K kernel is plain Triton; it was gated to Hopper only because
++    # that is where it was tuned.  SM120 (RTX PRO 6000) needs it too: with block_shape
++    # [32, 32] the default config runs at ~3 % occupancy for decode M (E20).
++    platform = get_platform()
++    hopper_tuned = (platform.is_sm90 or platform.is_sm120) and (
+         config.get("SWAP_AB", False) or config.get("SPLIT_K", 1) > 1
+     )
+     if hopper_tuned:

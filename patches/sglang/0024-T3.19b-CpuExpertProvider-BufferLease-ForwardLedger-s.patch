@@ -1,0 +1,689 @@
+From 9fc1481765ed6e53f63be9776fb9ae129143fa12 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Wed, 7 Oct 2026 17:42:13 -0400
+Subject: [PATCH 24/50] T3.19b: CpuExpertProvider / BufferLease / ForwardLedger
+ seam around KTMoEWrapper (kt_provider.py); C3 remainder asserts
+ (check_deferral_adjacency, check_forward_boundary) in kt_contract.py;
+ kt_ep_wrapper submit/sync/apply route through the provider; graph runners
+ reserve capture sizes via reserve_capture_sizes. Behaviour-preserving: same
+ kt calls, same order, same args; metadata-only bookkeeping, graph-safe.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_contract.py   |  51 ++-
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py |  75 ++--
+ python/sglang/srt/layers/moe/kt_provider.py   | 410 ++++++++++++++++++
+ .../cuda_graph_setup.py                       |   7 +-
+ .../runner/decode_cuda_graph_runner.py        |   5 +-
+ 5 files changed, 519 insertions(+), 29 deletions(-)
+ create mode 100644 python/sglang/srt/layers/moe/kt_provider.py
+
+diff --git a/python/sglang/srt/layers/moe/kt_contract.py b/python/sglang/srt/layers/moe/kt_contract.py
+index 632c0c46..313bd1eb 100644
+--- a/python/sglang/srt/layers/moe/kt_contract.py
++++ b/python/sglang/srt/layers/moe/kt_contract.py
+@@ -8,6 +8,12 @@ to run under CUDA-graph capture and cheap enough to run on every MoE layer:
+   check_moe_boundary  - once per forward in KTEPWrapperMethod.apply: the tensor
+                         shapes/dtypes/layout kt-kernel's pinned D2H copies and the
+                         FlashInfer runner rely on.
++  check_deferral_adjacency / check_forward_boundary
++                      - the cross-layer deferral rule (review C3), called by the
++                        kt_provider ForwardLedger: a slot written by layer L's
++                        deferred task is consumed by layer L+1 and by nothing else,
++                        and no slot is outstanding when a forward ends (the last MoE
++                        layer runs D=0 by rule). Pure functions over ints and dicts.
+ 
+ Why these and not more (recipe review MAINTAINABILITY-REVIEW-2026-09 section 7.1, C9):
+ kt-kernel's _prepare_forward_cpu_buffers does `copy_(..., non_blocking=True)` into
+@@ -22,7 +28,7 @@ and are left to the opt-in NaN probe (KT_NAN_PROBE_MIN_TOKENS).
+ 
+ from __future__ import annotations
+ 
+-from typing import Optional
++from typing import Mapping, Optional
+ 
+ import torch
+ 
+@@ -144,3 +150,46 @@ def check_moe_boundary(
+             raise KTContractError(
+                 f"{where}{name} on {t.device} but hidden_states on {hidden_states.device}."
+             )
++
++
++def check_deferral_adjacency(*, outstanding_for_layer: Optional[int], layer_idx: int) -> None:
++    """Refuse a submission that would skip or re-consume an outstanding deferred slot.
++
++    ``outstanding_for_layer`` is the layer that must consume the slot the previous
++    layer's deferred task is filling (previous layer + 1), or None when no deferred
++    task is outstanding. Submitting any other layer means the slot would be
++    accumulated into the wrong layer's output (kt's slot is keyed by layer parity,
++    not layer index) or consumed twice.
++    """
++    if outstanding_for_layer is not None and outstanding_for_layer != layer_idx:
++        raise KTContractError(
++            f"layer {layer_idx}: submitted while layer {outstanding_for_layer} must consume the "
++            f"deferred slot written by layer {outstanding_for_layer - 1}; deferred experts are only "
++            "valid across adjacent MoE layers of one forward."
++        )
++
++
++def check_forward_boundary(
++    *,
++    outstanding_for_layer: Optional[int],
++    pending_flags: Mapping[int, bool],
++    last_layer_idx: int,
++) -> None:
++    """Refuse to end a forward with a deferred slot still outstanding.
++
++    Two views must agree: the orchestration's ledger (``outstanding_for_layer``) and
++    kt-kernel's own per-layer flag dict (``pending_flags``). A pending flag on the
++    last MoE layer means its deferred experts would be added into the first MoE
++    layer of the *next* forward (the slot parity wraps), which is the D=0 rule for
++    the last layer being violated.
++    """
++    if outstanding_for_layer is not None:
++        raise KTContractError(
++            f"forward ended with layer {outstanding_for_layer - 1}'s deferred slot outstanding "
++            f"(consumer layer {outstanding_for_layer} never submitted)."
++        )
++    if bool(pending_flags.get(last_layer_idx, False)):
++        raise KTContractError(
++            f"forward ended with kt reporting a pending deferred task on the last MoE layer "
++            f"{last_layer_idx}; the last layer must run with max_deferred_experts_per_token=0."
++        )
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index 3b3b15a8..f2867393 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -20,6 +20,11 @@ import torch
+ 
+ from sglang.srt.arg_groups.overrides import model_config_of
+ from sglang.srt.layers.moe.kt_contract import check_moe_boundary, check_moe_topology
++from sglang.srt.layers.moe.kt_provider import (
++    ExpertBatchShape,
++    ExpertSubmission,
++    KtKernelProvider,
++)
+ from sglang.srt.layers.moe.kt_timeline import get_timeline
+ from sglang.srt.layers.quantization.base_config import FusedMoEMethodBase
+ from sglang.srt.runtime_context import (
+@@ -895,6 +900,10 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+ 
+         # KT wrapper will be initialized in create_weights
+         self.wrapper: Optional[KTMoEWrapper] = None
++        # CpuExpertProvider seam over the wrapper (recipe T3.19b); rank 0 only.
++        # submit() parks the handle here, sync() / _sync_timed() consume it.
++        self.provider: Optional[KtKernelProvider] = None
++        self._pending: Optional[ExpertSubmission] = None
+         # Layerwise GPU prefill coordinator (process_weights_after_loading);
+         # None when KT_GPU_PREFILL_MIN_TOKENS is 0.
+         self.streamer: Optional[_LayerwisePrefillCoordinator] = None
+@@ -1015,6 +1024,13 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 self.wrapper.select_deferred_experts = types.MethodType(
+                     _select_deferred_experts_compact, self.wrapper
+                 )
++            self.provider = KtKernelProvider(
++                self.wrapper,
++                layer_idx=self.kt_config.layer_idx,
++                hidden=hidden_size,
++                top_k=num_experts_per_tok,
++                max_deferred=layer_max_deferred,
++            )
+ 
+     def process_weights_after_loading(self, layer: torch.nn.Module) -> None:
+         """Process weights after loading from checkpoint.
+@@ -1149,8 +1165,11 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # topk_ids in place for the GPU side.
+         cpu_topk_ids = remap_topk_ids_for_cpu(topk_ids, self.num_gpu_experts, num_kt_experts)
+ 
+-        # Submit forward task to CPU (non-blocking)
+-        self.wrapper.submit_forward(
++        # Submit forward task to CPU (non-blocking) through the provider seam:
++        # the same kt submit_forward call, plus shape validation, the deferral
++        # ledger and the captured-buffer lease check (metadata only).
++        self._pending = self.provider.submit(
++            ExpertBatchShape.of(x, topk_ids),
+             x,
+             cpu_topk_ids,
+             topk_weights,
+@@ -1172,41 +1191,39 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             return torch.zeros_like(x)
+ 
+         # Wait for CPU computation and retrieve results
+-        return self.wrapper.sync_forward(
+-            x, torch.cuda.current_stream(x.device).cuda_stream
++        return self.provider.wait(
++            self._take_pending(), torch.cuda.current_stream(x.device).cuda_stream
+         )
+ 
++    def _take_pending(self) -> ExpertSubmission:
++        pending, self._pending = self._pending, None
++        if pending is None:
++            raise RuntimeError(
++                f"[KT] layer {self.kt_config.layer_idx}: sync() without a preceding submit()"
++            )
++        return pending
++
+     def _sync_timed(self, x: torch.Tensor, mark) -> Optional[torch.Tensor]:
+         """``sync`` with a timeline mark between the kt wait and the H2D copy.
+ 
+-        Mirrors the CUDA branch of ``BaseMoEWrapper.sync_forward`` (kt-kernel
++        The split wait lives in ``KtKernelProvider.wait(mark=...)``: it mirrors
++        the CUDA branch of ``BaseMoEWrapper.sync_forward`` (kt-kernel
+         0.7.0.post4: ``cpu_infer.sync_with_cuda_stream(stream, allow_pending)``
+         then ``copy_forward_output_to_device``); the recipe's kt buffer test
+         asserts that order still holds in the installed kt_kernel. Used only
+-        while a timeline capture is active (KT_TIMELINE=1), so the plain path
+-        above stays byte-for-byte the qualified one. Ranks without kt work
+-        (TP1) only record the two marks and return None, like the plain path
+-        which never calls sync() there.
++        while a timeline capture is active (KT_TIMELINE=1). Ranks without kt
++        work (TP1) only record the two marks and return None, like the plain
++        path which never calls sync() there.
+         """
+         if self.tp_rank != 0 or self.wrapper is None:
+             mark("sync")
+             mark("h2d")
+             return None
+-        w = self.wrapper
+-        stream = torch.cuda.current_stream(x.device).cuda_stream
+-        if os.environ.get("KT_FORCE_SYNC_SUBMIT", "") == "1":
+-            # kt's synchronous fallback has a different wait; do not mirror it,
+-            # time wait+H2D as one "sync" bucket instead.
+-            out = w.sync_forward(x, stream)
+-            mark("sync")
+-            mark("h2d")
+-            return out
+-        allow_pending = 1 if w._layer_has_pending_deferred.get(w.layer_idx, False) else 0
+-        w.cpu_infer.sync_with_cuda_stream(stream, allow_pending)
+-        mark("sync")
+-        out = w.copy_forward_output_to_device(x)
+-        mark("h2d")
+-        return out
++        return self.provider.wait(
++            self._take_pending(),
++            torch.cuda.current_stream(x.device).cuda_stream,
++            mark=mark,
++        )
+ 
+     def apply(
+         self,
+@@ -1341,6 +1358,14 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 output = output + cpu_output
+             if b2_out is not None:
+                 output = output + self.b2.join(b2_out)
++            if (
++                self.provider is not None
++                and self.kt_config.num_layers is not None
++                and self.kt_config.layer_idx == self.kt_config.num_layers - 1
++            ):
++                # Forward boundary (review C3): the ledger and kt's own flag
++                # dict must both show no deferred slot outstanding.
++                self.provider.check_forward_end()
+             if dump is not None:
+                 timeline.dump_end(
+                     dump, {"kt_output": cpu_output, "moe_output": output}
+@@ -1392,7 +1417,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             Attribute value from gpu_method
+         """
+         # Avoid infinite recursion for internal attributes
+-        if name in ("gpu_method", "wrapper", "kt_config", "streamer"):
++        if name in ("gpu_method", "wrapper", "kt_config", "streamer", "provider", "_pending"):
+             raise AttributeError(
+                 f"'{type(self).__name__}' object has no attribute '{name}'"
+             )
+diff --git a/python/sglang/srt/layers/moe/kt_provider.py b/python/sglang/srt/layers/moe/kt_provider.py
+new file mode 100644
+index 00000000..982af347
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/kt_provider.py
+@@ -0,0 +1,410 @@
++"""The seam between SGLang's MoE orchestration and the CPU expert tier (recipe T3.19b).
++
++Today the CPU tier is kt-kernel's ``KTMoEWrapper`` on TP rank 0, driven from
++``KTEPWrapperMethod`` through four calls that carry the whole hybrid's implicit
++state: ``submit_forward`` / ``sync_forward`` (per layer), the class-wide pinned
++buffer cache keyed by token count (``KExpertsCPUBuffer``), and the class-wide
++deferred-expert flag per layer (``BaseMoEWrapper._layer_has_pending_deferred``).
++Everything the migration roadmap wants to move - ownership to other ranks, a
++native coordinator, a different expert engine - has to replace exactly those
++calls, so this module names them:
++
++  CpuExpertProvider  what a CPU expert engine must offer per MoE layer:
++                     reserve(contract) / validate(shape) / submit(...) / wait(...).
++  KtKernelProvider   the adapter around today's KTMoEWrapper. Behaviour-preserving:
++                     the plain decode path calls the very same kt methods in the
++                     same order with the same arguments as before; what is added is
++                     metadata-only bookkeeping (no device sync, no allocation, so
++                     it is safe under CUDA-graph capture).
++  BufferLease        the identity (data_ptr tuple) of the pinned/device buffer set
++                     kt handed out for one token count, recorded when a graph
++                     captures that size and asserted equal at every later
++                     Python-side submit of the same size. Graph replays run no
++                     Python, so the check guards the registry the replays were
++                     captured against, not the replay itself.
++  ForwardLedger      the cross-layer deferral bookkeeping (review C3): a slot
++                     written by layer L's deferred task is consumed by layer L+1
++                     and nothing else, and no slot is outstanding when a forward
++                     ends. Checked in Python from the submissions, independently
++                     of kt's own flag dict, and both must agree at the forward end.
++
++Not in this module: streamed-prefill (every rank, no kt), the B2 side path (off by
++default, removed at T3.19c), and the SGLang-side tensor contract
++(``kt_contract.check_moe_boundary``) which runs on every rank before any provider
++is consulted.
++"""
++
++from __future__ import annotations
++
++import os
++from dataclasses import dataclass
++from typing import Any, Callable, Dict, List, Mapping, Optional, Protocol, Sequence, Tuple
++
++import torch
++
++from sglang.srt.layers.moe.kt_contract import (
++    KTContractError,
++    check_deferral_adjacency,
++    check_forward_boundary,
++)
++
++
++# --------------------------------------------------------------------------- values
++
++
++@dataclass(frozen=True)
++class ExpertBatchShape:
++    """The one thing kt keys its buffers on: (tokens, hidden); top_k for the id tensors."""
++
++    tokens: int
++    hidden: int
++    top_k: int
++
++    @classmethod
++    def of(cls, hidden_states: torch.Tensor, topk_ids: torch.Tensor) -> "ExpertBatchShape":
++        return cls(int(hidden_states.shape[0]), int(hidden_states.shape[-1]), int(topk_ids.shape[-1]))
++
++
++@dataclass(frozen=True)
++class CaptureContract:
++    """Token counts the graph runners will capture, as the CPU tier must pre-size them."""
++
++    batch_sizes: Tuple[int, ...]
++    hidden: int
++    top_k: int
++
++    def __post_init__(self) -> None:
++        if any(int(b) < 1 for b in self.batch_sizes):
++            raise KTContractError(f"CaptureContract batch_sizes must be >= 1: {self.batch_sizes}")
++        object.__setattr__(self, "batch_sizes", tuple(sorted({int(b) for b in self.batch_sizes})))
++
++
++@dataclass(frozen=True)
++class ExpertSubmission:
++    """Handle returned by submit(); the only thing wait() needs besides the stream.
++
++    ``deferred_for_layer`` is the layer whose output absorbs this layer's deferred
++    experts (layer_idx + 1), or None when nothing was deferred. ``hidden_states`` is
++    the submitted input (kt keys its buffers on it; the graph-static buffer under
++    capture, the live tensor eagerly).
++    """
++
++    layer_idx: int
++    shape: ExpertBatchShape
++    deferred_for_layer: Optional[int]
++    stream: int
++    hidden_states: torch.Tensor
++
++
++@dataclass(frozen=True)
++class BufferLease:
++    """Identity of the buffer set kt serves for one token count (14 data_ptrs: 7 kinds x 2 slots)."""
++
++    tokens: int
++    hidden: int
++    ptrs: Tuple[int, ...]
++
++    @classmethod
++    def of(cls, buffers: Sequence[Sequence[torch.Tensor]], tokens: int, hidden: int) -> "BufferLease":
++        ptrs = tuple(int(t.data_ptr()) for kind in buffers for t in kind)
++        return cls(tokens, hidden, ptrs)
++
++    def check_same(self, other: "BufferLease", *, where: str = "") -> None:
++        if (self.tokens, self.hidden) != (other.tokens, other.hidden):
++            raise KTContractError(
++                f"{where}buffer lease for ({self.tokens}, {self.hidden}) compared with "
++                f"({other.tokens}, {other.hidden})."
++            )
++        if self.ptrs != other.ptrs:
++            moved = [i for i, (a, b) in enumerate(zip(self.ptrs, other.ptrs)) if a != b]
++            raise KTContractError(
++                f"{where}kt buffer set for bs={self.tokens} is not the one a CUDA graph captured: "
++                f"{len(moved)} of {len(self.ptrs)} tensors moved (indices {moved[:6]}). A replay would "
++                "read or write the old addresses (kt-kernel bug C, E23 R3)."
++            )
++
++
++# --------------------------------------------------------------------------- ledger
++
++
++class ForwardLedger:
++    """Cross-layer deferral bookkeeping for one process (one CPU tier).
++
++    ``outstanding_for_layer`` is the layer that must consume the last deferred
++    slot, or None. Pure Python; raises KTContractError.
++    """
++
++    def __init__(self) -> None:
++        self.outstanding_for_layer: Optional[int] = None
++        self.last_submission: Optional[ExpertSubmission] = None
++
++    def before_submit(self, layer_idx: int) -> None:
++        check_deferral_adjacency(
++            outstanding_for_layer=self.outstanding_for_layer, layer_idx=layer_idx
++        )
++
++    def after_submit(self, submission: ExpertSubmission) -> None:
++        self.outstanding_for_layer = submission.deferred_for_layer
++        self.last_submission = submission
++
++    def check_forward_end(self, *, pending_flags: Mapping[int, bool], last_layer_idx: int) -> None:
++        check_forward_boundary(
++            outstanding_for_layer=self.outstanding_for_layer,
++            pending_flags=pending_flags,
++            last_layer_idx=last_layer_idx,
++        )
++
++    def reset(self) -> None:
++        self.outstanding_for_layer = None
++        self.last_submission = None
++
++
++# --------------------------------------------------------------------------- protocol
++
++
++class CpuExpertProvider(Protocol):
++    """Per-MoE-layer CPU expert engine as the orchestration sees it."""
++
++    layer_idx: int
++    hidden: int
++    top_k: int
++    max_deferred: int
++
++    def reserve(self, contract: CaptureContract) -> None: ...
++
++    def validate(self, shape: ExpertBatchShape) -> None: ...
++
++    def submit(
++        self,
++        shape: ExpertBatchShape,
++        hidden_states: torch.Tensor,
++        compact_ids: torch.Tensor,
++        weights: torch.Tensor,
++        stream: int,
++    ) -> ExpertSubmission: ...
++
++    def wait(
++        self,
++        submission: ExpertSubmission,
++        stream: int,
++        mark: Optional[Callable[[str], None]] = None,
++    ) -> torch.Tensor: ...
++
++
++def _capturing() -> bool:
++    try:
++        return bool(torch.cuda.is_current_stream_capturing())
++    except Exception:  # noqa: BLE001 - no CUDA in the CPU-only test image
++        return False
++
++
++# --------------------------------------------------------------------------- registry
++
++_PROVIDERS: List["KtKernelProvider"] = []
++_LEASES: Dict[int, BufferLease] = {}
++_LEDGER = ForwardLedger()
++
++
++def ledger() -> ForwardLedger:
++    return _LEDGER
++
++
++def providers() -> List["KtKernelProvider"]:
++    return list(_PROVIDERS)
++
++
++def reset_registry() -> None:
++    """Tests only: forget providers, leases and the ledger."""
++    _PROVIDERS.clear()
++    _LEASES.clear()
++    _LEDGER.reset()
++
++
++def reserve_capture_sizes(batch_sizes: Sequence[int]) -> None:
++    """Runner entry point: register the token counts the graphs will capture.
++
++    Calls kt's own registration (accumulating, T3.16a) exactly as the runner did
++    before, then hands every provider its contract. Safe to call when kt is not
++    installed (no-op) and before any provider exists (kt registration only).
++    """
++    try:
++        from kt_kernel import KTMoEWrapper
++    except ImportError:
++        return
++    KTMoEWrapper.set_capture_batch_sizes(list(batch_sizes))
++    registered = tuple(KTMoEWrapper.get_capture_batch_sizes())
++    for p in _PROVIDERS:
++        p.reserve(CaptureContract(registered, p.hidden, p.top_k))
++
++
++# --------------------------------------------------------------------------- adapter
++
++
++class KtKernelProvider:
++    """CpuExpertProvider over one kt-kernel ``KTMoEWrapper`` (TP rank 0 only)."""
++
++    def __init__(
++        self,
++        wrapper: Any,
++        *,
++        layer_idx: int,
++        hidden: int,
++        top_k: int,
++        max_deferred: int,
++        ledger: Optional[ForwardLedger] = None,
++        leases: Optional[Dict[int, BufferLease]] = None,
++        register: bool = True,
++    ) -> None:
++        self.wrapper = wrapper
++        self.layer_idx = int(layer_idx)
++        self.hidden = int(hidden)
++        self.top_k = int(top_k)
++        self.max_deferred = int(max_deferred)
++        self.contract: Optional[CaptureContract] = None
++        self._ledger = ledger if ledger is not None else _LEDGER
++        self._leases = leases if leases is not None else _LEASES
++        if int(getattr(wrapper, "layer_idx", layer_idx)) != self.layer_idx:
++            raise KTContractError(
++                f"provider for layer {self.layer_idx} given a kt wrapper for layer {wrapper.layer_idx}"
++            )
++        if int(getattr(wrapper, "hidden_size", hidden)) != self.hidden:
++            raise KTContractError(
++                f"layer {self.layer_idx}: kt wrapper hidden_size={wrapper.hidden_size} != {self.hidden}"
++            )
++        if int(getattr(wrapper, "num_experts_per_tok", top_k)) != self.top_k:
++            raise KTContractError(
++                f"layer {self.layer_idx}: kt wrapper num_experts_per_tok={wrapper.num_experts_per_tok} != {self.top_k}"
++            )
++        if int(getattr(wrapper, "max_deferred_experts_per_token", max_deferred)) != self.max_deferred:
++            raise KTContractError(
++                f"layer {self.layer_idx}: kt wrapper max_deferred_experts_per_token="
++                f"{wrapper.max_deferred_experts_per_token} != {self.max_deferred}"
++            )
++        if register:
++            _PROVIDERS.append(self)
++
++    # -- protocol ----------------------------------------------------------------
++
++    def reserve(self, contract: CaptureContract) -> None:
++        if contract.hidden != self.hidden or contract.top_k != self.top_k:
++            raise KTContractError(
++                f"layer {self.layer_idx}: capture contract ({contract.hidden}, top_k {contract.top_k}) "
++                f"does not match the layer ({self.hidden}, top_k {self.top_k})."
++            )
++        if self.contract is not None and not set(self.contract.batch_sizes) <= set(contract.batch_sizes):
++            raise KTContractError(
++                f"layer {self.layer_idx}: capture contract shrank from {self.contract.batch_sizes} to "
++                f"{contract.batch_sizes}; registration only accumulates (T3.16a)."
++            )
++        self.contract = contract
++
++    def validate(self, shape: ExpertBatchShape) -> None:
++        where = f"layer {self.layer_idx}: "
++        if shape.tokens < 1:
++            raise KTContractError(f"{where}empty submission (0 tokens).")
++        if shape.hidden != self.hidden:
++            raise KTContractError(f"{where}hidden {shape.hidden} != {self.hidden}.")
++        if shape.top_k != self.top_k:
++            raise KTContractError(f"{where}top_k {shape.top_k} != {self.top_k}.")
++        if _capturing():
++            sizes = self.contract.batch_sizes if self.contract is not None else self._kt_capture_sizes()
++            if shape.tokens not in sizes:
++                raise KTContractError(
++                    f"{where}capturing bs={shape.tokens} which no contract reserved ({sizes}); the graph "
++                    "would bake kt's temporary buffer (bug C)."
++                )
++
++    def submit(
++        self,
++        shape: ExpertBatchShape,
++        hidden_states: torch.Tensor,
++        compact_ids: torch.Tensor,
++        weights: torch.Tensor,
++        stream: int,
++    ) -> ExpertSubmission:
++        self.validate(shape)
++        self._ledger.before_submit(self.layer_idx)
++        # The call the hybrid has always made, unchanged.
++        self.wrapper.submit_forward(hidden_states, compact_ids, weights, stream)
++        deferred = bool(self._pending_flags().get(self.layer_idx, False))
++        if deferred and self.max_deferred == 0:
++            raise KTContractError(
++                f"layer {self.layer_idx}: kt reports a deferred task but the layer is configured D=0."
++            )
++        submission = ExpertSubmission(
++            layer_idx=self.layer_idx,
++            shape=shape,
++            deferred_for_layer=self.layer_idx + 1 if deferred else None,
++            stream=int(stream),
++            hidden_states=hidden_states,
++        )
++        self._ledger.after_submit(submission)
++        self._check_lease(shape, hidden_states)
++        return submission
++
++    def wait(
++        self,
++        submission: ExpertSubmission,
++        stream: int,
++        mark: Optional[Callable[[str], None]] = None,
++    ) -> torch.Tensor:
++        if submission.layer_idx != self.layer_idx:
++            raise KTContractError(
++                f"layer {self.layer_idx}: asked to wait for layer {submission.layer_idx}'s submission."
++            )
++        w = self.wrapper
++        x = submission.hidden_states
++        if mark is None:
++            return w.sync_forward(x, stream)
++        # Timeline-instrumented wait (KT_TIMELINE=1, T3.19a): the same two kt
++        # steps sync_forward performs on the CUDA path, with a mark between.
++        if os.environ.get("KT_FORCE_SYNC_SUBMIT", "") == "1":
++            out = w.sync_forward(x, stream)
++            mark("sync")
++            mark("h2d")
++            return out
++        allow_pending = 1 if self._pending_flags().get(self.layer_idx, False) else 0
++        w.cpu_infer.sync_with_cuda_stream(stream, allow_pending)
++        mark("sync")
++        out = w.copy_forward_output_to_device(x)
++        mark("h2d")
++        return out
++
++    # -- forward boundary ------------------------------------------------------
++
++    def check_forward_end(self) -> None:
++        """Call once per forward after the last MoE layer's wait (D=0 rule layer)."""
++        self._ledger.check_forward_end(
++            pending_flags=self._pending_flags(), last_layer_idx=self.layer_idx
++        )
++
++    # -- internals -------------------------------------------------------------
++
++    def _pending_flags(self) -> Mapping[int, bool]:
++        return type(self.wrapper)._layer_has_pending_deferred
++
++    @staticmethod
++    def _kt_capture_sizes() -> Tuple[int, ...]:
++        from kt_kernel.experts_base import KExpertsCPUBuffer
++
++        return tuple(KExpertsCPUBuffer.capture_bs)
++
++    @staticmethod
++    def _kt_captured_buffers(tokens: int):
++        from kt_kernel.experts_base import KExpertsCPUBuffer
++
++        if tokens not in KExpertsCPUBuffer.capture_bs:
++            return None
++        return KExpertsCPUBuffer.capture_buffers.get(tokens)
++
++    def _check_lease(self, shape: ExpertBatchShape, hidden_states: torch.Tensor) -> None:
++        buffers = self._kt_captured_buffers(shape.tokens)
++        if buffers is None:
++            return  # unregistered size (temp buffer) or registered but not yet allocated
++        lease = BufferLease.of(buffers, shape.tokens, shape.hidden)
++        held = self._leases.get(shape.tokens)
++        if held is None:
++            if _capturing():
++                self._leases[shape.tokens] = lease
++            return
++        held.check_same(lease, where=f"layer {self.layer_idx}: ")
+diff --git a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
+index b94c351b..347236c9 100644
+--- a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
++++ b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
+@@ -542,12 +542,15 @@ def register_kt_capture_sizes(model_runner: ModelRunner) -> None:
+     if model_runner.is_draft_worker or model_runner.device != "cuda":
+         return
+     try:
+-        from kt_kernel import KTMoEWrapper
++        from kt_kernel import KTMoEWrapper  # noqa: F401
+     except ImportError:
+         return
+     if _decode_graph_capture_disabled(model_runner):
+         return
+-    KTMoEWrapper.set_capture_batch_sizes(kt_capture_token_sizes(model_runner))
++    # kt registration plus the per-layer CaptureContract (recipe T3.19b seam).
++    from sglang.srt.layers.moe.kt_provider import reserve_capture_sizes
++
++    reserve_capture_sizes(kt_capture_token_sizes(model_runner))
+ 
+ 
+ def capture_decode_graph(*, model_runner: ModelRunner) -> GraphCapture:
+diff --git a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
+index 506c1a57..c1ef4b66 100644
+--- a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
++++ b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
+@@ -371,7 +371,10 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):
+             # bs * tokens_per_request (DFlash: K+1). Sizes not in this list
+             # fall back to a single reusable temp buffer, whose address a
+             # captured graph would then bake in and later see overwritten.
+-            KTMoEWrapper.set_capture_batch_sizes(
++            # kt registration plus the per-layer CaptureContract (recipe T3.19b seam).
++            from sglang.srt.layers.moe.kt_provider import reserve_capture_sizes
++
++            reserve_capture_sizes(
+                 sorted({bs * self.captured_req_width for bs in self.capture_bs})
+             )
+ 

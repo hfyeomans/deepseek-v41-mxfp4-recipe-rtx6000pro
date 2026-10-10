@@ -1,0 +1,368 @@
+From 682fc6a02b3e3585738e870dcbbee7460adeceb9 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Sat, 10 Oct 2026 14:36:47 -0400
+Subject: [PATCH 50/50] sampler/scheduler: a NaN/Inf logits row aborts that
+ request, not the server (recipe T3.13 / C10)
+
+- Sampler.forward (outside the decode graph): under SGLANG_DSV41_REJECT_NAN_ROWS (default on)
+  compute nan_rows = isnan|isposinf per row, then nan_to_num_ the logits (NaN -> -1e30,
+  +inf -> 1e30, -inf kept so grammar masks survive). Well-formed rows are bit-identical.
+- LogitsProcessorOutput.nan_rows; copy_to_cpu moves it D2H beside next_token_ids.
+- batch_result_processor: before update_finish_state in the prefill (non-beam) and decode
+  paths, a flagged row gets FINISH_ABORT(..., INTERNAL_SERVER_ERROR, "NonFiniteLogits") and an
+  ERROR log line `[non-finite-logits] rid=... row=... mode=...`; the tokenizer manager turns it
+  into an HTTP 500 JSON error for that request only. Off / spec / row-count mismatch -> no-op.
+- kt_nan_inject.py: KT_NAN_INJECT="row=r,bs=b,step=n,layer=l" test hook (rank 0, fires once,
+  armed by breakable_cuda_graph_backend.replay via KtRuntime.nan_inject, adds a NaN to one row of
+  the MoE output after the CPU add). Diagnostic only; unset in production.
+
+Verified on the recipe's instrumented serve (row=1,bs=4,step=3,layer=20): exactly one of four
+concurrent requests returns 500 "non-finite logits ...", the other three run to max_tokens, the
+next C4 group is 4 x 200, /health 200, same-prompt C4 consistency PASS.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                  |  6 ++
+ python/sglang/srt/layers/logits_processor.py  |  3 +
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py |  5 +
+ python/sglang/srt/layers/moe/kt_nan_inject.py | 91 +++++++++++++++++++
+ python/sglang/srt/layers/moe/kt_runtime.py    | 11 ++-
+ python/sglang/srt/layers/sampler.py           | 14 +++
+ .../batch_result_processor.py                 | 48 ++++++++++
+ python/sglang/srt/managers/utils.py           |  3 +
+ .../breakable_cuda_graph_backend.py           |  7 ++
+ 9 files changed, 187 insertions(+), 1 deletion(-)
+ create mode 100644 python/sglang/srt/layers/moe/kt_nan_inject.py
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 067812a7..890c214d 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1460,6 +1460,12 @@ class Envs:
+     # stop fragmenting into "reserved but unallocated" blocks. Graph pools, weights
+     # and the KV pool stay ordinary segments. Per-serve lever, off by default.
+     SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE = EnvBool(False)
++    # Recipe T3.13 / C10: a batch row whose raw next-token logits are not all
++    # finite fails *that* request (FINISH_ABORT, HTTP 500, err_type
++    # NonFiniteLogits) instead of being sampled from sanitized logits or
++    # silently truncated by the vocab-boundary check. The row flags are computed
++    # on the device (graph-safe) and ride the existing D2H of the token ids.
++    SGLANG_DSV41_REJECT_NAN_ROWS = EnvBool(True)
+     SGLANG_FP8_PAGED_MQA_LOGITS_TORCH = EnvBool(False)
+     SGLANG_OPT_FLASHMLA_SPARSE_PREFILL = EnvBool(True)
+ 
+diff --git a/python/sglang/srt/layers/logits_processor.py b/python/sglang/srt/layers/logits_processor.py
+index ba7c5ff1..4f16fb57 100644
+--- a/python/sglang/srt/layers/logits_processor.py
++++ b/python/sglang/srt/layers/logits_processor.py
+@@ -188,6 +188,9 @@ class LogitsProcessorOutput:
+     hidden_states_token_indices: Optional[torch.Tensor] = None
+ 
+     ## Part 2: This part will be assigned in python/sglang/srt/layers/sampler.py::Sampler
++    # Recipe T3.13 / C10: per batch row, True when the raw next-token logits held
++    # a NaN/Inf before sanitizing.  shape: [#seq] bool; None when the check is off.
++    nan_rows: Optional[torch.Tensor] = None
+     # he log probs of output tokens, if SGLANG_RETURN_ORIGINAL_LOGPROB = True, will get the log probs before applying temperature. If False, will get the log probs before applying temperature.
+     next_token_logprobs: Optional[torch.Tensor] = None
+     # The logprobs and ids of the top-k tokens in output positions. shape: [#seq, k]
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index d61916dd..4273c9b8 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -728,6 +728,11 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             elif self.tp_rank == 0:
+                 cpu_output = self.sync(x)
+                 output = output + cpu_output
++            # Debug-only (KT_NAN_INJECT, recipe T3.13 / C10): None in a real
++            # serve, so no node is captured. Lives on rank 0 like the CPU add.
++            nan_inject = self.kt_config.runtime.nan_inject
++            if nan_inject is not None:
++                output = nan_inject.add_to(self.kt_config.layer_idx, output)
+             if (
+                 self.provider is not None
+                 and self.kt_config.num_layers is not None
+diff --git a/python/sglang/srt/layers/moe/kt_nan_inject.py b/python/sglang/srt/layers/moe/kt_nan_inject.py
+new file mode 100644
+index 00000000..5fbb302b
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/kt_nan_inject.py
+@@ -0,0 +1,91 @@
++"""Debug-only NaN injection into one MoE layer's output (recipe T3.13 / C10).
++
++Off unless ``KT_NAN_INJECT`` is set; the default serve has no object and no
++extra graph node. The test it exists for: a NaN that appears in one request's
++hidden state mid-decode must fail *that* request (HTTP 500, ``NonFiniteLogits``)
++while the other rows of the batch keep decoding and the server stays up.
++
++Spec (``KT_NAN_INJECT``): ``row=<r>,bs=<b>,step=<n>,layer=<l>`` -- on the
++``n``-th replayed decode graph of batch size ``b`` (rank 0 counts replays),
++add NaN to element 0 of row ``r``'s hidden state after MoE layer ``l``. The
++add is captured into the decode graph as ``output + buf[:rows]`` against a
++zero buffer allocated once (one bf16 row per possible batch row); the host
++writes the NaN into that buffer right before the target replay and zeroes it
++again before the next one, so exactly one step of one row is poisoned. The TP
++all-reduce after the layer carries the NaN to rank 1 element-wise, which is the
++same path a real NaN from the CPU tier would take.
++
++Forwards with more rows than the buffer (prefill chunks) are left untouched.
++"""
++
++from __future__ import annotations
++
++import logging
++import math
++import os
++from typing import Optional
++
++import torch
++
++logger = logging.getLogger(__name__)
++
++KT_NAN_INJECT = os.environ.get("KT_NAN_INJECT", "").strip()
++# Decode rows the injector can reach; prefill chunks are larger and skipped.
++_CAPACITY = 64
++
++
++class NanInjector:
++    def __init__(self, *, row: int, bs: int, step: int, layer: int) -> None:
++        if not (0 <= row < bs <= _CAPACITY) or step < 1 or layer < 0:
++            raise ValueError(f"KT_NAN_INJECT: bad spec row={row} bs={bs} step={step} layer={layer}")
++        self.row, self.bs, self.step, self.layer = row, bs, step, layer
++        self.buf: Optional[torch.Tensor] = None
++        self.replays_at_bs = 0
++        self.fired = False
++        self.armed = False
++
++    @classmethod
++    def from_env(cls, spec: str = KT_NAN_INJECT) -> Optional["NanInjector"]:
++        if not spec:
++            return None
++        fields = {}
++        for part in spec.split(","):
++            k, _, v = part.partition("=")
++            fields[k.strip()] = int(v)
++        return cls(
++            row=fields.get("row", 0),
++            bs=fields.get("bs", 1),
++            step=fields.get("step", 1),
++            layer=fields.get("layer", 0),
++        )
++
++    # -- inside the forward (captured) -------------------------------------------
++
++    def add_to(self, layer_idx: int, output: torch.Tensor) -> torch.Tensor:
++        """``output + buf[:rows]`` at the target layer; identity elsewhere."""
++        if layer_idx != self.layer or output.shape[0] > _CAPACITY:
++            return output
++        if self.buf is None:
++            self.buf = torch.zeros(
++                _CAPACITY, output.shape[1], dtype=output.dtype, device=output.device
++            )
++        return output + self.buf[: output.shape[0]]
++
++    # -- host side, once per decode graph replay ---------------------------------
++
++    def before_replay(self, batch_size: int) -> None:
++        if self.armed:
++            # The previous replay carried the NaN; this one must not.
++            self.buf.zero_()
++            self.armed = False
++        if self.fired or batch_size != self.bs or self.buf is None:
++            return
++        self.replays_at_bs += 1
++        if self.replays_at_bs == self.step:
++            self.buf[self.row, 0] = math.nan
++            self.armed = True
++            self.fired = True
++            logger.error(
++                "[KT_NAN_INJECT] poisoning row %d of the bs=%d decode replay #%d after MoE layer %d",
++                self.row, self.bs, self.replays_at_bs, self.layer,
++            )
+diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
+index d275449f..eef6a41f 100644
+--- a/python/sglang/srt/layers/moe/kt_runtime.py
++++ b/python/sglang/srt/layers/moe/kt_runtime.py
+@@ -43,6 +43,7 @@ from sglang.srt.layers.moe.kt_provider import (
+ )
+ 
+ if TYPE_CHECKING:
++    from sglang.srt.layers.moe.kt_nan_inject import NanInjector
+     from sglang.srt.layers.moe.kt_prefill import LayerwisePrefillCoordinator
+     from sglang.srt.layers.moe.kt_timeline import StepTimeline
+     from sglang.srt.model_executor.model_runner import ModelRunner
+@@ -60,6 +61,9 @@ class KtRuntime:
+         # (KT_GPU_PREFILL_MIN_TOKENS > 0); every later layer registers with it.
+         self.prefill_coordinator: Optional["LayerwisePrefillCoordinator"] = None
+         self.timeline = timeline
++        # Debug-only NaN injector (KT_NAN_INJECT, recipe T3.13 / C10); None in
++        # every real serve. Rank 0 only: it is the rank that adds the CPU tier.
++        self.nan_inject: Optional["NanInjector"] = None
+ 
+     # -- construction --------------------------------------------------------------
+ 
+@@ -74,7 +78,12 @@ class KtRuntime:
+ 
+         tp_rank = model_runner.ps.tp_rank
+         timeline = StepTimeline(tp_rank) if KT_TIMELINE else None
+-        return cls(tp_rank=tp_rank, timeline=timeline)
++        runtime = cls(tp_rank=tp_rank, timeline=timeline)
++        if tp_rank == 0:
++            from sglang.srt.layers.moe.kt_nan_inject import NanInjector
++
++            runtime.nan_inject = NanInjector.from_env()
++        return runtime
+ 
+     # -- providers -----------------------------------------------------------------
+ 
+diff --git a/python/sglang/srt/layers/sampler.py b/python/sglang/srt/layers/sampler.py
+index dd9d6c5a..48c18803 100644
+--- a/python/sglang/srt/layers/sampler.py
++++ b/python/sglang/srt/layers/sampler.py
+@@ -153,6 +153,20 @@ class Sampler(nn.Module):
+         if _is_hip and logits.shape[0] == 0:
+             return torch.empty((0,), dtype=torch.int64, device=logits.device)
+ 
++        # Recipe T3.13 / C10: flag rows whose logits are already broken before
++        # any sanitizing, then sanitize so the sampling kernels see finite
++        # values; the scheduler fails exactly the flagged requests. NaN and
++        # +Inf only: -Inf is what grammar / logit-bias masks legitimately write,
++        # and it is kept, so a well-formed row is left bit-identical.
++        # Device-side, no host sync, so it captures into the decode graph.
++        if envs.SGLANG_DSV41_REJECT_NAN_ROWS.get():
++            logits_output.nan_rows = torch.isnan(logits).any(dim=-1) | torch.isposinf(
++                logits
++            ).any(dim=-1)
++            torch.nan_to_num_(logits, nan=-1e30, posinf=1e30, neginf=float("-inf"))
++        else:
++            logits_output.nan_rows = None
++
+         # Preprocess logits (custom processors and NaN handling)
+         _trace_e2e_sampler("preprocess_enter")
+         logits = self._preprocess_logits(logits, sampling_info)
+diff --git a/python/sglang/srt/managers/scheduler_components/batch_result_processor.py b/python/sglang/srt/managers/scheduler_components/batch_result_processor.py
+index eb6cf4a8..0a329030 100644
+--- a/python/sglang/srt/managers/scheduler_components/batch_result_processor.py
++++ b/python/sglang/srt/managers/scheduler_components/batch_result_processor.py
+@@ -2,6 +2,7 @@ from __future__ import annotations
+ 
+ import logging
+ from dataclasses import dataclass
++from http import HTTPStatus
+ from typing import (
+     TYPE_CHECKING,
+     Callable,
+@@ -78,6 +79,47 @@ if TYPE_CHECKING:
+ logger = logging.getLogger(__name__)
+ 
+ 
++def _non_finite_rows(
++    batch: ScheduleBatch, logits_output: Optional[LogitsProcessorOutput]
++) -> Optional[List[bool]]:
++    """Per-request non-finite-logits flags (recipe T3.13 / C10), or None.
++
++    None when the check is off, when the batch has no sampled logits, or when
++    the rows do not map 1:1 onto ``batch.reqs`` (speculative verify layouts),
++    in which case nothing is rejected rather than guessing a mapping.
++    """
++    if logits_output is None or logits_output.nan_rows is None:
++        return None
++    if not batch.spec_algorithm.is_none():
++        return None
++    nan_rows = logits_output.nan_rows
++    if nan_rows.shape[0] != len(batch.reqs):
++        return None
++    return nan_rows.tolist()
++
++
++def _reject_non_finite_row(req: Req, row: int, mode: str) -> None:
++    """Fail one request whose logits were not finite; the batch keeps running.
++
++    Sets ``to_finish`` so the next ``update_finish_state`` finishes the request
++    with an abort the tokenizer manager turns into HTTP 500 (non-stream) or an
++    error chunk (stream). Its KV is released like any finished request.
++    """
++    if req.finished() or req.to_finish is not None:
++        return
++    logger.error(
++        "[non-finite-logits] rid=%s row=%d mode=%s: NaN/Inf in next-token logits; "
++        "aborting this request only (err_type=NonFiniteLogits)",
++        req.rid, row, mode,
++    )
++    req.to_finish = FINISH_ABORT(
++        "non-finite logits (NaN/Inf) were produced for this request; it was aborted, "
++        "the server keeps serving",
++        HTTPStatus.INTERNAL_SERVER_ERROR,
++        "NonFiniteLogits",
++    )
++
++
+ def _get_speculative_output_stride(result: GenerationBatchResult) -> int:
+     """Return the padded per-request width in flattened speculative output."""
+     stride = result.speculative_output_stride
+@@ -287,6 +329,7 @@ class SchedulerBatchResultProcessor:
+             # Move next_token_ids and logprobs to cpu
+             next_token_ids = next_token_ids.tolist()
+             self.move_logprobs_to_cpu(batch=batch, logits_output=logits_output)
++            non_finite = _non_finite_rows(batch, logits_output)
+ 
+             self._validate_pp_skip_output_comm(batch, result)
+ 
+@@ -340,6 +383,8 @@ class SchedulerBatchResultProcessor:
+ 
+                         self._maybe_update_reasoning_tokens(req, next_token_id)
+ 
++                        if non_finite is not None and non_finite[i]:
++                            _reject_non_finite_row(req, i, "prefill")
+                         req.update_finish_state()
+                     # A mixed spec tail committed its pending bonus token; advance
+                     # so the next spec prepare_for_decode reserves from the right base.
+@@ -938,6 +983,7 @@ class SchedulerBatchResultProcessor:
+         newly_finished_beam_groups = set()
+         if batch.spec_algorithm.is_none() and logits_output is not None:
+             newly_finished_beam_groups = self.beam_coordinator.commit_decode(batch)
++        non_finite = _non_finite_rows(batch, logits_output)
+ 
+         for i, req in enumerate(batch.reqs):
+             req: Req
+@@ -972,6 +1018,8 @@ class SchedulerBatchResultProcessor:
+ 
+             self._maybe_update_reasoning_tokens(req, next_token_id)
+             req.time_stats.set_last_decode_finish_time()
++            if non_finite is not None and non_finite[i]:
++                _reject_non_finite_row(req, i, "decode")
+             req.update_finish_state(new_accept_len)
+ 
+             self._handle_finish_state_updated_req(req, batch, result, i, logits_output)
+diff --git a/python/sglang/srt/managers/utils.py b/python/sglang/srt/managers/utils.py
+index 2695df7d..e320b7d3 100644
+--- a/python/sglang/srt/managers/utils.py
++++ b/python/sglang/srt/managers/utils.py
+@@ -161,6 +161,9 @@ class GenerationBatchResult:
+                 self.logits_output.hidden_states
+             )
+         self.next_token_ids = _async_d2h(self.next_token_ids)
++        # Recipe T3.13 / C10: the per-row non-finite flags ride the same fence.
++        if self.logits_output is not None and self.logits_output.nan_rows is not None:
++            self.logits_output.nan_rows = _async_d2h(self.logits_output.nan_rows)
+ 
+         if self.accept_lens is not None:
+             self.accept_lens = _async_d2h(self.accept_lens)
+diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+index cf02027c..0252c71b 100644
+--- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
++++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+@@ -356,6 +356,13 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+         static_forward_batch: ForwardBatch,
+         **kwargs,
+     ) -> Any:
++        # Debug-only NaN injector (KT_NAN_INJECT, recipe T3.13 / C10): arms or
++        # clears its captured buffer on the host before the replay. None in a
++        # real serve.
++        kt_runtime = getattr(self._model_runner, "kt_runtime", None)
++        nan_inject = kt_runtime.nan_inject if kt_runtime is not None else None
++        if nan_inject is not None:
++            nan_inject.before_replay(shape_key.size * self._rows_per_shape_unit())
+         with graph_pool_replay_scope():
+             self._graphs[shape_key].replay()
+         return self._outputs[shape_key]

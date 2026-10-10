@@ -1,0 +1,296 @@
+From 2323052b02e23cd26673776f69ff900d12caca68 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 00:04:04 -0400
+Subject: [PATCH 32/50] moe: persistent FlashInfer CUTLASS MXFP4 workspace per
+ device (E34d-v (i))
+
+FlashInfer's cutlass_fused_moe allocated and freed a ~980 MiB scratch on every
+call; across long prefills that churn fragmented the caching allocator until no
+contiguous block was left (1M x 1 died at ~306K prefix, 262K x 4 at ~190K, with
+>1.8 GiB reserved-but-free). fused_experts_none_to_flashinfer_mxfp4 now passes
+one buffer per device sized by cutlass_fused_moe_workspace_size for the
+prefill-chunk ceiling (max_prefill_buffer_tokens / max_running_requests, or
+SGLANG_FLASHINFER_MOE_WORKSPACE_MAX_ROWS), allocated at the first (pre-capture)
+call and never resized. Larger forwards or non-fitting configurations fall back
+to per-call allocation with one warning; allocation inside graph capture is
+refused. SGLANG_FLASHINFER_MOE_PERSISTENT_WORKSPACE=0 restores the old path.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                  |   6 +
+ .../moe/moe_runner/flashinfer_cutlass.py      | 214 +++++++++++++++++-
+ 2 files changed, 213 insertions(+), 7 deletions(-)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index a52c6864..309cf5b7 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -978,6 +978,12 @@ class Envs:
+     SGLANG_TRTLLM_MOE_PDL_MAX_TOKENS = EnvInt(8192)
+     # Use FlashInfer's fused atomic CUTLASS/CuTe DSL MoE finalize.
+     SGLANG_FLASHINFER_MOE_FUSED_FINALIZE = EnvBool(True)
++    # Hold one persistent CUTLASS MXFP4 MoE workspace per device instead of
++    # letting FlashInfer allocate and free its ~1 GiB scratch on every call
++    # (per-call churn fragments the allocator at long prefixes). The buffer is
++    # sized for the prefill-chunk ceiling unless MAX_ROWS overrides it.
++    SGLANG_FLASHINFER_MOE_PERSISTENT_WORKSPACE = EnvBool(True)
++    SGLANG_FLASHINFER_MOE_WORKSPACE_MAX_ROWS = EnvInt(None)
+     # Master switch for the experimental TRT-LLM LoRA fast path; when OFF (default) every
+     # fine-grained opt switch reads False, keeping non-experimental paths byte-identical.
+     SGLANG_EXPERIMENTAL_LORA_OPTI = EnvBool(False)
+diff --git a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
+index 950591ca..3d2d4351 100644
+--- a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
++++ b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
+@@ -8,7 +8,8 @@ Quantization methods prepare a small quant_info payload and route through
+ 
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass
++import logging
++from dataclasses import dataclass, field
+ from typing import TYPE_CHECKING, Optional
+ 
+ import torch
+@@ -112,6 +113,9 @@ class FlashInferCutlassMxfp4MoeQuantInfo(MoeQuantInfo):
+     padded_hidden: Optional[int] = None
+ 
+ 
++logger = logging.getLogger(__name__)
++
++
+ def _flashinfer_cutlass_fused_moe():
+     if not is_flashinfer_available():
+         raise RuntimeError(
+@@ -123,6 +127,177 @@ def _flashinfer_cutlass_fused_moe():
+     return cutlass_fused_moe, ActivationType
+ 
+ 
++@dataclass
++class _MoeWorkspace:
++    """One persistent ``cutlass_fused_moe`` scratch buffer for a device.
++
++    Without ``workspace_buffer=`` FlashInfer allocates and frees a ~1 GiB
++    scratch tensor on every call (``getWorkspaceInfo``). Across a long prefill
++    that churn, interleaved with the prefix-proportional attention and indexer
++    transients, fragments the caching allocator until no contiguous block of
++    that size is left: 1M x 1 died at a ~306K prefix and 262K x 4 at ~190K
++    with >1.8 GiB reserved-but-free (recipe E34d-v (i)). FlashInfer sizes the
++    workspace monotonically in rows, so one buffer sized for the largest
++    forward serves every smaller call; the binding checks the buffer is 1-D,
++    contiguous, 128-byte aligned and large enough before using it.
++    """
++
++    buffer: torch.Tensor
++    max_rows: int
++    # Kernel configuration -> whether it fits in ``buffer`` at ``max_rows``.
++    fits: dict = field(default_factory=dict)
++    warned_overflow: bool = False
++
++
++_MOE_WORKSPACES: dict[torch.device, _MoeWorkspace] = {}
++
++
++def _moe_workspace_row_ceiling(rows: int) -> int:
++    override = envs.SGLANG_FLASHINFER_MOE_WORKSPACE_MAX_ROWS.get()
++    if override is not None:
++        return max(int(override), rows)
++    try:
++        from sglang.srt.runtime_context import get_schedule, max_prefill_buffer_tokens
++
++        ceiling = max_prefill_buffer_tokens() or get_schedule().max_prefill_tokens
++        # Decode forwards carry one row per running request (times the draft
++        # length under speculation); n_gram_embedding sizes its buffer the
++        # same way.
++        ceiling = max(ceiling or 0, get_schedule().max_running_requests or 0)
++    except Exception:  # no published runtime context (unit tests)
++        ceiling = 0
++    return max(int(ceiling), rows)
++
++
++def _moe_workspace(
++    *,
++    x: torch.Tensor,
++    rows: int,
++    hidden_size: int,
++    intermediate_size: int,
++    num_experts_total: int,
++    top_k: int,
++    weight_dtype: torch.dtype,
++    output_dtype: torch.dtype,
++    activation_type,
++    tp_size: int,
++    tp_rank: int,
++    ep_size: int,
++    ep_rank: int,
++    use_w4_group_scaling: bool,
++    use_mxfp8_act_scaling: bool,
++    use_fused_finalize: bool,
++    use_wfp4afp8_humming: bool,
++) -> Optional[torch.Tensor]:
++    """Return the device's persistent workspace, or ``None`` to let FlashInfer
++    allocate per call (feature off, or a forward larger than the buffer)."""
++    if not envs.SGLANG_FLASHINFER_MOE_PERSISTENT_WORKSPACE.get():
++        return None
++    from flashinfer.fused_moe import cutlass_fused_moe_workspace_size
++
++    device = x.device
++    config_key = (
++        hidden_size,
++        intermediate_size,
++        num_experts_total,
++        top_k,
++        x.dtype,
++        weight_dtype,
++        output_dtype,
++        int(activation_type),
++        tp_size,
++        tp_rank,
++        ep_size,
++        ep_rank,
++        use_w4_group_scaling,
++        use_mxfp8_act_scaling,
++        use_fused_finalize,
++        use_wfp4afp8_humming,
++    )
++
++    def size_for(max_rows: int) -> int:
++        return int(
++            cutlass_fused_moe_workspace_size(
++                max_rows,
++                hidden_size,
++                intermediate_size,
++                num_experts_total,
++                top_k,
++                x_dtype=x.dtype,
++                weight_dtype=weight_dtype,
++                output_dtype=output_dtype,
++                activation_type=activation_type,
++                tp_size=tp_size,
++                tp_rank=tp_rank,
++                ep_size=ep_size,
++                ep_rank=ep_rank,
++                use_w4_group_scaling=use_w4_group_scaling,
++                use_mxfp8_act_scaling=use_mxfp8_act_scaling,
++                use_fused_finalize=use_fused_finalize,
++                use_wfp4afp8_humming=use_wfp4afp8_humming,
++                device=device,
++            )
++        )
++
++    ws = _MOE_WORKSPACES.get(device)
++    if ws is None:
++        if torch.cuda.is_current_stream_capturing():
++            raise RuntimeError(
++                "FlashInfer MoE workspace must be allocated before CUDA graph "
++                "capture (an allocation inside capture would live in the graph "
++                "pool); warm up the model first or set "
++                "SGLANG_FLASHINFER_MOE_PERSISTENT_WORKSPACE=0."
++            )
++        max_rows = _moe_workspace_row_ceiling(rows)
++        nbytes = size_for(max_rows)
++        buffer = torch.empty(nbytes, dtype=torch.uint8, device=device)
++        ws = _MoeWorkspace(buffer=buffer, max_rows=max_rows)
++        ws.fits[config_key] = True
++        _MOE_WORKSPACES[device] = ws
++        logger.info(
++            "FlashInfer MoE workspace: %.1f MiB persistent on %s for up to %d rows "
++            "(hidden=%d inter=%d experts=%d top_k=%d)",
++            nbytes / 2**20,
++            device,
++            max_rows,
++            hidden_size,
++            intermediate_size,
++            num_experts_total,
++            top_k,
++        )
++    elif config_key not in ws.fits:
++        # Another MoE shape on the same device: the buffer is never resized
++        # once a graph may have captured its address, so a configuration that
++        # does not fit at the buffer's row ceiling keeps per-call allocation.
++        fits = size_for(ws.max_rows) <= ws.buffer.numel()
++        ws.fits[config_key] = fits
++        if not fits:
++            logger.warning(
++                "FlashInfer MoE workspace on %s (%d rows) is too small for MoE "
++                "configuration %r; that configuration allocates per call (raise "
++                "SGLANG_FLASHINFER_MOE_WORKSPACE_MAX_ROWS to cover it).",
++                device,
++                ws.max_rows,
++                config_key,
++            )
++    if not ws.fits[config_key]:
++        return None
++
++    if rows > ws.max_rows:
++        if not ws.warned_overflow:
++            ws.warned_overflow = True
++            logger.warning(
++                "FlashInfer MoE forward of %d rows exceeds the persistent workspace "
++                "ceiling of %d rows on %s; falling back to per-call allocation for "
++                "such forwards (set SGLANG_FLASHINFER_MOE_WORKSPACE_MAX_ROWS).",
++                rows,
++                ws.max_rows,
++                device,
++            )
++        return None
++    return ws.buffer
++
++
+ def _activation_type(runner_config: MoeRunnerConfig):
+     from sglang.srt.layers.moe.moe_runner.flashinfer_trtllm import get_activation_type
+ 
+@@ -409,6 +584,34 @@ def fused_experts_none_to_flashinfer_mxfp4(
+     with use_symmetric_memory(get_tp_group(), disabled=not is_allocation_symmetric()):
+         out = torch.empty(x.shape[0], out_hidden, dtype=output_dtype, device=x.device)
+ 
++    activation_type = (
++        ActivationType.SwigluStep if quant_info.use_swiglu_step else ActivationType.Swiglu
++    )
++    use_fused_finalize = envs.SGLANG_FLASHINFER_MOE_FUSED_FINALIZE.get()
++    workspace_buffer = _moe_workspace(
++        x=x,
++        rows=x.shape[0],
++        # The binding derives both from fc2 [E, hidden, inter_packed]: packed
++        # FP4 holds two values per byte, so the logical inter dim is the packed
++        # dim times 2 * element_size (16 per int64 word on SM120, 2 per byte on
++        # SM90).
++        hidden_size=fc2_expert_weights.shape[1],
++        intermediate_size=fc2_expert_weights.shape[2] * 2 * fc2_expert_weights.element_size(),
++        num_experts_total=fc2_expert_weights.shape[0] * quant_info.moe_ep_size,
++        top_k=topk_ids.shape[1],
++        weight_dtype=fc2_expert_weights.dtype,
++        output_dtype=output_dtype,
++        activation_type=activation_type,
++        tp_size=quant_info.moe_tp_size,
++        tp_rank=quant_info.moe_tp_rank,
++        ep_size=quant_info.moe_ep_size,
++        ep_rank=quant_info.moe_ep_rank,
++        use_w4_group_scaling=not use_mxfp8_act_scaling,
++        use_mxfp8_act_scaling=use_mxfp8_act_scaling,
++        use_fused_finalize=use_fused_finalize,
++        use_wfp4afp8_humming=use_wfp4afp8_humming,
++    )
++
+     flashinfer_cutlass_fused_moe(
+         input=x,
+         token_selected_experts=topk_ids.to(torch.int32),
+@@ -429,14 +632,11 @@ def fused_experts_none_to_flashinfer_mxfp4(
+         ep_rank=quant_info.moe_ep_rank,
+         use_w4_group_scaling=not use_mxfp8_act_scaling,
+         use_mxfp8_act_scaling=use_mxfp8_act_scaling,
+-        activation_type=(
+-            ActivationType.SwigluStep
+-            if quant_info.use_swiglu_step
+-            else ActivationType.Swiglu
+-        ),
++        activation_type=activation_type,
+         tune_max_num_tokens=next_power_of_2(x.shape[0]),
+         output=out,
+-        use_fused_finalize=envs.SGLANG_FLASHINFER_MOE_FUSED_FINALIZE.get(),
++        use_fused_finalize=use_fused_finalize,
++        workspace_buffer=workspace_buffer,
+         **humming_kwargs,
+     )
+ 

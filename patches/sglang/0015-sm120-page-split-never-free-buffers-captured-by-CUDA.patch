@@ -1,0 +1,604 @@
+From 838490a6fd7f0a026f3c03b2586d0e9f4288a968 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Wed, 23 Sep 2026 00:03:42 -0400
+Subject: [PATCH 15/50] sm120 page-split: never free buffers captured by CUDA
+ graphs; pre-size from pool geometry
+
+E23 R1 bug B (DSpark K=2 graph mode: cudaErrorIllegalAddress / Xid 31 in the
+first attention layer on the second request, eager never faults).
+
+Root cause: _split_kv_pages_to_64 kept its page mask and split-output buffers
+in get_resources().buffers as grow-only tensors and *freed* the old tensor on
+growth. The warmup only touches the SWA pool (mask N=71), CUDA graphs are
+captured with that pointer baked into the memset, _page_mark_kernel and
+_page_split_kernel launches, and the first real prefill after capture grows the
+shared mask (N=1206) and the "extra" split buffer for the compressed pools.
+Every replay then wrote the freed block: silent corruption of whatever the
+caching allocator placed there (run H: verify positions/out_cache_loc read back
+as int8 page marks, 0x00010100), and an MMU fault once the segment was released.
+
+Fix:
+- _grow_persistent retires the old tensor into buffers["flash_mla_sm120_retired"]
+  instead of dropping it, so a captured graph stays self-consistent with the
+  buffer it captured (a pool's page count never changes after init). A grow
+  after capture now logs at ERROR.
+- reserve_split_buffers(pools, device) pre-sizes mask and split buffers from
+  the maximum over all pools; DeepseekV4AttnBackend calls it at init on SM120
+  with (num_pages, page_size, tag) from the SWA and compressed pools, keyed on
+  the pool tensors' indexed device (torch.device("cuda") vs "cuda:0" stringify
+  differently -- the first attempt reserved under the wrong key).
+- _page_mark_kernel takes an N_tok upper bound and drops indices outside
+  [0, N_tok) (defense in depth; FlashInfer's SM120 kernel has no upper-bound
+  check on positive indices).
+
+Diagnostics kept behind env flags (off by default):
+- SGLANG_SM120_IDX_GUARD=1: mask out-of-range token indices to -1 and record
+  in-graph OOB stats (idx_oob_stats_buffer, int64[5]).
+- SGLANG_BCG_DEBUG_LAYER_BREAKS=all|"0-9"|"0,4": per-layer graph breaks for
+  fault attribution; SGLANG_BCG_DEBUG_INPUTS=1 dumps verify graph inputs.
+
+Verified (run J): probe 171 tokens, 3-needle verify 7/7, C1/C3 512-token bench
+complete in graph mode, no fault, no OOB, accept rate 0.66 (C1) / 0.63 (C3).
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../kernels/ops/attention/flash_mla_sm120.py  | 231 +++++++++++++++---
+ .../layers/attention/deepseek_v4_backend.py   |  38 +++
+ python/sglang/srt/models/deepseek_v4.py       | 163 ++++++++++++
+ 3 files changed, 397 insertions(+), 35 deletions(-)
+
+diff --git a/python/sglang/kernels/ops/attention/flash_mla_sm120.py b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
+index c5c5c7be..76b46c0f 100644
+--- a/python/sglang/kernels/ops/attention/flash_mla_sm120.py
++++ b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
+@@ -231,6 +231,7 @@ def _flash_mla_sm120_prefill(
+     kv_u8 = k_cache.view(torch.uint8) if k_cache.dtype != torch.uint8 else k_cache
+     src_pbs = k_cache.shape[1] if k_cache.ndim >= 3 else _PBS_SRC
+     idx = indices.squeeze(1) if indices.dim() == 3 else indices
++    idx = _guard_indices(idx, kv_u8.shape[0] * src_pbs)  # SGLANG_SM120_IDX_GUARD
+     kv_64 = (
+         _split_kv_pages_to_64(kv_u8, src_pbs, touched_indices=idx)
+         if src_pbs != _PBS_DST
+@@ -253,6 +254,7 @@ def _flash_mla_sm120_prefill(
+         # c1 (256) and c2 (128) do not. Re-page those to 64 exactly like the
+         # SWA pool above; token indices are invariant under the split.
+         extra_pbs = extra_kv_u8.shape[1]
++        extra_idx = _guard_indices(extra_idx, extra_kv_u8.shape[0] * extra_pbs)
+         if extra_pbs not in (_PBS_DST, 2) and extra_pbs % _PBS_DST == 0:
+             extra_kv_u8 = _split_kv_pages_to_64(
+                 extra_kv_u8,
+@@ -441,6 +443,7 @@ def _page_mark_kernel(
+     indices_ptr,
+     mask_ptr,
+     N_idx,
++    N_tok,
+     SRC_PBS: tl.constexpr,
+     BLOCK: tl.constexpr,
+ ):
+@@ -454,11 +457,193 @@ def _page_mark_kernel(
+     offs = pid * BLOCK + tl.arange(0, BLOCK)
+     valid = offs < N_idx
+     idx = tl.load(indices_ptr + offs, mask=valid, other=-1)
+-    keep = valid & (idx >= 0)
++    # Upper bound too: an index past the pool (untranslated full-pool index,
++    # stale mapping, garbage from an unwritten req_to_token row) must not
++    # store past ``mask`` -- that is an MMU fault (Xid 31) inside a captured
++    # graph, which is unattributable. (E23 R1 bug B.)
++    keep = valid & (idx >= 0) & (idx < N_tok)
+     page = idx // SRC_PBS
+     tl.store(mask_ptr + page, tl.full((BLOCK,), 1, tl.int8), mask=keep)
+ 
+ 
++_IDX_GUARD_ENV = "SGLANG_SM120_IDX_GUARD"
++_IDX_STATS_KEY = "flash_mla_sm120_idx_oob_stats"
++_INT32_MAX = 2**31 - 1
++
++
++def _idx_guard_enabled() -> bool:
++    import os
++
++    return os.environ.get(_IDX_GUARD_ENV, "0") not in ("", "0", "false", "False")
++
++
++def idx_oob_stats_buffer(device) -> torch.Tensor:
++    """Persistent int64[5] per device: [oob_count, oob_min, oob_max, bound, calls].
++
++    Written in-graph by ``_guard_indices`` (so replays update it), read and
++    reset eagerly by the BCG debug layer breaks (``SGLANG_BCG_DEBUG_LAYER_BREAKS``).
++    """
++    from sglang.srt.runtime_context import get_resources
++
++    buffers = get_resources().buffers
++    key = f"{_IDX_STATS_KEY}:{device}"
++    buf = buffers.get(key)
++    if buf is None:
++        with torch.inference_mode(False):
++            buf = torch.zeros(5, dtype=torch.int64, device=device)
++            buf[1] = _INT32_MAX
++        buffers[key] = buf
++    return buf
++
++
++def _guard_indices(idx: torch.Tensor, bound: int) -> torch.Tensor:
++    """Mask token indices outside ``[0, bound)`` to -1 and record OOB stats.
++
++    Only active when ``SGLANG_SM120_IDX_GUARD=1``. Every op is graph-safe (no
++    host sync); stats accumulate in ``idx_oob_stats_buffer``.
++    """
++    if not _idx_guard_enabled():
++        return idx
++    stats = idx_oob_stats_buffer(idx.device)
++    idx64 = idx.to(torch.int64)
++    bad = idx64 >= bound
++    stats[0] += bad.sum()
++    stats[1] = torch.minimum(
++        stats[1], torch.where(bad, idx64, _INT32_MAX).min()
++    )
++    stats[2] = torch.maximum(stats[2], torch.where(bad, idx64, -1).max())
++    stats[3].fill_(bound)  # fill_ is a device kernel (graph-safe); `= int` is a H2D copy
++    stats[4] += 1
++    return torch.where(bad, torch.full_like(idx, -1), idx)
++
++
++_RETIRED_KEY = "flash_mla_sm120_retired"
++
++
++def _dev_key(dev) -> str:
++    # torch.device("cuda") and torch.device("cuda:0") are the same device but
++    # stringify differently; key on the resolved index so a reservation made
++    # with the backend's un-indexed device is found by the kernels' tensors.
++    dev = torch.device(dev)
++    if dev.type == "cuda" and dev.index is None:
++        dev = torch.device("cuda", torch.cuda.current_device())
++    return str(dev)
++
++
++def _split_buffer_key(dev, buffer_tag: str) -> str:
++    return f"flash_mla_sm120_split{buffer_tag}:{_dev_key(dev)}"
++
++
++def _mask_key(dev) -> str:
++    return f"flash_mla_sm120_mask:{_dev_key(dev)}"
++
++
++def _grow_persistent(buffers: dict, key: str, prev, make, what: str):
++    """Replace ``buffers[key]`` with a bigger tensor without freeing the old one.
++
++    CUDA graphs captured earlier hold the *old* data pointer for their memsets,
++    ``_page_mark_kernel`` and ``_page_split_kernel`` launches and keep writing
++    it on every replay. Dropping the old tensor hands that block back to the
++    caching allocator: whatever is placed there next is silently overwritten
++    (E23 R1 run H: verify ``positions``/``out_cache_loc`` read back as int8
++    page marks), and once the allocator releases the segment the captured
++    write hits unmapped memory -- cudaErrorIllegalAddress / Xid 31 in the first
++    attention layer of the step. Retired tensors are therefore kept alive for
++    the process lifetime; a graph stays self-consistent with the buffer it
++    captured because a pool's page count never changes after init.
++    ``reserve_split_buffers`` sizes these up-front so a grow after capture is a
++    bug worth shouting about rather than the normal path.
++    """
++    capturing = torch.cuda.is_current_stream_capturing()
++    # The first allocation can happen under inference mode (autotune), but the
++    # buffer is written again during CUDA graph capture outside inference mode,
++    # where an inference tensor cannot be mutated.
++    with torch.inference_mode(False):
++        new = make()
++    buffers[key] = new
++    if prev is not None:
++        buffers.setdefault(_RETIRED_KEY, []).append(prev)
++    logger.log(
++        logging.ERROR if (prev is not None and not capturing) else logging.WARNING,
++        "[sm120-split] %s %s: %s ptr=0x%x capturing=%s%s",
++        what,
++        "grown (old buffer retired, not freed)" if prev is not None else "allocated",
++        key,
++        new.data_ptr(),
++        capturing,
++        (
++            " -- grow after CUDA graph capture: call reserve_split_buffers() "
++            "with the full pool geometry before capture"
++            if prev is not None and not capturing
++            else ""
++        ),
++    )
++    return new
++
++
++def _ensure_split_buffer(dev, buffer_tag: str, num_dst_pages: int) -> torch.Tensor:
++    from sglang.srt.runtime_context import get_resources
++
++    buffers = get_resources().buffers
++    key = _split_buffer_key(dev, buffer_tag)
++    buf = buffers.get(key)
++    if buf is None or buf.shape[0] < num_dst_pages:
++        # Zero-filled, not torch.empty: dst pages the mask never marks keep
++        # whatever bytes were in that VRAM, and in FP8 e4m3 0x7F/0xFF decode
++        # to NaN. A kernel read of an unmarked page (padding rows of a mixed
++        # batch, a -1 index) then poisons the logits non-deterministically.
++        # Zero bytes decode to 0.0 with scale 0 -- finite. (T3.6d2 probe.)
++        buf = _grow_persistent(
++            buffers,
++            key,
++            buf,
++            lambda: torch.zeros(
++                num_dst_pages, _BYTES_PER_DST_PAGE_PADDED, dtype=torch.uint8, device=dev
++            ),
++            f"split buffer pages={num_dst_pages}",
++        )
++    return buf
++
++
++def _ensure_mask(dev, num_src_pages: int) -> torch.Tensor:
++    from sglang.srt.runtime_context import get_resources
++
++    buffers = get_resources().buffers
++    key = _mask_key(dev)
++    mbuf = buffers.get(key)
++    if mbuf is None or mbuf.shape[0] < num_src_pages:
++        mbuf = _grow_persistent(
++            buffers,
++            key,
++            mbuf,
++            lambda: torch.zeros(num_src_pages, dtype=torch.int8, device=dev),
++            f"page mask N={num_src_pages}",
++        )
++    return mbuf
++
++
++def reserve_split_buffers(pools, device) -> None:
++    """Pre-size the persistent page-split buffers before any CUDA graph capture.
++
++    ``pools`` is an iterable of ``(num_src_pages, src_page_size, buffer_tag)``
++    for every KV pool that ``_split_kv_pages_to_64`` may be asked to re-page
++    (SWA pool with tag "", compressed pools with tag "extra"). Pools whose page
++    size is already 64 (or 2) are ignored. Sizing from the largest pool means
++    no later call can grow (and retire) a buffer that a captured graph uses.
++    """
++    max_mask = 0
++    max_dst = {}
++    for num_src_pages, src_pbs, tag in pools:
++        if src_pbs == _PBS_DST or src_pbs % _PBS_DST != 0:
++            continue
++        max_mask = max(max_mask, num_src_pages)
++        max_dst[tag] = max(max_dst.get(tag, 0), num_src_pages * (src_pbs // _PBS_DST))
++    if max_mask:
++        _ensure_mask(device, max_mask)
++    for tag, pages in max_dst.items():
++        _ensure_split_buffer(device, tag, pages)
++
++
+ def _split_kv_pages_to_64(
+     kv_u8: torch.Tensor,
+     src_pbs: int,
+@@ -486,31 +671,10 @@ def _split_kv_pages_to_64(
+     ratio = src_pbs // _PBS_DST
+     num_dst_pages = N * ratio
+ 
+-    from sglang.srt.runtime_context import get_resources
+-
+-    # Pre-allocated grow-only buffer for page-split output per device.
++    # Persistent per-device page-split output buffer (grow-only, never freed;
++    # see _grow_persistent / reserve_split_buffers).
+     dev = kv_u8.device
+-    buffers = get_resources().buffers
+-    key = f"flash_mla_sm120_split{buffer_tag}:{dev}"
+-    buf = buffers.get(key)
+-    if buf is None or buf.shape[0] < num_dst_pages:
+-        # The first allocation can happen under inference mode (autotune), but
+-        # the buffer is written again during CUDA graph capture outside
+-        # inference mode, where an inference tensor cannot be mutated.
+-        #
+-        # Zero-filled, not torch.empty: dst pages the mask never marks keep
+-        # whatever bytes were in that VRAM, and in FP8 e4m3 0x7F/0xFF decode
+-        # to NaN. A kernel read of an unmarked page (padding rows of a mixed
+-        # batch, a -1 index) then poisons the logits non-deterministically.
+-        # Zero bytes decode to 0.0 with scale 0 -- finite. (T3.6d2 probe.)
+-        with torch.inference_mode(False):
+-            buf = torch.zeros(
+-                num_dst_pages,
+-                _BYTES_PER_DST_PAGE_PADDED,
+-                dtype=torch.uint8,
+-                device=dev,
+-            )
+-        buffers[key] = buf
++    buf = _ensure_split_buffer(dev, buffer_tag, num_dst_pages)
+     out = buf[:num_dst_pages]
+ 
+     # Get raw 2D view of source
+@@ -526,16 +690,7 @@ def _split_kv_pages_to_64(
+     if use_mask:
+         # Persistent per-device int8 mask, zeroed each call (cheap memset,
+         # captured cleanly by CUDA graph). 1 = page is referenced this step.
+-        mkey = f"flash_mla_sm120_mask:{dev}"
+-        mbuf = buffers.get(mkey)
+-        if mbuf is None or mbuf.shape[0] < N:
+-            # The first allocation can happen under inference mode (autotune),
+-            # but the buffer is zeroed again later during CUDA graph capture
+-            # outside inference mode -- an inference tensor cannot be mutated
+-            # there, so force a normal tensor.
+-            with torch.inference_mode(False):
+-                mbuf = torch.empty(N, dtype=torch.int8, device=dev)
+-            buffers[mkey] = mbuf
++        mbuf = _ensure_mask(dev, N)
+         mask = mbuf[:N]
+         mask.zero_()
+         idx_flat = touched_indices.reshape(-1).contiguous()
+@@ -546,6 +701,7 @@ def _split_kv_pages_to_64(
+             idx_flat,
+             mask,
+             idx_flat.numel(),
++            N * src_pbs,  # N_tok: pool size in tokens (upper bound)
+             src_pbs,  # SRC_PBS
+             _MARK_BLOCK,
+         )
+@@ -613,6 +769,7 @@ def _flash_mla_flashinfer(
+     # the persistent dst buffer is left untouched and never read).
+     kv_u8 = k_cache.view(torch.uint8) if k_cache.dtype != torch.uint8 else k_cache
+     src_pbs = k_cache.shape[1] if k_cache.ndim >= 3 else _PBS_SRC
++    idx = _guard_indices(idx, kv_u8.shape[0] * src_pbs)  # SGLANG_SM120_IDX_GUARD
+     kv_64 = (
+         _split_kv_pages_to_64(kv_u8, src_pbs, touched_indices=idx)
+         if src_pbs != _PBS_DST
+@@ -631,6 +788,10 @@ def _flash_mla_flashinfer(
+         if extra_indices is not None and extra_indices.dim() == 3
+         else extra_indices
+     )
++    if extra_idx is not None and extra_kv_u8 is not None and extra_kv_u8.ndim >= 3:
++        extra_idx = _guard_indices(
++            extra_idx, extra_kv_u8.shape[0] * extra_kv_u8.shape[1]
++        )
+ 
+     output = torch.empty(B, H, head_dim_v, dtype=torch.bfloat16, device=dev)
+     out_lse = torch.empty(B, H, dtype=torch.float32, device=dev)
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index f2d6d84f..24a9ee46 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -1150,6 +1150,8 @@ class DeepseekV4AttnBackend(
+         self.MAX_SEQ_LEN_FOR_CAPTURE = self.req_to_token.shape[1]
+ 
+         assert isinstance(self.token_to_kv_pool, DeepSeekV4TokenToKVPool)
++        if get_platform().is_sm120:
++            self._reserve_sm120_split_buffers()
+         self.index_topk = getattr(
+             model_runner.model_config.hf_text_config, "index_topk", C4_TOPK
+         )
+@@ -1218,6 +1220,42 @@ class DeepseekV4AttnBackend(
+         self._verify_mask = None
+         self.cuda_graph_swa_out_cache_loc: Optional[torch.Tensor] = None
+ 
++    def _reserve_sm120_split_buffers(self) -> None:
++        """Size the SM120 page-split scratch from the real pool geometry.
++
++        The FlashInfer SM120 sparse MLA kernels take pbs=64 pages, so the SWA
++        pool (pbs 256) and the c1/c2 compressed pools (pbs 256/128) are re-paged
++        through persistent buffers in flash_mla_sm120. Those buffers used to be
++        sized lazily by the first caller: the warmup only touches the SWA pool,
++        CUDA graphs are captured against that small allocation, and the first
++        real prefill then grows the shared page mask for the compressed pools
++        -- freeing the tensor the captured graphs still write on every replay
++        (E23 R1 bug B, Xid 31 in layer 0 on the second request). Reserving the
++        maximum over all pools here, before capture, removes the grow.
++        """
++        from sglang.kernels.ops.attention.flash_mla_sm120 import (
++            reserve_split_buffers,
++        )
++
++        pools = []
++        device = self.device
++        swa_pool = getattr(self.token_to_kv_pool, "swa_kv_pool", None)
++        if swa_pool is not None and getattr(swa_pool, "kv_buffer", None):
++            pools.append((swa_pool.kv_buffer[0].shape[0], swa_pool.page_size, ""))
++            device = swa_pool.kv_buffer[0].device
++        for pool in self.token_to_kv_pool.kv_pools.values():
++            if getattr(pool, "kv_buffer", None):
++                pools.append((pool.kv_buffer[0].shape[0], pool.page_size, "extra"))
++                device = pool.kv_buffer[0].device
++        # Key on the pool tensors' (indexed) device, the same one the kernels
++        # will see, not the backend's possibly un-indexed torch.device("cuda").
++        reserve_split_buffers(pools, device)
++        logger.info(
++            "[sm120-split] reserved page-split buffers from pools "
++            "(num_pages, page_size, tag): %s",
++            pools,
++        )
++
+     def _move_to_device(self, x: List[int]) -> torch.Tensor:
+         pin_tensor = torch.tensor(x, dtype=torch.int32, pin_memory=True)
+         return pin_tensor.to(self.device, non_blocking=True)
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index c754fe72..c8f3585e 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -3,6 +3,7 @@ from __future__ import annotations
+ import concurrent.futures
+ import functools
+ import logging
++import os
+ import time
+ from contextlib import contextmanager, nullcontext
+ from types import SimpleNamespace
+@@ -747,6 +748,149 @@ def deepseek_v4_engram_hash_ids(hasher, input_ids: torch.Tensor) -> torch.Tensor
+ bcg_deepseek_v4_engram_hash_ids = eager_on_graph(True)(deepseek_v4_engram_hash_ids)
+ 
+ 
++def _debug_layer_break_ids(spec: str, num_layers: int) -> set:
++    """Parse SGLANG_BCG_DEBUG_LAYER_BREAKS: "all", "3", "0-9", "0,4,9-12"."""
++    spec = spec.strip()
++    if not spec:
++        return set()
++    if spec == "all":
++        return set(range(num_layers))
++    ids = set()
++    for part in spec.split(","):
++        part = part.strip()
++        if not part:
++            continue
++        if "-" in part:
++            lo, hi = part.split("-", 1)
++            ids.update(range(int(lo), int(hi) + 1))
++        else:
++            ids.add(int(part))
++    return {i for i in ids if 0 <= i < num_layers}
++
++
++def _t_summary(name: str, t) -> str:
++    if t is None:
++        return f"{name}=None"
++    if not torch.is_tensor(t):
++        return f"{name}={t!r}"
++    if t.numel() == 0:
++        return f"{name}=[] shape={tuple(t.shape)}"
++    if t.numel() <= 24:
++        return f"{name}={t.flatten().tolist()}"
++    return (
++        f"{name}=shape{tuple(t.shape)} min={t.min().item()} max={t.max().item()}"
++    )
++
++
++def _debug_dump_graph_inputs(fb) -> None:
++    """Log the request-level graph inputs and their SWA translations."""
++    parts = [
++        f"mode={getattr(fb.forward_mode, 'name', fb.forward_mode)}",
++        f"bs={fb.batch_size}",
++        _t_summary("req_pool_indices", fb.req_pool_indices),
++        _t_summary("seq_lens", fb.seq_lens),
++        _t_summary("out_cache_loc", fb.out_cache_loc),
++        _t_summary("positions", fb.positions),
++        f"ptr(out_cache_loc)=0x{fb.out_cache_loc.data_ptr():x}"
++        if torch.is_tensor(fb.out_cache_loc)
++        else "",
++        f"ptr(positions)=0x{fb.positions.data_ptr():x}"
++        if torch.is_tensor(fb.positions)
++        else "",
++        f"ptr(req_pool_indices)=0x{fb.req_pool_indices.data_ptr():x}"
++        if torch.is_tensor(fb.req_pool_indices)
++        else "",
++        f"ptr(seq_lens)=0x{fb.seq_lens.data_ptr():x}"
++        if torch.is_tensor(fb.seq_lens)
++        else "",
++    ]
++    pool = getattr(fb, "token_to_kv_pool", None)
++    mapping = getattr(pool, "full_to_swa_index_mapping", None)
++    if mapping is not None and fb.out_cache_loc is not None:
++        parts.append(f"mapping_len={mapping.numel()}")
++        loc = fb.out_cache_loc.to(torch.int64)
++        in_range = (loc >= 0) & (loc < mapping.numel())
++        parts.append(f"out_loc_in_mapping_range={bool(in_range.all().item())}")
++        if bool(in_range.all().item()):
++            parts.append(_t_summary("swa_of_out_loc", mapping[loc]))
++        swa_pool = getattr(pool, "swa_kv_pool", None)
++        for attr in ("size", "num_pages", "page_size"):
++            v = getattr(swa_pool, attr, None)
++            if v is not None and not torch.is_tensor(v):
++                parts.append(f"swa_{attr}={v}")
++    backend = getattr(fb, "attn_backend", None)
++    md = getattr(backend, "forward_metadata", None)
++    core = getattr(md, "core_attn_metadata", None)
++    if core is not None:
++        for attr in (
++            "swa_out_cache_loc",
++            "raw_out_loc",
++            "swa_page_indices",
++            "swa_topk_lengths",
++            "seq_lens_casual",
++        ):
++            parts.append(_t_summary(attr, getattr(core, attr, None)))
++        pt = getattr(core, "page_table", None)
++        if torch.is_tensor(pt):
++            parts.append(f"page_table_shape={tuple(pt.shape)}")
++    spec = getattr(fb, "spec_info", None)
++    if spec is not None:
++        parts.append(f"spec={type(spec).__name__}")
++        for attr in ("draft_token_num", "num_draft_tokens", "verify_len"):
++            v = getattr(spec, attr, None)
++            if v is not None and not torch.is_tensor(v):
++                parts.append(f"spec.{attr}={v}")
++    logger.info("[graph-inputs] %s", " ".join(parts))
++
++
++def _make_debug_layer_break(layer_id: int):
++    """Diagnostic eager break in front of one layer: a captured graph is split
++    here so a replay fault is attributed to the segment (= layer range) that
++    raised it. Costs one hidden_states copy per layer per step; debug only."""
++
++    def debug_layer_break(
++        hidden_states: torch.Tensor, forward_batch=None
++    ) -> torch.Tensor:
++        # SGLANG_BCG_DEBUG_INPUTS=1: at the first break, dump the graph-static
++        # inputs this replay consumes (the captured ForwardBatch's tensors are
++        # the static buffers, so their contents are current at replay), plus
++        # the SWA write/read targets derived from them. Eager: syncs are fine.
++        if (
++            forward_batch is not None
++            and layer_id == 0
++            and os.environ.get("SGLANG_BCG_DEBUG_INPUTS", "0") not in ("", "0")
++        ):
++            _debug_dump_graph_inputs(forward_batch)
++        # With SGLANG_SM120_IDX_GUARD=1 the SM120 attention path accumulates
++        # out-of-pool KV index stats in-graph; drain them here (eager, so a
++        # host sync is fine) and attribute them to the layers since the
++        # previous break. [count, min, max, bound, calls]
++        if os.environ.get("SGLANG_SM120_IDX_GUARD", "0") not in ("", "0"):
++            from sglang.kernels.ops.attention.flash_mla_sm120 import (
++                idx_oob_stats_buffer,
++            )
++
++            stats = idx_oob_stats_buffer(hidden_states.device)
++            count, lo, hi, bound, calls = stats.tolist()
++            if count > 0:
++                logger.warning(
++                    "[idx-guard] before layer %d: %d out-of-pool KV indices "
++                    "(min %d, max %d, pool bound %d, %d attention calls)",
++                    layer_id,
++                    count,
++                    lo,
++                    hi,
++                    bound,
++                    calls,
++                )
++            stats.zero_()
++            stats[1] = 2**31 - 1
++        return hidden_states.clone()
++
++    debug_layer_break.__qualname__ = f"debug_layer_break_{layer_id}"
++    return eager_on_graph(True)(debug_layer_break)
++
++
+ class MqaAttentionBase(nn.Module):
+     def __init__(
+         self,
+@@ -3511,6 +3655,22 @@ class DeepseekV4Model(nn.Module):
+         if self.engram_layout is not None:
+             self.engram_hasher = EngramHasher.from_config(config, self.engram_layout)
+ 
++        # Diagnostic (E23 R1): SGLANG_BCG_DEBUG_LAYER_BREAKS splits the
++        # breakable CUDA graph in front of the listed layers so a replay
++        # fault is attributed to one layer's segment.
++        self._debug_layer_breaks = {
++            i: _make_debug_layer_break(i)
++            for i in _debug_layer_break_ids(
++                os.environ.get("SGLANG_BCG_DEBUG_LAYER_BREAKS", ""),
++                config.num_hidden_layers,
++            )
++        }
++        if self._debug_layer_breaks:
++            logger.info(
++                "Breakable CUDA graph: debug layer breaks in front of layers %s",
++                sorted(self._debug_layer_breaks),
++            )
++
+         self.engram_prefetch_stream = None
+         if (
+             _is_cuda
+@@ -3696,6 +3856,9 @@ class DeepseekV4Model(nn.Module):
+                 positions = tail.positions
+                 if hash_ids is not None:
+                     hash_ids = tail.rows(hash_ids)
++            debug_break = self._debug_layer_breaks.get(i)
++            if debug_break is not None and is_in_breakable_cuda_graph():
++                hidden_states = debug_break(hidden_states, forward_batch)
+             engram = self.layers[i].engram
+             if engram is not None:
+                 before_engram = hidden_states

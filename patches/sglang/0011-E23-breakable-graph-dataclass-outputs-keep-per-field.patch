@@ -1,0 +1,98 @@
+From 7164552919f3de7b7e6be71ca124739686776342 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Tue, 22 Sep 2026 14:25:37 -0400
+Subject: [PATCH 11/50] E23: breakable-graph dataclass outputs keep per-field
+ row counts (DSpark draft: bs logits rows vs bs*gamma hidden rows)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../breakable_cuda_graph_backend.py           | 40 ++++++++++++-------
+ 1 file changed, 25 insertions(+), 15 deletions(-)
+
+diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+index 64c82131..1d9586d2 100644
+--- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
++++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+@@ -61,10 +61,6 @@ def _is_dataclass_instance(obj: Any) -> bool:
+     return dataclasses.is_dataclass(obj) and not isinstance(obj, type)
+ 
+ 
+-def _dataclass_values(obj: Any):
+-    return (getattr(obj, f.name) for f in dataclasses.fields(obj))
+-
+-
+ def _map_dataclass(obj: Any, fn: Callable[[Any], Any]) -> Any:
+     """Same dataclass type with ``fn`` applied to every field value."""
+     return dataclasses.replace(
+@@ -161,7 +157,7 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+             out_rows = self._output_rows(out, size)
+             self._copy_output_to_buffer(out, self._shared_output_buffer, out_rows)
+ 
+-        stored = self._slice_output(self._shared_output_buffer, out_rows)
++        stored = self._slice_output(self._shared_output_buffer, out_rows, like=out)
+         self._graphs[shape_key] = graph
+         self._outputs[shape_key] = stored
+         # CUDA graphs retain tensor addresses, not Python tensor lifetimes.
+@@ -181,12 +177,10 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+         if isinstance(output, (list, tuple)) and output:
+             return min(self._output_rows(o, cap) for o in output if o is not None)
+         if _is_dataclass_instance(output):
+-            rows = [
+-                self._output_rows(v, cap)
+-                for v in _dataclass_values(output)
+-                if torch.is_tensor(v)
+-            ]
+-            return min(rows) if rows else cap
++            # Fields legitimately differ in rows (a DSpark draft returns bs
++            # logits rows but bs*gamma hidden rows), so the row count is
++            # resolved per field in _copy_output_to_buffer / _slice_output.
++            return cap
+         return cap
+ 
+     def _alloc_full_buffer(self, output: Any, size: int) -> Any:
+@@ -217,7 +211,12 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+             return output
+         raise TypeError(f"Unsupported BCG output type: {type(output)}")
+ 
+-    def _slice_output(self, output: Any, num_tokens: int) -> Any:
++    @staticmethod
++    def _field_rows(like: Any, name: str, cap: int) -> int:
++        v = getattr(like, name, None) if like is not None else None
++        return min(cap, v.shape[0]) if torch.is_tensor(v) else cap
++
++    def _slice_output(self, output: Any, num_tokens: int, like: Any = None) -> Any:
+         if output is None:
+             return None
+         if torch.is_tensor(output):
+@@ -229,8 +228,17 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+         if isinstance(output, list):
+             return [self._slice_output(item, num_tokens) for item in output]
+         if _is_dataclass_instance(output):
+-            return _map_dataclass(
+-                output, lambda v: self._slice_output(v, num_tokens)
++            # ``like`` is the live output whose per-field row counts the
++            # buffer views must reproduce (see _output_rows).
++            return dataclasses.replace(
++                output,
++                **{
++                    f.name: self._slice_output(
++                        getattr(output, f.name),
++                        self._field_rows(like, f.name, num_tokens),
++                    )
++                    for f in dataclasses.fields(output)
++                },
+             )
+         if not torch.is_tensor(output):
+             return output
+@@ -276,7 +284,9 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+         if _is_dataclass_instance(output) and type(output) is type(output_buffer):
+             for f in dataclasses.fields(output):
+                 self._copy_output_to_buffer(
+-                    getattr(output, f.name), getattr(output_buffer, f.name), num_tokens
++                    getattr(output, f.name),
++                    getattr(output_buffer, f.name),
++                    self._field_rows(output, f.name, num_tokens),
+                 )
+             return
+         if not torch.is_tensor(output) and not torch.is_tensor(output_buffer):

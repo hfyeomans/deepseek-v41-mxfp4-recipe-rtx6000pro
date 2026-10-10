@@ -1,0 +1,1069 @@
+From a8537fe78d7fd55958cb9364b5435cc10c00676f Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Sat, 10 Oct 2026 11:55:39 -0400
+Subject: [PATCH 48/50] kt_prefill: shared weight arenas replace the kt export
+ (recipe T3.39 window 2 K2)
+
+Rank 0 creates one sealed memfd per MoE layer sized by kt's weight_arena_bytes
+and kt loads the compact CPU experts straight into it (kt patch 0003, MOEConfig
+subclass injected around NativeMoEWrapper.load_weights); rank 1 maps the same
+memfd through /proc/<pid0>/fd/<fd>; every rank cudaHostRegisters its mapping.
+Streamed prefill then copies each rank's TP slice with cudaMemcpy2DAsync on a
+side stream behind the previous layer's GEMM event: no kt export, no shm, no
+gloo barriers, staging set reduced to w13/s13/w2/s2.
+
+PrefillPipeline is now staged/layer_begin/layer_end over one staging set;
+ArenaLayout.from_kt checks kt's carve (one TP part, E8M0 scales, constant
+stride). KtRuntime.weight_arena_bytes / load_cpu_experts(weight_arena=) own
+the kt side; kt_ep_wrapper creates the arena before the rank-0 load and
+attaches all ranks after it.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py |  29 +-
+ python/sglang/srt/layers/moe/kt_prefill.py    | 642 +++++++++---------
+ python/sglang/srt/layers/moe/kt_runtime.py    |  80 +++
+ 3 files changed, 434 insertions(+), 317 deletions(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index c9873c8d..d61916dd 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -52,8 +52,9 @@ logger = logging.getLogger(__name__)
+ 
+ # Layerwise GPU prefill of the CPU experts (recipe E22 / T3.6b2) lives in
+ # kt_prefill.py since T3.19d: PrefillPipeline (the protocol as a state
+-# machine) + LayerwisePrefillCoordinator (shm, pinned host buffers, GPU
+-# staging, barriers). KT_GPU_PREFILL_MIN_TOKENS is read there.
++# machine) + LayerwisePrefillCoordinator (per-layer shared weight arenas that
++# kt loads into and both ranks page-lock, GPU staging, side-stream copies;
++# T3.39 window 2). KT_GPU_PREFILL_MIN_TOKENS is read there.
+ # E22d NaN probe: for forwards of at least KT_NAN_PROBE_MIN_TOKENS tokens, log
+ # the MoE token count and streamed decision once per forward, and check every
+ # MoE layer's input and output for non-finite values (one device sync per
+@@ -418,7 +419,15 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         if hasattr(self.gpu_method, "process_weights_after_loading"):
+             self.gpu_method.process_weights_after_loading(layer)
+ 
+-        # 2. Load CPU weights using KT wrapper
++        # 2. Load CPU weights using KT wrapper. With layerwise GPU prefill
++        # (recipe T3.39 window 2) rank 0 first creates this layer's shared
++        # weight arena and kt loads straight into it; the streamer is resolved
++        # on every rank so its constructor-time checks run uniformly.
++        streamer = (
++            LayerwisePrefillCoordinator.for_method(self)
++            if self.gpu_experts_mask is not None
++            else None
++        )
+         if self.tp_rank == 0 and self.wrapper is not None:
+             torch.cuda.synchronize()
+ 
+@@ -454,19 +463,25 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 if remap is not None
+                 else None
+             )
++            weight_arena = None
++            if streamer is not None:
++                nbytes = self.kt_config.runtime.weight_arena_bytes(self.wrapper)
++                weight_arena = streamer.create_arena(self, nbytes)
+             self.kt_config.runtime.load_cpu_experts(
+                 self.wrapper,
+                 torch.arange(self.num_cpu_experts),
+                 self.gpu_experts_mask,
+                 cpu_checkpoint_ids,
++                weight_arena=weight_arena,
+             )
+ 
+-        # 3. Layerwise GPU prefill: every rank joins (shared host buffer,
+-        # gloo barriers), so this runs on all ranks in the same layer order.
++        # 3. Layerwise GPU prefill: every rank maps rank 0's arena for this
++        # layer (gloo broadcast of the memfd), so this runs on all ranks in
++        # the same layer order.
+         if self.gpu_experts_mask is not None:
+-            self.streamer = LayerwisePrefillCoordinator.for_method(self)
++            self.streamer = streamer
+             if self.streamer is not None:
+-                self.streamer.register(self)
++                self.streamer.attach_layer(self)
+             # 4. Executable topology contract (recipe T3.16d, review C9): the
+             # rank-0 ownership and contiguous expert split above are only
+             # correct for this parallel layout; refuse anything else here,
+diff --git a/python/sglang/srt/layers/moe/kt_prefill.py b/python/sglang/srt/layers/moe/kt_prefill.py
+index 7fbbd320..23029a49 100644
+--- a/python/sglang/srt/layers/moe/kt_prefill.py
++++ b/python/sglang/srt/layers/moe/kt_prefill.py
+@@ -1,69 +1,70 @@
+-"""Layerwise GPU prefill of the CPU experts (recipe E22 / T3.6b2, seam T3.19d).
++"""Layerwise GPU prefill of the CPU experts (recipe E22 / T3.6b2, seam T3.19d,
++shared weight arena T3.39 window 2).
+ 
+ The CPU tier is ~50x slower than the GPUs on a prefill chunk (216 tok/s vs
+ ~8K tok/s all-GPU), so for chunks of at least KT_GPU_PREFILL_MIN_TOKENS tokens
+ the CPU experts are *streamed* to the GPUs instead of computed on the CPU:
+-kt-kernel exports each CPU expert's packed MXFP4 bytes and bf16 scales
+-(write_weight_scale_to_buffer, one TP slice per rank) into a pinned host
+-buffer shared by both TP ranks, each rank DMAs its slice into a per-rank
+-staging set of expert slots laid out for the FlashInfer SM120 CUTLASS MoE,
+-and the layer runs the fused kernel twice: once over the resident GPU experts
+-and once over the staged CPU experts. The export of layer L+1 is submitted
+-while layer L computes (host double buffer), so per layer the cost is
+-~max(export, H2D + GEMM). Measured on this host (E22a): export 68 ms/layer at
+-52 GB/s (core-bound, scales with KT_CPUINFER), H2D 37 ms to both cards,
+-pipelined ~87 ms/layer; vs ~19 s/layer-chunk on the CPU path at 4096 tokens.
+-
+-Decode and short chunks keep the CPU path untouched. Ranks coordinate via the
+-TP group's gloo cpu_group: one barrier when the host buffer is filled and one
+-before it is overwritten. 0 (default) disables the feature.
++each rank DMAs its TP slice of every CPU expert straight out of kt-kernel's
++resident weight storage into a per-rank staging set laid out for the
++FlashInfer SM120 CUTLASS MoE, and the layer runs the fused kernel twice: once
++over the resident GPU experts and once over the staged CPU experts.
++
++kt-kernel's resident storage is a caller-owned *arena* (kt patch 0003,
++``MOEConfig.weight_arenas``): rank 0 creates one ``memfd`` per MoE layer,
++sized by ``weight_arena_bytes``, and hands it to kt before the layer loads;
++kt carves every expert's gate / up / down block out of it (row-major MXFP4
++nibbles followed by the per-32 E8M0 scales, ``weight_arena_layout``). Rank 1
++maps the same memfd through ``/proc/<pid0>/fd/<n>``; every rank page-locks
++its mapping once (``cudaHostRegister``). From then on a streamed layer costs
++the host nothing: no export, no shared buffer, no barrier -- the copies are
++issued on a side stream against kt's own bytes and overlap the next layer's
++attention and resident-expert work. Before this (E22 .. T3.39 window 1) each
++layer-chunk paid a 65 ms core-bound kt export into a shared pinned buffer plus
++copies serialised with the compute stream.
++
++Decode and short chunks keep the CPU path untouched (kt reads the same arena).
++0 (default) disables the feature.
+ 
+ Two objects (T3.19d):
+ 
+-  PrefillPipeline             the distributed state machine, pure Python, no
+-                              torch: which host buffer holds which layer, in
+-                              which state, which layer must come next, how
+-                              many tokens this forward has. Every illegal
++  PrefillPipeline             the protocol, pure Python, no torch: which
++                              layer is staged, which must come next, how many
++                              tokens this forward has. Every illegal
+                               transition raises KTContractError. Tested
+                               exhaustively on the CPU (test_kt_prefill.py).
+-  LayerwisePrefillCoordinator the shell that owns the shm segment, the pinned
+-                              registration, the GPU staging slots, the CUDA
+-                              events and the gloo barriers, and performs the
+-                              IO the pipeline permits. One per TP-rank
+-                              process, owned by the runner's KtRuntime.
++  LayerwisePrefillCoordinator the shell that owns the arenas, the pinned
++                              registrations, the GPU staging set, the copy
++                              stream and events, and performs the IO the
++                              pipeline permits. One per TP-rank process, owned
++                              by the runner's KtRuntime.
+ 
+-Host buffer life cycle (each of the two buffers, independently)::
++Staging set life cycle (one set per rank; copy of layer L+1 waits for the
++GEMM of layer L on the GPU, through events, never on the host)::
+ 
+-    FREE ──claim_for_export──> EXPORTING ──export_ready──> FILLED
+-     ^                          (rank 0: kt writing)        (every rank may read)
+-     │                                                        │ dma_issued
+-     └──────────── dma_complete (event synchronised) ──── READING
+-
+-A buffer in EXPORTING or FILLED holds data nobody has read yet and cannot be
+-claimed; a buffer in READING has a DMA in flight on this rank's stream and
+-must be waited on (``dma_complete``) before it is claimed. The gloo barrier
+-after the wait makes the wait global: rank 0 may only overwrite once every
+-rank's DMA is done.
++    begin_forward ──stage(first)──> STAGED(first) ──layer_begin──> IN LAYER
++                                       ^                              │
++                                       └── stage(next) ── layer_end ──┘  (None at the last layer: closed)
+ 
+ Forward life cycle: ``begin_forward(num_tokens)`` opens the forward at the
+ first registered layer, ``layer_begin`` / ``layer_end`` walk the registered
+ layers in ascending order with the same token count, and ``layer_end`` of the
+ last layer closes it. A streamed layer outside an open forward, a skipped
+-layer, a changed token count, or a second ``begin_forward`` while one is open
+-are all contract violations; the coordinator surfaces them before any IO.
++layer, a changed token count, a layer begun before its copy was issued, or a
++second ``begin_forward`` while one is open are all contract violations; the
++coordinator surfaces them before any IO.
+ """
+ 
+ from __future__ import annotations
+ 
+-import enum
++import ctypes
++import fcntl
+ import logging
++import mmap
+ import os
+ import time
+ from dataclasses import dataclass
+-from multiprocessing import shared_memory
+ from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+ 
+-import numpy as np
+ import torch
+ 
+ from sglang.srt.layers.moe.kt_contract import KTContractError
+@@ -77,25 +78,20 @@ logger = logging.getLogger(__name__)
+ KT_GPU_PREFILL_MIN_TOKENS = int(os.environ.get("KT_GPU_PREFILL_MIN_TOKENS", "0"))
+ KT_GPU_PREFILL_LOG = os.environ.get("KT_GPU_PREFILL_LOG", "0") == "1"
+ 
+-
+-# --------------------------------------------------------------------------- state machine
+-
+-
+-class BufferState(enum.Enum):
+-    FREE = "free"            # nothing outstanding; may be claimed for an export
+-    EXPORTING = "exporting"  # rank 0 has submitted kt's export into it
+-    FILLED = "filled"        # export synced and barrier passed: every rank may DMA from it
+-    READING = "reading"      # this rank's DMA is in flight (event recorded, not yet synced)
++# kt-kernel's MXFP4 block scale group (BufferBInt4KGroup, group_size 32).
++MXFP4_GROUP = 32
++# memfd seals: the arena may neither shrink nor grow once kt has carved it.
++_F_SEAL_SHRINK = getattr(fcntl, "F_SEAL_SHRINK", 0x0002)
++_F_SEAL_GROW = getattr(fcntl, "F_SEAL_GROW", 0x0004)
++_F_ADD_SEALS = getattr(fcntl, "F_ADD_SEALS", 1033)
++_MFD_ALLOW_SEALING = getattr(os, "MFD_ALLOW_SEALING", 0x0002)
+ 
+ 
+-@dataclass
+-class HostBuffer:
+-    state: BufferState = BufferState.FREE
+-    layer: Optional[int] = None  # the layer whose experts it holds (EXPORTING / FILLED / READING)
++# --------------------------------------------------------------------------- state machine
+ 
+ 
+ class PrefillPipeline:
+-    """The streamed-prefill protocol as data: buffers, forward, expected layer.
++    """The streamed-prefill protocol as data: staged layer, forward, expected layer.
+ 
+     Pure Python; the coordinator asks it before every IO step and it either
+     returns what to do next or raises KTContractError. ``layers`` is the
+@@ -104,19 +100,17 @@ class PrefillPipeline:
+     layer has registered).
+     """
+ 
+-    def __init__(self, layers: Sequence[int], num_buffers: int = 2) -> None:
++    def __init__(self, layers: Sequence[int]) -> None:
+         layers = tuple(int(l) for l in layers)
+         if not layers:
+             raise KTContractError("PrefillPipeline: no streaming layers registered")
+         if list(layers) != sorted(set(layers)):
+             raise KTContractError(f"PrefillPipeline: layers must be distinct and ascending, got {layers}")
+-        if num_buffers < 2:
+-            raise KTContractError(f"PrefillPipeline: need >= 2 host buffers for the export/DMA overlap, got {num_buffers}")
+         self.layers = layers
+-        self.buffers = [HostBuffer() for _ in range(num_buffers)]
+         self.forward_tokens: Optional[int] = None  # None <=> no forward open
+         self.expected_layer: Optional[int] = None
+-        self.current_buf = 0
++        self.staged_layer: Optional[int] = None  # copy issued into the staging set, not yet consumed
++        self.in_layer = False  # between layer_begin and layer_end
+         self.forwards_completed = 0
+ 
+     # -- queries -------------------------------------------------------------------
+@@ -143,10 +137,18 @@ class PrefillPipeline:
+                 f"[KT layerwise prefill] layer {layer_idx} is not a streaming layer (registered: {self.layers})"
+             )
+ 
++    def _expecting(self, what: str, layer_idx: int) -> None:
++        if not self.open or layer_idx != self.expected_layer:
++            raise KTContractError(
++                f"[KT layerwise prefill] {what}({layer_idx}) while expecting "
++                f"{self.expected_layer if self.open else 'no forward'}"
++                + ("" if self.open else " (begin_forward was not called)")
++            )
++
+     # -- forward life cycle ----------------------------------------------------------
+ 
+     def begin_forward(self, num_tokens: int) -> int:
+-        """Open a forward of ``num_tokens`` tokens; returns the buffer to export the first layer into."""
++        """Open a forward of ``num_tokens`` tokens; returns the first layer to stage."""
+         if self.open:
+             raise KTContractError(
+                 f"[KT layerwise prefill] begin_forward while a forward is open "
+@@ -155,19 +157,33 @@ class PrefillPipeline:
+             )
+         if num_tokens <= 0:
+             raise KTContractError(f"[KT layerwise prefill] begin_forward with {num_tokens} tokens")
+-        for i, b in enumerate(self.buffers):
+-            if b.state in (BufferState.EXPORTING, BufferState.FILLED):
+-                raise KTContractError(
+-                    f"[KT layerwise prefill] begin_forward with host buffer {i} {b.state.value} "
+-                    f"(layer {b.layer}): unread export left over from a previous forward"
+-                )
++        if self.staged_layer is not None:
++            raise KTContractError(
++                f"[KT layerwise prefill] begin_forward with layer {self.staged_layer} still staged: "
++                "a copy from a previous forward was never consumed"
++            )
+         self.forward_tokens = int(num_tokens)
+         self.expected_layer = self.first_layer
+-        self.current_buf = 0
+-        return self.current_buf
++        return self.first_layer
++
++    def staged(self, layer_idx: int) -> None:
++        """The copy of ``layer_idx``'s experts was issued into the staging set."""
++        self._check_layer(layer_idx)
++        self._expecting("staged", layer_idx)
++        if self.staged_layer is not None:
++            raise KTContractError(
++                f"[KT layerwise prefill] staged({layer_idx}) while layer {self.staged_layer} is staged: "
++                "the single staging set would be overwritten before its GEMM"
++            )
++        if self.in_layer:
++            raise KTContractError(
++                f"[KT layerwise prefill] staged({layer_idx}) inside layer {layer_idx}: "
++                "the copy must be issued before layer_begin"
++            )
++        self.staged_layer = layer_idx
+ 
+-    def layer_begin(self, layer_idx: int, num_tokens: int) -> int:
+-        """Enter ``layer_idx``; returns the buffer its export was submitted into."""
++    def layer_begin(self, layer_idx: int, num_tokens: int) -> None:
++        """Enter ``layer_idx``: its copy must be the staged one; the GEMM consumes it."""
+         self._check_layer(layer_idx)
+         if not self.open:
+             raise KTContractError(
+@@ -184,97 +200,40 @@ class PrefillPipeline:
+                 f"[KT layerwise prefill] layer {layer_idx} has {num_tokens} tokens but this forward "
+                 f"began with {self.forward_tokens}"
+             )
+-        b = self.buffers[self.current_buf]
+-        if b.state is not BufferState.EXPORTING or b.layer != layer_idx:
++        if self.in_layer:
++            raise KTContractError(f"[KT layerwise prefill] layer_begin({layer_idx}) twice without layer_end")
++        if self.staged_layer != layer_idx:
+             raise KTContractError(
+-                f"[KT layerwise prefill] layer {layer_idx}: host buffer {self.current_buf} is "
+-                f"{b.state.value} (layer {b.layer}), not exporting layer {layer_idx}"
++                f"[KT layerwise prefill] layer {layer_idx} begun but the staging set holds "
++                f"{'nothing' if self.staged_layer is None else f'layer {self.staged_layer}'}; "
++                "its copy was not issued"
+             )
+-        return self.current_buf
++        self.staged_layer = None
++        self.in_layer = True
+ 
+     def layer_end(self, layer_idx: int) -> Optional[int]:
+-        """Leave ``layer_idx``; returns the next streaming layer, or None and closes the forward."""
++        """Leave ``layer_idx``; returns the next layer to stage, or None and closes the forward."""
+         self._check_layer(layer_idx)
+-        if not self.open or layer_idx != self.expected_layer:
+-            raise KTContractError(
+-                f"[KT layerwise prefill] layer_end({layer_idx}) while expecting "
+-                f"{self.expected_layer if self.open else 'no forward'}"
+-            )
+-        b = self.buffers[self.current_buf]
+-        if b.state is not BufferState.READING or b.layer != layer_idx:
++        self._expecting("layer_end", layer_idx)
++        if not self.in_layer:
+             raise KTContractError(
+-                f"[KT layerwise prefill] layer_end({layer_idx}): host buffer {self.current_buf} is "
+-                f"{b.state.value} (layer {b.layer}); the layer's DMA was not issued"
++                f"[KT layerwise prefill] layer_end({layer_idx}) without layer_begin"
+             )
++        self.in_layer = False
+         nxt = self.next_layer(layer_idx)
+         self.expected_layer = nxt
+         if nxt is None:
+             self.forward_tokens = None
+             self.forwards_completed += 1
+-        else:
+-            self.current_buf = (self.current_buf + 1) % len(self.buffers)
+         return nxt
+ 
+-    # -- buffer life cycle -----------------------------------------------------------
+-
+-    def needs_dma_wait(self, buf: int) -> bool:
+-        """True when ``buf`` has a DMA in flight that must be synchronised before a claim."""
+-        return self.buffers[buf].state is BufferState.READING
+-
+-    def dma_complete(self, buf: int) -> None:
+-        b = self.buffers[buf]
+-        if b.state is not BufferState.READING:
+-            raise KTContractError(
+-                f"[KT layerwise prefill] dma_complete on host buffer {buf} in state {b.state.value}"
+-            )
+-        b.state, b.layer = BufferState.FREE, None
+-
+-    def claim_for_export(self, buf: int, layer_idx: int) -> None:
+-        """Hand ``buf`` to kt for ``layer_idx``'s export (after the global barrier)."""
+-        self._check_layer(layer_idx)
+-        if not self.open or layer_idx != self.expected_layer:
+-            raise KTContractError(
+-                f"[KT layerwise prefill] export of layer {layer_idx} claimed while expecting "
+-                f"{self.expected_layer if self.open else 'no forward'}"
+-            )
+-        if buf != self.current_buf:
+-            raise KTContractError(
+-                f"[KT layerwise prefill] export of layer {layer_idx} into host buffer {buf}, "
+-                f"but the pipeline's next buffer is {self.current_buf}"
+-            )
+-        b = self.buffers[buf]
+-        if b.state is not BufferState.FREE:
+-            raise KTContractError(
+-                f"[KT layerwise prefill] export of layer {layer_idx} into host buffer {buf} "
+-                f"which is {b.state.value} (layer {b.layer}): "
+-                + ("its DMA has not been waited for" if b.state is BufferState.READING else "unread data would be overwritten")
+-            )
+-        b.state, b.layer = BufferState.EXPORTING, layer_idx
+-
+-    def export_ready(self, buf: int) -> None:
+-        """Rank 0's export sync and the global barrier are done: every rank may read."""
+-        b = self.buffers[buf]
+-        if b.state is not BufferState.EXPORTING:
+-            raise KTContractError(
+-                f"[KT layerwise prefill] export_ready on host buffer {buf} in state {b.state.value}"
+-            )
+-        b.state = BufferState.FILLED
+-
+-    def dma_issued(self, buf: int) -> None:
+-        b = self.buffers[buf]
+-        if b.state is not BufferState.FILLED:
+-            raise KTContractError(
+-                f"[KT layerwise prefill] dma_issued on host buffer {buf} in state {b.state.value}"
+-            )
+-        b.state = BufferState.READING
+-
+     def snapshot(self) -> dict:
+         return {
+             "open": self.open,
+             "forward_tokens": self.forward_tokens,
+             "expected_layer": self.expected_layer,
+-            "current_buf": self.current_buf,
+-            "buffers": [(b.state.value, b.layer) for b in self.buffers],
++            "staged_layer": self.staged_layer,
++            "in_layer": self.in_layer,
+             "forwards_completed": self.forwards_completed,
+         }
+ 
+@@ -282,20 +241,6 @@ class PrefillPipeline:
+ # --------------------------------------------------------------------------- memory layouts
+ 
+ 
+-def e8m0_from_bf16_bits_(raw: torch.Tensor, dst: torch.Tensor) -> None:
+-    """``dst`` (uint8) <- the E8M0 exponent kt-kernel packed as bf16 bits (e8m0 << 7)
+-    in ``raw``, consuming ``raw`` in place: an arithmetic ``>> 7`` on the int16 view
+-    (the sign bit of e8m0 >= 128 patterns only fills the high byte) and a narrowing
+-    copy that keeps the low byte. Same bytes as the previous
+-    ``(raw.view(int16).to(int32) >> 7).to(uint8)`` for every 16-bit pattern, without
+-    its two int32 temporaries (2 x 234 MiB per streamed layer at chunk 8192: the
+-    allocation the 1M x 1 needle run and the 262K x 4 first chunk OOMed on, recipe
+-    E34d-v (ii)). ``raw`` is the H2D landing zone; the next load overwrites it."""
+-    bits = raw.view(torch.int16)
+-    bits >>= 7
+-    dst.copy_(bits)
+-
+-
+ class _StreamedExpertSlots:
+     """Per-rank GPU staging for one layer's CPU experts, in SGLang's layout.
+ 
+@@ -308,72 +253,72 @@ class _StreamedExpertSlots:
+     def __init__(self, n: int, hidden: int, inter_tp: int, device: torch.device):
+         self.inter_tp = inter_tp
+         self.w13 = torch.empty((n, 2 * inter_tp, hidden // 2), dtype=torch.int8, device=device)
+-        self.s13 = torch.empty((n, 2 * inter_tp, hidden // 32), dtype=torch.uint8, device=device)
++        self.s13 = torch.empty((n, 2 * inter_tp, hidden // MXFP4_GROUP), dtype=torch.uint8, device=device)
+         self.w2 = torch.empty((n, hidden, inter_tp // 2), dtype=torch.int8, device=device)
+-        self.s2 = torch.empty((n, hidden, inter_tp // 32), dtype=torch.uint8, device=device)
+-        # bf16 landing zone for kt-kernel's scales (bits = e8m0 << 7).
+-        self.s13_raw = torch.empty((n, 2 * inter_tp, hidden // 32), dtype=torch.bfloat16, device=device)
+-        self.s2_raw = torch.empty((n, hidden, inter_tp // 32), dtype=torch.bfloat16, device=device)
+-        # scratch for the on-device gate/up half swap (one half of w13 / s13)
+-        self._half_w = torch.empty((n, inter_tp, hidden // 2), dtype=torch.int8, device=device)
+-        self._half_s = torch.empty((n, inter_tp, hidden // 32), dtype=torch.bfloat16, device=device)
+-        self.tensors = (self.w13, self.s13, self.w2, self.s2, self.s13_raw, self.s2_raw, self._half_w, self._half_s)
++        self.s2 = torch.empty((n, hidden, inter_tp // MXFP4_GROUP), dtype=torch.uint8, device=device)
++        self.tensors = (self.w13, self.s13, self.w2, self.s2)
+ 
+     @property
+     def nbytes(self) -> int:
+         return sum(t.numel() * t.element_size() for t in self.tensors)
+ 
+-    def load(self, host: "_HostSlice") -> None:
+-        """H2D on the current stream (4 bulk copies), then fix the layout up."""
+-        from flashinfer import block_scale_interleave
+ 
+-        it = self.inter_tp
+-        self.w13.view(torch.uint8).copy_(host.w13, non_blocking=True)
+-        self.s13_raw.copy_(host.s13, non_blocking=True)
+-        self.w2.view(torch.uint8).copy_(host.w2, non_blocking=True)
+-        self.s2_raw.copy_(host.s2, non_blocking=True)
+-        # kt-kernel writes [gate; up]; the kernel wants [up; gate].
+-        for t, tmp in ((self.w13, self._half_w), (self.s13_raw, self._half_s)):
+-            tmp.copy_(t[:, :it])
+-            t[:, :it].copy_(t[:, it:])
+-            t[:, it:].copy_(tmp)
+-        # bf16 (e8m0 << 7) -> E8M0 uint8, then FlashInfer's SM120 interleave,
+-        # applied to the whole [E, N, K/32] tensor like the resident loader does.
+-        for raw, dst in ((self.s13_raw, self.s13), (self.s2_raw, self.s2)):
+-            e8m0_from_bf16_bits_(raw, dst)
+-            dst.copy_(block_scale_interleave(dst).reshape_as(dst))
+-
+-
+-class _HostSlice:
+-    """One TP rank's view of one host buffer: kt-kernel's export layout."""
+-
+-    def __init__(self, raw: torch.Tensor, n: int, hidden: int, inter_tp: int):
+-        self.n = n
+-        sizes = (
+-            ("w13", torch.uint8, (n, 2 * inter_tp, hidden // 2)),
+-            ("s13", torch.bfloat16, (n, 2 * inter_tp, hidden // 32)),
+-            ("w2", torch.uint8, (n, hidden, inter_tp // 2)),
+-            ("s2", torch.bfloat16, (n, hidden, inter_tp // 32)),
+-        )
+-        off = 0
+-        for name, dtype, shape in sizes:
+-            numel = int(np.prod(shape))
+-            nbytes = numel * torch.empty(0, dtype=dtype).element_size()
+-            setattr(self, name, raw[off : off + nbytes].view(dtype).view(*shape))
+-            off += nbytes
+-        assert off == raw.numel(), (off, raw.numel())
++@dataclass(frozen=True)
++class ArenaLayout:
++    """Where one layer's experts sit inside its arena (bytes), for all CPU TP parts = 1.
++
++    kt carves gate / up / down blocks per expert in order, each block = row-major
++    MXFP4 nibbles ``[n, k/2]`` then E8M0 scales ``[n, k/32]`` (BufferBInt4KGroup;
++    verified byte-for-byte in evidence/t339/window2/k2-build/smoke_arena.py).
++    Expert ``e``'s gate block starts at ``gate0 + e * stride`` etc.
++    """
++
++    nbytes: int
++    gate0: int
++    up0: int
++    down0: int
++    stride: int
+ 
+     @staticmethod
+-    def nbytes(n: int, hidden: int, inter_tp: int) -> int:
+-        return n * (2 * inter_tp * hidden // 2 + 2 * (2 * inter_tp * hidden // 32) + hidden * inter_tp // 2 + 2 * (hidden * inter_tp // 32))
+-
+-    def ptrs(self, e: int) -> Tuple[int, int, int, int]:
+-        return (
+-            self.w13[e].data_ptr(),
+-            self.s13[e].data_ptr(),
+-            self.w2[e].data_ptr(),
+-            self.s2[e].data_ptr(),
+-        )
++    def from_kt(layout: Sequence[Sequence[Tuple[int, int, int, bool, bool, bool]]], nbytes: int, n: int) -> "ArenaLayout":
++        if len(layout) != 1:
++            raise KTContractError(
++                f"[KT layerwise prefill] weight_arena_layout has {len(layout)} CPU TP parts; "
++                "streaming reads one arena per layer (--kt-threadpool-count 1)"
++            )
++        part = layout[0]
++        if len(part) != n:
++            raise KTContractError(f"[KT layerwise prefill] weight_arena_layout has {len(part)} experts, expected {n}")
++        g0, u0, d0, ge8, ue8, de8 = part[0]
++        if not (ge8 and ue8 and de8):
++            raise KTContractError(
++                "[KT layerwise prefill] kt did not compact the block scales to E8M0 in the arena "
++                f"(flags gate={ge8} up={ue8} down={de8}); the staging copies read E8M0 bytes"
++            )
++        stride = part[1][0] - g0 if n > 1 else 0
++        for e, (g, u, d, a, b, c) in enumerate(part):
++            if (g, u, d) != (g0 + e * stride, u0 + e * stride, d0 + e * stride) or not (a and b and c):
++                raise KTContractError(
++                    f"[KT layerwise prefill] expert {e} is not at a constant stride in the arena "
++                    f"({(g, u, d)} vs expected {(g0 + e * stride, u0 + e * stride, d0 + e * stride)}, e8 {(a, b, c)})"
++                )
++        return ArenaLayout(nbytes=int(nbytes), gate0=int(g0), up0=int(u0), down0=int(d0), stride=int(stride))
++
++
++class _LayerArena:
++    """One MoE layer's arena as this rank sees it: the mapping (page-locked) and its layout."""
++
++    def __init__(self, layer_idx: int, fd: int, nbytes: int, owner: bool):
++        self.layer_idx = layer_idx
++        self.fd = fd
++        self.nbytes = nbytes
++        self.owner = owner  # rank 0: created the memfd (kt writes through its own mapping)
++        self.mm = mmap.mmap(fd, nbytes, mmap.MAP_SHARED, mmap.PROT_READ | mmap.PROT_WRITE)
++        self.base = ctypes.addressof(ctypes.c_char.from_buffer(self.mm))
++        if self.base % 64 != 0:
++            raise KTContractError(f"[KT layerwise prefill] layer {layer_idx} arena mapping not 64-byte aligned")
++        self.layout: Optional[ArenaLayout] = None
++        self.registered = False
+ 
+ 
+ # --------------------------------------------------------------------------- coordinator
+@@ -384,10 +329,18 @@ class LayerwisePrefillCoordinator:
+ 
+     One instance per TP-rank process, owned by the runner's KtRuntime
+     (``runtime.prefill_coordinator``) and shared by every layer's
+-    KTEPWrapperMethod. Rank 0 owns the kt-kernel wrappers and does the export;
+-    every rank DMAs its own TP slice out of the shared pinned buffer. The
+-    protocol itself lives in ``self.pipeline`` (PrefillPipeline); this class
+-    performs the IO the pipeline allows, in the order it dictates.
++    KTEPWrapperMethod. Rank 0 owns the kt-kernel wrappers and the arenas;
++    every rank maps every arena and DMAs its own TP slice. The protocol lives
++    in ``self.pipeline`` (PrefillPipeline); this class performs the IO the
++    pipeline allows, in the order it dictates.
++
++    Load-time sequence per layer, on every rank in the same layer order:
++      rank 0: ``create_arena(method)`` -> memfd + mapping, pointer handed to kt
++              through KtRuntime.load_cpu_experts; kt loads into it
++      all:    ``attach_layer(method)`` -> rank 0 reads the layout from kt and
++              broadcasts (pid, fd, nbytes, layout); other ranks open
++              ``/proc/<pid>/fd/<fd>`` and map it; every rank page-locks its
++              mapping and registers the layer
+     """
+ 
+     @staticmethod
+@@ -405,93 +358,135 @@ class LayerwisePrefillCoordinator:
+         tp = get_tp_group()
+         self.tp_rank = tp.rank_in_group
+         self.tp_size = tp.world_size
++        self.tp_ranks = tp.ranks
+         self.cpu_group = tp.cpu_group
+         self.n_cpu = method.num_cpu_experts
+         self.hidden = method.hidden_size
+         self.inter_tp = method.intermediate_size_per_partition
++        self.inter = self.inter_tp * self.tp_size
+         self.device = torch.device("cuda", torch.cuda.current_device())
+         self.min_tokens = KT_GPU_PREFILL_MIN_TOKENS
++        if method.kt_config.threadpool_count != 1:
++            raise KTContractError(
++                f"[KT layerwise prefill] --kt-threadpool-count {method.kt_config.threadpool_count}: "
++                "streaming reads one arena per layer (one CPU TP part)"
++            )
++        if self.inter % (2 * MXFP4_GROUP) or self.hidden % (2 * MXFP4_GROUP) or self.inter_tp % (2 * MXFP4_GROUP):
++            raise KTContractError(
++                f"[KT layerwise prefill] hidden {self.hidden} / intermediate {self.inter} (per rank {self.inter_tp}) "
++                f"must be multiples of {2 * MXFP4_GROUP}"
++            )
+         self.layers: Dict[int, "KTEPWrapperMethod"] = {}
++        self.arenas: Dict[int, _LayerArena] = {}
+         # Built at the first forward from the registered layers; registering
+         # after that is refused (the protocol's layer list is fixed).
+         self.pipeline: Optional[PrefillPipeline] = None
+ 
+-        # Host: 2 buffers x tp_size rank slices, one POSIX shm segment created
+-        # by rank 0, mapped by every rank, page-locked in every process
+-        # (same recipe as sglang.srt.utils.host_shared_memory).
+-        slice_bytes = _HostSlice.nbytes(self.n_cpu, self.hidden, self.inter_tp)
+-        total = 2 * self.tp_size * slice_bytes
+-        name = [f"kt_lw_prefill_{os.getpid()}" if self.tp_rank == 0 else None]
+-        if self.tp_rank == 0:
+-            self._shm = shared_memory.SharedMemory(name=name[0], create=True, size=total)
+-        torch.distributed.broadcast_object_list(name, src=tp.ranks[0], group=self.cpu_group)
+-        if self.tp_rank != 0:
+-            self._shm = shared_memory.SharedMemory(name=name[0])
+-        self._np = np.ndarray((total,), dtype=np.uint8, buffer=self._shm.buf)
+-        raw = torch.from_numpy(self._np)
+-        self._register_pinned(raw.data_ptr(), total)
+-        torch.distributed.barrier(group=self.cpu_group)
+-        if self.tp_rank == 0:
+-            self._shm.unlink()  # mappings survive; nothing left in /dev/shm on exit
+-
+-        self.host: List[List[_HostSlice]] = []
+-        for b in range(2):
+-            ranks = []
+-            for r in range(self.tp_size):
+-                off = (b * self.tp_size + r) * slice_bytes
+-                ranks.append(_HostSlice(raw[off : off + slice_bytes], self.n_cpu, self.hidden, self.inter_tp))
+-            self.host.append(ranks)
+-        # Per-buffer, per-expert pointer lists for kt-kernel (rank-major lists).
+-        self._ptrs: List[List[Tuple[List[int], List[int], List[int], List[int]]]] = []
+-        for b in range(2):
+-            per_expert = []
+-            for e in range(self.n_cpu):
+-                p = [self.host[b][r].ptrs(e) for r in range(self.tp_size)]
+-                per_expert.append(tuple([q[i] for q in p] for i in range(4)))
+-            self._ptrs.append(per_expert)
+-
+-        # Device: one staging set (DMA of layer L waits for GEMM of layer L-1 on
+-        # the same stream), plus the per-expert kernel side tensors.
++        # Device: one staging set per rank plus the per-expert kernel side tensors.
+         self.slots = _StreamedExpertSlots(self.n_cpu, self.hidden, self.inter_tp, self.device)
+         self.global_scale = torch.ones(self.n_cpu, dtype=torch.float32, device=self.device)
+         self.swiglu_limit: Optional[torch.Tensor] = None
+-        self.dma_done = [torch.cuda.Event(), torch.cuda.Event()]
+-        for ev in self.dma_done:
+-            ev.record()
+-
+-        self._pending: Optional["KTEPWrapperMethod"] = None  # rank 0: layer whose export is in flight
++        # Copies run on their own stream; the GEMM of layer L (compute stream)
++        # and the copy of layer L+1 (copy stream) are ordered by events only.
++        self.copy_stream = torch.cuda.Stream(device=self.device)
++        self.staged_ready = torch.cuda.Event()
++        self.gemm_done = torch.cuda.Event()
++        self.gemm_done.record()
++        self._cuda_rt = None
+         self._t_forward = 0.0
++        self._registered_bytes = 0
+         logger.info(
+-            "[KT layerwise prefill] enabled: min_tokens=%d, %d CPU experts/layer, host pinned %.2f GiB (shared), "
++            "[KT layerwise prefill] enabled: min_tokens=%d, %d CPU experts/layer, shared weight arenas, "
+             "GPU staging %.2f GiB/rank, tp=%d",
+             self.min_tokens,
+             self.n_cpu,
+-            total / 2**30,
+             self.slots.nbytes / 2**30,
+             self.tp_size,
+         )
+ 
+-    @staticmethod
+-    def _register_pinned(ptr: int, nbytes: int) -> None:
+-        try:
++    # -- CUDA runtime -----------------------------------------------------------
++    @property
++    def cuda_rt(self):
++        if self._cuda_rt is None:
+             import cuda.bindings.runtime as cuda_rt
+ 
+-            from sglang.srt.utils import check_cuda_result
++            self._cuda_rt = cuda_rt
++        return self._cuda_rt
++
++    def _check(self, result) -> None:
++        err = result[0] if isinstance(result, tuple) else result
++        if int(err) != 0:
++            raise RuntimeError(f"[KT layerwise prefill] CUDA runtime call failed: {err}")
+ 
+-            check_cuda_result(cuda_rt.cudaHostRegister(ptr, nbytes, cuda_rt.cudaHostRegisterPortable))
+-        except ImportError:
+-            err = torch.cuda.cudart().cudaHostRegister(ptr, nbytes, 1)  # 1 = cudaHostRegisterPortable
+-            if int(err) != 0:
+-                raise RuntimeError(f"cudaHostRegister failed: {err}")
++    def _register_pinned(self, arena: _LayerArena) -> None:
++        rt = self.cuda_rt
++        t0 = time.perf_counter()
++        self._check(rt.cudaHostRegister(arena.base, arena.nbytes, rt.cudaHostRegisterPortable))
++        arena.registered = True
++        self._registered_bytes += arena.nbytes
++        if KT_GPU_PREFILL_LOG:
++            logger.info(
++                "[KT layerwise prefill] rank %d: layer %d arena %.2f GiB page-locked in %.2f s (%.1f GiB total)",
++                self.tp_rank,
++                arena.layer_idx,
++                arena.nbytes / 2**30,
++                time.perf_counter() - t0,
++                self._registered_bytes / 2**30,
++            )
+ 
+-    # -- per-layer registry --------------------------------------------------
+-    def register(self, method: "KTEPWrapperMethod") -> None:
++    # -- arenas (load time) ------------------------------------------------------
++    def create_arena(self, method: "KTEPWrapperMethod", nbytes: int) -> int:
++        """Rank 0: create ``method``'s layer arena; returns the pointer kt loads into."""
++        layer_idx = method.kt_config.layer_idx
++        if self.tp_rank != 0:
++            raise KTContractError(f"[KT layerwise prefill] create_arena on rank {self.tp_rank}")
++        if layer_idx in self.arenas or self.pipeline is not None:
++            raise KTContractError(f"[KT layerwise prefill] layer {layer_idx}: arena created twice or after the first forward")
++        if nbytes <= 0:
++            raise KTContractError(f"[KT layerwise prefill] layer {layer_idx}: arena of {nbytes} bytes")
++        fd = os.memfd_create(f"kt_arena_L{layer_idx}", _MFD_ALLOW_SEALING)
++        os.ftruncate(fd, nbytes)
++        fcntl.fcntl(fd, _F_ADD_SEALS, _F_SEAL_SHRINK | _F_SEAL_GROW)
++        arena = _LayerArena(layer_idx, fd, nbytes, owner=True)
++        self.arenas[layer_idx] = arena
++        return arena.base
++
++    def attach_layer(self, method: "KTEPWrapperMethod") -> None:
++        """Every rank, same layer order: share rank 0's arena for ``method``'s layer and register it."""
++        layer_idx = method.kt_config.layer_idx
+         if self.pipeline is not None:
+             raise KTContractError(
+-                f"[KT layerwise prefill] layer {method.kt_config.layer_idx} registered after the first "
++                f"[KT layerwise prefill] layer {layer_idx} registered after the first "
+                 "streamed forward; the streaming layer list is fixed once a forward has run"
+             )
+-        self.layers[method.kt_config.layer_idx] = method
++        if layer_idx in self.layers:
++            raise KTContractError(f"[KT layerwise prefill] layer {layer_idx} registered twice")
++        msg = [None]
++        if self.tp_rank == 0:
++            arena = self.arenas.get(layer_idx)
++            if arena is None:
++                raise KTContractError(f"[KT layerwise prefill] layer {layer_idx}: attach_layer before create_arena")
++            layout = method.wrapper.moe.weight_arena_layout()  # raises if kt did not use the arena
++            arena.layout = ArenaLayout.from_kt(layout, arena.nbytes, self.n_cpu)
++            msg[0] = (os.getpid(), arena.fd, arena.nbytes, arena.layout)
++        torch.distributed.broadcast_object_list(msg, src=self.tp_ranks[0], group=self.cpu_group)
++        if self.tp_rank != 0:
++            pid, fd0, nbytes, layout = msg[0]
++            path = f"/proc/{pid}/fd/{fd0}"
++            try:
++                fd = os.open(path, os.O_RDWR)
++            except OSError as e:
++                raise KTContractError(
++                    f"[KT layerwise prefill] rank {self.tp_rank} cannot open rank 0's layer {layer_idx} arena "
++                    f"({path}): {e}; both TP ranks must share a PID namespace and uid"
++                ) from e
++            if os.fstat(fd).st_size != nbytes:
++                raise KTContractError(f"[KT layerwise prefill] layer {layer_idx} arena at {path} is not {nbytes} bytes")
++            arena = _LayerArena(layer_idx, fd, nbytes, owner=False)
++            arena.layout = layout
++            self.arenas[layer_idx] = arena
++        self._register_pinned(self.arenas[layer_idx])
++        self.layers[layer_idx] = method
+ 
+     @property
+     def forward_open(self) -> bool:
+@@ -511,34 +506,67 @@ class LayerwisePrefillCoordinator:
+             )
+         return self.swiglu_limit
+ 
+-    # -- pipeline --------------------------------------------------------------
+-    def _barrier(self) -> None:
+-        torch.distributed.barrier(group=self.cpu_group)
+-
+-    def _submit_export(self, layer_idx: int, buf: int) -> None:
+-        """Export layer `layer_idx`'s CPU experts into host buffer `buf`.
+-
+-        The buffer was last read by a DMA two layers ago: wait for this rank's
+-        copy, then (barrier) for every rank's, before kt-kernel overwrites it.
+-        """
+-        if self.pipeline.needs_dma_wait(buf):
+-            self.dma_done[buf].synchronize()
+-            self.pipeline.dma_complete(buf)
+-        self._barrier()
+-        self.pipeline.claim_for_export(buf, layer_idx)
+-        if self.tp_rank == 0:
+-            m = self.layers[layer_idx]
+-            for e, (w13, s13, w2, s2) in enumerate(self._ptrs[buf]):
+-                m.wrapper.submit_write_weight_scale_to_buffer(self.tp_size, e, w13, s13, w2, s2)
+-            self._pending = m
++    # -- staging copies -----------------------------------------------------------
++    def _copy2d(self, dst: int, dpitch: int, src: int, spitch: int, width: int, height: int, stream: int) -> None:
++        rt = self.cuda_rt
++        self._check(
++            rt.cudaMemcpy2DAsync(dst, dpitch, src, spitch, width, height, rt.cudaMemcpyKind.cudaMemcpyHostToDevice, stream)
++        )
++
++    def _stage(self, layer_idx: int) -> None:
++        """Issue layer ``layer_idx``'s copies on the copy stream (after the last GEMM) and mark it staged."""
++        from flashinfer import block_scale_interleave
++
++        arena = self.arenas[layer_idx]
++        lay = arena.layout
++        H, I, It, E, r = self.hidden, self.inter, self.inter_tp, self.n_cpu, self.tp_rank
++        s = self.slots
++        self.copy_stream.wait_event(self.gemm_done)
++        st = self.copy_stream.cuda_stream
++        with torch.cuda.stream(self.copy_stream):
++            # gate / up: this rank's rows [r*It, (r+1)*It) are contiguous in the
++            # arena; one 2D copy over all experts each for nibbles and scales.
++            w13_pitch = s.w13[1].data_ptr() - s.w13[0].data_ptr() if E > 1 else 0
++            s13_pitch = s.s13[1].data_ptr() - s.s13[0].data_ptr() if E > 1 else 0
++            nib_rows, e8_rows = H // 2, H // MXFP4_GROUP
++            for off, row0 in ((lay.up0, 0), (lay.gate0, It)):  # kernel order [up; gate]
++                self._copy2d(
++                    s.w13.data_ptr() + row0 * nib_rows, w13_pitch,
++                    arena.base + off + r * It * nib_rows, lay.stride,
++                    It * nib_rows, E, st,
++                )
++                self._copy2d(
++                    s.s13.data_ptr() + row0 * e8_rows, s13_pitch,
++                    arena.base + off + I * nib_rows + r * It * e8_rows, lay.stride,
++                    It * e8_rows, E, st,
++                )
++            # down: this rank's columns of every row, per expert (row pitch I/2 in
++            # the arena, It/2 on the device; scales likewise with /32).
++            w2_pitch, s2_pitch = It // 2, It // MXFP4_GROUP
++            for e in range(E):
++                blk = arena.base + lay.down0 + e * lay.stride
++                self._copy2d(s.w2[e].data_ptr(), w2_pitch, blk + r * w2_pitch, I // 2, w2_pitch, H, st)
++                self._copy2d(
++                    s.s2[e].data_ptr(), s2_pitch, blk + H * (I // 2) + r * s2_pitch, I // MXFP4_GROUP, s2_pitch, H, st
++                )
++            # FlashInfer's SM120 scale interleave, applied to the whole [E, N, K/32]
++            # tensor like the resident loader does.
++            for sc in (s.s13, s.s2):
++                sc.copy_(block_scale_interleave(sc).reshape_as(sc))
++            self.staged_ready.record(self.copy_stream)
++        self.pipeline.staged(layer_idx)
+ 
++    # -- pipeline --------------------------------------------------------------
+     def begin_forward(self, num_tokens: int) -> None:
+-        """Open a streamed forward: build the pipeline on first use, export the first layer."""
++        """Open a streamed forward: build the pipeline on first use, stage the first layer."""
+         if self.pipeline is None:
++            missing = sorted(set(self.layers) - set(self.arenas))
++            if missing:
++                raise KTContractError(f"[KT layerwise prefill] layers {missing} registered without an arena")
+             self.pipeline = PrefillPipeline(sorted(self.layers))
+         self._t_forward = time.perf_counter()
+-        buf = self.pipeline.begin_forward(num_tokens)
+-        self._submit_export(self.pipeline.first_layer, buf)
++        first = self.pipeline.begin_forward(num_tokens)
++        self._stage(first)
+ 
+     def end_forward(self, num_tokens: int) -> None:
+         if KT_GPU_PREFILL_LOG:
+@@ -570,20 +598,13 @@ class LayerwisePrefillCoordinator:
+                     f"a streamed forward starts at layer {min(self.layers)}"
+                 )
+             self.begin_forward(num_tokens)
+-        buf = self.pipeline.layer_begin(layer_idx, num_tokens)
+-
+-        # 1. host buffer `buf` holds layer_idx (rank 0 waits for its export)
+-        if self.tp_rank == 0:
+-            self._pending.wrapper.sync_write_weight_scale_to_buffer()
+-        self._barrier()
+-        self.pipeline.export_ready(buf)
++        self.pipeline.layer_begin(layer_idx, num_tokens)
+ 
+-        # 2. DMA this rank's slice + scale fix-up, on the compute stream
+-        self.slots.load(self.host[buf][self.tp_rank])
+-        self.dma_done[buf].record()
+-        self.pipeline.dma_issued(buf)
++        # 1. the staging set holds layer_idx once the copy stream's event fires
++        compute = torch.cuda.current_stream(self.device)
++        compute.wait_event(self.staged_ready)
+ 
+-        # 3. fused MoE over the staged experts (ids already compact 0..n_cpu-1, -1 = resident)
++        # 2. fused MoE over the staged experts (ids already compact 0..n_cpu-1, -1 = resident)
+         gm = method.gpu_method
+         quant_info = FlashInferCutlassMxfp4MoeQuantInfo(
+             w13_weight=self.slots.w13,
+@@ -605,11 +626,12 @@ class LayerwisePrefillCoordinator:
+         )
+         topk_output = dispatch_output.topk_output._replace(topk_ids=streamed_topk_ids)
+         out = gm.runner.run(dispatch_output._replace(topk_output=topk_output), quant_info).hidden_states
++        self.gemm_done.record(compute)
+ 
+-        # 4. prefetch the next layer into the other buffer, or close the forward
++        # 3. stage the next layer behind this GEMM (copy stream), or close the forward
+         nxt = self.pipeline.layer_end(layer_idx)
+         if nxt is not None:
+-            self._submit_export(nxt, self.pipeline.current_buf)
++            self._stage(nxt)
+         else:
+             self.end_forward(num_tokens)
+         return out
+diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
+index 5b3e4dba..d275449f 100644
+--- a/python/sglang/srt/layers/moe/kt_runtime.py
++++ b/python/sglang/srt/layers/moe/kt_runtime.py
+@@ -111,12 +111,51 @@ class KtRuntime:
+ 
+     # -- weights -------------------------------------------------------------------
+ 
++    @staticmethod
++    def _arena_backend(wrapper: Any):
++        """kt's MXFP4 backend class for this host, which must carve caller arenas (kt patch 0003)."""
++        from kt_kernel.utils.amx import _select_mxfp4_backend
++
++        backend_cls = _select_mxfp4_backend()
++        if backend_cls is None or not hasattr(backend_cls, "weight_arena_bytes"):
++            raise KTContractError(
++                f"layer {wrapper.layer_idx}: kt's MXFP4 backend "
++                f"{None if backend_cls is None else backend_cls.__name__} has no weight_arena_bytes; "
++                "streamed prefill needs the AMXFP4_KGroup_MOE backend built with kt patch 0003"
++            )
++        return backend_cls
++
++    def weight_arena_bytes(self, wrapper: Any) -> int:
++        """Bytes kt needs for one layer's compact CPU experts in a caller-owned arena.
++
++        Same ``MOEConfig`` fields ``NativeMoEWrapper.load_weights`` sets before
++        constructing the backend (expert count, sizes, pool, MXFP4 quant
++        config); the pointer lists are irrelevant to the size.
++        """
++        from kt_kernel_ext.moe import MOEConfig
++
++        backend_cls = self._arena_backend(wrapper)
++        cfg = MOEConfig(
++            wrapper.num_experts,
++            wrapper.num_experts_per_tok,
++            wrapper.hidden_size,
++            wrapper.moe_intermediate_size,
++            wrapper.gpu_experts_mask.data_ptr(),
++        )
++        cfg.layer_idx = wrapper.layer_idx
++        cfg.pool = wrapper.cpu_infer.backend_
++        cfg.quant_config.bits = 4
++        cfg.quant_config.group_size = 32
++        cfg.quant_config.zero_point = False
++        return int(backend_cls.weight_arena_bytes(cfg))
++
+     def load_cpu_experts(
+         self,
+         wrapper: Any,
+         cpu_ids: torch.Tensor,
+         gpu_experts_mask: torch.Tensor,
+         cpu_checkpoint_ids: Optional[Sequence[int]] = None,
++        weight_arena: Optional[int] = None,
+     ) -> None:
+         """Load one layer's CPU experts into kt-kernel as a compact MoE.
+ 
+@@ -124,6 +163,16 @@ class KtRuntime:
+         expert of each compact id in order; None loads the mask's complement
+         in ascending checkpoint id.
+ 
++        ``weight_arena`` (recipe T3.39 window 2) is the 64-byte-aligned host
++        pointer of a buffer of at least ``weight_arena_bytes(wrapper)`` bytes;
++        kt then carves every expert's packed weights out of it instead of
++        ``aligned_alloc`` (kt patch 0003, ``MOEConfig.weight_arenas``), so the
++        streamed-prefill coordinator can DMA the same bytes to the GPUs.
++        kt builds its ``MOEConfig`` from the name bound in
++        ``kt_kernel.utils.amx``; that name is rebound for the duration of the
++        call to a subclass whose constructor sets ``weight_arenas``, and the
++        backend is checked afterwards to have carved the arena.
++
+         kt's ``NativeMoEWrapper`` keeps its loader in the class slot
+         ``_native_loader_instance``: the first wrapper's ``__init__`` fills it
+         with a plain ``MXFP4SafeTensorLoader``, ``load_weights`` reads the slot
+@@ -135,6 +184,7 @@ class KtRuntime:
+         would hand kt all experts under shifted ids and nothing downstream
+         would notice until the sums were wrong.
+         """
++        import kt_kernel.utils.amx as kt_amx
+         from kt_kernel.utils.amx import NativeMoEWrapper
+         from kt_kernel.utils.loader import MXFP4SafeTensorLoader
+ 
+@@ -145,6 +195,21 @@ class KtRuntime:
+                 f"layer {wrapper.layer_idx}: compact CPU experts need kt's NativeMoEWrapper "
+                 f"with method MXFP4, got {type(wrapper).__name__} / {getattr(wrapper, 'method', None)}"
+             )
++        config_cls = stock_config_cls = kt_amx.MOEConfig
++        if weight_arena is not None:
++            arena_ptr = int(weight_arena)
++            if arena_ptr <= 0 or arena_ptr % 64:
++                raise KTContractError(
++                    f"layer {wrapper.layer_idx}: weight arena pointer {arena_ptr:#x} is not 64-byte aligned"
++                )
++            self._arena_backend(wrapper)
++
++            class _ArenaMOEConfig(stock_config_cls):  # type: ignore[misc,valid-type]
++                def __init__(self, *args) -> None:
++                    super().__init__(*args)
++                    self.weight_arenas = [arena_ptr]
++
++            config_cls = _ArenaMOEConfig
+         slot = NativeMoEWrapper._native_loader_instance
+         if slot is not None:
+             if isinstance(slot, CompactMXFP4Loader) or not isinstance(slot, MXFP4SafeTensorLoader):
+@@ -155,11 +220,26 @@ class KtRuntime:
+             NativeMoEWrapper._release_loader()  # kt's constructor-made plain loader
+         loader = CompactMXFP4Loader(wrapper.weight_path, gpu_experts_mask, cpu_checkpoint_ids)
+         NativeMoEWrapper._native_loader_instance = loader
++        kt_amx.MOEConfig = config_cls
+         try:
+             wrapper.load_weights(cpu_ids)
+         finally:
++            kt_amx.MOEConfig = stock_config_cls
+             if NativeMoEWrapper._native_loader_instance is loader:
+                 NativeMoEWrapper._release_loader()
++        if weight_arena is not None:
++            try:
++                layout = wrapper.moe.weight_arena_layout()
++            except (RuntimeError, AttributeError) as e:
++                raise KTContractError(
++                    f"layer {wrapper.layer_idx}: kt built {type(wrapper.moe).__name__} without the weight arena "
++                    f"it was handed ({e}); the compact experts are in kt-private memory and cannot be streamed"
++                ) from e
++            if len(layout) != 1 or len(layout[0]) != int(cpu_ids.numel()):
++                raise KTContractError(
++                    f"layer {wrapper.layer_idx}: kt carved {[len(p) for p in layout]} experts per CPU TP part "
++                    f"into the arena, expected one part of {int(cpu_ids.numel())}"
++                )
+         if wrapper.loader is not loader:
+             raise KTContractError(
+                 f"layer {wrapper.layer_idx}: kt loaded the experts through "

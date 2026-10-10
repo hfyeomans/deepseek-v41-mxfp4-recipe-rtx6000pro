@@ -1,0 +1,50 @@
+From 1eeb48cdc421b52d652a324f49923d68862b7dfd Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 09:16:07 -0400
+Subject: [PATCH 35/50] kt_prefill: convert streamed expert scales to E8M0 in
+ place on the landing zone (E34d-v (ii))
+
+(raw.view(int16).to(int32) >> 7).to(uint8) made two int32 temporaries per
+streamed layer (2 x 234 MiB at chunk 8192); the 1M x 1 needle run OOMed on one
+at a ~860K prefix (919 MiB reserved but unallocated) and 262K x 4 on the first
+chunk. e8m0_from_bf16_bits_ shifts the int16 view in place and narrows on the
+copy: same bytes for every 16-bit pattern (recipe test_kt_prefill.py,
+exhaustive), no temporaries.
+---
+ python/sglang/srt/layers/moe/kt_prefill.py | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_prefill.py b/python/sglang/srt/layers/moe/kt_prefill.py
+index baff4087..7fbbd320 100644
+--- a/python/sglang/srt/layers/moe/kt_prefill.py
++++ b/python/sglang/srt/layers/moe/kt_prefill.py
+@@ -282,6 +282,20 @@ class PrefillPipeline:
+ # --------------------------------------------------------------------------- memory layouts
+ 
+ 
++def e8m0_from_bf16_bits_(raw: torch.Tensor, dst: torch.Tensor) -> None:
++    """``dst`` (uint8) <- the E8M0 exponent kt-kernel packed as bf16 bits (e8m0 << 7)
++    in ``raw``, consuming ``raw`` in place: an arithmetic ``>> 7`` on the int16 view
++    (the sign bit of e8m0 >= 128 patterns only fills the high byte) and a narrowing
++    copy that keeps the low byte. Same bytes as the previous
++    ``(raw.view(int16).to(int32) >> 7).to(uint8)`` for every 16-bit pattern, without
++    its two int32 temporaries (2 x 234 MiB per streamed layer at chunk 8192: the
++    allocation the 1M x 1 needle run and the 262K x 4 first chunk OOMed on, recipe
++    E34d-v (ii)). ``raw`` is the H2D landing zone; the next load overwrites it."""
++    bits = raw.view(torch.int16)
++    bits >>= 7
++    dst.copy_(bits)
++
++
+ class _StreamedExpertSlots:
+     """Per-rank GPU staging for one layer's CPU experts, in SGLang's layout.
+ 
+@@ -326,7 +340,7 @@ class _StreamedExpertSlots:
+         # bf16 (e8m0 << 7) -> E8M0 uint8, then FlashInfer's SM120 interleave,
+         # applied to the whole [E, N, K/32] tensor like the resident loader does.
+         for raw, dst in ((self.s13_raw, self.s13), (self.s2_raw, self.s2)):
+-            dst.copy_((raw.view(torch.int16).to(torch.int32) >> 7).to(torch.uint8))
++            e8m0_from_bf16_bits_(raw, dst)
+             dst.copy_(block_scale_interleave(dst).reshape_as(dst))
+ 
+ 

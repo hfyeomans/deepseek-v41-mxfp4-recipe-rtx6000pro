@@ -1,0 +1,239 @@
+From b93cb915f7c32864793521f7efeb6202b4463dcd Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Thu, 24 Sep 2026 12:38:49 -0400
+Subject: [PATCH 20/50] kt_contract: executable SGLang->kt boundary and
+ rank-topology contract (recipe T3.16d)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_contract.py   | 146 ++++++++++++++++++
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py |  34 ++++
+ 2 files changed, 180 insertions(+)
+ create mode 100644 python/sglang/srt/layers/moe/kt_contract.py
+
+diff --git a/python/sglang/srt/layers/moe/kt_contract.py b/python/sglang/srt/layers/moe/kt_contract.py
+new file mode 100644
+index 00000000..632c0c46
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/kt_contract.py
+@@ -0,0 +1,146 @@
++"""Executable contract at the SGLang -> kt-kernel / streamed-prefill boundary.
++
++Two pure functions, torch-only, no device syncs, no allocation, so they are safe
++to run under CUDA-graph capture and cheap enough to run on every MoE layer:
++
++  check_moe_topology  - once per layer at create_weights: the parallel layout the
++                        hybrid's rank-0 ownership and contiguous expert split assume.
++  check_moe_boundary  - once per forward in KTEPWrapperMethod.apply: the tensor
++                        shapes/dtypes/layout kt-kernel's pinned D2H copies and the
++                        FlashInfer runner rely on.
++
++Why these and not more (recipe review MAINTAINABILITY-REVIEW-2026-09 section 7.1, C9):
++kt-kernel's _prepare_forward_cpu_buffers does `copy_(..., non_blocking=True)` into
++fixed pinned tuples keyed by (tokens, hidden); a wrong hidden size or a topk tensor
++of another row count either asserts deep in kt with no layer context or, for the
++cached capture tuple, silently reads stale rows. Every rank other than 0 returns
++zeros for the CPU tier and relies on the layer's TP all-reduce to sum rank 0's
++result in - that is only true when the MoE's TP group is the full TP group and
++there is no expert parallelism. Value-range checks on topk_ids need a device sync
++and are left to the opt-in NaN probe (KT_NAN_PROBE_MIN_TOKENS).
++"""
++
++from __future__ import annotations
++
++from typing import Optional
++
++import torch
++
++
++class KTContractError(AssertionError):
++    """A boundary or topology precondition of the kt hybrid was violated."""
++
++
++def check_moe_topology(
++    *,
++    tp_rank: int,
++    tp_size: int,
++    moe_tp_rank: int,
++    moe_tp_size: int,
++    moe_ep_size: int,
++    has_kt_wrapper: bool,
++    num_gpu_experts: int,
++    num_experts: int,
++    max_deferred: int,
++    top_k: int,
++    b2_experts: int = 0,
++    has_streamer: bool = True,
++    layer_idx: Optional[int] = None,
++) -> None:
++    """Refuse parallel layouts the rank-0 hybrid does not implement.
++
++    Raises KTContractError with the offending values; never returns a value.
++    """
++    where = f"layer {layer_idx}: " if layer_idx is not None else ""
++    if moe_ep_size != 1:
++        raise KTContractError(
++            f"{where}moe_ep_size={moe_ep_size}: the contiguous GPU/CPU expert split "
++            "(experts [0, num_gpu_experts) on GPU, the rest on rank 0's CPU) needs every "
++            "rank to see the full routing id space; expert parallelism partitions it."
++        )
++    if moe_tp_size != tp_size or moe_tp_rank != tp_rank:
++        raise KTContractError(
++            f"{where}MoE TP group (rank {moe_tp_rank}/{moe_tp_size}) differs from the model "
++            f"TP group (rank {tp_rank}/{tp_size}); ranks != 0 return zeros for the CPU tier "
++            "and rely on the layer's TP all-reduce to add rank 0's result."
++        )
++    if has_kt_wrapper != (tp_rank == 0):
++        raise KTContractError(
++            f"{where}kt wrapper present={has_kt_wrapper} on tp_rank={tp_rank}; exactly rank 0 "
++            "owns the CPU experts (rank-0 kt-kernel path)."
++        )
++    if not 0 <= num_gpu_experts < num_experts:
++        raise KTContractError(
++            f"{where}num_gpu_experts={num_gpu_experts} must be in [0, {num_experts}) for a "
++            "layer with CPU experts (an all-GPU layer must not build the hybrid)."
++        )
++    if not 0 <= max_deferred < top_k:
++        raise KTContractError(
++            f"{where}max_deferred_experts_per_token={max_deferred} must be in [0, top_k={top_k}); "
++            "kt-kernel protects top_k - D experts per token and D >= top_k protects none."
++        )
++    if b2_experts:
++        num_cpu = num_experts - num_gpu_experts
++        if not 0 < b2_experts < num_cpu:
++            raise KTContractError(
++                f"{where}KT_B2_UVA_EXPERTS={b2_experts} must be in (0, {num_cpu}) at this placement."
++            )
++        if not has_streamer:
++            raise KTContractError(
++                f"{where}KT_B2_UVA_EXPERTS={b2_experts} needs the streamed-prefill export path "
++                "(KT_GPU_PREFILL_MIN_TOKENS > 0)."
++            )
++
++
++def check_moe_boundary(
++    hidden_states: torch.Tensor,
++    topk_ids: torch.Tensor,
++    topk_weights: torch.Tensor,
++    *,
++    hidden_size: int,
++    top_k: int,
++    layer_idx: Optional[int] = None,
++) -> None:
++    """Refuse tensors kt-kernel's pinned copies would mis-copy or silently cast.
++
++    Metadata-only: reads shapes, dtypes, strides and devices; never touches values.
++    """
++    where = f"layer {layer_idx}: " if layer_idx is not None else ""
++    if hidden_states.dim() != 2 or hidden_states.shape[1] != hidden_size:
++        raise KTContractError(
++            f"{where}hidden_states {tuple(hidden_states.shape)} must be [tokens, {hidden_size}]; "
++            "kt-kernel keys its pinned buffers on (tokens, hidden)."
++        )
++    tokens = hidden_states.shape[0]
++    if tokens < 1:
++        raise KTContractError(f"{where}empty forward (0 tokens) reached the MoE boundary.")
++    if tuple(topk_ids.shape) != (tokens, top_k):
++        raise KTContractError(
++            f"{where}topk_ids {tuple(topk_ids.shape)} must be [{tokens}, {top_k}]."
++        )
++    if tuple(topk_weights.shape) != (tokens, top_k):
++        raise KTContractError(
++            f"{where}topk_weights {tuple(topk_weights.shape)} must be [{tokens}, {top_k}]."
++        )
++    if topk_ids.dtype not in (torch.int32, torch.int64):
++        raise KTContractError(
++            f"{where}topk_ids dtype {topk_ids.dtype} must be int32 or int64 (kt casts to long; "
++            "the GPU runner and the -1 masks assume a signed integer)."
++        )
++    if not topk_weights.dtype.is_floating_point:
++        raise KTContractError(f"{where}topk_weights dtype {topk_weights.dtype} must be floating point.")
++    if hidden_states.dtype != torch.bfloat16:
++        raise KTContractError(
++            f"{where}hidden_states dtype {hidden_states.dtype} must be bfloat16; kt-kernel's "
++            "input_tensor_cpu is bf16 and copy_ would cast silently."
++        )
++    for name, t in (("hidden_states", hidden_states), ("topk_ids", topk_ids), ("topk_weights", topk_weights)):
++        if not t.is_contiguous():
++            raise KTContractError(
++                f"{where}{name} is not contiguous; non_blocking pinned copies of a strided "
++                "tensor go through a temporary and serialize the stream."
++            )
++        if t.device != hidden_states.device:
++            raise KTContractError(
++                f"{where}{name} on {t.device} but hidden_states on {hidden_states.device}."
++            )
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index 7341d54e..92d0d342 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -19,6 +19,7 @@ import numpy as np
+ import torch
+ 
+ from sglang.srt.arg_groups.overrides import model_config_of
++from sglang.srt.layers.moe.kt_contract import check_moe_boundary, check_moe_topology
+ from sglang.srt.layers.quantization.base_config import FusedMoEMethodBase
+ from sglang.srt.runtime_context import (
+     get_exec,
+@@ -927,6 +928,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         """
+         self.global_num_experts = num_experts
+         self.hidden_size = hidden_size
++        self.top_k = layer.top_k
+         self.intermediate_size_per_partition = intermediate_size_per_partition
+ 
+         # Get required parameters from layer object
+@@ -945,6 +947,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             and self.kt_config.layer_idx == self.kt_config.num_layers - 1
+         ):
+             layer_max_deferred = 0
++        self.layer_max_deferred = layer_max_deferred
+ 
+         # A layer whose experts all fit on GPU (e.g. DeepSeek-V4.1 DSpark
+         # draft MoEs: 128 experts vs --kt-num-gpu-experts 224) needs no CPU
+@@ -1072,6 +1075,26 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                     )
+                 self.b2 = _B2UvaExperts(self, self.streamer, KT_B2_UVA_EXPERTS)
+                 self.num_kt_experts = self.num_cpu_experts - self.b2.n
++            # 5. Executable topology contract (recipe T3.16d, review C9): the
++            # rank-0 ownership and contiguous expert split above are only
++            # correct for this parallel layout; refuse anything else here,
++            # once per layer, rather than produce wrong sums at the all-reduce.
++            tp = get_parallel()
++            check_moe_topology(
++                tp_rank=self.tp_rank,
++                tp_size=tp.tp_size,
++                moe_tp_rank=layer.moe_tp_rank,
++                moe_tp_size=layer.moe_tp_size,
++                moe_ep_size=getattr(layer, "moe_ep_size", 1),
++                has_kt_wrapper=self.wrapper is not None,
++                num_gpu_experts=self.num_gpu_experts,
++                num_experts=self.global_num_experts,
++                max_deferred=self.layer_max_deferred,
++                top_k=self.top_k,
++                b2_experts=self.b2.n if self.b2 is not None else 0,
++                has_streamer=self.streamer is not None,
++                layer_idx=self.kt_config.layer_idx,
++            )
+ 
+     def create_moe_runner(
+         self, layer: torch.nn.Module, moe_runner_config: "MoeRunnerConfig"
+@@ -1175,6 +1198,17 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+ 
+         x = dispatch_output.hidden_states
+         topk_output = dispatch_output.topk_output
++        # Boundary contract (recipe T3.16d, review 7.1): metadata-only, no
++        # device sync, so it is graph-capture safe. Every path below (kt,
++        # streamed, B2) and every rank goes through here.
++        check_moe_boundary(
++            x,
++            topk_output.topk_ids,
++            topk_output.topk_weights,
++            hidden_size=self.hidden_size,
++            top_k=self.top_k,
++            layer_idx=self.kt_config.layer_idx,
++        )
+ 
+         # Large prefill chunk: stream this layer's CPU experts to the GPUs and
+         # run them there (E22). Same decision on every rank (same token count).

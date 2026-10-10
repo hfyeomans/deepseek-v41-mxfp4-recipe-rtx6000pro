@@ -1,0 +1,438 @@
+From c777da2d411f225764b924c20a8796bde3a7aac2 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Sat, 10 Oct 2026 02:09:14 -0400
+Subject: [PATCH 46/50] kt_remap: per-layer expert remap at load
+ (--kt-expert-map), compact loader explicit order (recipe T3.8b)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py |  19 +-
+ python/sglang/srt/layers/moe/kt_loader.py     |  34 ++-
+ python/sglang/srt/layers/moe/kt_remap.py      | 199 ++++++++++++++++++
+ python/sglang/srt/layers/moe/kt_runtime.py    |  12 +-
+ python/sglang/srt/models/deepseek_v4.py       |  20 ++
+ python/sglang/srt/server_args.py              |   7 +
+ 6 files changed, 283 insertions(+), 8 deletions(-)
+ create mode 100644 python/sglang/srt/layers/moe/kt_remap.py
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index beced563..c9873c8d 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -23,7 +23,7 @@ from sglang.srt.layers.moe.kt_provider import (
+     ExpertSubmission,
+     KtKernelProvider,
+ )
+-from sglang.srt.layers.moe import kt_runtime
++from sglang.srt.layers.moe import kt_remap, kt_runtime
+ from sglang.srt.layers.quantization.base_config import FusedMoEMethodBase
+ from sglang.srt.runtime_context import (
+     get_exec,
+@@ -85,6 +85,10 @@ KT_NAN_PROBE_MIN_TOKENS = int(os.environ.get("KT_NAN_PROBE_MIN_TOKENS", "0"))
+ #   * submit() rewrites routed ids: GPU-expert slots become -1 (kt-kernel's
+ #     own "skip this slot" marker, used by its deferred-expert path) and CPU
+ #     ids become id - num_gpu_experts (contiguous split).
++# With --kt-expert-map (kt_remap.py) the model loader permutes each layer's
++# experts so the map's GPU set occupies physical ids 0..num_gpu_experts-1;
++# the compact loader then reads the CPU experts in that permuted order
++# (cpu_checkpoint_ids) and everything above stays positional.
+ # Only the MXFP4 method is supported (the one this recipe uses).
+ # ---------------------------------------------------------------------------
+ 
+@@ -442,8 +446,19 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                     "KTEPWrapperMethod compact CPU experts require the identity "
+                     "physical->logical expert map (EPLB rebalancing unsupported)."
+                 )
++            # Expert remap (recipe T3.8b): the CPU slots' checkpoint ids in
++            # physical order; None keeps checkpoint order (ids num_gpu..n-1).
++            remap = kt_remap.current(int(self.gpu_experts_mask.numel()))
++            cpu_checkpoint_ids = (
++                remap.cpu_checkpoint_ids(self.kt_config.layer_idx)
++                if remap is not None
++                else None
++            )
+             self.kt_config.runtime.load_cpu_experts(
+-                self.wrapper, torch.arange(self.num_cpu_experts), self.gpu_experts_mask
++                self.wrapper,
++                torch.arange(self.num_cpu_experts),
++                self.gpu_experts_mask,
++                cpu_checkpoint_ids,
+             )
+ 
+         # 3. Layerwise GPU prefill: every rank joins (shared host buffer,
+diff --git a/python/sglang/srt/layers/moe/kt_loader.py b/python/sglang/srt/layers/moe/kt_loader.py
+index 8f53d3d8..bbb4ff64 100644
+--- a/python/sglang/srt/layers/moe/kt_loader.py
++++ b/python/sglang/srt/layers/moe/kt_loader.py
+@@ -6,24 +6,45 @@ expert of the layer (GPU ones included, ~2x the host RAM and load time), so
+ this subclass loads the complement of ``gpu_experts_mask`` and nothing else.
+ The mask is a constructor argument; ``KtRuntime.load_cpu_experts`` builds one
+ loader per layer and hands it to kt explicitly (no class-wide patching).
++
++With an expert remap (recipe T3.8b, ``kt_remap.py``) the CPU slots hold
++checkpoint experts other than the top ids: ``cpu_checkpoint_ids`` then names
++the checkpoint expert of each compact id in order (compact id ``c`` is
++checkpoint expert ``cpu_checkpoint_ids[c]``); the mask only sizes the layer.
+ """
+ 
+ from __future__ import annotations
+ 
++from typing import Optional, Sequence
++
+ import torch
+ from kt_kernel.utils.loader import MXFP4SafeTensorLoader
+ 
+ class CompactMXFP4Loader(MXFP4SafeTensorLoader):
+-    def __init__(self, file_path: str, gpu_experts_mask: torch.Tensor):
++    def __init__(
++        self,
++        file_path: str,
++        gpu_experts_mask: torch.Tensor,
++        cpu_checkpoint_ids: Optional[Sequence[int]] = None,
++    ):
+         super().__init__(file_path)
+         if gpu_experts_mask.dtype != torch.bool or gpu_experts_mask.dim() != 1:
+             raise ValueError(f"gpu_experts_mask must be a 1-D bool tensor, got {gpu_experts_mask.dtype} {tuple(gpu_experts_mask.shape)}")
+         self.gpu_experts_mask = gpu_experts_mask.cpu()
++        if cpu_checkpoint_ids is not None:
++            ids = [int(e) for e in cpu_checkpoint_ids]
++            n_cpu = int((~self.gpu_experts_mask).sum())
++            if len(ids) != n_cpu or len(set(ids)) != len(ids) or (ids and (min(ids) < 0 or max(ids) >= self.gpu_experts_mask.numel())):
++                raise ValueError(
++                    f"cpu_checkpoint_ids must name {n_cpu} distinct experts below {self.gpu_experts_mask.numel()}, got {len(ids)}"
++                )
++            cpu_checkpoint_ids = ids
++        self.cpu_checkpoint_ids = cpu_checkpoint_ids
+         self.loaded_cpu_experts = 0
+ 
+     def load_experts(self, base_key: str, device: str = "cpu"):
+         mask = self.gpu_experts_mask
+-        if not bool(mask.any()):
++        if not bool(mask.any()) and self.cpu_checkpoint_ids is None:
+             out = super().load_experts(base_key, device)
+             self.loaded_cpu_experts = len(out["gate"])
+             return out
+@@ -47,7 +68,10 @@ class CompactMXFP4Loader(MXFP4SafeTensorLoader):
+                 f"gpu_experts_mask has {mask.numel()} entries but {prefix} holds {expert_count} experts"
+             )
+ 
+-        cpu_ids = torch.nonzero(~mask, as_tuple=False).flatten().tolist()
++        if self.cpu_checkpoint_ids is not None:
++            cpu_ids = list(self.cpu_checkpoint_ids)
++        else:
++            cpu_ids = torch.nonzero(~mask, as_tuple=False).flatten().tolist()
+         out = {k: [] for k in ("gate", "up", "down", "gate_scale", "up_scale", "down_scale")}
+         for exp_id in cpu_ids:
+             for proj, dst in ((gate_name, "gate"), (up_name, "up"), (down_name, "down")):
+@@ -62,6 +86,8 @@ class CompactMXFP4Loader(MXFP4SafeTensorLoader):
+         # print, like kt's own loaders: the launch log is the record (evidence READMEs).
+         print(
+             f"[MXFP4SafeTensorLoader] Loaded {len(cpu_ids)} CPU experts from {prefix} as compact "
+-            f"ids 0..{len(cpu_ids) - 1} ({expert_count - len(cpu_ids)} GPU experts not loaded)"
++            f"ids 0..{len(cpu_ids) - 1} ({expert_count - len(cpu_ids)} GPU experts not loaded"
++            + (", remapped order" if self.cpu_checkpoint_ids is not None else "")
++            + ")"
+         )
+         return out
+diff --git a/python/sglang/srt/layers/moe/kt_remap.py b/python/sglang/srt/layers/moe/kt_remap.py
+new file mode 100644
+index 00000000..640e382d
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/kt_remap.py
+@@ -0,0 +1,199 @@
++"""Per-layer routed-expert remap at load for the hybrid's expert placement (recipe T3.8b).
++
++The hybrid splits each MoE layer's routed experts positionally: physical ids
++``[0, num_gpu_experts)`` live on the GPUs, the rest run on the CPU through
++kt-kernel (``kt_ep_wrapper.py``). Routing is skewed (T3.8: half of a layer's
++routes land in 20-32 of its 384 experts), so *which* checkpoint experts hold
++the low ids decides how many routes the CPU tier serves per token. An
++``ExpertRemap`` permutes each layer's experts at load so that a chosen hot
++set takes the GPU ids:
++
++  * physical slot ``p`` holds checkpoint expert ``perm[layer][p]``: the
++    FusedMoE weight loader sees ``experts.<inv[e]>`` for checkpoint tensor
++    ``experts.<e>`` (``remap_weight``), and the compact kt loader is handed the
++    checkpoint ids of the CPU slots in physical order (``cpu_checkpoint_ids``);
++  * the gate's logit columns and both correction biases are permuted the same
++    way, so logit column ``p`` scores the expert that slot ``p`` holds.
++
++Everything downstream (``topk_ids >= num_gpu_experts``, the streamed prefill,
++the deferral ledger, the expert-distribution recorder) keeps its positional
++contract and simply sees a model whose experts are numbered differently. The
++routing decision itself is unchanged up to top-k tie order (no expert
++grouping in DeepSeek-V4.1: ``noaux_tc`` with a plain top-k over 384 scores),
++so the permutation is exact; what moves is which experts run on which tier.
++
++Map file (JSON)::
++
++    {"num_experts": 384, "num_gpu_experts": 219, "source": "...",
++     "gpu": {"0": [219 checkpoint ids], ..., "39": [...]}}
++
++``gpu[layer]`` lists the checkpoint experts that take the GPU slots of that
++layer; they are placed in ascending id order, followed by the remaining
++experts in ascending id order. A layer absent from the file keeps the
++identity order. ``num_experts`` and ``num_gpu_experts`` must match the served
++configuration; the file is refused otherwise, as is any duplicate or
++out-of-range id.
++"""
++
++from __future__ import annotations
++
++import functools
++import json
++import re
++from dataclasses import dataclass
++from typing import Dict, Optional, Tuple
++
++import torch
++
++from sglang.srt.layers.moe.kt_contract import KTContractError
++
++# Names as produced by DeepseekV4ForCausalLM.remap_weight_name_to_dpsk_hf_format.
++_EXPERT_RE = re.compile(r"^model\.layers\.(\d+)\.mlp\.experts\.(\d+)\.(.+)$")
++_GATE_RE = re.compile(
++    r"^model\.layers\.(\d+)\.mlp\.gate\."
++    r"(weight|e_score_correction_bias|e_score_correction_bias_vl)$"
++)
++_HASH_GATE_RE = re.compile(r"^model\.layers\.(\d+)\.mlp\.(gate|topk)\.tid2eid$")
++
++
++@dataclass(frozen=True)
++class ExpertRemap:
++    num_experts: int
++    num_gpu_experts: int
++    source: str
++    # layer -> (perm, inv): perm[p] = checkpoint id held by physical slot p,
++    # inv[e] = physical slot of checkpoint expert e.
++    layers: Dict[int, Tuple[Tuple[int, ...], Tuple[int, ...]]]
++
++    @classmethod
++    def from_gpu_sets(
++        cls,
++        gpu_sets: Dict[int, list],
++        num_experts: int,
++        num_gpu_experts: int,
++        source: str = "",
++    ) -> "ExpertRemap":
++        layers = {}
++        for layer, hot in gpu_sets.items():
++            hot = [int(e) for e in hot]
++            if len(hot) != num_gpu_experts:
++                raise KTContractError(
++                    f"expert map {source!r}: layer {layer} lists {len(hot)} GPU experts, "
++                    f"num_gpu_experts is {num_gpu_experts}"
++                )
++            if len(set(hot)) != len(hot) or min(hot) < 0 or max(hot) >= num_experts:
++                raise KTContractError(
++                    f"expert map {source!r}: layer {layer} has duplicate or out-of-range "
++                    f"expert ids (num_experts {num_experts})"
++                )
++            hot_set = set(hot)
++            perm = tuple(sorted(hot)) + tuple(
++                e for e in range(num_experts) if e not in hot_set
++            )
++            inv = [0] * num_experts
++            for p, e in enumerate(perm):
++                inv[e] = p
++            layers[int(layer)] = (perm, tuple(inv))
++        return cls(
++            num_experts=num_experts,
++            num_gpu_experts=num_gpu_experts,
++            source=source,
++            layers=layers,
++        )
++
++    @classmethod
++    def from_file(
++        cls, path: str, num_experts: int, num_gpu_experts: int
++    ) -> "ExpertRemap":
++        with open(path) as f:
++            doc = json.load(f)
++        for key, want in (("num_experts", num_experts), ("num_gpu_experts", num_gpu_experts)):
++            if int(doc.get(key, -1)) != want:
++                raise KTContractError(
++                    f"expert map {path}: {key} is {doc.get(key)!r}, the server runs {want}"
++                )
++        gpu = doc.get("gpu")
++        if not isinstance(gpu, dict) or not gpu:
++            raise KTContractError(f"expert map {path}: no 'gpu' layer -> ids table")
++        return cls.from_gpu_sets(
++            {int(k): v for k, v in gpu.items()},
++            num_experts,
++            num_gpu_experts,
++            source=str(doc.get("source", path)),
++        )
++
++    def is_remapped(self, layer: int) -> bool:
++        return layer in self.layers
++
++    def perm(self, layer: int) -> Tuple[int, ...]:
++        """Checkpoint id held by each physical slot (identity if not remapped)."""
++        if layer in self.layers:
++            return self.layers[layer][0]
++        return tuple(range(self.num_experts))
++
++    def cpu_checkpoint_ids(self, layer: int) -> Tuple[int, ...]:
++        """Checkpoint ids of the CPU slots, in physical (compact kt) order."""
++        return self.perm(layer)[self.num_gpu_experts :]
++
++    def remap_weight(
++        self, name: str, loaded_weight: torch.Tensor
++    ) -> Tuple[str, torch.Tensor]:
++        """Rename an expert tensor / permute a gate tensor of a remapped layer.
++
++        Call on every checkpoint tensor after the HF-name remap and before any
++        other renaming (the fused shared expert is renamed to
++        ``experts.<num_experts>`` later and must not pass through here).
++        """
++        m = _EXPERT_RE.match(name)
++        if m is not None:
++            layer, ckpt_id = int(m.group(1)), int(m.group(2))
++            if layer not in self.layers:
++                return name, loaded_weight
++            if ckpt_id >= self.num_experts:
++                raise KTContractError(
++                    f"{name}: expert id {ckpt_id} outside the {self.num_experts} routed "
++                    "experts the map covers (fused shared expert renamed too early?)"
++                )
++            slot = self.layers[layer][1][ckpt_id]
++            return f"model.layers.{layer}.mlp.experts.{slot}.{m.group(3)}", loaded_weight
++        m = _GATE_RE.match(name)
++        if m is not None:
++            layer = int(m.group(1))
++            if layer not in self.layers:
++                return name, loaded_weight
++            if loaded_weight.shape[0] != self.num_experts:
++                raise KTContractError(
++                    f"{name}: dim 0 is {loaded_weight.shape[0]}, expected {self.num_experts}"
++                )
++            idx = torch.tensor(self.layers[layer][0], dtype=torch.long)
++            return name, loaded_weight[idx].contiguous()
++        m = _HASH_GATE_RE.match(name)
++        if m is not None and int(m.group(1)) in self.layers:
++            raise KTContractError(
++                f"{name}: hash-routed layer cannot be remapped (tid2eid maps tokens to "
++                "checkpoint expert ids)"
++            )
++        return name, loaded_weight
++
++
++@functools.lru_cache(maxsize=None)
++def load_cached(
++    path: Optional[str], num_experts: int, num_gpu_experts: int
++) -> Optional[ExpertRemap]:
++    """The server's remap (None when no map is configured); one parse per process."""
++    if not path:
++        return None
++    return ExpertRemap.from_file(path, num_experts, num_gpu_experts)
++
++
++def current(num_experts: int) -> Optional[ExpertRemap]:
++    """The remap for the served configuration, from the exec config."""
++    from sglang.srt.runtime_context import get_exec
++
++    moe = get_exec().moe
++    path = getattr(moe, "kt_expert_map", None)
++    if not path:
++        return None
++    if moe.kt_weight_path is None or moe.kt_num_gpu_experts is None:
++        raise KTContractError("--kt-expert-map needs --kt-weight-path and --kt-num-gpu-experts")
++    return load_cached(path, num_experts, int(moe.kt_num_gpu_experts))
+diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
+index 23b21b29..5b3e4dba 100644
+--- a/python/sglang/srt/layers/moe/kt_runtime.py
++++ b/python/sglang/srt/layers/moe/kt_runtime.py
+@@ -112,10 +112,18 @@ class KtRuntime:
+     # -- weights -------------------------------------------------------------------
+ 
+     def load_cpu_experts(
+-        self, wrapper: Any, cpu_ids: torch.Tensor, gpu_experts_mask: torch.Tensor
++        self,
++        wrapper: Any,
++        cpu_ids: torch.Tensor,
++        gpu_experts_mask: torch.Tensor,
++        cpu_checkpoint_ids: Optional[Sequence[int]] = None,
+     ) -> None:
+         """Load one layer's CPU experts into kt-kernel as a compact MoE.
+ 
++        ``cpu_checkpoint_ids`` (recipe T3.8b expert remap) names the checkpoint
++        expert of each compact id in order; None loads the mask's complement
++        in ascending checkpoint id.
++
+         kt's ``NativeMoEWrapper`` keeps its loader in the class slot
+         ``_native_loader_instance``: the first wrapper's ``__init__`` fills it
+         with a plain ``MXFP4SafeTensorLoader``, ``load_weights`` reads the slot
+@@ -145,7 +153,7 @@ class KtRuntime:
+                     "layer; it releases the slot after every load_weights, so this is a kt-kernel change."
+                 )
+             NativeMoEWrapper._release_loader()  # kt's constructor-made plain loader
+-        loader = CompactMXFP4Loader(wrapper.weight_path, gpu_experts_mask)
++        loader = CompactMXFP4Loader(wrapper.weight_path, gpu_experts_mask, cpu_checkpoint_ids)
+         NativeMoEWrapper._native_loader_instance = loader
+         try:
+             wrapper.load_weights(cpu_ids)
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index 9564ad1b..bef1955b 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -110,6 +110,7 @@ from sglang.srt.layers.layernorm import RMSNorm
+ from sglang.srt.layers.linear import ColumnParallelLinear, RowParallelLinear
+ from sglang.srt.layers.logits_processor import LogitsMetadata, LogitsProcessor
+ from sglang.srt.layers.moe import get_moe_a2a_backend, should_use_dp_reduce_scatterv
++from sglang.srt.layers.moe import kt_remap
+ from sglang.srt.layers.moe.fused_moe_triton import FusedMoE
+ from sglang.srt.layers.moe.utils import (
+     is_shared_experts_fusion_disabled,
+@@ -4913,6 +4914,21 @@ class DeepseekV4ForCausalLM(nn.Module):
+             assert self.num_fused_shared_experts == 1
+             log_info_on_rank0(logger, "Shared experts fusion optimization enabled.")
+ 
++        # Hybrid expert placement (recipe T3.8b): with --kt-expert-map each MoE
++        # layer's routed experts are permuted at load so the map's hot set takes
++        # the GPU ids; expert tensors are renamed and the gate rows permuted
++        # before any other renaming (see kt_remap.py). Not for the MTP layer.
++        expert_remap = (
++            None if is_nextn else kt_remap.current(self.config.n_routed_experts)
++        )
++        if expert_remap is not None:
++            log_info_on_rank0(
++                logger,
++                f"Expert remap from {expert_remap.source}: {len(expert_remap.layers)} "
++                f"layers, {expert_remap.num_gpu_experts}/{expert_remap.num_experts} "
++                "experts per layer on GPU.",
++            )
++
+         with concurrent.futures.ThreadPoolExecutor() as executor:
+             futures = []
+             weight_names = []
+@@ -4937,6 +4953,10 @@ class DeepseekV4ForCausalLM(nn.Module):
+                         is_nextn=is_nextn,
+                         num_hidden_layers=self.config.num_hidden_layers,
+                     )
++                    if expert_remap is not None:
++                        name, loaded_weight = expert_remap.remap_weight(
++                            name, loaded_weight
++                        )
+ 
+                     # V4.1 checkpoint tensors with no module in the text model yet;
+                     # the per-group count is logged after loading.
+diff --git a/python/sglang/srt/server_args.py b/python/sglang/srt/server_args.py
+index 4c658889..74ee4ebc 100644
+--- a/python/sglang/srt/server_args.py
++++ b/python/sglang/srt/server_args.py
+@@ -3187,6 +3187,13 @@ class ServerArgs:
+         "[ktransformers parameter] Maximum number of experts deferred to CPU per token. All MoE layers except the final one use this value; the final layer always uses 0.",
+         NS("exec.moe"),
+     ] = None
++    kt_expert_map: A[
++        Optional[str],
++        "[ktransformers parameter] JSON file naming, per MoE layer, the checkpoint experts that take the GPU slots "
++        "(kt_remap.py): each layer's experts are permuted at load so the listed hot set gets ids 0..num_gpu_experts-1 "
++        "and the rest run on the CPU. Unset: checkpoint order (experts 0..num_gpu_experts-1 on GPU).",
++        NS("exec.moe"),
++    ] = None
+ 
+     # -------------------------------------------------------------------------
+     # Diffusion LLM

@@ -1,0 +1,33 @@
+From cad73914d706035cef37274a37cd69639610031f Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Wed, 23 Sep 2026 17:47:44 -0400
+Subject: [PATCH 17/50] kt_ep_wrapper: skip the E22d NaN probe while a CUDA
+ graph is capturing (host sync is forbidden there; KT_NAN_PROBE_MIN_TOKENS=1
+ killed decode-graph capture)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index e779d9b9..57128148 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -907,7 +907,14 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # Large prefill chunk: stream this layer's CPU experts to the GPUs and
+         # run them there (E22). Same decision on every rank (same token count).
+         streamed = self.streamer is not None and self.streamer.wants(x.shape[0])
+-        probe = 0 < KT_NAN_PROBE_MIN_TOKENS <= x.shape[0]
++        # The probe does a host sync (`.item()`), which CUDA forbids while a
++        # graph is being captured; skip it there. Consequence: with a small
++        # threshold the probe covers prefill and eager decode steps only — a
++        # captured decode graph replays without it (E27 soak launch, 2026-09-23).
++        probe = (
++            0 < KT_NAN_PROBE_MIN_TOKENS <= x.shape[0]
++            and not torch.cuda.is_current_stream_capturing()
++        )
+         if probe:
+             self._nan_probe(layer, "in", x, topk_output.topk_ids, streamed)
+         if streamed:

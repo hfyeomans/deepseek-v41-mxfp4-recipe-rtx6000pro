@@ -1,0 +1,76 @@
+From 670994ac04cadab56ae1913c823190a442017ad2 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Tue, 22 Sep 2026 13:50:01 -0400
+Subject: [PATCH 08/50] E22d: KT_NAN_PROBE_MIN_TOKENS per-layer non-finite
+ probe and per-forward token/streamed log
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py | 37 +++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index 0abe1c86..e779d9b9 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -69,6 +69,11 @@ logger = logging.getLogger(__name__)
+ # ---------------------------------------------------------------------------
+ KT_GPU_PREFILL_MIN_TOKENS = int(os.environ.get("KT_GPU_PREFILL_MIN_TOKENS", "0"))
+ KT_GPU_PREFILL_LOG = os.environ.get("KT_GPU_PREFILL_LOG", "0") == "1"
++# E22d NaN probe: for forwards of at least KT_NAN_PROBE_MIN_TOKENS tokens, log
++# the MoE token count and streamed decision once per forward, and check every
++# MoE layer's input and output for non-finite values (one device sync per
++# layer, so debugging only). 0 (default) disables it.
++KT_NAN_PROBE_MIN_TOKENS = int(os.environ.get("KT_NAN_PROBE_MIN_TOKENS", "0"))
+ 
+ 
+ class _StreamedExpertSlots:
+@@ -902,6 +907,9 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # Large prefill chunk: stream this layer's CPU experts to the GPUs and
+         # run them there (E22). Same decision on every rank (same token count).
+         streamed = self.streamer is not None and self.streamer.wants(x.shape[0])
++        probe = 0 < KT_NAN_PROBE_MIN_TOKENS <= x.shape[0]
++        if probe:
++            self._nan_probe(layer, "in", x, topk_output.topk_ids, streamed)
+         if streamed:
+             streamed_ids = remap_topk_ids_for_cpu(topk_output.topk_ids, self.num_gpu_experts)
+         else:
+@@ -934,8 +942,37 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             cpu_output = self.sync(x)
+             output = output + cpu_output
+ 
++        if probe:
++            self._nan_probe(layer, "out", output, None, streamed)
+         return StandardCombineInput(hidden_states=output)
+ 
++    def _nan_probe(
++        self,
++        layer: torch.nn.Module,
++        stage: str,
++        t: torch.Tensor,
++        topk_ids: Optional[torch.Tensor],
++        streamed: bool,
++    ) -> None:
++        """Log non-finite MoE inputs/outputs (E22d); one line per forward at the first layer."""
++        layer_idx = self.kt_config.layer_idx
++        bad = int((~torch.isfinite(t)).sum().item())
++        if stage == "in" and self.streamer is not None and layer_idx == min(self.streamer.layers):
++            logger.info(
++                "[KT probe] TP%d forward: %d MoE tokens, streamed=%s, threshold=%d",
++                self.tp_rank, t.shape[0], streamed,
++                self.streamer.min_tokens if self.streamer is not None else -1,
++            )
++        if bad:
++            rows = torch.nonzero(~torch.isfinite(t).all(dim=-1)).reshape(-1)[:8].tolist()
++            extra = ""
++            if topk_ids is not None:
++                extra = " topk_ids[min,max]=[%d,%d]" % (int(topk_ids.min()), int(topk_ids.max()))
++            logger.error(
++                "[KT probe] TP%d layer %d %s: %d non-finite values, first bad rows %s of %d, streamed=%s%s",
++                self.tp_rank, layer_idx, stage, bad, rows, t.shape[0], streamed, extra,
++            )
++
+     def __getattr__(self, name: str):
+         """Delegate attribute access to the wrapped GPU method.
+ 

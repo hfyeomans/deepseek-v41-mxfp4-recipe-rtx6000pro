@@ -1,0 +1,323 @@
+From 3805730e0b065fba9ec5f615fe4c7dde16d847a5 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Mon, 21 Sep 2026 17:32:25 -0400
+Subject: [PATCH 01/50] kt-ep hybrid: compact CPU-expert view, kt-kernel 0.7
+ API, fixes for V4.1-Flash MXFP4
+
+- KTEPWrapperMethod.fuse_routed_scaling_factor_in_topk = False: stops the
+  routed_scaling_factor (1.5) being applied twice via __getattr__ leak.
+- Compact CPU view: patched MXFP4SafeTensorLoader.load_experts returns only
+  the CPU-resident experts renumbered 0..n_cpu-1, so kt-kernel repacks
+  3.4 GiB/layer instead of 8.3 GiB (kt-kernel packs all num_experts
+  regardless of gpu_experts_mask). Requires identity physical->logical map.
+- remap_topk_ids_for_cpu(): GPU slots -> -1 (kt skip marker), CPU ids
+  shifted by num_gpu_experts, out of place before mask_cpu_expert_ids.
+- KTMoEWrapper(num_experts=n_cpu, gpu_experts_mask=None,
+  swiglu_limit=moe_runner_config.swiglu_limit) matches kt-kernel 0.7.0.post4.
+- All-GPU layer guard (num_gpu_experts >= num_experts): no KT wrapper.
+- mxfp4_flashinfer_cutlass_moe: size per-expert tensors from w13_weight.
+- decode_cuda_graph_runner: set_capture_batch_sizes on token counts
+  (bs * captured_req_width), which is what kt-kernel keys buffers on.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py | 182 +++++++++++++++++-
+ .../mxfp4_flashinfer_cutlass_moe.py           |   6 +-
+ .../runner/decode_cuda_graph_runner.py        |   9 +-
+ 3 files changed, 190 insertions(+), 7 deletions(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index 36c15cf1..b3650580 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -37,6 +37,101 @@ except ImportError:
+     KTRANSFORMERS_AVAILABLE = False
+ 
+ 
++# ---------------------------------------------------------------------------
++# Compact CPU-expert view for kt-kernel.
++#
++# kt-kernel's NativeMoEWrapper is built for the KTransformers memory model in
++# which the CPU holds *every* expert and the GPU experts are hot duplicates:
++# its loader reads all experts of a layer, converts every expert's block
++# scales to bf16, and the C++ load_weights repacks all `num_experts` experts
++# into its own anonymous buffers regardless of gpu_experts_mask (measured on
++# DeepSeek-V4.1-Flash layer 5: ~8.0 GiB per layer whether 80 or 320 experts
++# are on CPU; 40 layers would need ~320 GiB, more than this host has).
++#
++# This recipe cannot afford a full CPU copy, so the wrapper below shows
++# kt-kernel a smaller MoE that contains only the CPU experts, renumbered
++# 0..n_cpu-1 in ascending original id:
++#   * the patched MXFP4SafeTensorLoader.load_experts() returns only the CPU
++#     experts' tensors (mask published in _KT_LOADER_GPU_MASK during load),
++#   * KTMoEWrapper is created with num_experts = n_cpu and no GPU mask,
++#   * submit() rewrites routed ids: GPU-expert slots become -1 (kt-kernel's
++#     own "skip this slot" marker, used by its deferred-expert path) and CPU
++#     ids become id - num_gpu_experts (contiguous split).
++# Only the MXFP4 loader is patched (the method this recipe uses).
++# ---------------------------------------------------------------------------
++_KT_LOADER_GPU_MASK: Optional[torch.Tensor] = None
++_KT_LOADER_PATCHED = False
++
++
++def _install_kt_mxfp4_loader_compact() -> None:
++    global _KT_LOADER_PATCHED
++    if _KT_LOADER_PATCHED or not KTRANSFORMERS_AVAILABLE:
++        return
++    try:
++        from kt_kernel.utils.loader import MXFP4SafeTensorLoader
++    except ImportError:
++        return
++
++    orig_load_experts = MXFP4SafeTensorLoader.load_experts
++
++    def load_experts(self, base_key: str, device: str = "cpu"):
++        mask = _KT_LOADER_GPU_MASK
++        if mask is None or not bool(mask.any()):
++            return orig_load_experts(self, base_key, device)
++
++        gate_name, up_name, down_name = self.PROJ_NAMES
++        prefix = None
++        expert_count = 0
++        for cand in self._experts_prefix_candidates(base_key):
++            expert_count = 0
++            while self.has_tensor(f"{cand}.{expert_count}.{gate_name}.weight"):
++                expert_count += 1
++            if expert_count > 0:
++                prefix = cand
++                break
++        if prefix is None:
++            raise ValueError(
++                f"No MXFP4 experts found under any of: "
++                f"{self._experts_prefix_candidates(base_key)}"
++            )
++        if mask.numel() != expert_count:
++            raise ValueError(
++                f"gpu_experts_mask has {mask.numel()} entries but {prefix} "
++                f"holds {expert_count} experts"
++            )
++
++        cpu_ids = torch.nonzero(~mask, as_tuple=False).flatten().tolist()
++        out = {
++            k: []
++            for k in ("gate", "up", "down", "gate_scale", "up_scale", "down_scale")
++        }
++        for exp_id in cpu_ids:
++            for proj, dst in (
++                (gate_name, "gate"),
++                (up_name, "up"),
++                (down_name, "down"),
++            ):
++                w = self.load_tensor(f"{prefix}.{exp_id}.{proj}.weight", device)
++                w = w.contiguous()
++                if w.dtype != torch.uint8:
++                    w = w.view(torch.uint8)
++                out[dst].append(w)
++                out[dst + "_scale"].append(
++                    self._ue8m0_to_bf16(
++                        self.load_tensor(f"{prefix}.{exp_id}.{proj}.scale", device)
++                    )
++                )
++        print(
++            f"[MXFP4SafeTensorLoader] Loaded {len(cpu_ids)} CPU experts from "
++            f"{prefix} as compact ids 0..{len(cpu_ids) - 1} "
++            f"({expert_count - len(cpu_ids)} GPU experts not loaded)"
++        )
++        return out
++
++    MXFP4SafeTensorLoader.load_experts = load_experts
++    _KT_LOADER_PATCHED = True
++
++
+ @dataclass
+ class KTConfig:
+     """Configuration for KTransformers heterogeneous computing CPU part.
+@@ -114,6 +209,18 @@ def mask_cpu_expert_ids(topk_ids: torch.Tensor, num_gpu_experts: int) -> torch.T
+     return topk_ids
+ 
+ 
++@torch.compile(dynamic=True, backend=get_compiler_backend())
++def remap_topk_ids_for_cpu(topk_ids: torch.Tensor, num_gpu_experts: int) -> torch.Tensor:
++    """Routed ids -> compact CPU-expert ids (out of place).
++
++    Experts [0, num_gpu_experts) live on GPU and become -1 (skipped by
++    kt-kernel); expert e >= num_gpu_experts becomes e - num_gpu_experts, its
++    index in the compact CPU MoE the KT wrapper was built with.
++    """
++    shifted = topk_ids - num_gpu_experts
++    return torch.where(topk_ids >= num_gpu_experts, shifted, torch.full_like(topk_ids, -1))
++
++
+ class KTEPWrapperMethod(FusedMoEMethodBase):
+     """Wrapper for any MoE quantization method to enable CPU-GPU expert parallelism.
+ 
+@@ -133,6 +240,14 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         method = KTEPWrapperMethod(gpu_method, kt_config)
+     """
+ 
++    # The routed scaling factor must be applied exactly once, to the CPU+GPU
++    # sum. DeepseekV2MoE does that itself whenever the quant method is a
++    # KTEPWrapperMethod, so the TopK pre-scaling that some GPU methods opt
++    # into (e.g. Mxfp4FlashinferCutlassMoEMethod sets this True) has to be
++    # turned off here; otherwise __getattr__ would leak the GPU method's flag
++    # and the routed output would be scaled twice (1.5^2 for DeepSeek-V4.1).
++    fuse_routed_scaling_factor_in_topk = False
++
+     def __init__(
+         self,
+         gpu_method: FusedMoEMethodBase,
+@@ -158,6 +273,8 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+ 
+         # KT wrapper will be initialized in create_weights
+         self.wrapper: Optional[KTMoEWrapper] = None
++        # Layer's GPU-expert mask (bool[num_experts]); set in create_weights.
++        self.gpu_experts_mask: Optional[torch.Tensor] = None
+ 
+         # Store parameters needed for KT initialization
+         self._layer_params = None
+@@ -202,6 +319,16 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         ):
+             layer_max_deferred = 0
+ 
++        # A layer whose experts all fit on GPU (e.g. DeepSeek-V4.1 DSpark
++        # draft MoEs: 128 experts vs --kt-num-gpu-experts 224) needs no CPU
++        # side at all. Clamp so the GPU method allocates the real expert
++        # count, the weight loader keeps every expert, and no KT wrapper is
++        # built (kt-kernel would otherwise try to load "layers.<idx>.ffn.experts"
++        # for a layer index that does not exist in the checkpoint).
++        if self.num_gpu_experts >= num_experts:
++            self.num_gpu_experts = num_experts
++            self.gpu_method.num_gpu_experts = num_experts
++
+         # 1. Create weights for GPU experts using the wrapped method
+         # GPU experts: 0 to num_gpu_experts-1
+         self.gpu_method.create_weights(
+@@ -213,22 +340,39 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             **extra_weight_attrs,
+         )
+ 
++        if self.num_gpu_experts >= num_experts:
++            return
++
++        # Contiguous split: experts [0, num_gpu_experts) on GPU, the rest on
++        # CPU. Must agree with mask_cpu_expert_ids() below and with the
++        # FusedMoE weight loader, which drops expert_id >= num_gpu_experts.
++        self.gpu_experts_mask = torch.zeros(num_experts, dtype=torch.bool)
++        self.gpu_experts_mask[: self.num_gpu_experts] = True
++
+         # 2. Initialize KT wrapper for CPU experts
+-        # CPU experts: num_gpu_experts to num_experts-1
++        # CPU experts: num_gpu_experts to num_experts-1, shown to kt-kernel as
++        # a compact MoE of num_cpu_experts experts (see module comment).
++        self.num_cpu_experts = num_experts - self.num_gpu_experts
+         if self.tp_rank == 0:
++            # SwiGLU clamp (DeepSeek-V4.1 swiglu_limit=10.0): the GPU method
++            # applies it inside its fused kernel; the CPU experts must apply
++            # the same clamp or the two halves of the layer disagree.
++            swiglu_limit = getattr(layer, "moe_runner_config", None)
++            swiglu_limit = getattr(swiglu_limit, "swiglu_limit", None)
+             self.wrapper = KTMoEWrapper(
+                 layer_idx=self.kt_config.layer_idx,
+-                num_experts=num_experts,
++                num_experts=self.num_cpu_experts,
+                 num_experts_per_tok=num_experts_per_tok,
+                 hidden_size=hidden_size,
+                 moe_intermediate_size=intermediate_size_full,
+-                num_gpu_experts=self.num_gpu_experts,
++                gpu_experts_mask=None,
+                 cpuinfer_threads=self.kt_config.cpuinfer_threads,
+                 threadpool_count=self.kt_config.threadpool_count,
+                 weight_path=self.kt_config.weight_path,
+                 chunked_prefill_size=self.kt_config.chunked_prefill_size,
+                 method=self.kt_config.method,
+                 max_deferred_experts_per_token=layer_max_deferred,
++                swiglu_limit=float(swiglu_limit or 0.0),
+             )
+ 
+     def process_weights_after_loading(self, layer: torch.nn.Module) -> None:
+@@ -255,7 +399,27 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 .physical_to_logical_map_cpu[self.kt_config.layer_idx]
+                 .contiguous()
+             )
+-            self.wrapper.load_weights(physical_to_logical_map_cpu)
++            # The compact CPU view assumes the identity expert layout (no
++            # EPLB remapping); anything else would need the map applied to
++            # the loader's expert ids as well.
++            if not torch.equal(
++                physical_to_logical_map_cpu,
++                torch.arange(
++                    physical_to_logical_map_cpu.numel(),
++                    dtype=physical_to_logical_map_cpu.dtype,
++                ),
++            ):
++                raise NotImplementedError(
++                    "KTEPWrapperMethod compact CPU experts require the identity "
++                    "physical->logical expert map (EPLB rebalancing unsupported)."
++                )
++            global _KT_LOADER_GPU_MASK
++            _install_kt_mxfp4_loader_compact()
++            _KT_LOADER_GPU_MASK = self.gpu_experts_mask
++            try:
++                self.wrapper.load_weights(torch.arange(self.num_cpu_experts))
++            finally:
++                _KT_LOADER_GPU_MASK = None
+ 
+     def create_moe_runner(
+         self, layer: torch.nn.Module, moe_runner_config: "MoeRunnerConfig"
+@@ -297,9 +461,17 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         topk_output = dispatch_output.topk_output
+         topk_weights, topk_ids, _ = topk_output
+ 
++        # Compact CPU view: GPU-expert slots -> -1 (kt-kernel skips them),
++        # CPU experts -> 0..num_cpu_experts-1. Must run before apply() masks
++        # topk_ids in place for the GPU side.
++        cpu_topk_ids = remap_topk_ids_for_cpu(topk_ids, self.num_gpu_experts)
++
+         # Submit forward task to CPU (non-blocking)
+         self.wrapper.submit_forward(
+-            x, topk_ids, topk_weights, torch.cuda.current_stream(x.device).cuda_stream
++            x,
++            cpu_topk_ids,
++            topk_weights,
++            torch.cuda.current_stream(x.device).cuda_stream,
+         )
+ 
+     def sync(self, x: torch.Tensor) -> torch.Tensor:
+diff --git a/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py b/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py
+index 62c9aa9e..f51f9c2d 100644
+--- a/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py
++++ b/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py
+@@ -88,7 +88,11 @@ class Mxfp4FlashinferCutlassMoEMethod:
+ 
+         self.moe_runner_config = moe_runner_config
+ 
+-        E = layer.num_local_experts
++        # Number of experts this rank holds weights for. Under the KT CPU/GPU
++        # wrapper it is the GPU share (moe_runner_config.num_local_experts is
++        # overridden there), not layer.num_local_experts; the per-expert
++        # tensors below must match w13_weight.shape[0].
++        E = layer.w13_weight.shape[0]
+         device = layer.w13_weight.device
+         if self._use_mxfp8_act_scaling:
+             # FlashInfer's MXFP4 ABI requires a neutral per-expert global scale.
+diff --git a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
+index 1a9ebbde..c8c780d8 100644
+--- a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
++++ b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
+@@ -366,7 +366,14 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):
+         )
+         self.max_bs = max(self.capture_bs)
+         if KTRANSFORMERS_AVAILABLE:
+-            KTMoEWrapper.set_capture_batch_sizes(self.capture_bs)
++            # kt-kernel keys its pinned CPU buffers on hidden_states.shape[0],
++            # i.e. the token count, which under speculative decoding is
++            # bs * tokens_per_request (DFlash: K+1). Sizes not in this list
++            # fall back to a single reusable temp buffer, whose address a
++            # captured graph would then bake in and later see overwritten.
++            KTMoEWrapper.set_capture_batch_sizes(
++                sorted({bs * self.captured_req_width for bs in self.capture_bs})
++            )
+ 
+         self.ragged_verify_mode = (
+             ragged_verify_compact_graphs_enabled(self.model_runner.spec_algorithm)

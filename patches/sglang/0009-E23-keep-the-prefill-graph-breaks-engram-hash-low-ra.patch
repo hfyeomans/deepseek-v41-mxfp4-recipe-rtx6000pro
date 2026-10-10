@@ -1,0 +1,56 @@
+From 6032dd44374a1f24cc70465d34efea78bd0ee66d Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Tue, 22 Sep 2026 14:12:09 -0400
+Subject: [PATCH 09/50] E23: keep the prefill-graph breaks (engram hash,
+ low-ratio sources, attention) out of the speculative TARGET_VERIFY step
+ captured by the decode graph
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/models/deepseek_v4.py | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index 4c16f8ab..80756c4a 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -1826,8 +1826,11 @@ class MQALayer(MqaAttentionBase):
+         if self.compress_ratio in (1, 2) and (
+             self.compressor is not None or self.indexer is not None
+         ):
++            # TARGET_VERIFY also reports is_extend(); it is captured by the
++            # decode graph runner, which never sets the tc-piecewise context
++            # these prefill-graph breaks read (E23).
+             if (
+-                forward_batch.forward_mode.is_extend()
++                forward_batch.forward_mode.is_extend_without_speculative()
+                 and is_in_breakable_cuda_graph()
+                 and not getattr(attn_backend, "low_ratio_prefill_graph", False)
+             ):
+@@ -2009,7 +2012,10 @@ class MQALayer(MqaAttentionBase):
+         else:
+             attn_q = q_padded if q_padded is not None else q
+             save_kv_cache = False
+-            if forward_batch.forward_mode.is_extend() and is_in_breakable_cuda_graph():
++            if (
++                forward_batch.forward_mode.is_extend_without_speculative()
++                and is_in_breakable_cuda_graph()
++            ):
+                 o = attn_q.new_empty(
+                     (*attn_q.shape[:-1], self.attn_mqa.v_head_dim),
+                 )
+@@ -3641,8 +3647,12 @@ class DeepseekV4Model(nn.Module):
+                         [hash_ids, hash_ids.new_zeros(pad_rows, *hash_ids.shape[1:])]
+                     )
+             elif (
+-                forward_batch.forward_mode.is_extend() and is_in_breakable_cuda_graph()
++                forward_batch.forward_mode.is_extend_without_speculative()
++                and is_in_breakable_cuda_graph()
+             ):
++                # Prefill graph only: the verify step (TARGET_VERIFY) is captured
++                # by the decode graph, where the hasher's MODE_VERIFY path is
++                # graph-static and the tc-piecewise context is None (E23).
+                 hash_ids = bcg_deepseek_v4_engram_hash_ids(
+                     self.engram_hasher, input_ids
+                 )

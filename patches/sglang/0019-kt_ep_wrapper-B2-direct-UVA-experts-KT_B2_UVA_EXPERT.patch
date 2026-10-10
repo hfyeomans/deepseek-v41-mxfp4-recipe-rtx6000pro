@@ -1,0 +1,441 @@
+From 7e41317ee64f510e9f3696034d1cb6467217d767 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Thu, 24 Sep 2026 10:14:32 -0400
+Subject: [PATCH 19/50] =?UTF-8?q?kt=5Fep=5Fwrapper:=20B2=20direct-UVA=20ex?=
+ =?UTF-8?q?perts=20(KT=5FB2=5FUVA=5FEXPERTS)=20=E2=80=94=20pinned-host=20c?=
+ =?UTF-8?q?opy=20of=20the=20last=20N=20CPU=20experts=20computed=20by=20Fla?=
+ =?UTF-8?q?shInfer's=20SM120=20MXFP4=20MoE=20over=20UVA=20on=20a=20side=20?=
+ =?UTF-8?q?stream,=20gated=20to=20bs<=3DKT=5FB2=5FMAX=5FTOKENS=20(recipe?=
+ =?UTF-8?q?=20T3.18=20/=20E30)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Each TP rank runs its slice of the N tail CPU experts straight out of pinned
+host memory (device pointer of cudaHostAlloc'd weights; the grouped GEMM issues
+the PCIe reads) so their bytes leave the CCD fabric for the two PCIe links.
+kt-kernel sees them as -1 for those forwards but still loads all CPU experts,
+so forwards above KT_B2_MAX_TOKENS (default 1) hand them back to kt: at |S|=40
+a 13-token short prefill hit most of S per layer and put 10-13 ms of PCIe-bound
+GEMM on the critical path (TTFT 0.61 -> 2.5 s). The B2 GEMM is forked onto a
+per-device side stream after submit() and joined after sync(); FlashInfer's
+cutlass_fused_moe allocates its workspace per call on the current stream and
+only sets tactics host-side under a mutex, so it shares no device state with
+the resident tier's call. submit() takes the kt expert count per call.
+
+Measured (recipe evidence/t318-b2-prototype/): bit-equal to device weights,
+graph replay works, ~0.21 ms per expert hit at 39-41 GiB/s vs ~0.146 ms for
+kt's full-expert read; C1 41.92 -> 42.71 summed / 39.86 -> 40.71 wall at |S|=40,
+40.65 / 38.73 at |S|=60; C4 unchanged. Verdict: experiment kept, default 0.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py | 314 +++++++++++++++++-
+ 1 file changed, 304 insertions(+), 10 deletions(-)
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index 57128148..7341d54e 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -74,6 +74,33 @@ KT_GPU_PREFILL_LOG = os.environ.get("KT_GPU_PREFILL_LOG", "0") == "1"
+ # MoE layer's input and output for non-finite values (one device sync per
+ # layer, so debugging only). 0 (default) disables it.
+ KT_NAN_PROBE_MIN_TOKENS = int(os.environ.get("KT_NAN_PROBE_MIN_TOKENS", "0"))
++# B2 direct-UVA experts (recipe T3.18, migration roadmap Stage 2 item 0): the
++# last KT_B2_UVA_EXPERTS CPU-resident experts of every MoE layer are *also*
++# kept in pinned host memory in the GPU kernel's layout, and on forwards of
++# at most KT_B2_MAX_TOKENS tokens each TP rank runs FlashInfer's SM120 MXFP4
++# MoE over its slice of them straight out of host memory (UVA device pointer,
++# PCIe reads issued by the GEMM itself) on a side stream, joined after
++# kt-kernel's sync. Their bytes leave the CPU-core/CCD path (E1b/E25 ceiling
++# ~125 GB/s) for the two PCIe links (E4b: additive, ~53 GiB/s each). kt-kernel
++# sees those experts as -1 (skipped) but still holds them, so larger forwards
++# hand them back to it. Streamed prefill chunks are unaffected (they already
++# run every CPU expert on the GPU). Requires KT_GPU_PREFILL_MIN_TOKENS > 0
++# (the export path is reused once at load time).
++# Verdict (recipe T3.18 / E30, 2026-09-24): kept as an experiment, NOT a
++# default. Bit-equal and graph-capturable, but one PCIe link per rank reads an
++# expert slice in ~0.21 ms vs ~0.146 ms for kt's full-expert read at 125 GB/s,
++# so B2 only adds bandwidth, never speed per expert: C1 41.9 -> 42.7 tok/s at
++# |S|=40 (+2 %), 40.7 at |S|=60 (B2 becomes the longest pole). 0 (default)
++# disables it.
++KT_B2_UVA_EXPERTS = int(os.environ.get("KT_B2_UVA_EXPERTS", "0"))
++# B2 runs only for forwards of at most this many MoE tokens; larger eager
++# forwards (short prefill below KT_GPU_PREFILL_MIN_TOKENS, big decode batches)
++# hand the B2 experts back to kt-kernel, which keeps a copy of them. At |S|=40
++# a 13-token prefill layer hit most of S and B2's ~0.21 ms/expert-hit put
++# 10-13 ms/step of PCIe-bound GEMM on the critical path (TTFT 0.61 -> 2.5 s,
++# T3.18 S=40 run); per-token B2 cost also exceeds kt's per-expert cost once
++# several tokens share the batch.
++KT_B2_MAX_TOKENS = int(os.environ.get("KT_B2_MAX_TOKENS", "1"))
+ 
+ 
+ class _StreamedExpertSlots:
+@@ -544,15 +571,28 @@ def mask_cpu_expert_ids(topk_ids: torch.Tensor, num_gpu_experts: int) -> torch.T
+ 
+ 
+ @torch.compile(dynamic=True, backend=get_compiler_backend())
+-def remap_topk_ids_for_cpu(topk_ids: torch.Tensor, num_gpu_experts: int) -> torch.Tensor:
++def remap_topk_ids_for_cpu(
++    topk_ids: torch.Tensor, num_gpu_experts: int, num_kt_experts: int
++) -> torch.Tensor:
+     """Routed ids -> compact CPU-expert ids (out of place).
+ 
+     Experts [0, num_gpu_experts) live on GPU and become -1 (skipped by
+-    kt-kernel); expert e >= num_gpu_experts becomes e - num_gpu_experts, its
+-    index in the compact CPU MoE the KT wrapper was built with.
++    kt-kernel); expert e in [num_gpu_experts, num_gpu_experts + num_kt_experts)
++    becomes e - num_gpu_experts, its index in the compact CPU MoE the KT
++    wrapper was built with. Anything above that range (the B2 direct-UVA
++    experts, when enabled) is also -1 for kt-kernel.
+     """
+     shifted = topk_ids - num_gpu_experts
+-    return torch.where(topk_ids >= num_gpu_experts, shifted, torch.full_like(topk_ids, -1))
++    on_kt = (topk_ids >= num_gpu_experts) & (shifted < num_kt_experts)
++    return torch.where(on_kt, shifted, torch.full_like(topk_ids, -1))
++
++
++@torch.compile(dynamic=True, backend=get_compiler_backend())
++def remap_topk_ids_for_b2(topk_ids: torch.Tensor, first_b2_expert: int) -> torch.Tensor:
++    """Routed ids -> B2 local ids [0, |S|) for experts >= first_b2_expert, else -1."""
++    return torch.where(
++        topk_ids >= first_b2_expert, topk_ids - first_b2_expert, torch.full_like(topk_ids, -1)
++    )
+ 
+ 
+ def _select_deferred_experts_compact(
+@@ -589,6 +629,218 @@ def _select_deferred_experts_compact(
+     return immediate_ids, deferred_ids
+ 
+ 
++def _uva_view(pinned: torch.Tensor, device: torch.device) -> torch.Tensor:
++    """A CUDA tensor aliasing a pinned host tensor (the GPU reads it over PCIe).
++
++    Wraps the host allocation's device pointer via the CUDA array interface;
++    no copy. On UVA hosts cudaHostAlloc'd memory is mapped into the device
++    address space, so the pointer is the same; the runtime is still asked.
++    The pinned tensor is kept alive by the view.
++    """
++    assert pinned.is_pinned()
++    nbytes = pinned.numel() * pinned.element_size()
++    try:
++        import cuda.bindings.runtime as cuda_rt
++
++        err, dptr = cuda_rt.cudaHostGetDevicePointer(pinned.data_ptr(), 0)
++        if int(err) != 0:
++            raise RuntimeError(f"cudaHostGetDevicePointer failed: {err}")
++        dptr = int(dptr)
++    except ImportError:
++        dptr = pinned.data_ptr()
++
++    class _CAI:
++        __cuda_array_interface__ = {
++            "shape": (nbytes,),
++            "typestr": "|u1",
++            "data": (dptr, False),
++            "version": 3,
++            "strides": None,
++        }
++
++    view = torch.as_tensor(_CAI(), device=device).view(pinned.dtype).view(pinned.shape)
++    view._kt_host_owner = pinned  # type: ignore[attr-defined]
++    return view
++
++
++class _B2HostPool:
++    """One flat pinned allocation per process for every layer's B2 experts.
++
++    torch's caching host allocator rounds each pinned block up to a power of
++    two, so per-tensor allocations would waste ~35 % of RAM; one flat buffer
++    sized for all layers keeps the overhead to the final rounding only.
++    """
++
++    _buf: Optional[torch.Tensor] = None
++    _off = 0
++
++    @classmethod
++    def take(cls, method: "KTEPWrapperMethod", n: int, shape: Tuple[int, ...], dtype: torch.dtype) -> torch.Tensor:
++        nbytes = int(np.prod(shape)) * torch.empty(0, dtype=dtype).element_size()
++        if cls._buf is None:
++            layers = method.kt_config.num_layers or 1
++            per_layer = _HostSlice.nbytes(n, method.hidden_size, method.intermediate_size_per_partition)
++            # GPU layout is smaller than the export layout (uint8 vs bf16 scales); use it as the bound
++            total = layers * per_layer
++            cls._buf = torch.empty(total, dtype=torch.uint8, pin_memory=True)
++            logger.info("[KT B2] pinned host pool %.2f GiB for up to %d layers", total / 2**30, layers)
++        end = cls._off + nbytes
++        if end > cls._buf.numel():
++            raise RuntimeError("[KT B2] host pool exhausted (more MoE layers than kt_config.num_layers?)")
++        t = cls._buf[cls._off : end].view(dtype).view(*shape)
++        cls._off = end
++        return t
++
++
++class _B2UvaExperts:
++    """One layer's B2 experts: the last `n` CPU experts, host-resident in the
++    GPU kernel's layout and computed by the GPU straight out of host memory.
++
++    Built on every TP rank at load time by reusing the layerwise-prefill export
++    once (rank 0 exports the experts, every rank stages its TP slice, fixes
++    the layout up on the device and copies it back into its own pinned
++    tensors). At forward time `run()` is the same FlashInfer call the streamed
++    prefill makes, with weight tensors whose storage is host memory: the
++    grouped GEMM reads only the routed experts' rows, so the bytes moved are
++    data-dependent while the graph-captured work is not (T3.18 microbench:
++    39-41 GiB/s effective per link, bit-equal to device weights, replays).
++    """
++
++    def __init__(self, method: "KTEPWrapperMethod", streamer: _LayerwisePrefillCoordinator, n: int):
++        n_cpu = method.num_cpu_experts
++        if not 0 < n < n_cpu:
++            raise ValueError(f"KT_B2_UVA_EXPERTS={n} must be in (0, {n_cpu}) at this placement")
++        self.n = n
++        self.layer_idx = method.kt_config.layer_idx
++        # Original ids [first, global_num_experts) -> local [0, n); compact kt ids n_cpu-n .. n_cpu-1.
++        self.first = method.global_num_experts - n
++        self.device = streamer.device
++        rank = streamer.tp_rank
++
++        # 1. rank 0 exports the n experts into rows [0, n) of host buffer 0.
++        streamer.dma_done[0].synchronize()
++        streamer._barrier()
++        if rank == 0:
++            for i in range(n):
++                w13, s13, w2, s2 = streamer._ptrs[0][i]
++                method.wrapper.submit_write_weight_scale_to_buffer(
++                    streamer.tp_size, n_cpu - n + i, w13, s13, w2, s2
++                )
++            method.wrapper.sync_write_weight_scale_to_buffer()
++        streamer._barrier()
++
++        # 2. every rank stages its slice and fixes the layout up on the device
++        #    (rows >= n hold stale bytes and are ignored), then copies rows
++        #    [0, n) back into pinned host tensors it owns.
++        slots = streamer.slots
++        slots.load(streamer.host[0][rank])
++        self.host: Dict[str, torch.Tensor] = {}
++        self.w: Dict[str, torch.Tensor] = {}
++        for name, src in (("w13", slots.w13), ("s13", slots.s13), ("w2", slots.w2), ("s2", slots.s2)):
++            h = _B2HostPool.take(method, n, (n,) + tuple(src.shape[1:]), src.dtype)
++            h.copy_(src[:n], non_blocking=True)
++            self.host[name] = h
++        torch.cuda.current_stream(self.device).synchronize()
++        streamer.dma_done[0].record()
++        streamer._barrier()
++        for name, h in self.host.items():
++            self.w[name] = _uva_view(h, self.device)
++        self.global_scale = torch.ones(n, dtype=torch.float32, device=self.device)
++        self.nbytes = sum(h.numel() * h.element_size() for h in self.host.values())
++        if self.layer_idx == min(streamer.layers) or KT_GPU_PREFILL_LOG:
++            logger.info(
++                "[KT B2] layer %d: %d experts (ids %d..%d) host-resident for direct-UVA compute, "
++                "%.1f MiB pinned per layer per rank (%.2f GiB for %d layers); kt-kernel keeps %d",
++                self.layer_idx, n, self.first, method.global_num_experts - 1,
++                self.nbytes / 2**20, self.nbytes * (method.kt_config.num_layers or 1) / 2**30,
++                method.kt_config.num_layers or 1, n_cpu - n,
++            )
++
++    def run(
++        self,
++        method: "KTEPWrapperMethod",
++        layer: torch.nn.Module,
++        dispatch_output: "StandardDispatchOutput",
++        b2_topk_ids: torch.Tensor,
++    ) -> torch.Tensor:
++        """This rank's TP slice of the B2 experts' output (summed by the layer's all-reduce)."""
++        from sglang.srt.layers.moe.moe_runner.flashinfer_cutlass import (
++            FlashInferCutlassMxfp4MoeQuantInfo,
++        )
++
++        gm = method.gpu_method
++        lim = method.streamer._swiglu_limit_for(gm)
++        quant_info = FlashInferCutlassMxfp4MoeQuantInfo(
++            w13_weight=self.w["w13"],
++            w2_weight=self.w["w2"],
++            w13_weight_scale=self.w["s13"],
++            w2_weight_scale=self.w["s2"],
++            mxfp4_weight_global_scale=self.global_scale,
++            w13_bias=None,
++            w2_bias=None,
++            swiglu_alpha=None,
++            swiglu_beta=None,
++            swiglu_limit=None if lim is None else lim[: self.n],
++            use_swiglu_step=gm._use_swiglu_step,
++            moe_tp_size=layer.moe_tp_size,
++            moe_tp_rank=layer.moe_tp_rank,
++            moe_ep_size=layer.moe_ep_size,
++            moe_ep_rank=layer.moe_ep_rank,
++            padded_hidden=None,
++        )
++        topk_output = dispatch_output.topk_output._replace(topk_ids=b2_topk_ids)
++        return gm.runner.run(dispatch_output._replace(topk_output=topk_output), quant_info).hidden_states
++
++    def fork(
++        self,
++        method: "KTEPWrapperMethod",
++        layer: torch.nn.Module,
++        dispatch_output: "StandardDispatchOutput",
++        b2_topk_ids: torch.Tensor,
++    ) -> torch.Tensor:
++        """Enqueue run() on the B2 side stream, ordered after the current stream.
++
++        The result must go through join() before the current stream reads it.
++        Off the main stream the host-memory GEMM overlaps the resident-expert
++        tier *and* the kt-kernel wait instead of serialising in front of them
++        (T3.18 S=40 on the main stream: GPU busy 15 -> 25-30 ms/step).
++
++        FlashInfer's cutlass_fused_moe allocates its workspace per call on the
++        current stream and only sets tactics host-side under a mutex, so a
++        concurrent call on another stream shares no device state with the
++        resident tier's call.
++        """
++        side = _b2_stream(self.device)
++        side.wait_stream(torch.cuda.current_stream(self.device))
++        with torch.cuda.stream(side):
++            return self.run(method, layer, dispatch_output, b2_topk_ids)
++
++    def join(self, out: torch.Tensor) -> torch.Tensor:
++        """Make the current stream wait for fork()'s work before using ``out``.
++
++        Allocator safety without record_stream(): ``out`` lives in the side
++        stream's pool. It is dropped after the main stream's add, and the next
++        side-stream allocation (next layer's fork) happens only after that
++        fork's wait_stream(main), which is enqueued after the add -- so no
++        side-stream kernel can overwrite the block while main still reads it.
++        The same ordering holds inside a CUDA graph's private pool.
++        """
++        torch.cuda.current_stream(self.device).wait_stream(_b2_stream(self.device))
++        return out
++
++
++_B2_STREAMS: Dict[int, torch.cuda.Stream] = {}
++
++
++def _b2_stream(device: torch.device) -> torch.cuda.Stream:
++    """One side stream per device for B2 (layers run sequentially, so shared)."""
++    s = _B2_STREAMS.get(device.index)
++    if s is None:
++        s = torch.cuda.Stream(device=device)
++        _B2_STREAMS[device.index] = s
++    return s
++
++
+ class KTEPWrapperMethod(FusedMoEMethodBase):
+     """Wrapper for any MoE quantization method to enable CPU-GPU expert parallelism.
+ 
+@@ -644,6 +896,10 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # Layerwise GPU prefill coordinator (process_weights_after_loading);
+         # None when KT_GPU_PREFILL_MIN_TOKENS is 0.
+         self.streamer: Optional[_LayerwisePrefillCoordinator] = None
++        # B2 direct-UVA experts (process_weights_after_loading); None when
++        # KT_B2_UVA_EXPERTS is 0. num_kt_experts = CPU experts kt-kernel computes.
++        self.b2: Optional[_B2UvaExperts] = None
++        self.num_kt_experts: int = 0
+         # Layer's GPU-expert mask (bool[num_experts]); set in create_weights.
+         self.gpu_experts_mask: Optional[torch.Tensor] = None
+ 
+@@ -724,6 +980,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # CPU experts: num_gpu_experts to num_experts-1, shown to kt-kernel as
+         # a compact MoE of num_cpu_experts experts (see module comment).
+         self.num_cpu_experts = num_experts - self.num_gpu_experts
++        self.num_kt_experts = self.num_cpu_experts
+         if self.tp_rank == 0:
+             # SwiGLU clamp (DeepSeek-V4.1 swiglu_limit=10.0): the GPU method
+             # applies it inside its fused kernel; the CPU experts must apply
+@@ -807,6 +1064,14 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             self.streamer = _LayerwisePrefillCoordinator.get(self)
+             if self.streamer is not None:
+                 self.streamer.register(self)
++            # 4. B2 direct-UVA experts: same all-rank, same-order property.
++            if KT_B2_UVA_EXPERTS > 0:
++                if self.streamer is None:
++                    raise RuntimeError(
++                        "KT_B2_UVA_EXPERTS needs KT_GPU_PREFILL_MIN_TOKENS > 0 (its export path)"
++                    )
++                self.b2 = _B2UvaExperts(self, self.streamer, KT_B2_UVA_EXPERTS)
++                self.num_kt_experts = self.num_cpu_experts - self.b2.n
+ 
+     def create_moe_runner(
+         self, layer: torch.nn.Module, moe_runner_config: "MoeRunnerConfig"
+@@ -827,6 +1092,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         self,
+         layer: torch.nn.Module,
+         dispatch_output: "StandardDispatchOutput",
++        num_kt_experts: Optional[int] = None,
+     ) -> None:
+         """Submit CPU expert computation asynchronously (non-blocking).
+ 
+@@ -836,7 +1102,13 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         Args:
+             layer: The MoE layer module
+             dispatch_output: Dispatched tokens and routing information
++            num_kt_experts: how many compact CPU experts kt-kernel computes this
++                forward (the rest are -1 for it). Defaults to num_cpu_experts,
++                i.e. every CPU expert; apply() passes the B2-reduced count when
++                B2 takes the tail experts.
+         """
++        if num_kt_experts is None:
++            num_kt_experts = self.num_cpu_experts
+         assert self.moe_runner_config.activation == "silu", (
+             "Only SiLU activation is supported."
+         )
+@@ -851,7 +1123,7 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # Compact CPU view: GPU-expert slots -> -1 (kt-kernel skips them),
+         # CPU experts -> 0..num_cpu_experts-1. Must run before apply() masks
+         # topk_ids in place for the GPU side.
+-        cpu_topk_ids = remap_topk_ids_for_cpu(topk_ids, self.num_gpu_experts)
++        cpu_topk_ids = remap_topk_ids_for_cpu(topk_ids, self.num_gpu_experts, num_kt_experts)
+ 
+         # Submit forward task to CPU (non-blocking)
+         self.wrapper.submit_forward(
+@@ -917,12 +1189,31 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         )
+         if probe:
+             self._nan_probe(layer, "in", x, topk_output.topk_ids, streamed)
++        b2_out = None
+         if streamed:
+-            streamed_ids = remap_topk_ids_for_cpu(topk_output.topk_ids, self.num_gpu_experts)
++            # every CPU expert, B2 ones included, goes through the streamed path
++            streamed_ids = remap_topk_ids_for_cpu(
++                topk_output.topk_ids, self.num_gpu_experts, self.num_cpu_experts
++            )
+         else:
++            # B2 only for small forwards (see KT_B2_MAX_TOKENS); otherwise
++            # kt-kernel computes every CPU expert, S included. Same decision on
++            # every rank (same token count); static per captured graph.
++            use_b2 = self.b2 is not None and x.shape[0] <= KT_B2_MAX_TOKENS
++            if use_b2:
++                # before mask_cpu_expert_ids() rewrites topk_ids in place
++                b2_ids = remap_topk_ids_for_b2(topk_output.topk_ids, self.b2.first)
+             # Step 1: Submit CPU expert computation (non-blocking)
+             if self.tp_rank == 0:
+-                self.submit(layer, dispatch_output)
++                self.submit(
++                    layer,
++                    dispatch_output,
++                    self.num_kt_experts if use_b2 else self.num_cpu_experts,
++                )
++            if use_b2:
++                # Side stream: the host-memory GEMM overlaps the resident tier
++                # and the kt-kernel wait below; joined as late as possible.
++                b2_out = self.b2.fork(self, layer, dispatch_output, b2_ids)
+ 
+         # Step 2: Prepare GPU computation by masking CPU expert IDs
+         # CPU expert IDs (>= num_gpu_experts) are set to -1 so GPU kernel skips them
+@@ -945,9 +1236,12 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             # Each rank adds its own TP slice of the streamed experts; the
+             # layer's TP all-reduce sums the slices like the resident ones.
+             output = output + self.streamer.run_layer(self, layer, dispatch_output, streamed_ids)
+-        elif self.tp_rank == 0:
+-            cpu_output = self.sync(x)
+-            output = output + cpu_output
++        else:
++            if self.tp_rank == 0:
++                cpu_output = self.sync(x)
++                output = output + cpu_output
++            if b2_out is not None:
++                output = output + self.b2.join(b2_out)
+ 
+         if probe:
+             self._nan_probe(layer, "out", output, None, streamed)

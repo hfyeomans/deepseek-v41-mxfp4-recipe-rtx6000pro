@@ -1,0 +1,709 @@
+From e66d44fbf641a96664a19fbbad1c873a603dfa67 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Thu, 24 Sep 2026 14:13:28 -0400
+Subject: [PATCH 23/50] kt_timeline: opt-in per-layer decode timeline +
+ recorded-tensor dump (recipe T3.19a)
+
+KT_TIMELINE=1 bakes external timing events (torch.cuda.Event(external=True))
+into every breakable-graph capture at six points per MoE layer on the kt path
+(start / export / gpu / sync / h2d / end) and records segment events plus
+host clocks around each replay segment and eager break. Every replay writes a
+"tick" (host t0/t1); every KT_TIMELINE_SAMPLE-th replay syncs and writes a
+"step" record with per-segment GPU time, inter-segment gaps (the Engram
+breaks), per-break host time and per-layer buckets (export, gpu_experts,
+cpu_wait, h2d, combine, cpu_total) to KT_TIMELINE_DIR/timeline-rank{r}.jsonl.
+The same capture copies hidden_states / topk_ids / topk_weights / kt output /
+MoE output for KT_TIMELINE_DUMP_LAYERS (default 14,20) into private buffers
+inside the graph and saves them after a sampled replay; eager decode-size
+forwards of those layers are saved too (T3.16e(3) parity input).
+
+kt_ep_wrapper._sync_timed mirrors kt-kernel 0.7.0.post4 BaseMoEWrapper.
+sync_forward (sync_with_cuda_stream then copy_forward_output_to_device) so a
+mark can sit between the wait and the H2D; the recipe's in-image test asserts
+the installed kt still has that order. Falls back to sync_forward when
+KT_FORCE_SYNC_SUBMIT=1.
+
+With KT_TIMELINE unset every touched path is behaviour-identical: get_timeline
+returns None, mark/dump stay None, and apply() takes the original sync()
+branch. Streamed-prefill layers are not instrumented.
+
+Measured on the qualified profile (recipe evidence/t319/a): GPU-event buckets
+explain 98.9-99.7 % of the unsampled replay period at bs 1 and 4 on both
+ranks; C1 41.37/39.15 wall tok/s (gate >= 39.0), C4 57.80/55.56, NLL 0 tokens
+moved, consistency PASS, 0 NaN/Xid, EDAC 0/0.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/layers/moe/kt_ep_wrapper.py |  73 +++-
+ python/sglang/srt/layers/moe/kt_timeline.py   | 402 ++++++++++++++++++
+ .../breakable_cuda_graph_backend.py           |  56 ++-
+ .../breakable_cuda_graph.py                   |  22 +
+ 4 files changed, 539 insertions(+), 14 deletions(-)
+ create mode 100644 python/sglang/srt/layers/moe/kt_timeline.py
+
+diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+index 92d0d342..3b3b15a8 100644
+--- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
++++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
+@@ -20,6 +20,7 @@ import torch
+ 
+ from sglang.srt.arg_groups.overrides import model_config_of
+ from sglang.srt.layers.moe.kt_contract import check_moe_boundary, check_moe_topology
++from sglang.srt.layers.moe.kt_timeline import get_timeline
+ from sglang.srt.layers.quantization.base_config import FusedMoEMethodBase
+ from sglang.srt.runtime_context import (
+     get_exec,
+@@ -1175,6 +1176,38 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             x, torch.cuda.current_stream(x.device).cuda_stream
+         )
+ 
++    def _sync_timed(self, x: torch.Tensor, mark) -> Optional[torch.Tensor]:
++        """``sync`` with a timeline mark between the kt wait and the H2D copy.
++
++        Mirrors the CUDA branch of ``BaseMoEWrapper.sync_forward`` (kt-kernel
++        0.7.0.post4: ``cpu_infer.sync_with_cuda_stream(stream, allow_pending)``
++        then ``copy_forward_output_to_device``); the recipe's kt buffer test
++        asserts that order still holds in the installed kt_kernel. Used only
++        while a timeline capture is active (KT_TIMELINE=1), so the plain path
++        above stays byte-for-byte the qualified one. Ranks without kt work
++        (TP1) only record the two marks and return None, like the plain path
++        which never calls sync() there.
++        """
++        if self.tp_rank != 0 or self.wrapper is None:
++            mark("sync")
++            mark("h2d")
++            return None
++        w = self.wrapper
++        stream = torch.cuda.current_stream(x.device).cuda_stream
++        if os.environ.get("KT_FORCE_SYNC_SUBMIT", "") == "1":
++            # kt's synchronous fallback has a different wait; do not mirror it,
++            # time wait+H2D as one "sync" bucket instead.
++            out = w.sync_forward(x, stream)
++            mark("sync")
++            mark("h2d")
++            return out
++        allow_pending = 1 if w._layer_has_pending_deferred.get(w.layer_idx, False) else 0
++        w.cpu_infer.sync_with_cuda_stream(stream, allow_pending)
++        mark("sync")
++        out = w.copy_forward_output_to_device(x)
++        mark("h2d")
++        return out
++
+     def apply(
+         self,
+         layer: torch.nn.Module,
+@@ -1223,6 +1256,16 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         )
+         if probe:
+             self._nan_probe(layer, "in", x, topk_output.topk_ids, streamed)
++        # Opt-in timeline (KT_TIMELINE=1, recipe T3.19a): external CUDA events
++        # baked into the captured graph at start/export/gpu/sync/h2d/end; None
++        # when off or not capturing. Log-only.
++        timeline = get_timeline(self.tp_rank)
++        mark = None
++        if timeline is not None and not streamed:
++            mark = timeline.layer_marker(self.kt_config.layer_idx)
++            if mark is not None:
++                mark("start")
++        dump = None
+         b2_out = None
+         if streamed:
+             # every CPU expert, B2 ones included, goes through the streamed path
+@@ -1248,6 +1291,21 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+                 # Side stream: the host-memory GEMM overlaps the resident tier
+                 # and the kt-kernel wait below; joined as late as possible.
+                 b2_out = self.b2.fork(self, layer, dispatch_output, b2_ids)
++            if mark is not None:
++                mark("export")
++            if timeline is not None and timeline.dump_wanted(
++                self.kt_config.layer_idx, x.shape[0]
++            ):
++                # Inputs as kt saw them, snapshotted before the in-place GPU
++                # mask below; the kt output joins in dump_end (T3.16e(3) parity).
++                dump = timeline.dump_begin(
++                    self.kt_config.layer_idx,
++                    {
++                        "hidden_states": x,
++                        "topk_ids": topk_output.topk_ids,
++                        "topk_weights": topk_output.topk_weights,
++                    },
++                )
+ 
+         # Step 2: Prepare GPU computation by masking CPU expert IDs
+         # CPU expert IDs (>= num_gpu_experts) are set to -1 so GPU kernel skips them
+@@ -1263,6 +1321,8 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+         # Step 3: Execute GPU expert computation (any quantization method)
+         # This runs in parallel with CPU computation
+         gpu_combine_input = self.gpu_method.apply(layer, masked_dispatch_output)
++        if mark is not None:
++            mark("gpu")
+ 
+         # Step 4: Synchronize CPU results and merge with GPU results
+         output = gpu_combine_input.hidden_states
+@@ -1271,11 +1331,22 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
+             # layer's TP all-reduce sums the slices like the resident ones.
+             output = output + self.streamer.run_layer(self, layer, dispatch_output, streamed_ids)
+         else:
+-            if self.tp_rank == 0:
++            cpu_output = None
++            if mark is not None:
++                cpu_output = self._sync_timed(x, mark)
++                if self.tp_rank == 0:
++                    output = output + cpu_output
++            elif self.tp_rank == 0:
+                 cpu_output = self.sync(x)
+                 output = output + cpu_output
+             if b2_out is not None:
+                 output = output + self.b2.join(b2_out)
++            if dump is not None:
++                timeline.dump_end(
++                    dump, {"kt_output": cpu_output, "moe_output": output}
++                )
++            if mark is not None:
++                mark("end")
+ 
+         if probe:
+             self._nan_probe(layer, "out", output, None, streamed)
+diff --git a/python/sglang/srt/layers/moe/kt_timeline.py b/python/sglang/srt/layers/moe/kt_timeline.py
+new file mode 100644
+index 00000000..d27f6025
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/kt_timeline.py
+@@ -0,0 +1,402 @@
++"""Opt-in per-layer decode timeline and MoE tensor dump (recipe T3.19a).
++
++Off unless ``KT_TIMELINE=1``. Log-only: nothing here changes what the model
++computes. The recorder answers one question per replayed step: where did the
++step's wall time go, per MoE layer and per graph segment / eager break?
++
++How it stays CUDA-graph safe
++----------------------------
++* Inside a capture the only calls are ``torch.cuda.Event.record()`` on events
++  created with ``external=True`` (a ``cudaEventRecordExternal`` node, which
++  records a real timestamp on every replay instead of becoming a capture-time
++  dependency) and ``copy_()`` into private buffers allocated once (memcpy
++  nodes). No host sync, no allocation after the first capture of a key.
++* Outside the capture, the replay loop (``BreakableCUDAGraph.replay``) records
++  ordinary timing events around every segment and break and takes
++  ``time.perf_counter_ns`` stamps. Every ``KT_TIMELINE_SAMPLE``-th replay of a
++  key is *sampled*: the stream is synchronized once at the end and all event
++  offsets are read and written as one JSON line. Non-sampled replays only pay
++  the host stamps (a few microseconds).
++
++Per MoE layer (rank 0; rank 1 has no kt work and shows only GPU experts and
++the all-reduce it waits for in ``combine``), the marks are
++
++    start -> export -> gpu -> sync -> h2d -> end
++
++    export      D2H of x / topk ids / weights into kt's pinned slot and the
++                submit host node (``BaseMoEWrapper.submit_forward``)
++    gpu_experts FlashInfer MXFP4 experts for the resident GPU experts
++    cpu_wait    exposed kt wait: the sync host node released only when the
++                CPU experts finished (``cpu_infer.sync_with_cuda_stream``)
++    h2d         pinned output -> device (``copy_forward_output_to_device``)
++    combine     ``output + cpu_output`` (+ B2 join when active)
++    cpu_total   sync - export: CPU expert compute incl. the part overlapped
++                by gpu_experts (derived, not a bucket)
++
++Sum identity checked by ``scripts/kt-timeline-report.py`` (recipe):
++    gpu_span = sum(segment) + sum(gap)             (one GPU timeline)
++    segment  = sum(MoE layer spans in it) + other  (attention, dense, norms,
++                                                    all-reduce, sampling head)
++    replay host wall >= gpu_span; the difference is host launch overhead.
++
++Env knobs (all read once at import):
++    KT_TIMELINE=1              enable
++    KT_TIMELINE_DIR            output dir inside the container (default
++                               /tmp/kt-timeline); bind-mount it out
++    KT_TIMELINE_SAMPLE=8       sample every N-th replay of a key
++    KT_TIMELINE_MAX_RECORDS    sampled records per key (default 256)
++    KT_TIMELINE_DUMP_LAYERS    MoE layer ids whose tensors are dumped (default
++                               "14,20"; "" disables)
++    KT_TIMELINE_DUMP_MAX=2     dumps per (key, layer)
++    KT_TIMELINE_DUMP_MAX_TOKENS=4  eager (non-graph) dumps only at <= this many
++                               tokens, so prefill chunks are never dumped
++"""
++
++from __future__ import annotations
++
++import json
++import logging
++import os
++import time
++from typing import Callable, Dict, List, Optional
++
++import torch
++
++logger = logging.getLogger(__name__)
++
++KT_TIMELINE = os.environ.get("KT_TIMELINE", "0") == "1"
++KT_TIMELINE_DIR = os.environ.get("KT_TIMELINE_DIR", "/tmp/kt-timeline")
++KT_TIMELINE_SAMPLE = max(1, int(os.environ.get("KT_TIMELINE_SAMPLE", "8")))
++KT_TIMELINE_MAX_RECORDS = int(os.environ.get("KT_TIMELINE_MAX_RECORDS", "256"))
++KT_TIMELINE_DUMP_MAX = int(os.environ.get("KT_TIMELINE_DUMP_MAX", "2"))
++KT_TIMELINE_DUMP_MAX_TOKENS = int(os.environ.get("KT_TIMELINE_DUMP_MAX_TOKENS", "4"))
++
++
++def _parse_layers(spec: str) -> frozenset:
++    out = set()
++    for part in spec.split(","):
++        part = part.strip()
++        if part:
++            out.add(int(part))
++    return frozenset(out)
++
++
++KT_TIMELINE_DUMP_LAYERS = _parse_layers(os.environ.get("KT_TIMELINE_DUMP_LAYERS", "14,20"))
++
++LAYER_MARKS = ("start", "export", "gpu", "sync", "h2d", "end")
++# (bucket, from-mark, to-mark)
++LAYER_BUCKETS = (
++    ("export", "start", "export"),
++    ("gpu_experts", "export", "gpu"),
++    ("cpu_wait", "gpu", "sync"),
++    ("h2d", "sync", "h2d"),
++    ("combine", "h2d", "end"),
++)
++
++
++def _new_event(external: bool) -> torch.cuda.Event:
++    return torch.cuda.Event(enable_timing=True, external=external)
++
++
++def _in_capture_mode() -> bool:
++    """SGLang's model_capture_mode() flag: also true for the eager warmup
++    forwards that precede each capture (dummy inputs, not worth dumping)."""
++    try:
++        from sglang.srt.model_executor.runner_utils import get_is_capture_mode
++    except Exception:  # pragma: no cover - layout differences
++        return False
++    return bool(get_is_capture_mode())
++
++
++class _StepRecorder:
++    """One replay of one key. Cheap unless ``sampled``."""
++
++    __slots__ = (
++        "tl", "key", "n", "sampled", "t0", "t_seg", "t_brk", "ev", "break_names",
++    )
++
++    def __init__(self, tl: "StepTimeline", key: str, n: int, sampled: bool, ev: Optional[dict]):
++        self.tl = tl
++        self.key = key
++        self.n = n
++        self.sampled = sampled
++        self.ev = ev
++        self.t0 = time.perf_counter_ns()
++        self.t_seg: List[List[int]] = []
++        self.t_brk: List[List[int]] = []
++        self.break_names: List[str] = []
++
++    def seg_start(self, i: int) -> None:
++        self.t_seg.append([time.perf_counter_ns(), 0])
++        if self.sampled:
++            self.ev["seg_start"][i].record()
++
++    def seg_end(self, i: int) -> None:
++        if self.sampled:
++            self.ev["seg_end"][i].record()
++        self.t_seg[i][1] = time.perf_counter_ns()
++
++    def break_start(self, i: int, name: str) -> None:
++        self.break_names.append(name)
++        self.t_brk.append([time.perf_counter_ns(), 0])
++
++    def break_end(self, i: int) -> None:
++        self.t_brk[i][1] = time.perf_counter_ns()
++
++    def finish(self) -> None:
++        t_end = time.perf_counter_ns()
++        self.tl._tick(self.key, self.n, self.t0, t_end)
++        if not self.sampled:
++            return
++        t_sync0 = time.perf_counter_ns()
++        torch.cuda.current_stream().synchronize()
++        t_sync1 = time.perf_counter_ns()
++        self.tl._write_sample(self, t_end, t_sync1 - t_sync0)
++
++
++class StepTimeline:
++    """Process-wide recorder; one per rank (see :func:`get_timeline`)."""
++
++    def __init__(self, rank: int):
++        self.rank = rank
++        self._capture_key: Optional[str] = None
++        # key -> layer_idx -> {mark: external Event recorded inside the graph}
++        self._layer_events: Dict[str, Dict[int, Dict[str, torch.cuda.Event]]] = {}
++        # key -> [(layer_idx, {name: private device buffer})] copied in-graph
++        self._dump_regs: Dict[str, List] = {}
++        # key -> replay-side events (created at first replay of the key)
++        self._replay_events: Dict[str, dict] = {}
++        self._replays: Dict[str, int] = {}
++        self._written: Dict[str, int] = {}
++        self._dumped: Dict[tuple, int] = {}
++        self._fh = None
++        self._ticks: List[dict] = []
++        os.makedirs(KT_TIMELINE_DIR, exist_ok=True)
++        self._path = os.path.join(KT_TIMELINE_DIR, f"timeline-rank{rank}.jsonl")
++        logger.info(
++            "[kt-timeline] enabled on TP%d: %s (sample every %d replays, dump layers %s)",
++            rank, self._path, KT_TIMELINE_SAMPLE, sorted(KT_TIMELINE_DUMP_LAYERS),
++        )
++
++    # ------------------------------------------------------------ capture side
++    def begin_capture(self, key: str) -> None:
++        assert self._capture_key is None, f"nested capture: {self._capture_key} -> {key}"
++        self._capture_key = key
++        self._layer_events[key] = {}
++        self._dump_regs[key] = []
++
++    def end_capture(self) -> None:
++        key = self._capture_key
++        self._capture_key = None
++        if key is not None:
++            logger.info(
++                "[kt-timeline] TP%d captured %s: %d MoE layers instrumented, %d dump layers",
++                self.rank, key, len(self._layer_events[key]), len(self._dump_regs[key]),
++            )
++
++    def layer_marker(self, layer_idx: int) -> Optional[Callable[[str], None]]:
++        """Callable ``mark(name)`` recording one of LAYER_MARKS for this layer,
++        or None when not capturing (eager forwards are not timed)."""
++        key = self._capture_key
++        if key is None:
++            return None
++        events = self._layer_events[key].get(layer_idx)
++        if events is None:
++            events = {m: _new_event(external=True) for m in LAYER_MARKS}
++            self._layer_events[key][layer_idx] = events
++
++        def mark(name: str) -> None:
++            events[name].record()
++
++        return mark
++
++    def dump_wanted(self, layer_idx: int, num_tokens: int) -> bool:
++        """True when this forward of ``layer_idx`` should be dumped: a capture
++        of a registered key, or an eager forward small enough to be a decode
++        step (never a prefill chunk, never a capture warmup)."""
++        if layer_idx not in KT_TIMELINE_DUMP_LAYERS:
++            return False
++        if self._capture_key is not None:
++            return True
++        if torch.cuda.is_current_stream_capturing() or _in_capture_mode():
++            return False
++        if num_tokens > KT_TIMELINE_DUMP_MAX_TOKENS:
++            return False
++        return self._dumped.get(("eager", layer_idx), 0) < KT_TIMELINE_DUMP_MAX
++
++    def dump_begin(self, layer_idx: int, tensors: Dict[str, torch.Tensor]) -> dict:
++        """Snapshot the layer's inputs (they are masked in place right after).
++        Capture: ``copy_`` into private buffers inside the graph, read back
++        after a sampled replay. Eager: device clones."""
++        return {"layer_idx": layer_idx, "tensors": self._snapshot(tensors)}
++
++    def dump_end(self, handle: dict, tensors: Dict[str, torch.Tensor]) -> None:
++        handle["tensors"].update(self._snapshot(tensors))
++        layer_idx = handle["layer_idx"]
++        key = self._capture_key
++        if key is not None:
++            self._dump_regs[key].append((layer_idx, handle["tensors"]))
++            return
++        x = handle["tensors"].get("hidden_states")
++        self._save_dump("eager", layer_idx, handle["tensors"], x.shape[0] if x is not None else -1)
++
++    @staticmethod
++    def _snapshot(tensors: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
++        out = {}
++        for name, t in tensors.items():
++            if t is None:
++                continue
++            buf = torch.empty_like(t)
++            buf.copy_(t)
++            out[name] = buf
++        return out
++
++    def _save_dump(self, key: str, layer_idx: int, tensors: Dict[str, torch.Tensor], num_tokens: int) -> None:
++        k = (key, layer_idx)
++        n = self._dumped.get(k, 0)
++        if n >= KT_TIMELINE_DUMP_MAX:
++            return
++        self._dumped[k] = n + 1
++        safe_key = key.replace(":", "-")
++        path = os.path.join(
++            KT_TIMELINE_DIR, f"dump-rank{self.rank}-{safe_key}-layer{layer_idx}-{n}.pt"
++        )
++        payload = {
++            "key": key,
++            "layer_idx": layer_idx,
++            "rank": self.rank,
++            "num_tokens": int(num_tokens),
++            "tensors": {name: t.detach().to("cpu").clone() for name, t in tensors.items() if t is not None},
++        }
++        torch.save(payload, path)
++        logger.info("[kt-timeline] TP%d dumped %s layer %d -> %s", self.rank, key, layer_idx, path)
++
++    # ------------------------------------------------------------- replay side
++    def begin_step(self, key: str, n_segments: int, n_breaks: int) -> _StepRecorder:
++        n = self._replays.get(key, 0)
++        self._replays[key] = n + 1
++        sampled = (
++            n % KT_TIMELINE_SAMPLE == 0
++            and self._written.get(key, 0) < KT_TIMELINE_MAX_RECORDS
++        )
++        ev = None
++        if sampled:
++            ev = self._replay_events.get(key)
++            if ev is None or len(ev["seg_start"]) < n_segments:
++                ev = {
++                    "seg_start": [_new_event(False) for _ in range(n_segments)],
++                    "seg_end": [_new_event(False) for _ in range(n_segments)],
++                }
++                self._replay_events[key] = ev
++        return _StepRecorder(self, key, n, sampled, ev)
++
++    def _tick(self, key: str, n: int, t0: int, t1: int) -> None:
++        self._ticks.append({"t": "tick", "key": key, "n": n, "t0_ns": t0, "t1_ns": t1})
++        if len(self._ticks) >= 64:
++            self._flush_ticks()
++
++    def _flush_ticks(self) -> None:
++        if not self._ticks:
++            return
++        fh = self._file()
++        for rec in self._ticks:
++            fh.write(json.dumps(rec) + "\n")
++        self._ticks.clear()
++        fh.flush()
++
++    def _file(self):
++        if self._fh is None:
++            self._fh = open(self._path, "a")
++        return self._fh
++
++    def _write_sample(self, step: _StepRecorder, t_end_ns: int, sync_ns: int) -> None:
++        key, ev = step.key, step.ev
++        n_seg = len(step.t_seg)
++        origin = ev["seg_start"][0]
++        ms = lambda e: float(origin.elapsed_time(e))  # noqa: E731
++
++        segments = []
++        for i in range(n_seg):
++            s, e = ms(ev["seg_start"][i]), ms(ev["seg_end"][i])
++            segments.append({
++                "i": i, "gpu_start_ms": s, "gpu_end_ms": e, "gpu_ms": e - s,
++                "host_ms": (step.t_seg[i][1] - step.t_seg[i][0]) / 1e6,
++            })
++        gaps = []
++        for i in range(n_seg - 1):
++            gaps.append({
++                "after_segment": i,
++                "gpu_gap_ms": segments[i + 1]["gpu_start_ms"] - segments[i]["gpu_end_ms"],
++            })
++        breaks = []
++        for j, (b0, b1) in enumerate(step.t_brk):
++            breaks.append({
++                "i": j,
++                "name": step.break_names[j] if j < len(step.break_names) else "",
++                "host_ms": (b1 - b0) / 1e6,
++                "host_start_ms": (b0 - step.t0) / 1e6,
++                "gpu_gap_ms": gaps[j]["gpu_gap_ms"] if j < len(gaps) else None,
++            })
++
++        layers = []
++        for layer_idx in sorted(self._layer_events.get(key, {})):
++            evs = self._layer_events[key][layer_idx]
++            marks = {m: ms(evs[m]) for m in LAYER_MARKS}
++            row = {"layer": layer_idx, "gpu_start_ms": marks["start"], "span_ms": marks["end"] - marks["start"]}
++            for bucket, a, b in LAYER_BUCKETS:
++                row[bucket] = marks[b] - marks[a]
++            row["cpu_total_ms"] = marks["sync"] - marks["export"]
++            # which segment the layer sits in (by its start timestamp)
++            seg_i = None
++            for s in segments:
++                if s["gpu_start_ms"] - 1e-3 <= marks["start"] <= s["gpu_end_ms"] + 1e-3:
++                    seg_i = s["i"]
++                    break
++            row["segment"] = seg_i
++            layers.append(row)
++
++        gpu_span = segments[-1]["gpu_end_ms"] - segments[0]["gpu_start_ms"] if segments else 0.0
++        rec = {
++            "t": "step",
++            "rank": self.rank,
++            "key": key,
++            "n": step.n,
++            "host": {
++                "replay_wall_ms": (t_end_ns - step.t0) / 1e6,
++                "final_sync_ms": sync_ns / 1e6,
++            },
++            "gpu_span_ms": gpu_span,
++            "segments": segments,
++            "gaps": gaps,
++            "breaks": breaks,
++            "layers": layers,
++        }
++        fh = self._file()
++        self._flush_ticks()
++        fh.write(json.dumps(rec) + "\n")
++        fh.flush()
++        self._written[key] = self._written.get(key, 0) + 1
++
++        # Graph-replay tensor dump: after the final sync the private buffers
++        # hold this replay's values for the registered layers.
++        for layer_idx, bufs in self._dump_regs.get(key, []):
++            x = bufs.get("hidden_states")
++            self._save_dump(key, layer_idx, bufs, x.shape[0] if x is not None else -1)
++
++
++_TIMELINE: Optional[StepTimeline] = None
++_TIMELINE_RANK: Optional[int] = None
++
++
++def get_timeline(rank: Optional[int] = None) -> Optional[StepTimeline]:
++    """The rank's recorder, or None when KT_TIMELINE is off. The first call
++    must pass ``rank``; later calls may omit it."""
++    global _TIMELINE, _TIMELINE_RANK
++    if not KT_TIMELINE:
++        return None
++    if _TIMELINE is None:
++        if rank is None:
++            return None
++        _TIMELINE = StepTimeline(rank)
++        _TIMELINE_RANK = rank
++    return _TIMELINE
+diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+index f0371a59..95093c07 100644
+--- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
++++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
+@@ -144,19 +144,34 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+         size = shape_key.size * self._rows_per_shape_unit()
+         if self._shared_output_buffer is None:
+             self._shared_output_buffer = self._alloc_full_buffer(warmup_out, size)
+-        with (
+-            graph_pool_capture_scope(),
+-            BreakableCUDAGraphCapture(
+-                cuda_graph=graph,
+-                pool=self._pool,
+-                stream=self._capture_stream,
+-                barrier_fn=self._tp_group.barrier,
+-            ),
+-        ):
+-            self._precarve.mint()
+-            out = captured_fn()
+-            out_rows = self._output_rows(out, size)
+-            self._copy_output_to_buffer(out, self._shared_output_buffer, out_rows)
++        # Opt-in step timeline (KT_TIMELINE=1, recipe T3.19a): tag the graph
++        # so its replay loop records per-segment / per-break timings, and let
++        # the MoE layers bake their external events into this capture.
++        from sglang.srt.layers.moe.kt_timeline import get_timeline  # lazy: layers -> runner cycle
++        from sglang.srt.runtime_context import get_parallel
++
++        timeline = get_timeline(get_parallel().tp_rank)
++        timeline_key = self._timeline_key(shape_key) if timeline is not None else None
++        if timeline is not None:
++            timeline.begin_capture(timeline_key)
++            graph.set_timeline(timeline, timeline_key)
++        try:
++            with (
++                graph_pool_capture_scope(),
++                BreakableCUDAGraphCapture(
++                    cuda_graph=graph,
++                    pool=self._pool,
++                    stream=self._capture_stream,
++                    barrier_fn=self._tp_group.barrier,
++                ),
++            ):
++                self._precarve.mint()
++                out = captured_fn()
++                out_rows = self._output_rows(out, size)
++                self._copy_output_to_buffer(out, self._shared_output_buffer, out_rows)
++        finally:
++            if timeline is not None:
++                timeline.end_capture()
+ 
+         stored = self._slice_output(self._shared_output_buffer, out_rows, like=out)
+         self._graphs[shape_key] = graph
+@@ -164,6 +179,21 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
+         # CUDA graphs retain tensor addresses, not Python tensor lifetimes.
+         self._capture_inputs[shape_key] = capture_inputs
+ 
++    def _timeline_key(self, shape_key: "ShapeKey") -> str:
++        """``<runner>:<size>[:variant]`` — e.g. ``decode:4``; the decode
++        runner's size is the batch size, the prefill runner's a token count."""
++        runner = type(self._cuda_graph_runner).__name__.lower()
++        kind = "decode" if "decode" in runner else ("prefill" if "prefill" in runner else runner)
++        if getattr(self._cuda_graph_runner, "is_draft_worker", False) or getattr(
++            self._model_runner, "is_draft_worker", False
++        ):
++            kind = "draft-" + kind
++        key = f"{kind}:{shape_key.size}"
++        for extra in (shape_key.variant_label, shape_key.dsa_variant, shape_key.stream_idx):
++            if extra is not None:
++                key += f":{extra}"
++        return key
++
+     def _rows_per_shape_unit(self) -> int:
+         """Output rows per unit of ``ShapeKey.size``.
+ 
+diff --git a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
+index 42d6077b..d51be4c5 100644
+--- a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
++++ b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
+@@ -296,11 +296,23 @@ class BreakableCUDAGraph:
+         self._segments: list[Any] = []
+         self._break_fns: list[Callable[[], Any]] = []
+         self._deduped_cuda_graph = deduped_cuda_graph
++        self._timeline = None
++
++    def set_timeline(self, recorder, key: str) -> None:
++        """Opt-in step timeline (recipe T3.19a): ``recorder.begin_step`` is
++        called per replay and its step object gets seg_start/seg_end/
++        break_start/break_end/finish. None (default) costs nothing."""
++        self._timeline = (recorder, key)
+ 
+     def replay(self) -> None:
+         stream = get_device_module().current_stream()
+         token = _current_stream_var.set(stream)
+         n = len(self._segments)
++        timeline = self._timeline
++        step = None
++        if timeline is not None:
++            recorder, key = timeline
++            step = recorder.begin_step(key, n, len(self._break_fns))
+         try:
+             if _DEBUG_SYNC:
+                 # Drain work enqueued before this replay (prefill, draft step,
+@@ -318,6 +330,8 @@ class BreakableCUDAGraph:
+                     )
+                     raise
+             for i, seg in enumerate(self._segments):
++                if step is not None:
++                    step.seg_start(i)
+                 try:
+                     seg.replay()
+                     if _DEBUG_SYNC:
+@@ -332,7 +346,11 @@ class BreakableCUDAGraph:
+                         _DEBUG_SYNC,
+                     )
+                     raise
++                if step is not None:
++                    step.seg_end(i)
+                 if i < len(self._break_fns):
++                    if step is not None:
++                        step.break_start(i, self._break_name(i))
+                     try:
+                         self._break_fns[i]()
+                         if _DEBUG_SYNC:
+@@ -349,6 +367,10 @@ class BreakableCUDAGraph:
+                             _DEBUG_SYNC,
+                         )
+                         raise
++                    if step is not None:
++                        step.break_end(i)
++            if step is not None:
++                step.finish()
+         finally:
+             _current_stream_var.reset(token)
+ 

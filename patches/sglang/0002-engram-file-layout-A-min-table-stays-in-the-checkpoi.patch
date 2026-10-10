@@ -1,0 +1,268 @@
+From a1ca246af56bc866c1126cc619aaa053ec041e1d Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Mon, 21 Sep 2026 19:29:24 -0400
+Subject: [PATCH 02/50] engram: file layout (A-min) -- table stays in the
+ checkpoint shard
+
+SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT=file maps the shard read-only and views
+the rank's row range; no host copy, no pinning, page cache is the row cache.
+Lookup is a CPU gather behind MADV_WILLNEED from a thread pool, run as an
+eager_on_graph break (decode needs --cuda-graph-backend-decode breakable).
+Bit-exact vs safetensors; ~1 ms/layer cold at T=1, ~0.5 s per 4K prefill chunk.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py       |  10 ++
+ python/sglang/srt/layers/engram.py | 162 +++++++++++++++++++++++++++++
+ 2 files changed, 172 insertions(+)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index d5dd9339..a52c6864 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1416,7 +1416,17 @@ class Envs:
+     # row range, gathered with the all-reduce. "auto" picks shared when shmem THP
+     # (transparent_hugepage/shmem_enabled) is on, else private when anonymous THP
+     # is on, else shared without huge pages.
++    # "file" (recipe overlay, E6-DESIGN 4.3 A-min): no host copy at all -- each
++    # rank maps the checkpoint shard that holds the table read-only and looks its
++    # row range up on the CPU; the page cache is the (elastic) row cache and NVMe
++    # is the tier below it. Bit-exact, ~1 ms per layer per decode token on a cold
++    # miss, ~0.5 s per 4K prefill chunk. Runs as an eager break, so decode needs
++    # --cuda-graph-backend-decode breakable. Set SGLANG_DSV41_ENGRAM_FILE_DIR when
++    # the served model path is not the snapshot directory.
+     SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT = EnvStr("auto")
++    SGLANG_DSV41_ENGRAM_FILE_DIR = EnvStr("")
++    # Threads issuing MADV_WILLNEED for the file layout's lookups (NVMe queue depth).
++    SGLANG_DSV41_ENGRAM_FILE_THREADS = EnvInt(16)
+     # With the host table on, drop the checkpoint's page cache (posix_fadvise
+     # DONTNEED on the safetensors) before pre-faulting the table and again after
+     # loading: cached checkpoint pages fragment host memory and starve the 512 MiB
+diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
+index 8f4340f1..44bd3b0c 100644
+--- a/python/sglang/srt/layers/engram.py
++++ b/python/sglang/srt/layers/engram.py
+@@ -9,11 +9,14 @@ from __future__ import annotations
+ 
+ import ctypes
+ import glob
++import json
+ import logging
+ import mmap
+ import os
+ import re
++import struct
+ import time
++from concurrent.futures import ThreadPoolExecutor
+ from typing import Optional
+ 
+ import msgspec
+@@ -47,6 +50,9 @@ from sglang.srt.layers.linear import ReplicatedLinear
+ from sglang.srt.layers.quantization.base_config import QuantizationConfig
+ from sglang.srt.managers.schedule_batch import MM_PAD_SHIFT_VALUE
+ from sglang.srt.model_executor.forward_batch_info import ForwardBatch
++from sglang.srt.model_executor.runner_backend_utils.breakable_cuda_graph.breakable_cuda_graph import (
++    eager_on_graph,
++)
+ from sglang.srt.runtime_context import get_model, get_parallel, get_serving
+ from sglang.srt.utils import add_prefix
+ from sglang.srt.utils.hf_transformers.tokenizer import get_tokenizer
+@@ -666,6 +672,130 @@ class _HostTable:
+             logger.info(msg)
+ 
+ 
++class _FileTable:
++    """`file` layout (recipe overlay, E6-DESIGN 4.3 A-min): the Engram table
++    stays in the checkpoint shard. V4.1-Flash stores each layer's table as one
++    contiguous fp8 tensor plus its e8m0 scale tensor inside a single safetensors
++    shard (layer 1 -> model-00047, layer 14 -> model-00048; 384M rows x 264 B =
++    94.4 GiB each), so a read-only MAP_SHARED mapping of the shard and two
++    views are the whole table. Nothing is copied, nothing is pinned; the page
++    cache is the row cache and its size is whatever DRAM the experts leave.
++
++    Lookups run on the CPU (an eager break in the CUDA graph): the rows' pages
++    are advised with MADV_WILLNEED from a small thread pool so a cold miss
++    costs one NVMe queue-depth-N round trip (~1 ms for 48 rows, ~0.5 s for a
++    4K-token prefill chunk on the 9100 PRO) instead of serialised page faults
++    (6x slower). Every TP rank maps the same file and owns its row range, so
++    the existing sharded all-reduce path reassembles the lookup and the two
++    ranks share one page cache."""
++
++    def __init__(self, model_dir: str, layer_id: int, row_start: int, rows: int):
++        snapshot = envs.SGLANG_DSV41_ENGRAM_FILE_DIR.get() or model_dir
++        index_path = os.path.join(snapshot, "model.safetensors.index.json")
++        if not os.path.exists(index_path):
++            raise FileNotFoundError(
++                f"engram file layout: {index_path} not found; point "
++                "SGLANG_DSV41_ENGRAM_FILE_DIR at the checkpoint snapshot directory"
++            )
++        with open(index_path) as fh:
++            weight_map = json.load(fh)["weight_map"]
++        w_name = f"layers.{layer_id}.engram.embed.weight"
++        s_name = f"layers.{layer_id}.engram.embed.scale"
++        if weight_map[w_name] != weight_map[s_name]:
++            raise RuntimeError("engram file layout: weight and scale live in different shards")
++        self.path = os.path.join(snapshot, weight_map[w_name])
++        with open(self.path, "rb") as fh:
++            n = struct.unpack("<Q", fh.read(8))[0]
++            header = json.loads(fh.read(n))
++        base = 8 + n
++        w, sc = header[w_name], header[s_name]
++        if w["dtype"] != "F8_E4M3" or sc["dtype"] != "F8_E8M0":
++            raise RuntimeError(f"engram file layout: unexpected dtypes {w['dtype']}/{sc['dtype']}")
++        self.total_rows, self.dim = w["shape"]
++        self.row_start, self.rows = row_start, rows
++        self.w_off = base + w["data_offsets"][0]
++        self.s_off = base + sc["data_offsets"][0]
++        self.fd = os.open(self.path, os.O_RDONLY)
++        self.mm = mmap.mmap(self.fd, 0, flags=mmap.MAP_SHARED, prot=mmap.PROT_READ)
++        self.mm.madvise(mmap.MADV_RANDOM)  # 48-row lookups must not pull readahead windows
++        raw = torch.frombuffer(self.mm, dtype=torch.uint8)
++        scale_cols = self.dim // FP8_BLOCK_SIZE
++        w_lo = self.w_off + row_start * self.dim
++        s_lo = self.s_off + row_start * scale_cols
++        self.weight = raw[w_lo : w_lo + rows * self.dim].view(torch.float8_e4m3fn).view(rows, self.dim)
++        self.scale = raw[s_lo : s_lo + rows * scale_cols].view(torch.float8_e8m0fnu).view(rows, scale_cols)
++        self.threads = max(1, envs.SGLANG_DSV41_ENGRAM_FILE_THREADS.get())
++        self.pool = ThreadPoolExecutor(self.threads, thread_name_prefix="engram-willneed")
++        self.stats = {"lookups": 0, "rows": 0, "ms": 0.0}
++
++    def prefetch(self, local_rows: list[int]) -> None:
++        """MADV_WILLNEED every page the rows touch, from `threads` workers."""
++        page = mmap.PAGESIZE
++        scale_cols = self.dim // FP8_BLOCK_SIZE
++        w_base = self.w_off + self.row_start * self.dim
++        s_base = self.s_off + self.row_start * scale_cols
++        mm, dim = self.mm, self.dim
++
++        def advise(lo: int, hi: int) -> None:
++            for r in local_rows[lo:hi]:
++                a = (w_base + r * dim) // page * page
++                mm.madvise(mmap.MADV_WILLNEED, a, page)
++                b = (s_base + r * scale_cols) // page * page
++                mm.madvise(mmap.MADV_WILLNEED, b, page)
++
++        n = len(local_rows)
++        if n == 0:
++            return
++        step = max(1, (n + self.threads - 1) // self.threads)
++        list(self.pool.map(lambda k: advise(k, min(n, k + step)), range(0, n, step)))
++
++    def gather(self, local: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
++        """fp8 rows and e8m0 scales for local (0-based, in-range) row ids, on CPU."""
++        t = time.perf_counter()
++        self.prefetch(local.tolist())
++        w = self.weight.index_select(0, local)
++        s = self.scale.index_select(0, local)
++        self.stats["lookups"] += 1
++        self.stats["rows"] += local.numel()
++        self.stats["ms"] += (time.perf_counter() - t) * 1e3
++        return w, s
++
++    def describe(self) -> str:
++        return (
++            f"layout=file, {os.path.basename(self.path)} rows [{self.row_start}, "
++            f"{self.row_start + self.rows}) of {self.total_rows}, "
++            f"{self.rows * (self.dim + self.dim // FP8_BLOCK_SIZE) / 2**30:.1f} GiB mapped read-only, "
++            f"{self.threads} prefetch threads, page cache is the row cache"
++        )
++
++
++def _engram_file_rows(embed: "EngramEmbedding", indices: torch.Tensor) -> torch.Tensor:
++    """The CPU lookup for the file layout, as one graph break. Returns bf16
++    (*indices.shape, dim) on indices.device with unowned rows zeroed, for the
++    sharded all-reduce."""
++    if torch.cuda.is_available() and torch.cuda.is_current_stream_capturing():
++        raise RuntimeError(
++            "engram file layout: lookup reached a live CUDA graph capture. It is a "
++            "CPU lookup and must run as an eager break: use "
++            "--cuda-graph-backend-decode breakable (and tc_piecewise/breakable "
++            "for prefill), or disable CUDA graphs."
++        )
++    tbl = embed.file_table
++    ids = indices.reshape(-1).to("cpu", dtype=torch.int64)
++    local = ids - tbl.row_start
++    owned = (local >= 0) & (local < tbl.rows)
++    local = local.masked_fill(~owned, 0)
++    w, s = tbl.gather(local)
++    dev = indices.device
++    rows = w.to(dev, non_blocking=False).float().unflatten(-1, (-1, FP8_BLOCK_SIZE))
++    values = (rows * s.to(dev, non_blocking=False).float().unsqueeze(-1)).flatten(-2)
++    values = values.to(torch.bfloat16).masked_fill(~owned.to(dev).unsqueeze(-1), 0)
++    return values.view(*indices.shape, embed.dim)
++
++
++bcg_engram_file_rows = eager_on_graph(True)(_engram_file_rows)
++
++
+ class EngramEmbedding(nn.Module):
+     """One layer's fp8 hash table with e8m0 block scales, dequantized on lookup.
+ 
+@@ -686,6 +816,7 @@ class EngramEmbedding(nn.Module):
+         row_end = num_embeddings * (tp_rank + 1) // self.tp_size
+         self.rows = row_end - self.row_start
+         self.host_table: Optional[_HostTable] = None
++        self.file_table: Optional[_FileTable] = None
+         if envs.SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE.get():
+             self._init_host_table(num_embeddings, dim, layer_id)
+         else:
+@@ -706,6 +837,20 @@ class EngramEmbedding(nn.Module):
+         layout = _HostTable.choose_layout(
+             envs.SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT.get()
+         )
++        if layout == "file":
++            from sglang.srt.server_args import get_global_server_args
++
++            self.file_table = _FileTable(
++                get_global_server_args().model_path, layer_id, self.row_start, self.rows
++            )
++            if self.file_table.total_rows != num_embeddings or self.file_table.dim != dim:
++                raise RuntimeError(
++                    f"engram file layout: shard has {self.file_table.total_rows}x"
++                    f"{self.file_table.dim}, model expects {num_embeddings}x{dim}"
++                )
++            self.weight = nn.Parameter(self.file_table.weight, requires_grad=False)
++            self.scale = nn.Parameter(self.file_table.scale, requires_grad=False)
++            return
+         n = num_embeddings if layout == "shared" else self.rows
+         w_bytes = n * dim
+         s_bytes = n * (dim // FP8_BLOCK_SIZE)
+@@ -728,6 +873,19 @@ class EngramEmbedding(nn.Module):
+ 
+     def _load_rows(self, param: nn.Parameter, loaded_weight: torch.Tensor):
+         rows = slice(self.row_start, self.row_start + self.rows)
++        if self.file_table is not None:
++            # The parameter already *is* the checkpoint; check the shard edges
++            # match what the loader handed us instead of copying 47 GiB.
++            if self.rows:
++                for r in (0, self.rows - 1):
++                    a = param.data[r].view(torch.uint8)
++                    b = loaded_weight[self.row_start + r].view(torch.uint8).view(-1)
++                    if not torch.equal(a, b):
++                        raise RuntimeError(
++                            f"engram file layout: row {self.row_start + r} differs "
++                            "between the mapped shard and the loader's tensor"
++                        )
++            return
+         if self._shared:
+             param.data[rows].copy_(loaded_weight[rows])
+         else:
+@@ -740,6 +898,8 @@ class EngramEmbedding(nn.Module):
+         the table ended up backed."""
+         if self.host_table is not None:
+             self.host_table.finish_load(label)
++        if self.file_table is not None:
++            logger.info("engram host table %s: %s", label, self.file_table.describe())
+ 
+     def forward(
+         self,
+@@ -795,6 +955,8 @@ class EngramEmbedding(nn.Module):
+         """Rows of `indices` this rank's shard holds, zero for the rest."""
+         if self.rows == 0:
+             return self._empty(indices).zero_()
++        if self.file_table is not None:
++            return bcg_engram_file_rows(self, indices)
+         if self.host_table is None and (
+             not indices.is_cuda or torch.version.cuda is None
+         ):

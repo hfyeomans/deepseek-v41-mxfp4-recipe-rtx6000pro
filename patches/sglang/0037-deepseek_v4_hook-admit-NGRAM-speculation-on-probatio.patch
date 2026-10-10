@@ -1,0 +1,41 @@
+From 84cd3ec433ee49e68fb5a24c563339b7f96d7833 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.ah.local>
+Date: Fri, 9 Oct 2026 14:07:23 -0400
+Subject: [PATCH 37/50] deepseek_v4_hook: admit NGRAM speculation on probation
+ (recipe T3.9h n-gram probe)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/arg_groups/deepseek_v4_hook.py | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/arg_groups/deepseek_v4_hook.py b/python/sglang/srt/arg_groups/deepseek_v4_hook.py
+index 743d61fa..fecd12c3 100644
+--- a/python/sglang/srt/arg_groups/deepseek_v4_hook.py
++++ b/python/sglang/srt/arg_groups/deepseek_v4_hook.py
+@@ -146,12 +146,23 @@ def apply_deepseek_v4_defaults(server_args: ServerArgs, model_arch: str) -> None
+         )
+ 
+     if cfg.speculative_algorithm is not None:
++        # Overlay (recipe T3.9h, 2026-10-09): NGRAM admitted on probation. Its
++        # verify input carries the same draft_token / draft_token_num /
++        # custom_mask contract the DSV4 backend reads for target-verify, and
++        # with --speculative-ngram-max-bfs-breadth 1 the draft is a linear
++        # chain like EAGLE topk 1. Upstream's guard stays for everything else.
+         assert cfg.speculative_algorithm in (
+             "EAGLE",
+             "DSPARK",
++            "NGRAM",
+         ), (
+-            f"Only EAGLE and DSPARK speculative algorithms are supported for {model_arch}"
++            f"Only EAGLE, DSPARK and NGRAM speculative algorithms are supported for {model_arch}"
+         )
++        if cfg.speculative_algorithm == "NGRAM":
++            logger.warning(
++                f"NGRAM speculation on {model_arch} is an overlay probe (recipe T3.9h); "
++                "upstream admits EAGLE and DSPARK only."
++            )
+         if cfg.speculative_algorithm == "EAGLE":
+             assert cfg.speculative_eagle_topk == 1, (
+                 f"Only EAGLE speculative algorithm with topk == 1 is supported for {model_arch}"
