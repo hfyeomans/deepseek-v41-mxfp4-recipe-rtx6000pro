@@ -22,6 +22,7 @@ class StreamResult:
     finish_reason: str | None
     stream_token_events: int
     raw_usage: dict = field(default_factory=dict)
+    reasoning: str = ""  # reasoning_content deltas (thinking on); counted in ttft_s and stream_token_events, not in text
 
     @property
     def decode_s(self) -> float:
@@ -68,6 +69,7 @@ def chat_stream(base_url: str, model: str, messages: list[dict], *, max_tokens: 
     t0 = time.perf_counter()
     ttft = None
     text_parts: list[str] = []
+    reasoning_parts: list[str] = []
     events = 0
     usage: dict = {}
     finish = None
@@ -84,6 +86,15 @@ def chat_stream(base_url: str, model: str, messages: list[dict], *, max_tokens: 
                 usage = chunk["usage"]
             for choice in chunk.get("choices", []):
                 delta = choice.get("delta", {})
+                # The first streamed token of either kind is the TTFT; with thinking on the
+                # reasoning tokens are decode tokens too (usage counts them), so decode_tps
+                # must span them.
+                reasoning = delta.get("reasoning_content")
+                if reasoning:
+                    if ttft is None:
+                        ttft = time.perf_counter() - t0
+                    reasoning_parts.append(reasoning)
+                    events += 1
                 content = delta.get("content")
                 if content:
                     if ttft is None:
@@ -102,6 +113,7 @@ def chat_stream(base_url: str, model: str, messages: list[dict], *, max_tokens: 
         finish_reason=finish,
         stream_token_events=events,
         raw_usage=usage,
+        reasoning="".join(reasoning_parts),
     )
 
 

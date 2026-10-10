@@ -1,0 +1,4 @@
+model=dsv41-flash-hybrid  runs=1 warmup=1 max_tokens=64
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         58.24     58.24     58.24       41.16       0.473     n/a
+FAIL evidence manifest: evidence/t38b/soak-default/manifest.json is a different manifest (eba4b4b0cb16 vs 6979b0e7d1d2); one evidence directory holds one serve

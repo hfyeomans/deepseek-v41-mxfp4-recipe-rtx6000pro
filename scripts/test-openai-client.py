@@ -25,8 +25,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.end_headers()
-        # reasoning delta first (must not count as content), then 3 content
-        # events carrying 5 tokens total per usage, then usage-only chunk
+        # reasoning delta first (must not count as content but is the first token, so it
+        # sets the TTFT), then 3 content events carrying 5 tokens total per usage, then
+        # usage-only chunk
         chunks = [
             {"choices": [{"delta": {"reasoning_content": "thinking..."}, "finish_reason": None}]},
             {"choices": [{"delta": {"content": "Hel"}, "finish_reason": None}]},
@@ -35,7 +36,7 @@ class Handler(BaseHTTPRequestHandler):
             {"choices": [], "usage": {"prompt_tokens": 11, "completion_tokens": 5}},
         ]
         for i, c in enumerate(chunks):
-            if i == 1:
+            if i == 0:
                 time.sleep(0.05)  # TTFT
             self.wfile.write(f"data: {json.dumps(c)}\n\n".encode())
             self.wfile.flush()
@@ -52,7 +53,8 @@ def test_stream_parsing_and_request_shape():
     finally:
         srv.shutdown()
     assert r.text == "Hello world", r.text
-    assert r.stream_token_events == 3
+    assert r.reasoning == "thinking...", r.reasoning
+    assert r.stream_token_events == 4
     assert r.completion_tokens == 5 and r.prompt_tokens == 11
     assert r.finish_reason == "stop"
     assert r.ttft_s >= 0.045, r.ttft_s

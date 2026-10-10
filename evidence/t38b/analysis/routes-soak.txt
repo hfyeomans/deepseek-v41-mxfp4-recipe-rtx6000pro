@@ -1,0 +1,38 @@
+== humaneval-full-c4: 35 rank-0 dumps
+  humaneval-full-c4/decode: 7958 passes, 7.55 M routes (4 tokens/pass); positional CPU share 15.0 % [layer 7.0-23.2]; oracle top-219 on GPU 97.7 %; experts hit/layer median 353; 50 % of routes in 23 experts (min 12, max 58), 90 % in 129; busiest expert 23.8x mean (min 8.6, max 60.8)
+  humaneval-full-c4/prefill: 164 passes, 7.06 M routes (179 tokens/pass); positional CPU share 11.8 % [layer 6.9-18.5]; oracle top-219 on GPU 97.4 %; experts hit/layer median 361; 50 % of routes in 22 experts (min 10, max 59), 90 % in 129; busiest expert 27.0x mean (min 10.3, max 55.1)
+== humaneval-think-c4: 15 rank-0 dumps
+  humaneval-think-c4/decode: 4585 passes, 3.81 M routes (3 tokens/pass); positional CPU share 12.5 % [layer 7.1-20.7]; oracle top-219 on GPU 97.3 %; experts hit/layer median 339; 50 % of routes in 25 experts (min 14, max 54), 90 % in 132; busiest expert 23.6x mean (min 10.5, max 50.8)
+  humaneval-think-c4/prefill: 35 passes, 1.43 M routes (171 tokens/pass); positional CPU share 12.4 % [layer 7.2-21.0]; oracle top-219 on GPU 98.5 %; experts hit/layer median 305; 50 % of routes in 22 experts (min 10, max 58), 90 % in 112; busiest expert 27.0x mean (min 10.3, max 46.5)
+== humaneval-think-c1: 6 rank-0 dumps
+  humaneval-think-c1/decode: 2168 passes, 0.52 M routes (1 tokens/pass); positional CPU share 12.8 % [layer 7.9-21.3]; oracle top-219 on GPU 98.0 %; experts hit/layer median 291; 50 % of routes in 24 experts (min 15, max 53), 90 % in 123; busiest expert 23.0x mean (min 10.1, max 53.4)
+  humaneval-think-c1/prefill: 6 passes, 0.25 M routes (172 tokens/pass); positional CPU share 12.6 % [layer 7.2-20.5]; oracle top-219 on GPU 98.8 %; experts hit/layer median 253; 50 % of routes in 22 experts (min 10, max 61), 90 % in 118; busiest expert 26.4x mean (min 10.2, max 47.1)
+== reasoning-c4: 20 rank-0 dumps
+  reasoning-c4/decode: 8596 passes, 4.28 M routes (2 tokens/pass); positional CPU share 10.7 % [layer 4.2-18.7]; oracle top-219 on GPU 97.3 %; experts hit/layer median 353; 50 % of routes in 22 experts (min 12, max 54), 90 % in 131; busiest expert 27.6x mean (min 9.9, max 52.4)
+  reasoning-c4/prefill: 5 passes, 0.18 M routes (148 tokens/pass); positional CPU share 13.0 % [layer 7.1-21.3]; oracle top-219 on GPU 98.6 %; experts hit/layer median 258; 50 % of routes in 25 experts (min 13, max 57), 90 % in 127; busiest expert 24.5x mean (min 11.6, max 43.6)
+== reasoning-c1: 11 rank-0 dumps
+  reasoning-c1/decode: 4988 passes, 1.20 M routes (1 tokens/pass); positional CPU share 9.6 % [layer 1.7-15.4]; oracle top-219 on GPU 98.9 %; experts hit/layer median 300; 50 % of routes in 13 experts (min 5, max 44), 90 % in 88; busiest expert 36.5x mean (min 12.7, max 61.6)
+  reasoning-c1/prefill: 4 passes, 0.08 M routes (82 tokens/pass); positional CPU share 12.5 % [layer 6.1-21.2]; oracle top-219 on GPU 99.9 %; experts hit/layer median 186; 50 % of routes in 17 experts (min 10, max 45), 90 % in 92; busiest expert 31.8x mean (min 15.5, max 48.9)
+== decode-distinct: 6 rank-0 dumps
+  decode-distinct/decode: 1532 passes, 0.92 M routes (2 tokens/pass); positional CPU share 13.8 % [layer 9.2-22.8]; oracle top-219 on GPU 97.0 %; experts hit/layer median 334; 50 % of routes in 32 experts (min 19, max 69), 90 % in 141; busiest expert 17.6x mean (min 6.0, max 24.3)
+  decode-distinct/prefill: 7 passes, 0.33 M routes (199 tokens/pass); positional CPU share 14.2 % [layer 8.2-24.0]; oracle top-219 on GPU 98.8 %; experts hit/layer median 251; 50 % of routes in 28 experts (min 15, max 52), 90 % in 131; busiest expert 21.0x mean (min 9.7, max 32.9)
+== prefill-text: 5 rank-0 dumps
+  prefill-text/decode: 8 passes, 0.00 M routes (1 tokens/pass); positional CPU share 24.9 % [layer 8.3-47.9]; oracle top-219 on GPU 100.0 %; experts hit/layer median 32; 50 % of routes in 9 experts (min 5, max 12), 90 % in 28; busiest expert 32.0x mean (min 24.0, max 64.0)
+  prefill-text/prefill: 13 passes, 15.76 M routes (5051 tokens/pass); positional CPU share 15.0 % [layer 8.1-25.1]; oracle top-219 on GPU 95.8 %; experts hit/layer median 381; 50 % of routes in 33 experts (min 13, max 67), 90 % in 153; busiest expert 20.9x mean (min 6.9, max 45.9)
+
+CPU share (fraction of routes sent to the CPU tier) of each map on each set, N_GPU=219/layer:
+map                                 humaneval-full-c4/decodehumaneval-full-c4/prefillhumaneval-think-c4/decodehumaneval-think-c4/prefillhumaneval-think-c1/decodehumaneval-think-c1/prefill     reasoning-c4/decode    reasoning-c4/prefill     reasoning-c1/decode    reasoning-c1/prefill  decode-distinct/decode decode-distinct/prefill     prefill-text/decode    prefill-text/prefill
+positional                                             15.0%                   11.8%                   12.5%                   12.4%                   12.8%                   12.6%                   10.7%                   13.0%                    9.6%                   12.5%                   13.8%                   14.2%                   24.9%                   15.0%
+prefill-fit (prefill-text)                             33.5%                   32.0%                   28.4%                   30.6%                   29.4%                   30.6%                   23.1%                   32.5%                   29.5%                   34.6%                   28.5%                   28.4%                   17.2%                    4.2%
+el8 mix (0.3D+0.3E+0.2A+0.2B)                          41.5%                   41.5%                   41.2%                   40.6%                   41.3%                   40.6%                   41.8%                   40.7%                   40.9%                   40.6%                   42.9%                   41.9%                   40.5%                   42.8%
+own oracle                                              2.3%                    2.6%                    2.7%                    1.5%                    2.0%                    1.2%                    2.7%                    1.4%                    1.1%                    0.1%                    3.0%                    1.2%                    0.0%                    4.2%
+
+map overlap (GPU slots shared, % of L*G):
+  positional vs prefill-fit (prefill-text): 75.6 %
+  positional vs el8 mix (0.3D+0.3E+0.2A+0.2B): 57.4 %
+  prefill-fit (prefill-text) vs el8 mix (0.3D+0.3E+0.2A+0.2B): 57.1 %
+
+symmetric check: our maps on el8's counts (CPU share), el8 sets A/B prefill text, C random ids, D prose decode, E code decode:
+positional                               41.8%     42.3%     44.7%     43.9%     43.6%
+prefill-fit (prefill-text)               42.6%     43.7%     43.2%     44.6%     45.5%
+el8 mix (0.3D+0.3E+0.2A+0.2B)            18.1%     13.7%     38.9%     10.0%      8.9%

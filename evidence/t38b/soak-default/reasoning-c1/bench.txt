@@ -1,0 +1,6 @@
+4 prompts at C1 in 94 s: completion tokens median 592 (max 2772, total 4427), decode median 56.71 tok/s per stream (min 56.25), aggregate 47.1, answers 4/4, finish {'stop': 4}
+  [0] 711 tok, reasoning 716 chars, 56.7 tok/s, stop, expected '216': True
+  [1] 472 tok, reasoning 721 chars, 57.2 tok/s, stop, expected '105': True
+  [2] 2772 tok, reasoning 5759 chars, 56.3 tok/s, stop, expected '224': True
+  [3] 472 tok, reasoning 1159 chars, 56.7 tok/s, stop, expected 'NO SUCH N': True
+wrote evidence/t38b/soak-default/reasoning-c1/bench.json

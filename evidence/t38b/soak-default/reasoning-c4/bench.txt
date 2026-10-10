@@ -1,0 +1,10 @@
+8 prompts at C4 in 185 s: completion tokens median 1017 (max 7297, total 17894), decode median 39.23 tok/s per stream (min 37.80), aggregate 96.6, answers 6/6, finish {'stop': 8}
+  [0] 659 tok, reasoning 777 chars, 37.8 tok/s, stop, expected '216': True
+  [1] 409 tok, reasoning 677 chars, 41.1 tok/s, stop, expected '105': True
+  [2] 2397 tok, reasoning 5038 chars, 39.0 tok/s, stop, expected '224': True
+  [3] 585 tok, reasoning 1279 chars, 38.2 tok/s, stop, expected 'NO SUCH N': True
+  [4] 1304 tok, reasoning 2829 chars, 37.8 tok/s, stop, expected '42': True
+  [5] 730 tok, reasoning 1635 chars, 39.4 tok/s, stop, expected '405': True
+  [6] 4513 tok, reasoning 11575 chars, 43.6 tok/s, stop, expected None: None
+  [7] 7297 tok, reasoning 22820 chars, 48.8 tok/s, stop, expected None: None
+wrote evidence/t38b/soak-default/reasoning-c4/bench.json

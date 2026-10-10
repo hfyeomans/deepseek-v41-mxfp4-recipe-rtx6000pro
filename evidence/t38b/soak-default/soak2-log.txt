@@ -1,0 +1,15 @@
+== serve2 03:19:05
+== set reasoning-c4 03:24:04: bash -c python3 scripts/bench-reasoning.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --concurrency 4 --max-tokens 16384 --output evidence/t38b/soak-default/reasoning-c4/bench.json > evidence/t38b/soak-default/reasoning-c4/bench.txt 2>&1
+dumps: 40  health=0
+  [5] 730 tok, reasoning 1635 chars, 39.4 tok/s, stop, expected '405': True
+  [6] 4513 tok, reasoning 11575 chars, 43.6 tok/s, stop, expected None: None
+  [7] 7297 tok, reasoning 22820 chars, 48.8 tok/s, stop, expected None: None
+wrote evidence/t38b/soak-default/reasoning-c4/bench.json
+== set reasoning-c1 03:27:18: bash -c python3 scripts/bench-reasoning.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --concurrency 1 --limit 4 --max-tokens 16384 --output evidence/t38b/soak-default/reasoning-c1/bench.json > evidence/t38b/soak-default/reasoning-c1/bench.txt 2>&1
+dumps: 20  health=0
+  [1] 472 tok, reasoning 721 chars, 57.2 tok/s, stop, expected '105': True
+  [2] 2772 tok, reasoning 5759 chars, 56.3 tok/s, stop, expected '224': True
+  [3] 472 tok, reasoning 1159 chars, 56.7 tok/s, stop, expected 'NO SUCH N': True
+wrote evidence/t38b/soak-default/reasoning-c1/bench.json
+health=0
+== soak2 done 03:29:02

@@ -1,0 +1,65 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "dataset": "~/.cache/dsv41-recipe/humaneval/HumanEval.jsonl.gz",
+  "dataset_sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+  "n_problems": 6,
+  "method": "chat completion, greedy (temperature 0), one sample, thinking on, last fenced block (+ dataset prompt when the block lacks the entry point) run against check() in a no-network container",
+  "generate": {
+    "wall_s": 41.618862741976045,
+    "n": 6,
+    "concurrency": 1,
+    "max_tokens": 8192,
+    "seed": 1,
+    "temperature": 0.0,
+    "thinking": true,
+    "median_reasoning_chars": 1045.0,
+    "median_decode_tps": 55.82390399807417,
+    "min_decode_tps": 54.63538936289163,
+    "max_decode_tps": 56.94161932401371,
+    "median_ttft_s": 0.49898670346010476,
+    "max_ttft_s": 0.566028187982738,
+    "median_completion_tokens": 378.0,
+    "total_completion_tokens": 2172,
+    "finish_reasons": {
+      "stop": 6
+    },
+    "modes": {
+      "full-function": 6,
+      "completion": 0
+    }
+  },
+  "timestamp": "2026-10-10T03:14:49-0400",
+  "evidence": {
+    "tool": "bench-humaneval.py",
+    "recorded_utc": "2026-10-10T07:14:49Z",
+    "manifest_hash": "eba4b4b0cb16751ceab0095cdd89c436d913c0f61b267b0fbd48403764f03042",
+    "manifest_file": "manifest.json",
+    "container_check": "unavailable: CalledProcessError",
+    "container_id": "4aae8962a839101055e10ae3337a1fdd9394d7dffbbd7d73bd214bc82634311c"
+  },
+  "score": {
+    "image": "dsv41-kt:recipe",
+    "timeout_s": 20.0,
+    "n": 6,
+    "passed": 6,
+    "failed": [],
+    "pass_at_1": 1.0,
+    "mlx_stream_fails": {
+      "ids": [
+        32,
+        83,
+        132,
+        140,
+        145,
+        163
+      ],
+      "ours_passed": []
+    },
+    "excluding_mlx_stream_fails": {
+      "n": 6,
+      "passed": 6
+    },
+    "failed_detail": {}
+  }
+}

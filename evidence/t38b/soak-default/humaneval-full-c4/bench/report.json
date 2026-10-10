@@ -1,0 +1,91 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "dataset": "~/.cache/dsv41-recipe/humaneval/HumanEval.jsonl.gz",
+  "dataset_sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+  "n_problems": 164,
+  "method": "chat completion, greedy (temperature 0), one sample, thinking off, last fenced block (+ dataset prompt when the block lacks the entry point) run against check() in a no-network container",
+  "generate": {
+    "wall_s": 334.0231256550178,
+    "n": 164,
+    "concurrency": 4,
+    "max_tokens": 2048,
+    "seed": 0,
+    "temperature": 0.0,
+    "thinking": false,
+    "median_reasoning_chars": 0.0,
+    "median_decode_tps": 25.862797013566052,
+    "min_decode_tps": 7.89145041526504,
+    "max_decode_tps": 39.5302701249724,
+    "median_ttft_s": 0.5244883245031815,
+    "max_ttft_s": 14.412564368976746,
+    "median_completion_tokens": 170.0,
+    "total_completion_tokens": 30585,
+    "finish_reasons": {
+      "stop": 164
+    },
+    "modes": {
+      "full-function": 164,
+      "completion": 0
+    }
+  },
+  "timestamp": "2026-10-10T03:14:48-0400",
+  "evidence": {
+    "tool": "bench-humaneval.py",
+    "recorded_utc": "2026-10-10T07:14:48Z",
+    "manifest_hash": "eba4b4b0cb16751ceab0095cdd89c436d913c0f61b267b0fbd48403764f03042",
+    "manifest_file": "manifest.json",
+    "container_check": "unavailable: CalledProcessError",
+    "container_id": "4aae8962a839101055e10ae3337a1fdd9394d7dffbbd7d73bd214bc82634311c"
+  },
+  "score": {
+    "image": "dsv41-kt:recipe",
+    "timeout_s": 20.0,
+    "n": 164,
+    "passed": 159,
+    "failed": [
+      50,
+      103,
+      132,
+      140,
+      145
+    ],
+    "pass_at_1": 0.9695121951219512,
+    "mlx_stream_fails": {
+      "ids": [
+        32,
+        83,
+        132,
+        140,
+        145,
+        163
+      ],
+      "ours_passed": [
+        32,
+        83,
+        163
+      ]
+    },
+    "excluding_mlx_stream_fails": {
+      "n": 158,
+      "passed": 156
+    },
+    "failed_detail": {
+      "50": [
+        "NameError: name 'encode_shift' is not defined. Did you mean: 'decode_shift'?"
+      ],
+      "103": [
+        "AssertionError"
+      ],
+      "132": [
+        "AssertionError"
+      ],
+      "140": [
+        "AssertionError: This prints if this assert fails 4 (good for debugging!)"
+      ],
+      "145": [
+        "AssertionError"
+      ]
+    }
+  }
+}

@@ -95,9 +95,10 @@ def generate(args, model: str, problems: list[dict], out: Path) -> dict:
     def one(problem: dict) -> dict:
         messages = [{"role": "user", "content": INSTRUCTION.format(prompt=problem["prompt"].rstrip())}]
         r = chat_stream(args.url, model, messages, max_tokens=args.max_tokens, temperature=0.0, seed=args.seed,
-                        thinking=False)
+                        thinking=args.thinking)
         program, mode = extract_program(problem, r.text)
         return {"task_id": problem["task_id"], "text": r.text, "program": program, "mode": mode,
+                "reasoning_chars": len(r.reasoning),
                 "ttft_s": r.ttft_s, "total_s": r.total_s, "decode_tps": r.decode_tps(),
                 "completion_tokens": r.completion_tokens, "prompt_tokens": r.prompt_tokens,
                 "finish_reason": r.finish_reason}
@@ -118,7 +119,8 @@ def generate(args, model: str, problems: list[dict], out: Path) -> dict:
     ttft = [s["ttft_s"] for s in samples]
     toks = [s["completion_tokens"] or 0 for s in samples]
     gen = {"wall_s": wall, "n": len(samples), "concurrency": args.concurrency, "max_tokens": args.max_tokens,
-           "seed": args.seed, "temperature": 0.0, "thinking": False,
+           "seed": args.seed, "temperature": 0.0, "thinking": args.thinking,
+           "median_reasoning_chars": statistics.median([s["reasoning_chars"] for s in samples]),
            "median_decode_tps": statistics.median(tps) if tps else None,
            "min_decode_tps": min(tps) if tps else None, "max_decode_tps": max(tps) if tps else None,
            "median_ttft_s": statistics.median(ttft), "max_ttft_s": max(ttft),
@@ -172,6 +174,9 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--concurrency", type=int, default=1, help="1 keeps per-request decode/TTFT single-stream")
     ap.add_argument("--limit", type=int, default=None, help="first N problems (smoke test)")
+    ap.add_argument("--thinking", action="store_true",
+                    help="thinking on (long-reasoning decode traffic; the answer is still the last fenced block of the "
+                         "content, the reasoning is kept per sample as a length only)")
     ap.add_argument("--phase", choices=("all", "generate", "score"), default="all")
     ap.add_argument("--image", default="dsv41-kt:recipe", help="image for the no-network scoring container")
     ap.add_argument("--timeout", type=float, default=20.0, help="per-problem wall timeout in the scorer")
@@ -189,7 +194,7 @@ def main() -> int:
         model = args.model or get_json(f"{args.url}/v1/models")["data"][0]["id"]
         report = {"url": args.url, "model": model, "dataset": str(args.dataset).replace(str(Path.home()), "~"),
                   "dataset_sha256": hashlib.sha256(args.dataset.read_bytes()).hexdigest(), "n_problems": len(problems),
-                  "method": "chat completion, greedy (temperature 0), one sample, thinking off, last fenced block "
+                  "method": f"chat completion, greedy (temperature 0), one sample, thinking {'on' if args.thinking else 'off'}, last fenced block "
                             "(+ dataset prompt when the block lacks the entry point) run against check() in a "
                             "no-network container",
                   "generate": generate(args, model, problems, out)}

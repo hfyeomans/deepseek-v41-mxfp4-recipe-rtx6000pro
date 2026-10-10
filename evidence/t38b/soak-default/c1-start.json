@@ -1,0 +1,87 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 512,
+  "runs": 3,
+  "warmup": 1,
+  "distinct_prompts": true,
+  "fixture_offset": 6,
+  "fixture_set": "distinct",
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 55.82898025008898,
+      "min_tps": 54.38790545649333,
+      "max_tps": 55.86184452464455,
+      "median_wall_tps": 54.15671928770644,
+      "median_ttft_s": 0.2984261360252276,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 54.38790545649333,
+          "wall_tps": 52.81516795670025,
+          "wall_s": 9.694184830004815,
+          "per_seq_tps": [
+            54.38790545649333
+          ],
+          "ttft_s": [
+            0.2982559709926136
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 55.86184452464455,
+          "wall_tps": 54.200011836312,
+          "wall_s": 9.446492401999421,
+          "per_seq_tps": [
+            55.86184452464455
+          ],
+          "ttft_s": [
+            0.2984261360252276
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 55.82898025008898,
+          "wall_tps": 54.15671928770644,
+          "wall_s": 9.454043869976886,
+          "per_seq_tps": [
+            55.82898025008898
+          ],
+          "ttft_s": [
+            0.300677174993325
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-10T02:59:01-0400",
+  "evidence": {
+    "tool": "bench-decode.py",
+    "recorded_utc": "2026-10-10T06:59:01Z",
+    "manifest_hash": "eba4b4b0cb16751ceab0095cdd89c436d913c0f61b267b0fbd48403764f03042",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "4aae8962a839101055e10ae3337a1fdd9394d7dffbbd7d73bd214bc82634311c"
+  }
+}

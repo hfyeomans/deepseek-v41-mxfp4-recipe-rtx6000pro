@@ -1,0 +1,39 @@
+== serve 02:53:58
+== decode gate (start) 02:58:22
+  1         55.83     54.39     55.86       54.16       0.298     n/a
+== set humaneval-full-c4 02:59:01: python3 scripts/bench-humaneval.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --phase generate --concurrency 4 --max-tokens 2048 --output-dir evidence/t38b/soak-default/humaneval-full-c4/bench
+generated 164 in 334 s: decode median 25.86 tok/s (min 7.89), TTFT median 0.524 s, finish {'stop': 164}, modes {'full-function': 164, 'completion': 0}
+dumps: 67  health=0
+== set humaneval-think-c4 03:04:48: python3 scripts/bench-humaneval.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --phase generate --thinking --limit 32 --concurrency 4 --max-tokens 8192 --output-dir evidence/t38b/soak-default/humaneval-think-c4/bench
+generated 32 in 118 s: decode median 32.59 tok/s (min 27.25), TTFT median 0.521 s, finish {'stop': 32}, modes {'full-function': 32, 'completion': 0}
+dumps: 25  health=0
+== set humaneval-think-c1 03:06:52: python3 scripts/bench-humaneval.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --phase generate --thinking --limit 6 --seed 1 --concurrency 1 --max-tokens 8192 --output-dir evidence/t38b/soak-default/humaneval-think-c1/bench
+generated 6 in 42 s: decode median 55.82 tok/s (min 54.64), TTFT median 0.499 s, finish {'stop': 6}, modes {'full-function': 6, 'completion': 0}
+dumps: 10  health=0
+== set decode-distinct 03:07:44: python3 scripts/bench-decode.py --url http://127.0.0.1:8000 --model dsv41-flash-hybrid --concurrency 1,4 --runs 3 --warmup 0 --max-tokens 256 --distinct-prompts --fixture-set distinct --output evidence/t38b/soak-default/decode-distinct/bench.json
+model=dsv41-flash-hybrid  runs=3 warmup=0 max_tokens=256  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         56.09     55.24     56.15       50.93       0.461     n/a
+  4        123.05    122.43    128.95      112.94       0.740     n/a
+dumps: 12  health=0
+== set prefill-text 03:08:37: bash -c python3 scripts/nll-score.py --url http://127.0.0.1:8000 --corpus scripts/fixtures/nll-corpus --output-dir evidence/t38b/soak-default/prefill-text/corpus --compare-dir evidence/t328/default-219-8192/corpus > evidence/t38b/soak-default/prefill-text/corpus.txt 2>&1
+dumps: 9  health=0
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+== gates 03:09:25
+     16,384      16,063               2052.52          7.826
+-- warm pass (seed 1277)
+     16,384      15,991               2067.15          7.738
+wrote evidence/t38b/soak-default/consistency.json
+peak gpu0: 95,884 MiB used, min free 2,003 MiB
+peak gpu1: 95,969 MiB used, min free 1,918 MiB
+wall 122.3 s, all finished: True
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 21.53, "total_s": 22.65, "finish_reason": "stop"}
+ALL PASS
+  1         53.45     52.49     54.50       51.92       0.300     n/a
+  4        116.99    116.58    118.49      112.42       0.733     n/a
+health=0
+== score 03:14:45
+pass@1 159/164 = 0.9695; failed [50, 103, 132, 140, 145]; on mlx-stream's 6 failures we pass [32, 83, 163]; excluding those six: 156/158
+pass@1 32/32 = 1.0000; failed []; on mlx-stream's 6 failures we pass []; excluding those six: 32/32
+pass@1 6/6 = 1.0000; failed []; on mlx-stream's 6 failures we pass []; excluding those six: 6/6
+== soak done 03:14:49

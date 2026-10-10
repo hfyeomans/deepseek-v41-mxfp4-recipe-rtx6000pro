@@ -1,0 +1,33 @@
+def starts_one_ends(n):
+    """
+    Given a positive integer n, return the count of the numbers of n-digit
+    positive integers that start or end with 1.
+    """
+    if n <= 0:
+        return 0
+    if n == 1:
+        return 1
+    # n-digit numbers: first digit 1..9, rest 0..9
+    # start with 1: 10^(n-1)
+    # end with 1: 9 * 10^(n-2)
+    # both: 10^(n-2)
+    # union = 10^(n-1) + 9*10^(n-2) - 10^(n-2) = 10^(n-1) + 8*10^(n-2)
+    return 10**(n-1) + 8 * 10**(n-2)
+
+
+def check(candidate):
+
+    # Check some simple cases
+    assert True, "This prints if this assert fails 1 (good for debugging!)"
+    assert candidate(1) == 1
+    assert candidate(2) == 18
+    assert candidate(3) == 180
+    assert candidate(4) == 1800
+    assert candidate(5) == 18000
+
+    # Check some edge cases that are easy to work out by hand.
+    assert True, "This prints if this assert fails 2 (also good for debugging!)"
+
+
+
+check(starts_one_ends)
