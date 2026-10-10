@@ -1,0 +1,24 @@
+== qual serve 00:08:44
+== benches 00:13:06
+     16,384      16,063               1522.83         10.552
+-- warm pass (seed 1277)
+     16,384      15,991               1933.60          8.259
+     32,768      31,996               1960.14         16.326
+-- warm pass (seed 1777)
+     32,768      32,067               2047.06         15.665
+  1         42.87     42.64     42.96       40.68       0.664     n/a
+  4         56.14     55.85     56.17       53.78       1.673     n/a
+== nll 00:19:57
+POOLED over 8 texts: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 65653; cluster-robust se 0.00000, z +0.00)  changed 0  worse/better >0.5: 0/0
+wrote evidence/t339/cpuinfer14-soak/corpus/*.json
+PASS
+wrote evidence/t339/cpuinfer14-soak/consistency.json
+== stress 00:20:55
+peak gpu0: 95,714 MiB used, min free 2,173 MiB
+peak gpu1: 95,841 MiB used, min free 2,046 MiB
+wall 148.4 s, all finished: True
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 24.12, "total_s": 25.53, "finish_reason": "stop"}
+ALL PASS
+wrote evidence/t339/cpuinfer14-soak/consistency-post.json
+health=0
+== qual done 00:24:09

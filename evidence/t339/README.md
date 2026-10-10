@@ -142,7 +142,28 @@ profile**.~~ **Qualification serve (2026-10-10, `qual-99128a7e/`, driver `qual-9
 
 The stress wall drops 25 % because the four 62K prefills are the thing that got faster. GPU 1's stress trough is
 100 MiB lower; GPU 0's is 12 MiB lower — within the day-to-day spread of this gate (T3.31 soak 2,179 / 2,122,
-round 1 2,203 / 2,144) and still ≥ 2 GiB. The `KT_CPUINFER=14` rider goes on the next serve.
+round 1 2,203 / 2,144) and still ≥ 2 GiB. ~~The `KT_CPUINFER=14` rider goes on the next serve.~~
+
+### `KT_CPUINFER=14` soak on `99128a7e` — withdrawn (2026-10-10, `cpuinfer14-soak/`, driver `soak14.sh`)
+
+Same gates, same seeds, both serves' benches at 0.01 % Engram residency:
+
+| | `99128a7e`, 16 workers | `99128a7e`, **14 workers** |
+|---|---|---|
+| 16K prefill cold / warm | 2,040 / 2,171 | **1,523 / 1,934 (−25 / −11 %)** |
+| 32K prefill cold / warm | 2,272 / 2,353 | **1,960 / 2,047 (−14 / −13 %)** |
+| C1 summed / wall | 42.41 / 40.43 | 42.87 / 40.68 |
+| C4 summed / wall | 55.75 / 53.63 | 56.14 / 53.78 |
+| NLL | 0 moved | 0 moved |
+| 4 × 62K stress | 4/4, 124.0 s, min free 2,149 / 2,022 | 4/4, **148.4 s**, 2,173 / 2,046 |
+| needles / same-prompt / health | 6/6 / PASS / 0 | 6/6 / PASS / 0 |
+
+Window 1's +9.4 % at 14 workers was measured with the FlashInfer stall holding the layer period at 90 ms, where
+the export was hidden and the only exposed host work was the Engram chunk-start gather. With the stall gone the
+period is shorter and kt's core-bound export (E22a: 3.3 GB per layer at ≈ 52 GB/s on 16 cores) is the term on
+the critical path; 14 workers make it 16/14 longer, and the gather's gain cannot pay for that. Decode is flat
+(E26 A1's plateau). `KT_CPUINFER` stays 16; the next step is a fresh CPU + GPU profile of one chunk on
+`99128a7e` to size window 2 (export-free streaming), which is now the exposed term rather than a stale ceiling.
 
 What this changes upstream of window 2: the layer period's host side is no longer 90 ms, so the pipeline is
 now GPU-side (≈ 52 ms: 29 HtoD + 3 fix-up + ≈ 20 compute) plus whatever the 6–17 ms export join still exposes.
@@ -163,6 +184,7 @@ a C++ library that caches by one key silently thrashes when the call pattern alt
 | `window1b/prefill-16k-{warm,unprofiled,pyspy}.*`, `prefill-32k.*` | bench outputs; `-pyspy` ran under the 5 s sample |
 | `window1b/pyspy-fixed.raw.gz`, `record-pyspy.txt` | py-spy raw on the fixed serve |
 | `window1b/c1*`, `c4*`, `verify.*` | decode and correctness sanity |
+| `cpuinfer14-soak/` | the `KT_CPUINFER=14` soak on `99128a7e`, same layout as `qual-99128a7e/` plus `soak14.sh` / `soak-log.txt` |
 | `qual-99128a7e/` | the qualification serve: `qual.sh` driver + `qual-log.txt`, launch / ready / manifest / `pre-serve-state`, `prefill-{16k,32k}.*`, `c1.*`, `c4.*`, `corpus/` + `corpus.txt` (NLL), `consistency*.{json,txt}`, `stress-kv.*`, `verify.*`, `vram-after-capture.txt`, `runner-log.txt` (dedicated-runner lines) |
 
 ## Files
