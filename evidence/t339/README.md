@@ -172,6 +172,80 @@ one chunk) on `99128a7e` before scoping it. The two lessons: a "no host op" gap 
 the host is in *some* non-aten native call, not which one — sample the native stack before attributing it; and
 a C++ library that caches by one key silently thrashes when the call pattern alternates two keys.
 
+## Re-profile on `99128a7e` — what a 16K TTFT is made of now (2026-10-10, `reprofile-99128a7e/`, driver `analysis/reprofile.sh`)
+
+One serve on the qualified profile (overlay `99128a7e`, launcher defaults, `KT_CPUINFER=16`), window 1's
+sequence: warm 16K seed 777 → two unprofiled seed 1277 → CPU + GPU profiler on one seed-1777 16K pass. The box
+was cold for Engram (both shards **3 %** resident at launch, 2.9 GB swap in use from before the serve; the
+qualification serve read 26 %), so the Engram terms below are a cold-box reading. Analyses: window 1's `gaps.py`,
+window 1b's `period.py`, and two new scripts (`analysis/regaps.py` — big gaps with timestamps, per-period idle,
+in-loop gap boundaries; `analysis/rebusy.py` — GPU time per period by class, copy / kernel overlap, stream ids,
+whole-trace class totals per rank); their outputs are beside them as `*-tp0.txt` / `*-tp1.txt`.
+
+| pass | tok/s (TTFT s) |
+|---|---|
+| warm, seed 777 (serve's first prefill, cold pages) | 649 (24.63) |
+| unprofiled, seed 1277, run 1 / run 2 | 2,062 / 2,093 (7.74 / 7.64) |
+| profiled (CPU + GPU activities), seed 1777 | 2,131 (7.51) |
+
+**Layer period 90.3 → 65.0 ms, and it is now export-bound, not host-bound.** Both ranks: median **65.0 ms**
+(p10 61.8, p90 66.4, n = 75). Inside a period the GPU is busy **56.0 ms** in one contiguous stretch from the w13
+HtoD to the resident MoE's last kernel: **29.2 ms of HtoD** (w13 973 MB 17.1 ms + w2 487 MB 8.5 ms + scales 3.2 ms
++ 0.4 DtoD — 1.64 GB at 57 GB/s, the PCIe 5 ×16 roof) and **26.8 ms of kernels**, with **zero overlap** between
+the two: `_StreamedExpertSlots.load` issues the four copies on the compute stream (all 80 × (w13 + s13 + w2 + 2 × s2)
+streamed-weight memcpys are on stream 30 with the kernels; the side streams 74 / 343–348 carry only the small
+Engram / kt staging copies). Then
+one **≈ 9 ms gap** (median 8.9, p10 1.2, p90 10.9; 67 of 75 periods; 552 ms per rank) between the resident MoE's
+`finalizeMoeRoutingKernel` and the next layer's w13 HtoD. The host is busy only 3.9 ms per period and idle in one
+53 ms stretch from offset ≈ 8 ms — blocked in the next layer's export join. So period = max(GPU 56, kt export
+≈ 65) = 65: the core-bound export (E22a: 3.3 GB per layer at ≈ 52 GB/s ≈ 68 ms) is on the critical path, which is
+what the `KT_CPUINFER=14` soak showed from the other side (16/14 longer export, −11 to −25 % prefill).
+
+Top GPU items per period (rank 0; rank 1 identical to ±0.1 ms): HtoD pinned 28.8 ms, NCCL all-reduce 5.3,
+cutlass grouped GEMM (resident + streamed experts) 4.3, `_w8a8_block_fp8_matmul` 3.9, elementwise 3.4 (mostly
+the w13 gate / up half swap after the copy), `sparse_mla_prefill` 3.0, `_hc_mix_stats_partial` 1.5, `mhc_post` 0.9,
+`finalizeMoeRouting` 0.4, `block_scale_interleave` 0.3.
+
+**Where the 7,482 ms trace span (TTFT 7.51 s) goes, rank 0 = the critical path:**
+
+| term | ms | share | note |
+|---|---|---|---|
+| streamed-expert HtoD, serialised with compute | 2,309 | 31 % | w13 1,366 + w2 683 + scales 260; 80 layer-chunks × 29 ms |
+| kernels (all classes, real all-reduce ≈ 418 as on rank 1) | 2,235 | 30 % | 80 × 27 ms + chunk-start / hasher work |
+| **NCCL spin waiting for rank 1** | **1,549** | **21 %** | four all-reduces of 304 / 474 / 302 / 443 ms — each right after an Engram row fetch |
+| GPU gaps ≥ 1 ms | 1,321 | 18 % | Engram chunk-start 347 + 307; export-bound in-loop 552; first layer of each chunk waiting for its export 52 + 54 |
+| sub-ms gaps | 68 | 1 % | |
+
+The Engram term is bigger than it looks from rank 0's own gaps. Per chunk the one post-hasher break submits
+both tables' gathers to the one `engram-ahead` worker, serially: layer 1's rows, then layer 14's. On rank 0
+layer 1's rows land 347 ms after the ids' D2H (chunk 2: 307) and layer 14's are ready when needed (its join is
+2 ms); on rank 1 layer 1's take **648 / 609 ms** and layer 14's land **474 / 443 ms late** (ids D2H at 1,602 ms,
+rows H2D at 2,076; rank 1's GPU idles, rank 0 spins in the all-reduce). Each table's gather is ≈ 1.1–1.3 s of worker
+time on this cold box; rank 1 starts its second one 300 ms later and overruns layer 14. **Engram on the critical
+path = 654 + 1,549 = 2.2 s = 29 % of the TTFT** at 3 % residency — the largest idle term now, ahead of the
+export-bound gap (0.66 s, 9 %). Why rank 1's gathers are consistently ~300 ms slower is open (same shards, same
+residency, same worker code; candidates: NVMe queue arbitration between the two processes' `WILLNEED` pools,
+CPU scheduling against the 32 kt export threads of the two ranks); the per-table `ahead hit / ms per lookup`
+log line is per rank and will answer it on the next serve that keeps the container log. T3.20 (c)'s chunk-ahead
+`WILLNEED` was priced at 0.3–0.4 s per chunk from window 1; on this profile it is ≈ 1.1 s per chunk because the
+loop got faster around a gather whose duration did not.
+
+### Window 2 sizing (derived from this profile, both ranks; 80 layer-chunks per 16K prefill)
+
+| variant | period model | loop | 16K TTFT | 16K prefill | VRAM | needs |
+|---|---|---|---|---|---|---|
+| today | max(GPU 29 + 27, export ≈ 65) = 65 ms | 5.2 s | 7.5 s | 2,130 | — | — |
+| (i) export-light only: DMA gate / up from the `cudaHostRegister`ed arena, host does down + scales (≈ 20–25 ms) | GPU-bound, serialised: 56 ms | 4.5 s | ≈ 6.8 s | ≈ +10 % | 0 | registered arena, 2D copies; export ≤ 56 ms |
+| (ii) (i) + the four copies on a side stream, **one** staging set: copy of L+1 starts when L's streamed MoE ends and overlaps L+1's attention / dense / resident MoE (≈ 20 ms); streamed MoE waits on an event | ≈ copy 29 + streamed MoE ≈ 7 → 36–40 ms | ≈ 3.0 s | ≈ 5.3 s | **≈ +40 %** | 0 | the host must not block in the export join before launching L+1's attention (join at the streamed-MoE call); export ≤ ≈ 36 ms (down + scales only) |
+| (iii) (ii) + a second staging set | ≈ max(29, 27) + ε ≈ 30–33 ms | ≈ 2.5 s | ≈ 4.8 s | ≈ +55 % | +1.6 GiB / rank | not affordable: 64K × 4 trough 2.0 GiB, 262K × 4 none |
+
+Variant (i) alone misses the +25 % go bar; (ii) clears it with no VRAM and is the one to build. Two caveats the
+model does not hide: every variant shortens the loop around an Engram gather of fixed length, so layer 14's
+lateness grows (at a 36 ms period layer 14 is needed ≈ 0.5 s after the chunk starts and the cold gather takes
+≈ 1.2 s) — the **chunk-ahead Engram gather (T3.20 (c), both tables in parallel, submitted a chunk early) has to
+land with or before window 2**, and on a cold box it is worth ≈ 2 s of today's 7.5 s by itself, more than (i);
+and the two ranks' exports share the 16 cores, so (i)'s host saving counts twice.
+
 ### Files (window 1b)
 
 | path | what |
@@ -198,3 +272,5 @@ a C++ library that caches by one key silently thrashes when the call pattern alt
 | `window1/cpuinfer{16,14}/*-TP-{0,1}.trace.json.gz` | torch-profiler traces (CPU + GPU, no stacks), one per rank |
 | `window1/cpuinfer{16,14}/prefill-16k-{warm,unprofiled,profiled}.{json,txt}` | bench outputs |
 | `window1/cpuinfer{16,14}/{launch,ready,start-profile,stop-profile,prefill-log}.txt`, `manifest.json` | serve provenance |
+| `reprofile-99128a7e/analysis/{reprofile.sh,regaps.py,rebusy.py}` + `*-tp{0,1}.txt` | re-profile driver, the two new analyses and the outputs of all four (`gaps`, `period`, `regaps`, `rebusy`) per rank |
+| `reprofile-99128a7e/*-TP-{0,1}.trace.json.gz`, `prefill-16k-*.{json,txt}`, `{launch,ready,start-profile,stop-profile,prefill-log}.txt`, `manifest.json` | traces, bench outputs and provenance of the re-profile serve |

@@ -1,0 +1,24 @@
+span 7482 ms, gpu busy 6093 ms, cpu_ops 378289
+layer period median 65.0 ms p10 61.8 p90 66.4 n=75 sum 4880
+gaps>=1ms 75 total 1321 ms
+big gaps (>=15ms): 4; time with no cpu_op at all: 0 ms
+        2 ms  c10d::barrier
+        1 ms  aten::sub
+        1 ms  aten::equal
+        1 ms  aten::copy_
+        1 ms  aten::to
+        1 ms  aten::_to_copy
+        1 ms  aten::ge
+        0 ms  aten::masked_fill_
+        0 ms  aten::lt
+        0 ms  aten::__and__
+        0 ms  aten::bitwise_and
+        0 ms  aten::bitwise_not
+  host op   481.4 ms at    1613  aten::item
+  host op   481.4 ms at    1613  aten::_local_scalar_dense
+  host op   450.5 ms at    5338  aten::item
+  host op   450.5 ms at    5338  aten::_local_scalar_dense
+  host op    59.8 ms at    4510  aten::item
+  host op    59.7 ms at    4510  aten::_local_scalar_dense
+  host op    59.4 ms at     779  aten::item
+  host op    59.4 ms at     779  aten::_local_scalar_dense

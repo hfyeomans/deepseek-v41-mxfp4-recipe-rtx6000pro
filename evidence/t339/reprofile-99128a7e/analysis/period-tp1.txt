@@ -1,0 +1,24 @@
+launch tid 135: 494289 ops, 365855 top-level
+n=75 period 65.0 ms, host busy 4.1 ms, gpu busy 56.1 ms
+host idle stretches (ms, offset from w13 launch) for 5 mid periods:
+  period 116.7 host 43.8 gpu 57.6 idle [(63.8, 52.8), (2.4, 50.3), (0.2, 12.3)]
+  period 60.0 host 49.6 gpu 58.6 idle [(0.3, 58.2), (0.3, 50.8), (0.3, 59.5)]
+  period 57.0 host 1.3 gpu 56.9 idle [(53.1, 0.2), (0.4, 55.6), (0.2, 54.4)]
+  period 61.3 host 3.3 gpu 56.6 idle [(52.6, 8.6), (0.4, 8.1), (0.4, 6.3)]
+  period 65.0 host 4.3 gpu 55.1 idle [(52.8, 12.1), (0.4, 11.6), (0.4, 2.3)]
+top-level host op time per period (ms):
+    6.71  aten::item
+    0.74  sglang::inplace_all_reduce
+    0.41  aten::index
+    0.35  Torch-Compiled Region: 1/0
+    0.33  aten::copy_
+    0.31  aten::einsum
+    0.29  aten::empty
+    0.26  sglang::per_token_group_quant_8bit_v2
+    0.18  Torch-Compiled Region: 0/0
+    0.17  aten::flatten
+    0.15  aten::mm
+    0.15  aten::slice
+    0.14  aten::view
+    0.14  c10d::barrier
+    0.13  aten::empty_like

@@ -1,0 +1,32 @@
+events by (cat, stream): {('gpu_memcpy', 74): 48, ('kernel', 74): 173, ('gpu_memset', 74): 50, ('gpu_memcpy', 30): 797, ('kernel', 30): 8521, ('gpu_memset', 30): 54, ('gpu_memcpy', 70): 3, ('kernel', 339): 15, ('kernel', 340): 7, ('kernel', 341): 1, ('kernel', 343): 199, ('kernel', 344): 185, ('kernel', 347): 419, ('kernel', 348): 494, ('kernel', 349): 3}
+n=75 periods, mean period 65.1 ms; GPU time per period by class (ms, summed, may overlap across streams):
+    17.2  memcpy w13 HtoD
+    11.7  other
+     8.6  memcpy w2 HtoD
+     5.7  dense GEMM
+     4.9  allreduce
+     3.4  attention
+     3.2  memcpy other (Memcpy HtoD (Pinned )
+     0.9  MoE (cutlass/tllm)
+     0.4  memcpy other (Memcpy DtoD (Device )
+     0.4  quant
+     0.0  memcpy other (Memcpy DtoH (Device )
+     0.0  memset
+     0.0  memcpy other (Memcpy HtoD (Pageabl)
+top kernels per period (ms):
+   28.98  Memcpy HtoD (Pinned -> Device)
+    4.78  ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)
+    4.46  _ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5t
+    4.08  _w8a8_block_fp8_matmul
+    3.40  void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native:
+    3.11  void sparse_mla_prefill_mg_dual_kernel<(ModelType)1, (ComputeMode)1, 32, 128, 64, 64, 2>(_
+    1.51  _hc_mix_stats_partial_kernel
+    0.95  mhc_post_tilelang_kernel
+    0.94  void cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_256x128_32x3_tn_align8
+    0.45  _hc_combine_kernel
+    0.40  Memcpy DtoD (Device -> Device)
+    0.39  void tensorrt_llm::kernels::cutlass_kernels::finalizeMoeRoutingKernel<__nv_bfloat16, __nv_
+    0.30  void tensorrt_llm::kernels::block_scale_interleave_kernel<unsigned char>(int, int, int, in
+    0.30  void sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bflo
+median per period: memcpy union 29.4 ms, kernel union 26.8 ms, all union 56.1 ms -> overlap 0.0 ms
+whole-trace GPU time by class (ms): {'memcpy w13 HtoD': 1374, 'other': 990, 'memcpy w2 HtoD': 687, 'dense GEMM': 461, 'allreduce': 418, 'attention': 265, 'memcpy other (Memcpy HtoD (Pinned )': 261, 'MoE (cutlass/tllm)': 77, 'memcpy other (Memcpy DtoD (Device )': 32, 'quant': 32, 'memcpy other (Memcpy DtoH (Device )': 0, 'memset': 0, 'memcpy other (Memcpy HtoD (Pageabl)': 0}

@@ -1,0 +1,14 @@
+w13 launches 80 first at 77 ms
+gaps >= 15 ms:
+  at      26 ms     51.9 ms  after void tensorrt_llm::kernels::cutlass_kernels::final (None)  before Memcpy HtoD (Pinned -> Device) (973209600)
+  at     117 ms    648.0 ms  after Memcpy DtoH (Device -> Pageable) (1572864)  before void at::native::vectorized_elementwise_kernel<4,  (None)
+  at    1602 ms    473.3 ms  after Memcpy DtoH (Device -> Pageable) (1572864)  before void at::native::vectorized_elementwise_kernel<4,  (None)
+  at    3794 ms     54.1 ms  after void tensorrt_llm::kernels::cutlass_kernels::final (None)  before Memcpy HtoD (Pinned -> Device) (973209600)
+  at    3887 ms    609.1 ms  after Memcpy DtoH (Device -> Pageable) (1500672)  before void at::native::vectorized_elementwise_kernel<4,  (None)
+  at    5327 ms    442.9 ms  after Memcpy DtoH (Device -> Pageable) (1500672)  before void at::native::vectorized_elementwise_kernel<4,  (None)
+per-period idle (ms): median 8.7 p10 1.2 p90 10.6 sum 599 n=75
+in-loop gap (< 15 ms) by boundary, total ms / count:
+      543 ms  n= 67  void tensorrt_llm::kernels::cu -> Memcpy HtoD (Pinned -> Device)
+        4 ms  n=  2  Memcpy DtoH (Device -> Pageabl -> _hc_mix_stats_partial_kernel
+        1 ms  n=  1  Memcpy DtoD (Device -> Device) -> void sglang::cross_device_redu
+in-loop gap total 548 ms, big-gap total 2279 ms
