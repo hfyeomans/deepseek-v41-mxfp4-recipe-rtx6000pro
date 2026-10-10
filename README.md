@@ -1,4 +1,6 @@
-# DeepSeek-V4.1-Flash FP4 on RTX PRO 6000 Blackwell: feasibility, plan, and recipe scaffold
+# DeepSeek-V4.1-Flash MXFP4 on RTX PRO 6000 Blackwell: feasibility, plan, and recipe
+
+Repository: `github.com/hfyeomans/deepseek-v41-mxfp4-recipe-rtx6000pro` (private, created 2026-10-10). The checkpoint's routed experts are MXFP4 (UE8M0 block-32 scales, the upstream checkpoint as shipped; [PROVENANCE](PROVENANCE.md)), not NVIDIA's NVFP4 re-quantization, which is why the remote carries `mxfp4` while the original local checkout directory still says `fp4`.
 
 A measured answer to "can two RTX PRO 6000 Blackwell 96 GB serve DeepSeek-V4.1-Flash at 262K context, and if not, what would?" — plus a phased plan to benchmark what does run, and the scripts to do it. Modeled on the [GLM-5.3 Flash dual-RTX-PRO-6000 recipe](https://github.com/samuelcardillo/glm-5.3-flash-2x-rtx-pro-6000-blackwell): pinned revisions, fail-closed preflight, reproducible tables, no host identifiers in public evidence.
 
@@ -76,6 +78,7 @@ Need a GPU window (stop the GLM container first):
 
 | Script | Purpose |
 |---|---|
+| `benchmarks_headline.py markdown` / `check` / `write` | T3.24e: the headline table at the top of [docs/BENCHMARKS.md](docs/BENCHMARKS.md) is generated from the manifest-stamped JSON of the rungs listed in `config/benchmarks-headline.json` (a file whose stamp does not match its sibling `manifest.json` is refused); `ci.sh` fails when the block is stale. |
 | `release-smoke.sh units` / `release-smoke.sh serve --output-dir evidence/<dir> [--context N --slots N --full]` | T3.24d: the pre-release GPU smoke — the three GPU unit suites with the cards free, then the qualification gate set (same-prompt C4, NLL corpus vs the T3.28 baseline, needles, log health; `--full` adds stress + decode / prefill benches) against a running `serve-hybrid.sh` server; see CONTRIBUTING |
 | `bench-pcie-h2d.py` (inside a torch container) | E2/E4: GDDR7 and PCIe bandwidth; prints the Option B decode ceiling |
 | `bench-dram-read.py` (inside a torch container, GPU-free) | E1b: read-only host DRAM bandwidth (fp32/int64 sum) at 8/16/32 threads |
@@ -140,4 +143,4 @@ Evidence in this repository was gathered on Ubuntu 26.04.1, kernel 7.0.0-31, dri
 
 ## Status
 
-Phase 0 (research and data) complete: the 2-GPU answer is the three-tier hybrid. Phase 1 microbenchmarks: E1 and E3 done, E2/E4 and the CPU expert GEMV bench next. Phase 2 (baseline) needs a GPU window on the existing deployment. Phase 3 (hybrid build) can start GPU-free. Phase 4 (3/4-GPU comparison) is blocked on hardware and power. See [plan/TASKS.md](plan/TASKS.md).
+**2026-10-10: the recipe is out of experimental-overlay form** — the six-point completion definition of the migration roadmap's gate ledger (G6, T3.24) holds: typed profiles, no unsafe flag in a release profile, the overlay as a 50-patch series on upstream `da64c5cb` re-applied and tree-hashed by `ci.sh`, every CPU suite in `ci.sh` plus the GPU smoke in `release-smoke.sh`, provenance for every artefact, and a generated headline table whose every number is read from manifest-stamped evidence ([docs/BENCHMARKS.md](docs/BENCHMARKS.md#headline--qualified-rungs-of-the-v41-flash-hybrid-generated-2026-10-10)). Qualified rungs: 64K × 4 (launcher default), 262K × 4 and 512K × 1 / 1M × 1 as per-rung overrides. The overlay is tagged `recipe-2026-10` at `682fc6a0`. What remains is throughput work and strengthening (T3.30 onwards in [plan/TASKS.md](plan/TASKS.md)); the earlier phase history is in [plan/README.md](plan/README.md).

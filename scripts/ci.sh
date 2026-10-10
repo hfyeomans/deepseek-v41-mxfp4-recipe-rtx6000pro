@@ -77,6 +77,10 @@ fi
 # stamping rules; then every stamped JSON under evidence/ must match its sibling manifest.json (pre-cut-over files exempt).
 if python3 "$ROOT/scripts/tests/test_evidence_manifest.py" >/dev/null; then :; else echo "FAIL evidence manifest tests"; exit 1; fi
 if python3 "$ROOT/scripts/evidence_manifest.py" check-evidence "$ROOT/evidence"; then :; else echo "FAIL evidence/ has stamped files that do not match their manifest.json"; exit 1; fi
+# T3.24e generated BENCHMARKS headline: every number read from stamped JSON beside its manifest (bad stamp refused),
+# and the block in docs/BENCHMARKS.md must equal what the script emits today.
+if python3 "$ROOT/scripts/tests/test_benchmarks_headline.py" >/dev/null; then :; else echo "FAIL benchmarks headline tests"; exit 1; fi
+if python3 "$ROOT/scripts/benchmarks_headline.py" check >/dev/null; then :; else echo "FAIL docs/BENCHMARKS.md headline block is stale: python3 scripts/benchmarks_headline.py write"; exit 1; fi
 # DSpark multi-stream-overlap gate (review C4 / Bug A): pure Python against the overlay checkout; skipped without it.
 if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi

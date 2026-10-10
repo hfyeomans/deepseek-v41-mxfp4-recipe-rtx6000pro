@@ -690,3 +690,53 @@ Performance band vs `evidence/t319/baseline-pin.json` (226 / 158, chunk 4096: C1
 - **Measured:** every Stage 1 deliverable (a–f) landed as one behaviour-preserving commit with its evidence dir; the per-step gate (NLL bit-identical, consistency PASS, C1 wall ≥ 39.0) held at each step and at the exit soak.
 - **Measured:** R1, R4–R9 closed; R2/R3 are half closed with the SGLang-side halves correctly re-filed under T3.23/T3.24 (the T3.19c ledger note over-claimed them); no new High or Medium debt. The wrapper is 538 lines with eleven methods; nothing in the kt path is owned by a module global.
 - **Inferred:** the §9 sequencing rule (contracts → seams → ownership) is satisfied through "seams"; **G1 is done** and T3.20 / T3.21 (G3) may start. T3.22 (G4) still waits on C10 / T3.13 and owner approval.
+
+## 12. Review pass 3 — Stage 6 (T3.24) exit (2026-10-10)
+
+Standing task T3.16i; this pass is the G6 exit in the [gate ledger](MIGRATION-ROADMAP-PYTHON-TO-NATIVE-HYBRID.md#gate-ledger-added-2026-09-24-the-enforced-sequence) and, because T3.22 was closed by decision rather than built, it also stands as the "pass after G4" the completion definition asks for. Scope: the twenty overlay commits after pass 2's last SHA (`bc73ef8d` → `682fc6a0`: T3.20 rounds 1, 2 and (c), E34d-v, T3.31, T3.39 window 1b and window 2, `kt_remap`, C10), the recipe-side T3.24a–e deliverables, and the two fully stamped qualification sets (`evidence/t329/262k-4slot-682fc6a0/`, `evidence/t339/window2/qual/`). Method as §1; every "Measured" row names its file or evidence dir.
+
+### 12a. Debt register status
+
+| ID | Status | Evidence |
+|---|---|---|
+| C10 | **Closed 2026-10-10** (T3.13, overlay `682fc6a0`) | `KT_REJECT_NAN_ROWS=1` (qualified default): the sampler aborts the one request whose logits row is non-finite and the server survives; `kt_nan_inject.py` + `test_kt_nan_reject.py` in `ci.sh`; serve proof `evidence/e24-nan/c10/` (injected NaN fails one request, same-prompt C4 PASS after). The per-forward probe (`KT_NAN_PROBE_MIN_TOKENS`) is a `diagnostic-env` knob, developer-only. |
+| R2 remainder | Open, unchanged, no consumer | BCG's recursive output-container interpretation (`breakable_cuda_graph.py`): every graph output is still a static tensor (T3.20's Engram staging added none). Carried into OPEN-SOURCE-PLAN as an upstream-facing cleanup; no recipe task, by design — there is nothing to gate. |
+| R3 SGLang-side half | Deferred to upstream submission | `captured_req_width` still crosses the three upstream runner files as a bare int; a `GraphRequestShape` type is a rebase cost against upstream and belongs with the OPEN-SOURCE-PLAN submission, not the recipe. |
+| R8 escape hatches | **Closed** (T3.24b) | `KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNTESTED_FIT`, `EXTRA_SERVER_ARGS` / `EXTRA_DOCKER_ENV` / `EXTRA_DOCKER_ARGS` are refused outside `PROFILE=developer`; `test_serve_config.py` carries the refusals. |
+| All other C / R rows | As at pass 2 (closed) | §11a |
+
+### 12b. Hotspot map refresh
+
+| # | Status at pass 3 | Location now |
+|---:|---|---|
+| 1 kt buffer lifetime | unchanged behind the seam; the resident arena is now a memfd the overlay owns (`MOEConfig.weight_arenas`, kt patch 0003) | `kt_provider.py`, `kt_prefill.py`, kt patches 0002 / 0003 |
+| 6 streamed prefill | **re-shaped by T3.39 window 2** (`a8537fe7` / `124ca1de`): export / shm / barriers gone; rank 1 maps rank 0's arena, both `cudaHostRegister`, copies on a side stream; `kt_prefill.py` 601 → 646 lines, still one state machine | `kt_prefill.py` |
+| 9 Engram file path | **moved**: `ahead` prefetch worker, host-side hashing, chunk-ahead gather for both tables (T3.20 r1 / r2 / (c): `ad973440`, `88b2f081`, `53714776`, `ff516964`, `9d481b0b`) | `engram.py`, `kt_runtime.py` |
+| 12 launch assembly | unchanged (registry); profile files added (T3.24a) | `scripts/serve_config.py`, `config/profiles/` |
+| 13 evidence | headline table generated from stamped JSON (T3.24e) | `scripts/benchmarks_headline.py`, `config/benchmarks-headline.json` |
+| **18 (new, Measured)** post-capture allocator lever | one env (`SGLANG_DSV41_POST_CAPTURE_EXPANDABLE`, `30e8c412`), registry-declared, qualified on at 262K × 4 (T3.31 / T3.29); the one launch-flag rollback in the overlay | `model_runner.py` patch, registry |
+| **19 (new, Measured)** expert remap | `kt_remap.py` 199 lines (`c777da2d`): checkpoint-order ↔ `KT_EXPERT_MAP` order at load, a pure function with its own test | `kt_remap.py`, `test_kt_remap.py` |
+| kt file sizes | `kt_ep_wrapper.py` 800 (765 at pass 2: C10 sampler hook + remap call), `kt_prefill.py` 646, `kt_provider.py` 375, `kt_runtime.py` 284 (187: arena ownership), `kt_loader.py` 93, `kt_timeline.py` 389, `kt_contract.py` 182, `kt_remap.py` 199, `kt_nan_inject.py` 91 — 3,059 lines, nine modules, each with one owner and one test file | `python/sglang/srt/layers/moe/kt_*.py` |
+
+No new High or Medium debt: the twenty commits each landed with a CPU test or a serve gate (NLL 0 moved at every behaviour-preserving step; T3.20 (c) and window 2 are the two performance commits and carry their own stress / needle / same-prompt sets).
+
+### 12c. Overlay commit traceability
+
+`git log --reverse --oneline da64c5cb..HEAD` = 50 commits; **50 / 50 are indexed in `patches/sglang/README.md`** (patch number → recipe task → OPEN-SOURCE-PLAN unit), and `scripts/tests/check-sglang-patch-series.sh` rebuilds tree `73ed0bd4` from the 50 files on every `ci.sh` run. `ci.sh` runs 19 test entry points (16 at pass 2: + `test_kt_nan_reject.py`, `test_kt_remap.py`, `test_benchmarks_headline.py` / headline `check`); the three GPU unit suites run through `release-smoke.sh units`.
+
+### 12d. Completion-definition scorecard (ledger G6)
+
+| Definition | Holds | By |
+|---|---|---|
+| 1 ledger rows + T3.16i passes after G1 / G4 / G6 | yes | §11 (G1), this section (G4 closed-by-decision, G6) |
+| 2 typed profile, zero ad-hoc env, every knob declared | yes | T3.24a |
+| 3 no unsafe flag in a release profile | yes | T3.24b, TROUBLESHOOTING retired-workarounds table |
+| 4 rollback is a launch flag from the same commit | closed-by-decision | G4 (no second mode); the allocator lever is the one flag-rollback |
+| 5 reproducible patch series on a pinned base | yes | T3.24c |
+| 6 release manifest with stamped C1 / C4 / prefill / TTFT / NLL / needle / soak rows | yes | T3.24e generated headline from `t329/262k-4slot-682fc6a0` and `t339/window2/qual` |
+
+### Pass 3 bottom line
+
+- **Measured:** every row of the debt register is closed, closed by decision, or re-filed to the upstream submission with no recipe consumer; the kt path is nine owned modules with 19 CI entry points and a tree-hash-checked patch series.
+- **Measured:** the two stamped qualification sets reproduce the headline (64K × 4 C1 57.6 / C4 121.0 / 16K prefill 2,934 cold; 262K × 4 C1 57.9 / C4 123.1), and the table that states them is generated, so a hand edit cannot drift from the evidence.
+- **Inferred:** **G6 is done**; the project has left experimental-overlay form. The next review pass is owed only when a stage of comparable size opens (T4.1b on a third card, or the OPEN-SOURCE-PLAN submission), not on the T3.30 / T3.35 strengthening work.

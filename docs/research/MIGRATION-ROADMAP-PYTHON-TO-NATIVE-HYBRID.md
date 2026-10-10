@@ -693,14 +693,14 @@ Entry: G4 exit and G5 done or closed-by-decision. Work items, each with a checkb
 
 **Completion definition — the project has left experimental-overlay form when all of the following are true:**
 
-1. Every G0..G5 row in this ledger is `done` or `closed-by-decision` with an evidence link, and T3.16i has a recorded pass after G1, G4, and G6.
-2. The qualified profile launches from a typed profile file with zero ad-hoc env vars, and every remaining knob is registry-declared with an evidence link.
-3. No unsafe flag or launcher workaround from the list above remains in a release profile.
-4. `rank0` and the promoted mode both launch from the same overlay commit and pass the same gate (rollback is a launch flag).
-5. The overlay is a reviewable patch series on a pinned upstream SHA, reproducible from a clean clone, with licences and provenance recorded.
-6. A release manifest exists whose C1/C4/prefill/TTFT/NLL/needle/soak rows were all produced by scripts that embed the manifest hash.
+1. Every G0..G5 row in this ledger is `done` or `closed-by-decision` with an evidence link, and T3.16i has a recorded pass after G1, G4, and G6. — **holds 2026-10-10**: G0–G5 rows below; T3.16i pass 1 (§10), pass 2 (§11, G1), pass 3 (§12, G4 closed by decision + G6 exit) in the [maintainability review](MAINTAINABILITY-REVIEW-2026-09.md).
+2. The qualified profile launches from a typed profile file with zero ad-hoc env vars, and every remaining knob is registry-declared with an evidence link. — **holds**: T3.24a (`config/profiles/qualified.env`, `scripts/serve_config.py`, `docs/CONFIG.md` generated; every override is recorded in the manifest).
+3. No unsafe flag or launcher workaround from the list above remains in a release profile. — **holds**: T3.24b (escape hatches developer-profile-only; the launcher refuses the B2 knobs and `KT_NAN_PROBE_MIN_TOKENS` is a diagnostic); each retired workaround has its [TROUBLESHOOTING](../TROUBLESHOOTING.md#retired-workarounds-what-an-old-evidence-readme-or-launch-log-may-still-show) row.
+4. `rank0` and the promoted mode both launch from the same overlay commit and pass the same gate (rollback is a launch flag). — **closed-by-decision with G4**: no second mode exists because T3.22 was closed at this topology; the only launch-flag rollback the overlay carries is the post-capture allocator lever (`SGLANG_DSV41_POST_CAPTURE_EXPANDABLE`, T3.31), on and off from the same commit.
+5. The overlay is a reviewable patch series on a pinned upstream SHA, reproducible from a clean clone, with licences and provenance recorded. — **holds**: T3.24c (`patches/sglang/` 50 patches on `da64c5cb`, tree-hash check in `ci.sh`), PROVENANCE, THIRD_PARTY_NOTICES.
+6. A release manifest exists whose C1/C4/prefill/TTFT/NLL/needle/soak rows were all produced by scripts that embed the manifest hash. — **holds**: `evidence/t329/262k-4slot-682fc6a0/` and `evidence/t339/window2/qual/` are fully stamped (`manifest.json` beside every JSON, `check-evidence` 0), and the BENCHMARKS headline table is generated from them (`scripts/benchmarks_headline.py`, T3.24e).
 
-Until then the repository is an engineering recipe with an experimental overlay, and README/BENCHMARKS say so.
+~~Until then the repository is an engineering recipe with an experimental overlay, and README/BENCHMARKS say so.~~ **No longer the case since 2026-10-10 (T3.24e): all six hold; README's Status says so and the generated headline table is the record.**
 
 ### Decision records (2026-10-10, owner-approved)
 
@@ -749,4 +749,4 @@ Reviewer: owner (approved 2026-10-10)
 | G3 | T3.20, T3.21 | agent | ~~waits for G1 exit~~ **done 2026-10-10**: T3.20 promoted (rounds 1, 2 and (c): `ahead` prefetch, host-side hashing, chunk-ahead gather; `evidence/t320-engram-prefetch/`), T3.21 closed on its stop clause (dense GEMM 4 % of a 16K TTFT, cuTile slower than Triton; `evidence/t321/`) | E26 A3, E20, `evidence/t320-engram-prefetch/`, `evidence/t321/` |
 | G4 | T3.22 | **owner approval** + agent | ~~waits for G1 exit, G2, C10, design record~~ **closed-by-decision 2026-10-10** (owner approved the design record's recommendation; record above) | `docs/research/T322-DESIGN.md`, `evidence/t327/window1/timeline/` |
 | G5 | T3.23 | agent | ~~waits for G4 timeline~~ **closed-by-decision 2026-10-10** (hottest Python loop 0.082 ms/step = 0.5 %; record above) | decision record above |
-| G6 | T3.24 | owner + agent | ~~waits for G4 exit and G5~~ **entered 2026-10-10** (G0–G5 all done or closed-by-decision) | OPEN-SOURCE-PLAN |
+| G6 | T3.24 | owner + agent | ~~waits for G4 exit and G5~~ ~~**entered 2026-10-10** (G0–G5 all done or closed-by-decision)~~ **done 2026-10-10** (T3.24a–e; completion definitions 1–6 annotated above; T3.16i pass 3 = review §12; overlay tag `recipe-2026-10` = `682fc6a0`) | OPEN-SOURCE-PLAN, review §12, `docs/BENCHMARKS.md` headline |
