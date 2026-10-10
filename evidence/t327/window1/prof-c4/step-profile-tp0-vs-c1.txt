@@ -1,0 +1,71 @@
+# evidence/t327/window1/prof-c4/1791653112.4685776-TP-0.trace.json.gz  (27269 GPU events / 8 steps)
+segment                             ms/step   compare     delta
+span                                143.004   53.963  -89.041
+gpu_busy                             30.395   17.046  -13.349
+idle_total                          112.610   36.916  -75.694
+idle_gaps_ge_100us                   98.526   28.493  -70.033
+n_gaps_ge_100us                      92.500   42.200  -50.300
+
+category                            ms/step   compare     delta
+moe_expert_gpu                       17.490    6.457  -11.033
+dense_fp8_gemm                        4.553    3.620   -0.933
+other                                 2.211    2.069   -0.142
+elementwise_index                     2.154    1.618   -0.536
+collective                            1.664    0.694   -0.970
+attention_indexer                     1.653    1.344   -0.309
+memcpy_memset                         0.907    0.363   -0.544
+rope_norm_act                         0.363    0.348   -0.015
+fp8_quant                             0.303    0.253   -0.050
+bf16_gemm                             0.186    1.508    1.322
+sampling                              0.072    0.072    0.000
+engram                                0.016    0.014   -0.002
+
+top kernels (this trace)                                                                     calls/st  ms/step   avg us
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       20.0   11.211    560.5
+_w8a8_block_fp8_matmul_hopper                                                                   171.0    2.672     15.6
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       30.0    2.361     78.7
+_w8a8_block_fp8_matmul                                                                           33.0    1.881     57.0
+sglang::cross_device_reduce_1stage<__nv_bfloat16, 2>                                             83.0    1.631     19.7
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       30.0    1.310     43.7
+_hc_mix_stats_partial_kernel                                                                     80.0    0.821     10.3
+cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_32x32_128x2_tn_align8>           30.0    0.797     26.6
+flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<                                     35.0    0.662     18.9
+_hc_mix_reduce_sinkhorn_kernel                                                                   80.0    0.582      7.3
+[gpu_memcpy] Memcpy DtoH                                                                        164.5    0.369      2.2
+[gpu_memcpy] Memcpy HtoD                                                                         48.1    0.338      7.0
+cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_64x64_64x6_tn_align8>              0.8    0.310    413.8
+sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bfloat16…      204.0    0.303      1.5
+sparse_mla_prefill_mg_dual_kernel<                                                                4.8    0.288     60.7
+tensorrt_llm::kernels::cutlass_kernels::doActivationKernel<__nv_fp8_e4m3, __nv_bfloat16, …       40.0    0.273      6.8
+at::native::sbtopk::gatherTopK<float, unsigned int, 2, false>                                    39.5    0.248      6.3
+_reduce_block_fp8_split_k                                                                       141.0    0.228      1.6
+tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel<__nv_fp8_e4m3, __nv_fp8_e4m…       40.0    0.218      5.4
+at::native::_scatter_gather_elementwise_kernel<128, 8, at::native::_cuda_scatter_gather_i…       42.0    0.198      4.7
+
+largest idle gaps (us): [22913.3, 16709.1, 15300.7, 15255.0, 15108.4, 14886.3, 14633.4, 14448.9, 13946.4, 13907.5]
+
+top kernels (compare trace)                                                                  calls/st  ms/step   avg us
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       10.0    3.903    390.3
+_w8a8_block_fp8_matmul_hopper                                                                   161.0    2.101     13.0
+_w8a8_block_fp8_matmul                                                                           42.0    1.519     36.2
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       35.0    0.985     28.1
+std::enable_if<!                                                                                 35.0    0.878     25.1
+_hc_mix_stats_partial_kernel                                                                     80.0    0.783      9.8
+flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<                                     40.0    0.713     17.8
+sglang::cross_device_reduce_1stage<__nv_bfloat16, 2>                                             83.0    0.679      8.2
+_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5…       35.0    0.640     18.3
+_hc_mix_reduce_sinkhorn_kernel                                                                   80.0    0.484      6.1
+std::enable_if<!                                                                                  1.0    0.447    447.3
+sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bfloat16…      203.0    0.253      1.2
+_reduce_block_fp8_split_k                                                                       161.0    0.250      1.6
+_router_triton_kernel                                                                            40.0    0.248      6.2
+tensorrt_llm::kernels::cutlass_kernels::doActivationKernel<__nv_fp8_e4m3, __nv_bfloat16, …       40.0    0.206      5.2
+at::native::sbtopk::gatherTopK<float, unsigned int, 1, false>                                    34.1    0.196      5.7
+_hc_combine_norm                                                                                 69.1    0.183      2.6
+tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel<__nv_fp8_e4m3, __nv_fp8_e4m…       40.0    0.182      4.5
+_page_split_kernel                                                                               40.0    0.166      4.2
+at::native::vectorized_elementwise_kernel<2, at::native::                                        79.6    0.157      2.0
+
+largest idle gaps, compare (us): [10846.8, 10148.0, 8575.4, 8300.9, 8255.9, 8210.0, 7044.1, 6562.0, 6510.7, 6415.5]
+
+wrote evidence/t327/window1/prof-c4/step-profile-tp0-vs-c1.json

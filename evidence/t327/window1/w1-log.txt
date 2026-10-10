@@ -1,0 +1,35 @@
+== serve 13:17:02
+== timeline benches 13:21:52
+  1         55.65     55.16     57.20       53.96       0.306     n/a
+  4        115.63    114.45    119.55      111.07       0.750     n/a
+== profiler C1 13:24:13
+Start profiling.
+
+  1         47.28     47.28     47.28       45.68       0.316     n/a
+== profiler C4 13:25:12
+Start profiling.
+
+  4        105.03    105.03    105.03       99.02       0.981     n/a
+== collect 13:26:18
+evidence/t327/window1/prof-c1:
+total 5204
+drwxrwxr-x 2 hank hank    4096 Oct 10 13:26 .
+drwxrwxr-x 5 hank hank    4096 Oct 10 13:26 ..
+-rw-r--r-- 1 hank hank 2975753 Oct 10 13:24 1791653053.5638726-TP-0.trace.json.gz
+-rw-r--r-- 1 hank hank 2341132 Oct 10 13:24 1791653053.5638726-TP-1.trace.json.gz
+
+evidence/t327/window1/prof-c4:
+total 6636
+drwxrwxr-x 2 hank hank    4096 Oct 10 13:26 .
+drwxrwxr-x 5 hank hank    4096 Oct 10 13:26 ..
+-rw-r--r-- 1 hank hank 3773059 Oct 10 13:25 1791653112.4685776-TP-0.trace.json.gz
+-rw-r--r-- 1 hank hank 3007030 Oct 10 13:25 1791653112.4685776-TP-1.trace.json.gz
+
+evidence/t327/window1/timeline:
+total 16960
+drwxrwxr-x 2 hank hank    4096 Oct 10 13:26 .
+drwxrwxr-x 5 hank hank    4096 Oct 10 13:26 ..
+-rw-r--r-- 1 hank hank 8614129 Oct 10 13:25 timeline-rank0.jsonl
+-rw-r--r-- 1 hank hank 8740030 Oct 10 13:25 timeline-rank1.jsonl
+health=2
+== done 13:26:28

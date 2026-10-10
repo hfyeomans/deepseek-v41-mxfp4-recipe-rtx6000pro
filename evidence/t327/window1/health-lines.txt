@@ -1,0 +1,24 @@
+777:[2026-10-10 17:24:27] INFO:     <docker-bridge-ip>:40248 - "POST /stop_profile HTTP/1.1" 500 Internal Server Error
+778-[2026-10-10 17:24:27] ERROR:    Exception in ASGI application
+779-Traceback (most recent call last):
+--
+830:  File "/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py", line 1186, in stop_profile_async
+831:    await _global_state.tokenizer_manager.stop_profile()
+832:  File "/sgl-workspace/sglang/python/sglang/srt/managers/tokenizer_control_mixin.py", line 401, in stop_profile
+833-    return await self._execute_profile(req)
+--
+867:[2026-10-10 17:25:33] INFO:     <docker-bridge-ip>:60522 - "POST /stop_profile HTTP/1.1" 500 Internal Server Error
+868-[2026-10-10 17:25:33] ERROR:    Exception in ASGI application
+869-Traceback (most recent call last):
+9:[2026-10-10 17:17:15] server_args={'model_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_mo
+374:[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTune
+375:[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 21.72profile/s]
+451:[AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/3 [00:00<?, ?profile/s][2026-10-10 17:20:40 TP0] FlashInfer MoE workspace: 979.6 MiB persistent on cuda:0 for up to 8192 rows (hid
+452:[AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1:  33%|███▎      | 1/3 [00:00<00:00,  7.04profile/s][
+453:[AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 3/3 [00:00<00:00, 12.77profile/s]
+454:[AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuni
+458:[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTune
+752:[2026-10-10 17:24:13 TP0] Profiling starts. Traces will be saved to: /tmp/prof-c1 (with profile id: 1791653053.5638726)
+753:[2026-10-10 17:24:13 TP1] Profiling starts. Traces will be saved to: /tmp/prof-c1 (with profile id: 1791653053.5638726)
+754:USDT:2026-10-10 17:24:13 135:135 SyncActivityProfilerHandler.cpp:52] profiler_startUSDT:2026-10-10 17:24:13 134:134 SyncActivityProfilerHandler.cpp:52] profiler_start
+756:[2026-10-10 17:24:13] INFO:     <docker-bridge-ip>:50022 - "POST /start_profile HTTP/1.1" 200 OK

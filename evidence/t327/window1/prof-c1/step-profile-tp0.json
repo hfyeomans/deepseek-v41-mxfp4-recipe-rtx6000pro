@@ -1,0 +1,183 @@
+{
+  "trace": {
+    "trace": "evidence/t327/window1/prof-c1/1791653053.5638726-TP-0.trace.json.gz",
+    "steps": 8,
+    "gpu_events": 25680,
+    "per_step_ms": {
+      "span": 53.963,
+      "gpu_busy": 17.046,
+      "idle_total": 36.916,
+      "idle_gaps_ge_100us": 28.493,
+      "n_gaps_ge_100us": 42.2
+    },
+    "by_category_ms_per_step": {
+      "moe_expert_gpu": 6.457,
+      "dense_fp8_gemm": 3.62,
+      "other": 2.069,
+      "elementwise_index": 1.618,
+      "bf16_gemm": 1.508,
+      "attention_indexer": 1.344,
+      "collective": 0.694,
+      "memcpy_memset": 0.363,
+      "rope_norm_act": 0.348,
+      "fp8_quant": 0.253,
+      "sampling": 0.072,
+      "engram": 0.014
+    },
+    "top_kernels": [
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 10.0,
+        "ms_per_step": 3.903,
+        "avg_us": 390.3,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_w8a8_block_fp8_matmul_hopper",
+        "calls_per_step": 161.0,
+        "ms_per_step": 2.101,
+        "avg_us": 13.0,
+        "category": "dense_fp8_gemm"
+      },
+      {
+        "name": "_w8a8_block_fp8_matmul",
+        "calls_per_step": 42.0,
+        "ms_per_step": 1.519,
+        "avg_us": 36.2,
+        "category": "dense_fp8_gemm"
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 35.0,
+        "ms_per_step": 0.985,
+        "avg_us": 28.1,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "std::enable_if<!",
+        "calls_per_step": 35.0,
+        "ms_per_step": 0.878,
+        "avg_us": 25.1,
+        "category": "bf16_gemm"
+      },
+      {
+        "name": "_hc_mix_stats_partial_kernel",
+        "calls_per_step": 80.0,
+        "ms_per_step": 0.783,
+        "avg_us": 9.8,
+        "category": "other"
+      },
+      {
+        "name": "flashinfer::sparse_mla_sm120::sparse_mla_decode_dsv4_kernel<",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.713,
+        "avg_us": 17.8,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "sglang::cross_device_reduce_1stage<__nv_bfloat16, 2>",
+        "calls_per_step": 83.0,
+        "ms_per_step": 0.679,
+        "avg_us": 8.2,
+        "category": "collective"
+      },
+      {
+        "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalINS1_17GroupProblemShapeIN4cute5\u2026",
+        "calls_per_step": 35.0,
+        "ms_per_step": 0.64,
+        "avg_us": 18.3,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_hc_mix_reduce_sinkhorn_kernel",
+        "calls_per_step": 80.0,
+        "ms_per_step": 0.484,
+        "avg_us": 6.1,
+        "category": "other"
+      },
+      {
+        "name": "std::enable_if<!",
+        "calls_per_step": 1.0,
+        "ms_per_step": 0.447,
+        "avg_us": 447.3,
+        "category": "bf16_gemm"
+      },
+      {
+        "name": "sglang::per_token_group_quant_8bit_v2_kernel<sglang::NaiveScheduler, 32, 2, __nv_bfloat16\u2026",
+        "calls_per_step": 203.0,
+        "ms_per_step": 0.253,
+        "avg_us": 1.2,
+        "category": "fp8_quant"
+      },
+      {
+        "name": "_reduce_block_fp8_split_k",
+        "calls_per_step": 161.0,
+        "ms_per_step": 0.25,
+        "avg_us": 1.6,
+        "category": "other"
+      },
+      {
+        "name": "_router_triton_kernel",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.248,
+        "avg_us": 6.2,
+        "category": "other"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::doActivationKernel<__nv_fp8_e4m3, __nv_bfloat16, \u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.206,
+        "avg_us": 5.2,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "at::native::sbtopk::gatherTopK<float, unsigned int, 1, false>",
+        "calls_per_step": 34.1,
+        "ms_per_step": 0.196,
+        "avg_us": 5.7,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "_hc_combine_norm",
+        "calls_per_step": 69.1,
+        "ms_per_step": 0.183,
+        "avg_us": 2.6,
+        "category": "rope_norm_act"
+      },
+      {
+        "name": "tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel<__nv_fp8_e4m3, __nv_fp8_e4m\u2026",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.182,
+        "avg_us": 4.5,
+        "category": "moe_expert_gpu"
+      },
+      {
+        "name": "_page_split_kernel",
+        "calls_per_step": 40.0,
+        "ms_per_step": 0.166,
+        "avg_us": 4.2,
+        "category": "attention_indexer"
+      },
+      {
+        "name": "at::native::vectorized_elementwise_kernel<2, at::native::",
+        "calls_per_step": 79.6,
+        "ms_per_step": 0.157,
+        "avg_us": 2.0,
+        "category": "elementwise_index"
+      }
+    ],
+    "largest_gaps_us": [
+      10846.8,
+      10148.0,
+      8575.4,
+      8300.9,
+      8255.9,
+      8210.0,
+      7044.1,
+      6562.0,
+      6510.7,
+      6415.5
+    ]
+  },
+  "compare": null
+}
