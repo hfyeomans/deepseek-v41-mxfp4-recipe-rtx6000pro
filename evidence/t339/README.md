@@ -123,9 +123,26 @@ One serve, launcher defaults otherwise (219 / 165, D=4, chunk 8192, 64K × 4, `K
 | `verify.py --context 60000` | — | ALL PASS, needles 6/6 at 50,543 tokens | — |
 | py-spy `--native`, TP0, 5 s during a 16K prefill (`pyspy-fixed.raw.gz`) | `getWorkspaceInfo` 80 % of samples (`diag/pyspy-stale.raw.gz`) | **0 samples**; residue = Engram `madvise` / `index_select` worker 17 %, kt export wait 6 %, `select` 7 % | — |
 
-Not run on this serve: the 4 × 62K stress, NLL and same-prompt gates — **`99128a7e` is not yet the qualified
-profile**; that is the next serve (and the one the approved `KT_CPUINFER=14` rider can ride on, one change per
-serve).
+~~Not run on this serve: the 4 × 62K stress, NLL and same-prompt gates — **`99128a7e` is not yet the qualified
+profile**.~~ **Qualification serve (2026-10-10, `qual-99128a7e/`, driver `qual-99128a7e/qual.sh`, launcher defaults,
+`KT_CPUINFER=16`): every gate met.**
+
+| gate | `ad973440` (T3.20 r2b / r2-stress) | **`99128a7e`** |
+|---|---|---|
+| 16K prefill cold / warm (seed 777 / 1277, `--warm-pass`) | 1,811 / 1,870 tok/s (TTFT 8.87 / 8.54 s) | **2,040 / 2,171 (7.87 / 7.37 s)** |
+| 32K prefill cold / warm (seed 1277 / 1777) | 1,910 / 1,929 (16.75 / 16.57 s) | **2,272 / 2,353 (14.09 / 13.63 s)** |
+| C1 summed / wall | 41.94 / 39.96 | 42.41 / 40.43 |
+| C4 summed / wall | 56.66 / 54.46 | 55.75 / 53.63 |
+| NLL vs the T3.28 corpus | 0 of 65,653 moved | **0 of 65,653 moved** |
+| same-prompt C4 | PASS | PASS (before and after stress) |
+| 4 × 62K stress | 4/4, wall 165.2 s, min free 2,161 / 2,122 MiB | **4/4, wall 124.0 s, min free 2,149 / 2,022 MiB** |
+| VRAM after capture | 92,778 / 92,835 MiB | 92,778 / 92,837 |
+| needles | 6/6 at 55,206 | 6/6 at 55,206 (TTFT 20.6 s) |
+| health | 0 | 0 |
+
+The stress wall drops 25 % because the four 62K prefills are the thing that got faster. GPU 1's stress trough is
+100 MiB lower; GPU 0's is 12 MiB lower — within the day-to-day spread of this gate (T3.31 soak 2,179 / 2,122,
+round 1 2,203 / 2,144) and still ≥ 2 GiB. The `KT_CPUINFER=14` rider goes on the next serve.
 
 What this changes upstream of window 2: the layer period's host side is no longer 90 ms, so the pipeline is
 now GPU-side (≈ 52 ms: 29 HtoD + 3 fix-up + ≈ 20 compute) plus whatever the 6–17 ms export join still exposes.
@@ -146,6 +163,7 @@ a C++ library that caches by one key silently thrashes when the call pattern alt
 | `window1b/prefill-16k-{warm,unprofiled,pyspy}.*`, `prefill-32k.*` | bench outputs; `-pyspy` ran under the 5 s sample |
 | `window1b/pyspy-fixed.raw.gz`, `record-pyspy.txt` | py-spy raw on the fixed serve |
 | `window1b/c1*`, `c4*`, `verify.*` | decode and correctness sanity |
+| `qual-99128a7e/` | the qualification serve: `qual.sh` driver + `qual-log.txt`, launch / ready / manifest / `pre-serve-state`, `prefill-{16k,32k}.*`, `c1.*`, `c4.*`, `corpus/` + `corpus.txt` (NLL), `consistency*.{json,txt}`, `stress-kv.*`, `verify.*`, `vram-after-capture.txt`, `runner-log.txt` (dedicated-runner lines) |
 
 ## Files
 
