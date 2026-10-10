@@ -17,6 +17,30 @@
 # "libnvrtc.so.12" (TROUBLESHOOTING.md). kt_kernel itself imports none of them.
 
 ARG BASE=lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860
+
+# --- stage 1 (T3.39 window 2, K2): rebuild the one C++ extension variant this host
+# uses (avx512_bf16) from the kt-kernel source the wheel was cut from, plus patch
+# 0003 (caller-owned weight arena: MOEConfig.weight_arenas, weight_arena_bytes,
+# weight_arena_layout). Same toolchain family as the wheel (g++ 13, CMake 3.31),
+# CUDA/AMX/oneDNN off like the wheel's avx512_bf16 build; the wheel's other five
+# ISA variants stay as shipped. PROVENANCE.md has the source pin and checks.
+FROM ${BASE} AS ktbuild
+ARG KT_SOURCE_TAG=v0.7.0.post4
+ARG KT_SOURCE_COMMIT=5632f7197e7a9898f0723755c2fc187a946a85a6
+COPY kt-kernel-patches/0003-weight-arena.patch /tmp/0003-weight-arena.patch
+RUN git clone --quiet --depth 1 --branch "${KT_SOURCE_TAG}" https://github.com/kvcache-ai/ktransformers /tmp/ktsrc \
+ && cd /tmp/ktsrc \
+ && test "$(git rev-parse HEAD)" = "${KT_SOURCE_COMMIT}" \
+ && git submodule update --init --depth 1 third_party/pybind11 third_party/llama.cpp \
+ && git apply --check /tmp/0003-weight-arena.patch && git apply /tmp/0003-weight-arena.patch \
+ && cd kt-kernel \
+ && CPUINFER_CPU_INSTRUCT=AVX512 CPUINFER_ENABLE_AVX512=ON CPUINFER_ENABLE_AVX512_VNNI=ON \
+    CPUINFER_ENABLE_AVX512_BF16=ON CPUINFER_ENABLE_AVX512_VBMI=ON CPUINFER_ENABLE_AMX=OFF \
+    CPUINFER_ENABLE_ONEDNN_VNNI=OFF CPUINFER_USE_CUDA=0 CPUINFER_NATIVE=OFF CPUINFER_BUILD_TYPE=Release \
+    python3 setup.py build_ext --inplace \
+ && so="$(find /tmp/ktsrc/kt-kernel/build -name 'kt_kernel_ext.cpython-312-x86_64-linux-gnu.so' | head -1)" \
+ && test -n "$so" && cp "$so" /tmp/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so
+
 FROM ${BASE}
 
 ARG KT_KERNEL_VERSION=0.7.0.post4
@@ -35,9 +59,13 @@ RUN pip download --no-cache-dir --no-deps -d /tmp/ktw "kt-kernel==${KT_KERNEL_VE
 # registered and already warmed (no allocation while capturing), a tuple a graph
 # holds is never retired, set_capture_batch_sizes merges across graph runners
 # instead of replacing. Tested by scripts/tests/run-kt-buffer-tests.sh.
+# 0003 (T3.39 window 2) is C++ and is compiled into the extension in stage 1
+# above; only the Python patches (0001, 0002) are applied to site-packages here.
 COPY kt-kernel-patches /opt/recipe/kt-kernel-patches
 RUN cd /opt/sglang/lib/python3.12/site-packages \
- && for p in /opt/recipe/kt-kernel-patches/*.patch; do patch -p1 --forward < "$p"; done
+ && for p in /opt/recipe/kt-kernel-patches/000[12]-*.patch; do patch -p1 --forward < "$p"; done
+COPY --from=ktbuild /tmp/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so \
+     /opt/sglang/lib/python3.12/site-packages/kt_kernel/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so
 
 COPY kt_smoke.py /opt/recipe/kt_smoke.py
 RUN python3 /opt/recipe/kt_smoke.py

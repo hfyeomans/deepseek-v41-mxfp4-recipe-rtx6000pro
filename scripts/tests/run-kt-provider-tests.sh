@@ -26,7 +26,8 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/kt_kernel" "$work/stub/sglang/srt/layers/moe"
 docker run --rm --entrypoint cat "$IMAGE" "$KT_PATH" > "$work/kt_kernel/experts_base.py"
-for p in "$ROOT"/config/kt-kernel-patches/*.patch; do
+# Python patches only; 0003+ are C++ (compiled into the image's extension, T3.39).
+for p in "$ROOT"/config/kt-kernel-patches/000[12]-*.patch; do
   (cd "$work" && patch -p1 -N -s -r - < "$p" >/dev/null) || true
 done
 python3 -m py_compile "$work/kt_kernel/experts_base.py"

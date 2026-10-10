@@ -1,0 +1,208 @@
+diff --git a/kt-kernel/ext_bindings.cpp b/kt-kernel/ext_bindings.cpp
+index 550f1fb..9d9a53d 100644
+--- a/kt-kernel/ext_bindings.cpp
++++ b/kt-kernel/ext_bindings.cpp
+@@ -476,6 +476,31 @@ void bind_moe_module(py::module_& moe_module, const char* name) {
+       .def("load_weights", &MoeClass::load_weights)
+       .def("forward", &MoeClass::forward_binding);
+ 
++  // Caller-owned weight arena (GeneralMOEConfig::weight_arenas): size and layout.
++  if constexpr (requires(const GeneralMOEConfig& c) { MoeTP::weight_arena_bytes(c); }) {
++    // Bytes per CPU TP part for cfg (cfg is the full config; the per-part
++    // intermediate_size is cfg.intermediate_size / pool subpool count, as in TP_MOE).
++    moe_cls.def_static("weight_arena_bytes", [](const GeneralMOEConfig& cfg) {
++      GeneralMOEConfig part = cfg;
++      const int tp_count = cfg.pool ? cfg.pool->config.subpool_count : 1;
++      if (tp_count <= 0 || cfg.intermediate_size % tp_count != 0) {
++        throw std::runtime_error("weight_arena_bytes: intermediate_size must be a multiple of the tp count");
++      }
++      part.intermediate_size /= tp_count;
++      return MoeTP::weight_arena_bytes(part);
++    });
++    // [tp part][expert] -> (gate_off, up_off, down_off, gate_e8, up_e8, down_e8)
++    moe_cls.def("weight_arena_layout", [](MoeClass& self) {
++      std::vector<std::vector<std::tuple<size_t, size_t, size_t, bool, bool, bool>>> out;
++      for (const auto& e : self.weight_arena_layouts()) {
++        std::vector<std::tuple<size_t, size_t, size_t, bool, bool, bool>> part;
++        for (const auto& w : e) part.emplace_back(w.gate, w.up, w.down, w.gate_e8, w.up_e8, w.down_e8);
++        out.push_back(std::move(part));
++      }
++      return out;
++    });
++  }
++
+   // Bind write_weight_scale_to_buffer_task for MoE types that support it
+   // Uses SFINAE to detect if MoeClass has write_weight_scale_to_buffer method
+   if constexpr (requires { &MoeClass::write_weight_scale_to_buffer; }) {
+@@ -885,6 +910,17 @@ PYBIND11_MODULE(kt_kernel_ext, m) {
+       .def_readwrite("quant_config", &GeneralMOEConfig::quant_config)
+ 
+       .def_readwrite("max_len", &GeneralMOEConfig::max_len)
++      .def_property(
++          "weight_arenas",
++          [](const GeneralMOEConfig& self) {
++            std::vector<uintptr_t> out;
++            for (void* p : self.weight_arenas) out.push_back(reinterpret_cast<uintptr_t>(p));
++            return out;
++          },
++          [](GeneralMOEConfig& self, const std::vector<uintptr_t>& val) {
++            self.weight_arenas.clear();
++            for (uintptr_t p : val) self.weight_arenas.push_back(reinterpret_cast<void*>(p));
++          })
+ 
+       .DEF_PTR_2D_PROPERTY(GeneralMOEConfig, gate_projs)
+       .DEF_PTR_2D_PROPERTY(GeneralMOEConfig, up_projs)
+diff --git a/kt-kernel/operators/amx/moe_base.hpp b/kt-kernel/operators/amx/moe_base.hpp
+index fb636ee..6fbf114 100644
+--- a/kt-kernel/operators/amx/moe_base.hpp
++++ b/kt-kernel/operators/amx/moe_base.hpp
+@@ -124,6 +124,25 @@ class AMX_MOE_BASE {
+     m_local_up_output_ptr_.resize(config_.expert_num);
+     m_local_down_output_ptr_.resize(config_.expert_num);
+ 
++    weight_arena_ = nullptr;
++    if (!config_.weight_arenas.empty()) {
++      if (static_cast<size_t>(tp_part_idx) >= config_.weight_arenas.size() ||
++          config_.weight_arenas[tp_part_idx] == nullptr) {
++        throw std::runtime_error("weight_arenas: no arena for this tp part");
++      }
++      weight_arena_ = reinterpret_cast<uint8_t*>(config_.weight_arenas[tp_part_idx]);
++      if (reinterpret_cast<uintptr_t>(weight_arena_) % 64 != 0) {
++        throw std::runtime_error("weight_arenas: arena must be 64-byte aligned");
++      }
++    }
++    size_t arena_offset = 0;
++    auto alloc_bb = [&](size_t bytes) -> void* {
++      if (weight_arena_ == nullptr) return std::aligned_alloc(64, bytes);
++      void* p = weight_arena_ + arena_offset;
++      arena_offset += weight_arena_align(bytes);
++      return p;
++    };
++
+     for (size_t i = 0; i < config_.expert_num; i++) {
+       gate_up_ba_.push_back(make_buffer_a(config_.max_len, config_.hidden_size, nullptr));
+       gate_bc_.push_back(make_buffer_c(config_.max_len, config_.intermediate_size, nullptr));
+@@ -131,17 +150,16 @@ class AMX_MOE_BASE {
+       down_ba_.push_back(make_buffer_a(config_.max_len, config_.intermediate_size, nullptr));
+       down_bc_.push_back(make_buffer_c(config_.max_len, config_.hidden_size, nullptr));
+ 
+-      void* gate_bb_ptr =
+-          std::aligned_alloc(64, buffer_b_required_size(config_.intermediate_size, config_.hidden_size));
++      void* gate_bb_ptr = alloc_bb(buffer_b_required_size(config_.intermediate_size, config_.hidden_size));
+       gate_bb_.push_back(make_buffer_b(config_.intermediate_size, config_.hidden_size, gate_bb_ptr));
+ 
+-      void* up_bb_ptr = std::aligned_alloc(64, buffer_b_required_size(config_.intermediate_size, config_.hidden_size));
++      void* up_bb_ptr = alloc_bb(buffer_b_required_size(config_.intermediate_size, config_.hidden_size));
+       up_bb_.push_back(make_buffer_b(config_.intermediate_size, config_.hidden_size, up_bb_ptr));
+ 
+-      void* down_bb_ptr =
+-          std::aligned_alloc(64, buffer_b_required_size(config_.hidden_size, config_.intermediate_size));
++      void* down_bb_ptr = alloc_bb(buffer_b_required_size(config_.hidden_size, config_.intermediate_size));
+       down_bb_.push_back(make_buffer_b(config_.hidden_size, config_.intermediate_size, down_bb_ptr));
+     }
++    weight_arena_used_ = arena_offset;
+     // TODO: need update to all *.hpp
+     // (config_.expert_num * T::M_STEP) in pool_count_ is to ensure padding for each experts.
+     pool_count_ = (size_t)config_.max_len * config_.num_experts_per_tok + config_.expert_num * T::M_STEP;
+@@ -163,6 +181,68 @@ class AMX_MOE_BASE {
+ 
+   ~AMX_MOE_BASE() { shared_mem_buffer_numa.dealloc(tp_part_idx, this); }
+ 
++  // --- caller-owned weight arena (GeneralMOEConfig::weight_arenas) ---
++  uint8_t* weight_arena_ = nullptr;
++  size_t weight_arena_used_ = 0;
++
++  static constexpr size_t weight_arena_align(size_t bytes) { return (bytes + 63) / 64 * 64; }
++
++  // Static mirror of buffer_b_required_size_impl: KGroup BufferB types take the
++  // group size, the others do not.
++  static size_t weight_arena_buffer_b_bytes(int n, int k, int group_size) {
++    if constexpr (requires { T::BufferB::required_size(n, k, group_size); }) {
++      return T::BufferB::required_size(n, k, group_size);
++    } else {
++      return T::BufferB::required_size(n, k);
++    }
++  }
++
++  // Bytes one tp part needs for cfg (cfg.intermediate_size is the per-part size).
++  static size_t weight_arena_bytes(const GeneralMOEConfig& cfg) {
++    const int g = cfg.quant_config.group_size;
++    const size_t gate_up = weight_arena_align(weight_arena_buffer_b_bytes(cfg.intermediate_size, cfg.hidden_size, g));
++    const size_t down = weight_arena_align(weight_arena_buffer_b_bytes(cfg.hidden_size, cfg.intermediate_size, g));
++    return static_cast<size_t>(cfg.expert_num) * (2 * gate_up + down);
++  }
++
++  // Per expert: byte offsets of gate / up / down BufferB storage inside this
++  // part's arena (weights first, then scales, see BufferBInt4KGroupImpl) and
++  // whether each tensor's scales were compacted in place to uint8 E8M0
++  // (always false for BufferB types without finalize_scale_e8). Valid after
++  // load_weights; throws when no arena was supplied.
++  struct WeightArenaEntry {
++    size_t gate, up, down;
++    bool gate_e8, up_e8, down_e8;
++  };
++  std::vector<WeightArenaEntry> weight_arena_layout() const {
++    if (weight_arena_ == nullptr) throw std::runtime_error("weight_arena_layout: no arena was supplied");
++    std::vector<WeightArenaEntry> out;
++    out.reserve(config_.expert_num);
++    for (size_t i = 0; i < static_cast<size_t>(config_.expert_num); i++) {
++      WeightArenaEntry e;
++      e.gate = reinterpret_cast<const uint8_t*>(gate_bb_[i]->b) - weight_arena_;
++      e.up = reinterpret_cast<const uint8_t*>(up_bb_[i]->b) - weight_arena_;
++      e.down = reinterpret_cast<const uint8_t*>(down_bb_[i]->b) - weight_arena_;
++      e.gate_e8 = scale_e8_valid_of(*gate_bb_[i]);
++      e.up_e8 = scale_e8_valid_of(*up_bb_[i]);
++      e.down_e8 = scale_e8_valid_of(*down_bb_[i]);
++      out.push_back(e);
++    }
++    return out;
++  }
++
++ private:
++  template <class B>
++  static bool scale_e8_valid_of(const B& bb) {
++    if constexpr (requires { bb.scale_e8_valid; }) {
++      return bb.scale_e8_valid;
++    } else {
++      return false;
++    }
++  }
++
++ public:
++
+   void warm_up() {
+     int qlen = config_.max_len;
+     std::vector<uint8_t> input(sizeof(ggml_bf16_t) * qlen * config_.hidden_size);
+@@ -749,6 +829,14 @@ class TP_MOE<AMX_MOE_BASE<T, Derived>> : public TP_MOE_Common<AMX_MOE_BASE<T, De
+   // Default load_weights implementation - can be overridden by derived TP_MOE classes
+   void load_weights() override { throw std::runtime_error("Not Implemented"); }
+ 
++  // [tp part][expert] carve result of GeneralMOEConfig::weight_arenas (see AMX_MOE_BASE).
++  using WeightArenaEntry = typename AMX_MOE_BASE<T, Derived>::WeightArenaEntry;
++  std::vector<std::vector<WeightArenaEntry>> weight_arena_layouts() const {
++    std::vector<std::vector<WeightArenaEntry>> out;
++    for (const auto& tp : this->tps) out.push_back(tp->weight_arena_layout());
++    return out;
++  }
++
+   void write_weight_scale_to_buffer(int gpu_tp_count, int gpu_experts_num,
+                                     const std::vector<uintptr_t>& w13_weight_ptrs,
+                                     const std::vector<uintptr_t>& w13_scale_ptrs,
+diff --git a/kt-kernel/operators/common.hpp b/kt-kernel/operators/common.hpp
+index f943935..fb1fc74 100644
+--- a/kt-kernel/operators/common.hpp
++++ b/kt-kernel/operators/common.hpp
+@@ -273,6 +273,13 @@ struct GeneralMOEConfig {
+ 
+   // for amx
+   int max_len = 0;
++  // Caller-owned resident weight storage, one arena per CPU TP part (index =
++  // tp_part_idx). When non-empty, AMX_MOE_BASE carves every expert's gate / up /
++  // down BufferB (weights + scales) sequentially, 64-byte aligned, from the
++  // part's arena instead of std::aligned_alloc, so the owning process can place
++  // the resident experts in shareable / pinnable memory. Size it with
++  // weight_arena_bytes(); read the carve result with weight_arena_layout().
++  std::vector<void*> weight_arenas;
+   std::vector<std::vector<void*>> gate_projs;
+   std::vector<std::vector<void*>> up_projs;
+   std::vector<std::vector<void*>> down_projs;

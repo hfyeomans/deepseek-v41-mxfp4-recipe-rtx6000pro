@@ -68,6 +68,19 @@ def main() -> int:
     if not hasattr(loader, "MXFP4SafeTensorLoader"):
         problems.append("kt_kernel.utils.loader lacks MXFP4SafeTensorLoader")
 
+    # kt patch 0003 (T3.39 window 2): the avx512_bf16 extension is rebuilt from
+    # source with the caller-owned weight arena; the stock wheel lacks these.
+    moe = kt_kernel.kt_kernel_ext.moe
+    fp4 = getattr(moe, "AMXFP4_KGroup_MOE", None)
+    if fp4 is None:
+        problems.append("kt_kernel_ext.moe lacks AMXFP4_KGroup_MOE")
+    elif not (hasattr(fp4, "weight_arena_bytes") and hasattr(fp4, "weight_arena_layout")):
+        problems.append("AMXFP4_KGroup_MOE lacks weight_arena_bytes/weight_arena_layout (patch 0003 not compiled in)")
+    cfg = moe.MOEConfig(1, 1, 64, 64)
+    cfg.weight_arenas = [64]
+    if getattr(cfg, "weight_arenas", None) != [64]:
+        problems.append(f"MOEConfig.weight_arenas does not round-trip: {getattr(cfg, 'weight_arenas', None)}")
+
     # --kt-num-gpu-experts N becomes a [layers, experts] bool mask holding
     # layers*N experts chosen by *global* top-k of activation frequency
     # (uniform frequencies -> ties, still exactly layers*N set).

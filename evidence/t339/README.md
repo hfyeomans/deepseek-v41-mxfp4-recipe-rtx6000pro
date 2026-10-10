@@ -327,6 +327,51 @@ memory in cgroup accounting (same total as today's anonymous arena + 5.8 GB less
 from-source kt-kernel build to the image**, which the recipe has avoided so far. Go / no-go is the owner's call
 before the build starts.
 
+### Window 2, K2 build (2026-10-10, `window2/k2-build/`) — patched kt-kernel extension in the image, arena carve bit-identical
+
+Owner picked K2 (shared memfd arena + kt-kernel allocator / pybind patch). What landed, no serve:
+
+- **Source pin verified.** The wheel's Python files equal upstream `kvcache-ai/ktransformers` tag `v0.7.0.post4`
+  = commit `5632f71` (2026-09-11; `diff -rq` of `kt-kernel/python/kt_kernel` vs the wheel's `kt_kernel/`: only
+  `cli/requirements` unpackaged). The wheel's `.so` links hwloc / gomp / numa / stdc++ / mvec (no dnnl → oneDNN
+  off, no cudart → CUDA off), which fixes the build flags.
+- **Patch `config/kt-kernel-patches/0003-weight-arena.patch`** (C++, +136 / −5 over `operators/common.hpp`,
+  `operators/amx/moe_base.hpp`, `ext_bindings.cpp`): `GeneralMOEConfig::weight_arenas` (one pointer per CPU TP
+  part); when set, `AMX_MOE_BASE::init` carves every expert's gate / up / down BufferB storage sequentially
+  (64-aligned) from the part's arena instead of `std::aligned_alloc` (stock code never frees that storage, so no
+  double-free path); static `weight_arena_bytes(cfg)` (per-part `intermediate_size`, KGroup / non-KGroup
+  `required_size` dispatched at compile time); post-load `weight_arena_layout()` → `[[(gate_off, up_off,
+  down_off, gate_e8, up_e8, down_e8)]]`, throwing when no arena was supplied. Load, forward and the existing
+  export are untouched. Bound on every `TP_MOE<AMX_MOE_BASE<…>>` class via `requires`, so the FP8 / BF16 / INT4
+  classes get it too.
+- **Image.** `config/Dockerfile.dsv41-kt` gained a `ktbuild` stage: clone the tag, assert the commit, init the
+  `pybind11` + `llama.cpp` submodules, `git apply` 0003, `python3 setup.py build_ext --inplace` with the wheel's
+  flag set (`AVX512 + VNNI + BF16 + VBMI`, AMX / oneDNN / CUDA off, not `-march=native`), and copy the one
+  resulting `.so` over the wheel's `_kt_kernel_ext_avx512_bf16` variant (the other five ISA variants stay as
+  shipped). Build 1 m 49 s on this box; image `sha256:8a7802d2…`, 51.84 GB (+11 MB). `kt_smoke.py` now also
+  requires `weight_arena_bytes` / `weight_arena_layout` on `AMXFP4_KGroup_MOE` and a `MOEConfig.weight_arenas`
+  round-trip. The Python-patch loops (Dockerfile, `run-kt-{buffer,provider,deferral}-tests.sh`) take
+  `000[12]-*.patch` only. `readelf -d` NEEDED of the rebuilt `.so` matches the wheel's (unvendored names).
+- **Smoke (`smoke_arena.py` → `smoke_arena.txt`, in the new image, no GPU):** `AMXFP4_KGroup_MOE` with
+  E = 4, k = 2, H = 4096, I = 2880, g = 32 on an `os.memfd_create` arena vs the stock allocator:
+  `weight_arena_bytes` = 88,473,600 = the BufferB formula; layout offsets 64-aligned, non-overlapping, inside
+  the arena; the arena bytes at expert 0's offsets equal the source nibbles and `bf16 bits >> 7` (E8M0) scales;
+  **decode (qlen 1 / 4 / 64) and prefill (2048) forwards bit-identical** between the two instances;
+  `weight_arena_layout()` on the no-arena instance raises. Existing kt test suites on the image: buffer 8/8,
+  provider 17/17, deferral 9/9, prefill 10/10, contract 14/14.
+- Previous image kept as `dsv41-kt:pre-k2` (`sha256:0ddb14aa…`) for rollback until window 2 qualifies.
+
+Next: the overlay (`kt_loader.py` / `kt_ep_wrapper.py` / `kt_prefill.py`): rank 0 memfd per MoE layer sized by
+`weight_arena_bytes`, rank 1 opens `/proc/<pid0>/fd/<n>`, both `cudaHostRegister`; drop the export / shm /
+barriers; side-stream copies (up → `w13[:, :I_tp]`, gate → `w13[:, I_tp:]`, E8M0 scales straight, down 2D);
+rewrite `test_kt_prefill.py`. Go bar unchanged: 16K prefill ≥ +25 % vs 2,195 cold, NLL bit-identical, decode
+untouched, stress trough ≥ 2 GiB.
+
+| path | what |
+|---|---|
+| `window2/k2-build/smoke_arena.py`, `.txt` | the arena-vs-allocator smoke above, run in `dsv41-kt:recipe` (`sha256:8a7802d2…`) |
+| `window2/k2-build/image-build-excerpt.txt` | `docker build` log, `ktbuild` stage + smoke step (compile lines dropped) |
+
 ### Files (window 1b)
 
 | path | what |

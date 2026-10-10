@@ -1,0 +1,167 @@
+#11 [ktbuild 3/3] RUN git clone --quiet --depth 1 --branch "v0.7.0.post4" https://github.com/kvcache-ai/ktransformers /tmp/ktsrc  && cd /tmp/ktsrc  && test "$(git rev-parse HEAD)" = "5632f7197e7a9898f0723755c2fc187a946a85a6"  && git submodule update --init --depth 1 third_party/pybind11 third_party/llama.cpp  && git apply --check /tmp/0003-weight-arena.patch && git apply /tmp/0003-weight-arena.patch  && cd kt-kernel  && CPUINFER_CPU_INSTRUCT=AVX512 CPUINFER_ENABLE_AVX512=ON CPUINFER_ENABLE_AVX512_VNNI=ON     CPUINFER_ENABLE_AVX512_BF16=ON CPUINFER_ENABLE_AVX512_VBMI=ON CPUINFER_ENABLE_AMX=OFF     CPUINFER_ENABLE_ONEDNN_VNNI=OFF CPUINFER_USE_CUDA=0 CPUINFER_NATIVE=OFF CPUINFER_BUILD_TYPE=Release     python3 setup.py build_ext --inplace  && so="$(find /tmp/ktsrc/kt-kernel/build -name 'kt_kernel_ext.cpython-312-x86_64-linux-gnu.so' | head -1)"  && test -n "$so" && cp "$so" /tmp/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so
+#11 2.011 Note: switching to '5632f7197e7a9898f0723755c2fc187a946a85a6'.
+#11 2.011 
+#11 2.011 You are in 'detached HEAD' state. You can look around, make experimental
+#11 2.011 changes and commit them, and you can discard any commits you make in this
+#11 2.011 state without impacting any branches by switching back to a branch.
+#11 2.011 
+#11 2.011 If you want to create a new branch to retain commits you create, you may
+#11 2.011 do so (now or later) by using -c with the switch command. Example:
+#11 2.011 
+#11 2.011   git switch -c <new-branch-name>
+#11 2.011 
+#11 2.011 Or undo this operation with:
+#11 2.011 
+#11 2.011   git switch -
+#11 2.011 
+#11 2.011 Turn off this advice by setting config variable advice.detachedHead to false
+#11 2.011 
+#11 2.195 Submodule 'third_party/llama.cpp' (https://github.com/ggerganov/llama.cpp.git) registered for path 'third_party/llama.cpp'
+#11 2.195 Submodule 'third_party/pybind11' (https://github.com/pybind/pybind11.git) registered for path 'third_party/pybind11'
+#11 2.196 Cloning into '/tmp/ktsrc/third_party/llama.cpp'...
+#11 5.003 Cloning into '/tmp/ktsrc/third_party/pybind11'...
+#11 6.821 From https://github.com/ggerganov/llama.cpp
+#11 6.821  * branch            a94e6ff8774b7c9f950d9545baf0ce35e8d1ed2f -> FETCH_HEAD
+#11 6.995 Submodule path 'third_party/llama.cpp': checked out 'a94e6ff8774b7c9f950d9545baf0ce35e8d1ed2f'
+#11 7.694 From https://github.com/pybind/pybind11
+#11 7.694  * branch            bb05e0810b87e74709d9f4c4545f1f57a1b386f5 -> FETCH_HEAD
+#11 7.708 Submodule path 'third_party/pybind11': checked out 'bb05e0810b87e74709d9f4c4545f1f57a1b386f5'
+#11 7.972 /opt/sglang/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: SetuptoolsWarning: `license` overwritten by `pyproject.toml`
+#11 7.972   corresp(dist, value, root_dir)
+#11 8.007 -- Version: 0.7.0.post4
+#11 8.007 -- Building kt-kernel (CPU-only multi-variant)
+#11 8.007 running build_ext
+#11 8.045 -- The C compiler identification is GNU 13.3.0
+#11 8.071 -- The CXX compiler identification is GNU 13.3.0
+#11 8.075 -- Detecting C compiler ABI info
+#11 8.101 -- Detecting C compiler ABI info - done
+#11 8.110 -- Check for working C compiler: /usr/bin/gcc - skipped
+#11 8.110 -- Detecting C compile features
+#11 8.111 -- Detecting C compile features - done
+#11 8.116 -- Detecting CXX compiler ABI info
+#11 8.147 -- Detecting CXX compiler ABI info - done
+#11 8.155 -- Check for working CXX compiler: /usr/bin/g++ - skipped
+#11 8.155 -- Detecting CXX compile features
+#11 8.156 -- Detecting CXX compile features - done
+#11 8.159 -- 
+#11 8.159 -- ========================================
+#11 8.159 -- CPU Feature Detection (CMake)
+#11 8.159 -- ========================================
+#11 8.159 -- Detected configuration from install.sh/setup.py
+#11 8.159 --   LLAMA_AVX512:      ON
+#11 8.159 --   LLAMA_AVX512_VNNI: ON
+#11 8.159 --   LLAMA_AVX512_BF16: ON
+#11 8.159 --   LLAMA_AVX512_VBMI: ON
+#11 8.159 -- 
+#11 8.159 -- Skipping auto-detection (using install.sh settings)
+#11 8.159 -- ========================================
+#11 8.159 -- 
+#11 8.160 -- Detected git worktree at /tmp/ktsrc; installing hooks from kt-kernel/.githooks
+#11 8.265 -- Found OpenMP_C: -fopenmp (found version "4.5")
+#11 8.300 -- Found OpenMP_CXX: -fopenmp (found version "4.5")
+#11 8.300 -- Found OpenMP: TRUE (found version "4.5")
+#11 8.300 -- CMAKE_CXX_FLAGS:  -O3 -ffast-math
+#11 8.300 -- CMAKE_SYSTEM_PROCESSOR: x86_64
+#11 8.300 -- x86 detected
+#11 8.300 CMake Warning at CMakeLists.txt:327 (message):
+#11 8.300   pure AVX is not supported at least avx2
+#11 8.300 
+#11 8.300 
+#11 8.301 -- AVX512 extensions: F=ON, BF16=ON, VNNI=ON, VBMI=ON
+#11 8.301 -- ARCH_FLAGS: -mf16c;-mfma;-mavx;-mfma;-msse3;-mf16c;-mavx2;-mfma;-msse3;-mf16c;-mavx512f;-mavx512bw;-mavx512dq;-mavx512vl;-mfma;-mf16c;-msse3;-mavx512vbmi;-mavx512vnni;-mavx512bf16;-mavx512vl
+#11 8.301 CMake Deprecation Warning at /tmp/ktsrc/third_party/pybind11/CMakeLists.txt:13 (cmake_minimum_required):
+#11 8.301   Compatibility with CMake < 3.10 will be removed from a future version of
+#11 8.301   CMake.
+#11 8.301 
+#11 8.301   Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+#11 8.301   to tell CMake that the project requires at least <min> but has been updated
+#11 8.301   to work with policies introduced by <max> or earlier.
+#11 8.301 
+#11 8.301 
+#11 8.303 -- pybind11 v2.14.0 dev1
+#11 8.320 -- Found PythonInterp: /opt/sglang/bin/python3 (found suitable version "3.12.3", minimum required is "3.7")
+#11 8.337 -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.12.so
+#11 8.338 -- Performing Test HAS_FLTO
+#11 8.386 -- Performing Test HAS_FLTO - Success
+#11 8.397 -- llama.cpp: applied patch /tmp/ktsrc/kt-kernel/third_party_patches/llama.cpp/0001-ggml-mxfp4-type.patch
+#11 8.399 -- llama.cpp: applied patch /tmp/ktsrc/kt-kernel/third_party_patches/llama.cpp/0002-gguf-numpy2-byteorder.patch
+#11 8.401 -- Found Git: /usr/bin/git (found version "2.43.0")
+#11 8.406 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+#11 8.436 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+#11 8.436 -- Found Threads: TRUE
+#11 8.437 -- Found OpenMP_C: -fopenmp (found version "4.5")
+#11 8.438 -- Found OpenMP_CXX: -fopenmp (found version "4.5")
+#11 8.438 -- OpenMP found
+#11 8.438 -- ccache found, compilation results will be cached. Disable with LLAMA_CCACHE=OFF.
+#11 8.446 -- CMAKE_SYSTEM_PROCESSOR: x86_64
+#11 8.446 -- x86 detected
+#11 8.449 -- No GPU support enabled, building for CPU only
+#11 8.449 -- SOURCE_DIR7: 
+#11 8.454 -- Using clang-format 16.0.3 at /usr/local/bin/clang-format
+#11 8.454 CMake Warning at CMakeLists.txt:748 (message):
+#11 8.454   clang-format >=18.0.0 required (found 16.0.3 at
+#11 8.454   /usr/local/bin/clang-format).
+#11 8.454 
+#11 8.454   Tip: Ensure your desired clang-format (e.g., conda's /bin/clang-format) is
+#11 8.454   earlier in PATH when running CMake,
+#11 8.454 
+#11 8.454   or pass -DCLANG_FORMAT_BIN=/full/path/to/clang-format.
+#11 8.454 
+#11 8.454 
+#11 8.456 -- Found PkgConfig: /usr/bin/pkg-config (found version "1.8.1")
+#11 8.456 -- Checking for one of the modules 'hwloc'
+#11 8.473 -- LTO: disabled
+#11 8.473 -- NUMA library found: /usr/lib/x86_64-linux-gnu/libnuma.so - enabling NUMA support
+#11 8.474 -- Configuring done (0.4s)
+#11 8.484 -- Generating done (0.0s)
+#11 8.484 -- Build files have been written to: /tmp/ktsrc/kt-kernel/build/temp.linux-x86_64-cpython-312/kt_kernel.kt_kernel_ext_Release
+#11 8.500 -- Found Git: /usr/bin/git (found version "2.43.0")
+#11 12.68 /tmp/ktsrc/third_party/llama.cpp/ggml.c: In function ‘ggml_compute_forward_clamp’:
+#11 12.68 /tmp/ktsrc/third_party/llama.cpp/ggml.c:13997:5: warning: enumeration value ‘GGML_TYPE_MXFP4’ not handled in switch [-Wswitch]
+#11 12.68 13997 |     switch (src0->type) {
+#11 12.68       |     ^~~~~~
+#11 104.4 In file included from /tmp/ktsrc/kt-kernel/operators/amx/bf16-moe.hpp:18,
+#11 104.4                  from /tmp/ktsrc/kt-kernel/ext_bindings.cpp:49:
+#11 104.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:324:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 104.4   324 |   static inline std::pair<__m512i, __m512i> fp8x64_to_bf16x64(__m512i bfp8_512) {
+#11 104.4       |                                           ^
+#11 104.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:324:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 104.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:665:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 104.4   665 |   static inline std::pair<__m512i, __m512i> fp8x64_to_bf16x64(__m512i bfp8_512) {
+#11 104.4       |                                           ^
+#11 104.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:665:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 104.5 -- CPUINFER_USE_ASCEND_NPU not set; auto-detected CANN toolkit: NO
+#11 104.5 Detected CPU info: {'vendor': 'amd', 'arch': 'x86_64', 'features': {'AVX512_VNNI', 'AVX512_BF16', 'AVX512_VBMI', 'AVX512_VPOPCNTDQ', 'AVX512', 'AVX2'}, 'raw': {'flags': {'mmx', 'pse36', 'vmcb_clean', 'ibrs_enhanced', 'amd_ppin', 'v_spec_ctrl', 'cr8_legacy', 'cpuid', 'smca', 'fxsr_opt', 'xtopology', 'rdseed', 'rdrand', 'osvw', 'sep', 'pse', 'avx512f', 'lm', 'avx512_vnni', 'tsc_scale', 'cx8', 'avx512_vpopcntdq', 'movbe', 'umip', 'avic', 'bmi1', 'avx512ifma', 'avx512_vbmi2', 'pat', 'clwb', 'avx2', 'pge', 'clzero', 'irperf', 'bpext', 'x2apic', 'rdt_a', 'avx512vl', 'v_vmsave_vmload', 'mmxext', 'fma', 'sse4_1', 'la57', 'x2avic', 'sse2', 'cqm_mbm_total', 'movdiri', 'mba', 'flush_l1d', 'avx512vbmi', 'gfni', 'mca', 'bmi2', 'cmp_legacy', 'xgetbv1', 'rep_good', 'lahf_lm', 'nx', 'tce', 'cqm', 'wbnoinvd', 'misalignsse', 'avx_vnni', 'invpcid', 'sse4a', 'aes', 'mwaitx', 'wdt', 'cpuid_fault', 'fsrm', 'extd_apicid', 'xsaves', 'cqm_mbm_local', 'stibp', 'smap', 'overflow_recov', 'sse4_2', 'arat', 'xsave', 'msr', 'cqm_occup_llc', 'vgif', 'aperfmperf', 'extapic', 'popcnt', 'de', 'ibrs', 'amd_lbr_pmc_freeze', 'perfctr_core', 'avx', 'succor', 'pcid', 'pae', 'erms', 'vaes', 'vnmi', 'avx512bw', 'fsgsbase', 'topoext', '3dnowprefetch', 'pni', 'xsavec', 'pku', 'npt', 'fxsr', 'rdpru', 'decodeassists', 'avx512cd', 'cdp_l3', 'cpb', 'sse', 'cat_l3', 'ibs', 'f16c', 'rdpid', 'fpu', 'ht', 'clflush', 'vme', 'tsc', 'perfctr_nb', 'debug_swap', 'hw_pstate', 'perfmon_v2', 'amd_lbr_v2', 'xsaveerptr', 'tsc_adjust', 'ssse3', 'ospke', 'flushbyasid', 'bus_lock_detect', 'nonstop_tsc', 'adx', 'syscall', 'rapl', 'pausefilter', 'mce', 'svm_lock', 'pclmulqdq', 'ibpb', 'svm', 'avx512_bitalg', 'abm', 'mtrr', 'cppc', 'nrip_save', 'rdtscp', 'xsaveopt', 'smep', 'constant_tsc', 'pfthreshold', 'apic', 'avx512_bf16', 'skinit', 'sha_ni', 'movdir64b', 'cmov', 'cx16', 'perfctr_llc', 'user_shstk', 'avx512dq', 'clflushopt', 'nopl', 'avx512_vp2intersect', 'monitor', 'lbrv', 'cqm_llc', 'ssbd', 'pdpe1gb', 'vpclmulqdq', 'vmmcall'}}}
+#11 104.5 -- Forward CPUINFER_ENABLE_AMX -> -DKTRANSFORMERS_CPU_USE_AMX=OFF
+#11 104.5 -- Forward CPUINFER_ENABLE_AVX512 -> -DKTRANSFORMERS_CPU_USE_AMX_AVX512=ON
+#11 104.5 -- Forward CPUINFER_ENABLE_AVX512_VNNI -> -DLLAMA_AVX512_VNNI=ON
+#11 104.5 -- Forward CPUINFER_ENABLE_AVX512_BF16 -> -DLLAMA_AVX512_BF16=ON
+#11 104.5 -- Forward CPUINFER_ENABLE_AVX512_VBMI -> -DLLAMA_AVX512_VBMI=ON
+#11 104.5 -- CPU detection: vendor=amd arch=x86_64 features=['AVX2', 'AVX512', 'AVX512_BF16', 'AVX512_VBMI', 'AVX512_VNNI', 'AVX512_VPOPCNTDQ']
+#11 104.5 -- Forward CPUINFER_ENABLE_ONEDNN_VNNI -> -DKTRANSFORMERS_CPU_USE_ONEDNN_VNNI=OFF
+#11 104.5 -- CMake configure args:
+#11 104.5     -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/tmp/ktsrc/kt-kernel/build/lib.linux-x86_64-cpython-312/kt_kernel/
+#11 104.5     -DPYTHON_EXECUTABLE=/opt/sglang/bin/python3
+#11 104.5     -DCMAKE_BUILD_TYPE=Release
+#11 104.5     -DLLAMA_NATIVE=OFF
+#11 104.5     -DLLAMA_FMA=ON
+#11 104.5     -DLLAMA_F16C=ON
+#11 104.5     -DLLAMA_AVX=ON
+#11 104.5     -DLLAMA_AVX2=ON
+#11 104.5     -DLLAMA_AVX512=ON
+#11 104.5     -DKTRANSFORMERS_CPU_USE_AMX=OFF
+#11 104.5     -DKTRANSFORMERS_CPU_USE_AMX_AVX512=ON
+#11 104.5     -DLLAMA_AVX512_VNNI=ON
+#11 104.5     -DLLAMA_AVX512_BF16=ON
+#11 104.5     -DLLAMA_AVX512_VBMI=ON
+#11 104.5     -DKTRANSFORMERS_CPU_USE_ONEDNN_VNNI=OFF
+#11 104.5 -- CMake build args: --build . --config Release --parallel 32
+#11 104.5 copying build/lib.linux-x86_64-cpython-312/kt_kernel/kt_kernel_ext.cpython-312-x86_64-linux-gnu.so -> python
+#11 DONE 104.6s
+#14 [stage-1 8/8] RUN python3 /opt/recipe/kt_smoke.py
+#14 2.125 kt-kernel 0.7.0.post4
+#14 2.125 torch 2.13.0+cu130 cuda 13.0
+#14 2.125 extension /opt/sglang/lib/python3.12/site-packages/kt_kernel/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so
+#14 2.125 sgl_kernel 0.4.6.post1; deep_gemm /opt/sglang/lib/python3.12/site-packages/deep_gemm/__init__.py (470 lines)
+#14 2.125 ok: MXFP4 CPU expert path importable, placement mask helper works
+#14 DONE 2.5s
