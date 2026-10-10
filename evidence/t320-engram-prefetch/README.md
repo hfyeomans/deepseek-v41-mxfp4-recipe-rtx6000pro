@@ -1,5 +1,7 @@
 # T3.20 / E36 — Engram rows fetched ahead of use (2026-10-09; round 2 below)
 
+> **Part (c), 2026-10-10:** the next prefill chunk's rows fetched during the current chunk — see [`chunk-ahead/README.md`](chunk-ahead/README.md) (16K / 32K prefill +7.6 / +11 %, default on, overlay `9d481b0b`).
+
 Three serves on the launcher default (219 / 165, D=4, chunk 8192, 64K × 4, `MEM_FRACTION_STATIC=0.96`,
 expandable-after-capture on), one per value of the new knob `ENGRAM_FILE_PREFETCH`
 (`SGLANG_DSV41_ENGRAM_FILE_PREFETCH`), KT timeline on (`KT_TIMELINE=1`), in the order pool → sync → ahead,

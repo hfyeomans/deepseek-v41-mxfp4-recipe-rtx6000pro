@@ -179,6 +179,12 @@ REGISTRY: tuple[Knob, ...] = (
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_FILE_PREFETCH", evidence="evidence/t320-engram-prefetch/"),
     Knob("ENGRAM_FILE_THREADS", "int", "16", "Threads of ENGRAM_FILE_PREFETCH=pool only (E18).",
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_FILE_THREADS", evidence="evidence/e18-engram-file/"),
+    Knob("ENGRAM_CHUNK_AHEAD", "flag", "1",
+         "With ENGRAM_FILE_PREFETCH=ahead, the post-hasher break also hashes the chunked request's next prefill chunk "
+         "and queues both tables' rows behind the current chunk's on the worker, so they land while this chunk's "
+         "layers run instead of 0.3-0.6 s late after the next hasher on a cold page cache (T3.20 (c)). 0 = per-chunk "
+         "fetch only (A/B comparator).",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_CHUNK_AHEAD", evidence="evidence/t320-engram-prefetch/chunk-ahead/"),
     # ---- escape hatches -----------------------------------------------------------------
     Knob("EXTRA_SERVER_ARGS", "str", "", "Appended verbatim (word-split) to the sglang.launch_server command."),
     Knob("EXTRA_DOCKER_ENV", "str", "", "Space-separated KEY=VALUE pairs passed as -e (e.g. CUDA_LAUNCH_BLOCKING=1)."),
@@ -235,6 +241,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_ENGRAM_FILE_DIR={snapshot_dir}",
         f"SGLANG_DSV41_ENGRAM_FILE_PREFETCH={r['ENGRAM_FILE_PREFETCH']}",
         f"SGLANG_DSV41_ENGRAM_FILE_THREADS={r['ENGRAM_FILE_THREADS']}",
+        f"SGLANG_DSV41_ENGRAM_CHUNK_AHEAD={r['ENGRAM_CHUNK_AHEAD']}",
         "SGLANG_OPT_USE_TILELANG_INDEXER=0",
         "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0",
         f"SGLANG_LOGPROB_CHUNK_SIZE={r['SGLANG_LOGPROB_CHUNK_SIZE']}",
@@ -377,7 +384,8 @@ def resolved_line(r: dict[str, str]) -> str:
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
             f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
-            f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} expert_map={emap} image={r['IMAGE']}")
+            f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} engram_chunk_ahead={r['ENGRAM_CHUNK_AHEAD']} "
+            f"expert_map={emap} image={r['IMAGE']}")
 
 
 def diagnostic_env(r: dict[str, str], env: dict[str, str]) -> list[str]:

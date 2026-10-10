@@ -1,0 +1,57 @@
+== off serve 09:46:30
+== benches 09:51:00
+ target tok  actual tok  median prefill tok/s  median TTFT s
+-- cold pass (seed 777)
+     16,384      16,063               2040.40          7.872
+-- warm pass (seed 1277)
+     16,384      15,991               2179.84          7.336
+ target tok  actual tok  median prefill tok/s  median TTFT s
+-- cold pass (seed 1277)
+     32,768      31,996               2259.44         14.164
+-- warm pass (seed 1777)
+     32,768      32,067               2346.73         13.665
+  1         56.84     56.35     58.38       55.12       0.299     n/a
+  4        123.04    122.28    123.85      118.04       0.736     n/a
+== nll 09:55:40
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t320-engram-prefetch/chunk-ahead/off/corpus/*.json
+PASS
+wrote evidence/t320-engram-prefetch/chunk-ahead/off/consistency.json
+== stress 09:56:31
+peak gpu0: 95,716 MiB used, min free 2,171 MiB
+peak gpu1: 95,843 MiB used, min free 2,044 MiB
+wall 117.6 s, all finished: True
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 20.77, "total_s": 21.81, "finish_reason": "stop"}
+ALL PASS
+wrote evidence/t320-engram-prefetch/chunk-ahead/off/consistency-post.json
+health=0
+== off done 09:59:04
+== on serve 09:59:04
+== benches 10:03:51
+ target tok  actual tok  median prefill tok/s  median TTFT s
+-- cold pass (seed 777)
+     16,384      16,063               2195.24          7.317
+-- warm pass (seed 1277)
+     16,384      15,991               2344.65          6.820
+ target tok  actual tok  median prefill tok/s  median TTFT s
+-- cold pass (seed 1277)
+     32,768      31,996               2498.77         12.807
+-- warm pass (seed 1777)
+     32,768      32,067               2612.28         12.312
+  1         57.89     57.38     58.64       56.08       0.299     n/a
+  4        122.46    119.54    125.67      117.57       0.740     n/a
+== nll 10:08:22
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t320-engram-prefetch/chunk-ahead/on/corpus/*.json
+PASS
+wrote evidence/t320-engram-prefetch/chunk-ahead/on/consistency.json
+== stress 10:09:10
+peak gpu0: 95,716 MiB used, min free 2,171 MiB
+peak gpu1: 95,845 MiB used, min free 2,042 MiB
+wall 103.6 s, all finished: True
+PASS multi_needle {"found": 6, "needles": 6, "prompt_tokens": 55206, "ttft_s": 19.09, "total_s": 20.16, "finish_reason": "stop"}
+ALL PASS
+wrote evidence/t320-engram-prefetch/chunk-ahead/on/consistency-post.json
+health=0
+== on done 10:11:28
+== all done 10:11:28
