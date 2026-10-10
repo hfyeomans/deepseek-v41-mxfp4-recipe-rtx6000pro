@@ -21,9 +21,42 @@ Probe without starting anything: `DRY_RUN=1 scripts/serve-hybrid.sh` (resolved l
 `scripts/serve-hybrid.sh --print` (resolved line + the docker command). Regenerate the table
 below with `python3 scripts/serve_config.py markdown`; `scripts/ci.sh` fails when it is stale.
 
+## Profiles (T3.24a)
+
+`PROFILE=<name>` (default `qualified`) loads [`config/profiles/<name>.env`](../config/profiles/)
+between the registry defaults and the environment:
+
+    registry default  <  profile file  <  environment
+
+so an env override is still an experiment on top of a named profile. The `resolved:` line ends
+with `profile=<name> overrides=[KNOB ...]` (the knobs the environment set, in registry order;
+`DRY_RUN` is never listed) and the launch manifest records both (`PROFILE`, `PROFILE_OVERRIDES`),
+so every evidence file names the profile it was measured on and what was changed on top of it.
+
+- A profile is `KNOB=value` lines (`#` comments, optional quotes, `{repo}` = the recipe root).
+  Every key must be a non-removed registry knob under its canonical name; a mistyped value, an
+  unknown or removed knob, a duplicate, or `PROFILE` itself is refused (rc 2, naming file:line).
+- `unsafe` knobs (`ALLOW_UNTESTED_FIT`, `KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNKNOWN_KNOBS`) and the
+  `EXTRA_*` escape hatches are refused in every profile except one whose file is named
+  `developer.env` (`PROFILE=developer`, or a local copy `PROFILE=/path/to/developer.env`).
+- The guards judge the resolved values, so a profile at 226 / 4096 is held to the same E34d /
+  T3.29 refusals as the environment.
+- Shipped: `qualified.env` (the serve shape every headline number was measured on) and
+  `developer.env` (the same shape; the only one allowed to carry the knobs above, all commented
+  out). **The registry stays the single source of truth**: `python3 scripts/serve_config.py
+  check-profiles` (in `ci.sh`) fails when a shipped profile names a value other than the
+  registry default, so `PROFILE=qualified` and an empty environment always mean the same serve.
+  To change the deployment, change the registry default *and* the profile, with the evidence.
+- A value that is a path (`KT_EXPERT_MAP`) is written as `{repo}/config/...` in the shipped
+  profiles; `PROFILE=<path>` (anything containing a `/`) loads a file outside `config/profiles/`.
+- Not the legacy `scripts/serve.sh` / `load-env.sh` `PROFILE` (`4gpu-sglang` / `2gpu-attempt`,
+  the 4-GPU path); those names are refused here as unknown profiles.
+
 <!-- generated: python3 scripts/serve_config.py markdown -->
 | knob | type | default | sink | doc | evidence |
 |---|---|---|---|---|---|
+| `PROFILE` | str | `qualified` | launcher | Profile file to load under the environment: a name -> config/profiles/<name>.env, or a path. Registry default < profile < environment. `qualified` = the serve shape every headline number was measured on (a CI test keeps it equal to the registry defaults, so the two cannot drift); `developer` = the same shape and the only profile allowed to carry EXTRA_* / ALLOW_* knobs. Not the legacy serve.sh PROFILE (4gpu-sglang / 2gpu-attempt). | config/profiles/ |
+| `PROFILE_OVERRIDES` | str | `""` | launcher | Derived, not settable: the knobs the environment set on top of the profile, in registry order (what the `resolved:` line prints as overrides=[...] and the launch manifest records). |  |
 | `IMAGE` | str | `dsv41-kt:recipe` | launcher | Image built by config/Dockerfile.dsv41-kt (dev-dsv41 + pruned kt-kernel). |  |
 | `CONTAINER_NAME` | str | `dsv41-kt` | launcher | docker container name; `docker rm -f` it to stop. |  |
 | `SERVED_MODEL_NAME` | str | `dsv41-flash-hybrid` | server-arg | Name the OpenAI-compatible API serves. |  |

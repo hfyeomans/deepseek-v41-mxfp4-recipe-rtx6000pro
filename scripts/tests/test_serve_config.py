@@ -16,12 +16,18 @@ implementations these are written against:
     unset, which would change every default launch -> test_goldens (print-default).
   - the launcher forwarding env the registry does not know, or the overlay reading env
     the registry does not declare -> test_overlay_reads_declared (skipped without the overlay).
+  - (T3.24a) a profile value silently losing to the registry default, or winning over the
+    environment, so a serve runs a shape its log does not name -> test_profile_resolution_order;
+    a profile carrying a mistyped / unknown / removed / unsafe knob -> test_profile_refusals;
+    the shipped qualified.env drifting from the registry default, so `PROFILE=qualified` and
+    an empty environment stop meaning the same serve -> test_shipped_profiles_match_registry.
 """
 from __future__ import annotations
 
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -153,6 +159,89 @@ def test_registry_declares_everything_launcher_uses() -> None:
             assert (k.container_name or k.name) in " ".join(sc.container_env(sc.resolve({})))
     # every env the launcher forwards with -e comes from the registry, not a hard-coded line
     assert "-e SGLANG_" not in text and '-e "KT_' not in text
+
+
+def _profile(tmp: str, name: str, body: str) -> str:
+    path = Path(tmp) / f"{name}.env"
+    path.write_text(body)
+    return str(path)
+
+
+def test_profile_resolution_order() -> None:
+    # registry default (chunk 8192, 4 slots) < profile (chunk 4096, 1 slot) < environment (slots 2):
+    # a wrong implementation reads the profile over the env, or the default over the profile.
+    with tempfile.TemporaryDirectory() as tmp:
+        p = _profile(tmp, "exp", "# comment\n\nKT_NUM_GPU_EXPERTS=226\nCHUNKED_PREFILL_SIZE=4096\n"
+                                 "MAX_RUNNING_REQUESTS='1'\nKT_EXPERT_MAP={repo}/config/expert-map-el8-mix-219.json\n")
+        r = sc.resolve({"PROFILE": p, "MAX_RUNNING_REQUESTS": "2", "DRY_RUN": "1"})
+        assert r["CHUNKED_PREFILL_SIZE"] == "4096" and r["MAX_RUNNING_REQUESTS"] == "2", r
+        assert r["KT_CPUINFER"] == "16"                              # untouched registry default
+        assert r["KT_EXPERT_MAP"] == str(ROOT / "config/expert-map-el8-mix-219.json")   # {repo} expanded
+        assert r["PROFILE"] == p and r["PROFILE_OVERRIDES"] == "MAX_RUNNING_REQUESTS", r  # DRY_RUN never listed
+        assert sc.resolved_line(r).endswith(f"profile={p} overrides=[MAX_RUNNING_REQUESTS]")
+        # through the launcher: the resolved line names the profile and the overrides (226 / 4096 x 1 is a
+        # qualified rung above 64K, E34b-ii) ...
+        q = launcher([], DRY_RUN="1", PROFILE=p, CONTEXT_LENGTH="262144", MAX_RUNNING_REQUESTS="1")
+        assert q.returncode == 0 and q.stdout.rstrip().endswith(
+            f"profile={p} overrides=[CONTEXT_LENGTH MAX_RUNNING_REQUESTS]"), (q.returncode, q.stdout, q.stderr)
+        # ... and the guards judge the profile's values, not the registry defaults (226 at chunk 8192 is refused)
+        q = launcher([], DRY_RUN="1", PROFILE=p, CHUNKED_PREFILL_SIZE="8192")
+        assert q.returncode == 2 and "KT_NUM_GPU_EXPERTS<=219" in q.stderr, (q.returncode, q.stderr)
+    # the shipped profiles resolve by bare name; an empty env reports no overrides
+    r = sc.resolve({})
+    assert r["PROFILE"] == "qualified" and r["PROFILE_OVERRIDES"] == ""
+    r = sc.resolve({"PROFILE": "developer"})
+    assert r["PROFILE"] == "developer" and r["CHUNKED_PREFILL_SIZE"] == "8192"
+
+
+def test_profile_refusals() -> None:
+    cases = {
+        "unknown key": ("KT_FOO=1\n", "KT_FOO is not a knob"),
+        "removed knob": ("KT_B2_UVA_EXPERTS=1\n", "removed at T3.16j"),
+        "mistyped value": ("KT_CPUINFER=sixteen\n", "KT_CPUINFER='sixteen': expected int"),
+        "malformed line": ("export KT_CPUINFER=16\n", "expected KNOB=value"),
+        "duplicate key": ("KT_CPUINFER=16\nKT_CPUINFER=14\n", "KT_CPUINFER set twice"),
+        "profile sets PROFILE": ("PROFILE=qualified\n", "PROFILE cannot be set from a profile"),
+        "unsafe knob outside developer": ("ALLOW_UNTESTED_FIT=1\n", "only PROFILE=developer (a file named developer.env) may carry it"),
+        "escape hatch outside developer": ("EXTRA_SERVER_ARGS=--log-level debug\n", "only PROFILE=developer"),
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        for name, (body, needle) in cases.items():
+            p = _profile(tmp, "bad", body)
+            try:
+                sc.resolve({"PROFILE": p})
+            except sc.ConfigError as e:
+                assert needle in str(e), (name, e)
+            else:
+                raise AssertionError(f"{name}: profile accepted")
+        # the same knobs are accepted by a file named developer.env, wherever it lives (a local copy)
+        p = _profile(tmp, "developer", "ALLOW_UNTESTED_FIT=1\nEXTRA_SERVER_ARGS=--log-level debug\n")
+        r = sc.resolve({"PROFILE": p})
+        assert r["ALLOW_UNTESTED_FIT"] == "1" and r["EXTRA_SERVER_ARGS"] == "--log-level debug", r
+    # missing profile, empty name, derived knob set by hand: all refused at the launcher
+    for env, needle in (({"PROFILE": "nope"}, "cannot read"), ({"PROFILE": ""}, "name a profile"),
+                        ({"PROFILE_OVERRIDES": "x"}, "derived from the environment")):
+        p = launcher([], DRY_RUN="1", **env)
+        assert p.returncode == 2 and needle in p.stderr, (env, p.returncode, p.stderr)
+
+
+def test_shipped_profiles_match_registry() -> None:
+    names = sorted(p.stem for p in (ROOT / "config/profiles").glob("*.env"))
+    assert names == ["developer", "qualified"], names
+    for name in names:
+        assert sc.profile_drift(name) == [], (name, sc.profile_drift(name))
+        prof = sc.load_profile(name)
+        # the profile states the serve shape explicitly rather than inheriting it silently
+        for knob in ("KT_NUM_GPU_EXPERTS", "KT_EXPERT_MAP", "KT_MAX_DEFERRED", "KT_CPUINFER", "CHUNKED_PREFILL_SIZE",
+                     "CONTEXT_LENGTH", "MAX_RUNNING_REQUESTS", "MEM_FRACTION_STATIC", "KT_REJECT_NAN_ROWS"):
+            assert knob in prof, (name, knob)
+    # drift is detected: a profile that disagrees with the registry names the knob and both values
+    with tempfile.TemporaryDirectory() as tmp:
+        p = _profile(tmp, "drift", "KT_CPUINFER=14\n")
+        assert sc.profile_drift(p) == ["KT_CPUINFER: profile='14' registry='16'"]
+    cp = subprocess.run([sys.executable, str(ROOT / "scripts/serve_config.py"), "check-profiles"],
+                        capture_output=True, text=True, check=False)
+    assert cp.returncode == 0 and cp.stdout.startswith("ok profiles developer qualified"), (cp.stdout, cp.stderr)
 
 
 def test_overlay_reads_declared() -> None:

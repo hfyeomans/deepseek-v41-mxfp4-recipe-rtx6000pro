@@ -62,6 +62,9 @@ if bash "$ROOT/scripts/tests/test-serve-config.sh" >/dev/null; then :; else echo
 # T3.19e typed knob registry: goldens (resolved line + --print byte-identical), unknown/removed/mistyped knobs refused,
 # diagnostics forwarded only when set, every overlay env read declared (overlay part skipped without the checkout).
 if python3 "$ROOT/scripts/tests/test_serve_config.py" >/dev/null; then :; else echo "FAIL serve_config registry tests"; exit 1; fi
+# T3.24a profile files: every config/profiles/*.env loads through the registry and names only registry-default
+# values (the registry is the single source of truth; a profile that drifts from it fails here).
+if python3 "$ROOT/scripts/serve_config.py" check-profiles >/dev/null; then :; else echo "FAIL config/profiles drift from scripts/serve_config.py (python3 scripts/serve_config.py check-profiles)"; exit 1; fi
 if ! diff -q <(python3 "$ROOT/scripts/serve_config.py" markdown) <(sed -n '/<!-- generated: python3 scripts\/serve_config.py markdown -->/,$p' "$ROOT/docs/CONFIG.md" | tail -n +2) >/dev/null; then
   echo "FAIL docs/CONFIG.md is stale: regenerate the table with python3 scripts/serve_config.py markdown"; exit 1
 fi

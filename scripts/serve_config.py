@@ -12,10 +12,21 @@ plus `scripts/tests/test_serve_config.py` pin their messages and the `resolved:`
     python3 scripts/serve_config.py resolved       # the one-line resolved config
     python3 scripts/serve_config.py markdown       # knob table for the docs
     python3 scripts/serve_config.py check-overlay DIR   # every env the overlay reads is declared
+    python3 scripts/serve_config.py check-profiles      # every config/profiles/*.env loads and equals the defaults
 
 Rules: an unknown `KT_*` / `DSPARK*` / `NGRAM*` variable in the environment is refused (rc 2) unless
 `ALLOW_UNKNOWN_KNOBS=1`; a removed knob is refused with the experiment that removed it;
 a value that does not parse as its type is refused. No docker, no GPU, no side effects.
+
+Profiles (T3.24a): `PROFILE=<name>` (default `qualified`) loads `config/profiles/<name>.env`, a
+file of `KNOB=value` lines, between the registry defaults and the caller's environment:
+
+    registry default  <  profile file  <  environment
+
+so an env override is still an experiment on top of a named profile, and the `resolved:` line
+(hence the launch manifest) names the profile and every knob the environment overrode. A profile
+may only name non-removed registry knobs; `unsafe` knobs and the `EXTRA_*` escape hatches are
+refused in every profile except `developer`. `{repo}` in a value expands to the recipe root.
 """
 from __future__ import annotations
 
@@ -61,7 +72,24 @@ def _repo(p: str) -> str:
     return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), p)
 
 
+PROFILE_DIR = _repo("config/profiles")
+DEVELOPER_PROFILE = "developer"          # the only profile allowed to carry unsafe knobs / EXTRA_*
+PROFILE_ONLY_DEVELOPER = ("EXTRA_SERVER_ARGS", "EXTRA_DOCKER_ENV", "EXTRA_DOCKER_ARGS")
+# Knobs that never count as an "override" of the profile: they select or describe the launch
+# rather than change what serves.
+NOT_OVERRIDES = ("PROFILE", "PROFILE_OVERRIDES", "DRY_RUN")
+
 REGISTRY: tuple[Knob, ...] = (
+    # ---- profile (T3.24a) ---------------------------------------------------------------
+    Knob("PROFILE", "str", "qualified",
+         "Profile file to load under the environment: a name -> config/profiles/<name>.env, or a path. "
+         "Registry default < profile < environment. `qualified` = the serve shape every headline number was "
+         "measured on (a CI test keeps it equal to the registry defaults, so the two cannot drift); `developer` "
+         "= the same shape and the only profile allowed to carry EXTRA_* / ALLOW_* knobs. Not the legacy "
+         "serve.sh PROFILE (4gpu-sglang / 2gpu-attempt).", evidence="config/profiles/"),
+    Knob("PROFILE_OVERRIDES", "str", "",
+         "Derived, not settable: the knobs the environment set on top of the profile, in registry order "
+         "(what the `resolved:` line prints as overrides=[...] and the launch manifest records)."),
     # ---- image / paths / network --------------------------------------------------------
     Knob("IMAGE", "str", "dsv41-kt:recipe", "Image built by config/Dockerfile.dsv41-kt (dev-dsv41 + pruned kt-kernel)."),
     Knob("CONTAINER_NAME", "str", "dsv41-kt", "docker container name; `docker rm -f` it to stop."),
@@ -295,8 +323,60 @@ def _parse(knob: Knob, raw: str) -> str:
     return raw
 
 
+_PROFILE_LINE = re.compile(r"^([A-Z][A-Z0-9_]*)=(.*)$")
+
+
+def profile_path(name: str) -> str:
+    """`PROFILE` value -> file: a bare name maps into config/profiles/, anything with a separator is a path."""
+    return name if os.sep in name else os.path.join(PROFILE_DIR, f"{name}.env")
+
+
+def load_profile(name: str) -> dict[str, str]:
+    """Parse config/profiles/<name>.env (or a path) into knob -> raw value; raise ConfigError on anything
+    the registry would not accept: a missing file, a malformed line, a key that is not a (non-removed,
+    canonical-name) knob, a duplicate key, PROFILE itself, or an unsafe / EXTRA_* knob outside `developer`."""
+    path = profile_path(name)
+    try:
+        text = Path(path).read_text()
+    except OSError as e:
+        known = sorted(p.stem for p in Path(PROFILE_DIR).glob("*.env")) if os.path.isdir(PROFILE_DIR) else []
+        raise ConfigError(f"PROFILE={name!r}: cannot read {path} ({e.strerror}); "
+                          f"profiles in config/profiles/: {' '.join(known) or 'none'}") from None
+    repo_root = _repo("")[:-1]
+    developer = Path(path).stem == DEVELOPER_PROFILE   # by file name, so a local copy keeps its status
+    out: dict[str, str] = {}
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        m = _PROFILE_LINE.match(line)
+        if not m:
+            raise ConfigError(f"{path}:{lineno}: expected KNOB=value, got {line!r}")
+        key, value = m.group(1), m.group(2).strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        value = value.replace("{repo}", repo_root)
+        knob = BY_NAME.get(key)
+        if knob is None:
+            raise ConfigError(f"{path}:{lineno}: {key} is not a knob declared in scripts/serve_config.py")
+        if knob.removed:
+            raise ConfigError(f"{path}:{lineno}: {knob.removed}")
+        if key != knob.name:
+            raise ConfigError(f"{path}:{lineno}: {key} is an alias; profiles use the canonical name {knob.name}")
+        if key in NOT_OVERRIDES:
+            raise ConfigError(f"{path}:{lineno}: {key} cannot be set from a profile")
+        if key in out:
+            raise ConfigError(f"{path}:{lineno}: {key} set twice")
+        if (knob.unsafe or key in PROFILE_ONLY_DEVELOPER) and not developer:
+            raise ConfigError(f"{path}:{lineno}: {key} is {'unsafe' if knob.unsafe else 'an escape hatch'}; "
+                              f"only PROFILE={DEVELOPER_PROFILE} (a file named {DEVELOPER_PROFILE}.env) may carry it")
+        out[key] = _parse(knob, value)
+    return out
+
+
 def resolve(env: dict[str, str]) -> dict[str, str]:
-    """Resolve every knob from `env`; raise ConfigError on an unknown, removed or mistyped knob."""
+    """Resolve every knob: registry default < profile file < `env`; raise ConfigError on an unknown,
+    removed or mistyped knob, or a profile the registry would not accept."""
     if env.get("ALLOW_UNKNOWN_KNOBS", "0") != "1":
         unknown = sorted(n for n in env if n.startswith(OWNED_PREFIXES) and n not in BY_NAME)
         if unknown:
@@ -306,15 +386,28 @@ def resolve(env: dict[str, str]) -> dict[str, str]:
     for k in REGISTRY:
         if k.removed and any(n in env for n in (k.name, *k.aliases)):
             raise ConfigError(k.removed)
+    if "PROFILE_OVERRIDES" in env:
+        raise ConfigError("PROFILE_OVERRIDES is derived from the environment, not set in it")
+    profile_name = _parse(BY_NAME["PROFILE"], env.get("PROFILE", BY_NAME["PROFILE"].default))
+    if not profile_name:
+        raise ConfigError("PROFILE='': name a profile (config/profiles/*.env) or leave it unset for `qualified`")
+    profile = load_profile(profile_name)
     out: dict[str, str] = {}
+    overrides: list[str] = []
     for k in REGISTRY:
         if k.removed:
             continue
         src = next((n for n in (k.name, *k.aliases) if n in env), None)
         if src is not None:
             out[k.name] = _parse(k, env[src])
+            if k.name not in NOT_OVERRIDES:
+                overrides.append(k.name)
+        elif k.name in profile:
+            out[k.name] = profile[k.name]
         else:
             out[k.name] = k.default(out) if callable(k.default) else k.default
+    out["PROFILE"] = profile_name
+    out["PROFILE_OVERRIDES"] = " ".join(overrides)
     return out
 
 
@@ -396,7 +489,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"nan_probe_min={r['KT_NAN_PROBE_MIN_TOKENS']} reject_nan_rows={r['KT_REJECT_NAN_ROWS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
             f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} engram_chunk_ahead={r['ENGRAM_CHUNK_AHEAD']} "
-            f"expert_map={emap} image={r['IMAGE']}")
+            f"expert_map={emap} image={r['IMAGE']} profile={r['PROFILE']} overrides=[{r['PROFILE_OVERRIDES']}]")
 
 
 def diagnostic_env(r: dict[str, str], env: dict[str, str]) -> list[str]:
@@ -417,6 +510,18 @@ def shell_fragment(env: dict[str, str]) -> str:
     lines.append("CONTAINER_ENV=" + shlex.quote(" ".join(container_env(r))))
     lines.append("DIAG_ENV=" + shlex.quote(" ".join(diagnostic_env(r, env))))
     return "\n".join(lines) + "\n"
+
+
+def profile_drift(name: str) -> list[str]:
+    """Knobs a shipped profile sets to something other than the registry default (single source of truth:
+    the registry carries type / doc / evidence / default; a shipped profile restates the serve shape and
+    must agree with it). Returns `KNOB: profile=... registry=...` lines; empty means no drift."""
+    profile = load_profile(name)
+    pure: dict[str, str] = {}   # the registry alone, no profile, no environment
+    for k in REGISTRY:
+        if not k.removed:
+            pure[k.name] = k.default(pure) if callable(k.default) else k.default
+    return [f"{k}: profile={v!r} registry={pure[k]!r}" for k, v in profile.items() if v != pure[k]]
 
 
 def markdown_table() -> str:
@@ -465,6 +570,17 @@ def main(argv: list[str]) -> int:
                 print("FAIL undeclared overlay env reads: " + " ".join(sorted(missing)), file=sys.stderr)
                 return 1
             print("ok every overlay env read is declared")
+        elif cmd == "check-profiles":
+            names = sorted(p.stem for p in Path(PROFILE_DIR).glob("*.env"))
+            if not names:
+                print(f"FAIL no profiles under {PROFILE_DIR}", file=sys.stderr); return 1
+            bad = {n: profile_drift(n) for n in names}
+            for n, drift in bad.items():
+                for line in drift:
+                    print(f"FAIL config/profiles/{n}.env drifts from the registry: {line}", file=sys.stderr)
+            if any(bad.values()):
+                return 1
+            print(f"ok profiles {' '.join(names)} load and agree with the registry defaults")
         else:
             print(__doc__, file=sys.stderr); return 2
     except ConfigError as e:

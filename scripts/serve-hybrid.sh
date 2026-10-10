@@ -26,7 +26,9 @@ done
 # combinations the evidence condemned (T3.16b / E34d / T3.29; each refusal names its
 # override), rejects unknown KT_* / DSPARK* / NGRAM* variables and removed knobs, and emits the
 # resolved values this script evals. `python3 scripts/serve_config.py markdown` prints
-# the knob table (docs/CONFIG.md).
+# the knob table (docs/CONFIG.md). PROFILE=<name> (default `qualified`) loads
+# config/profiles/<name>.env under the environment (T3.24a): registry default < profile
+# < environment; the resolved line and the manifest name the profile and every env override.
 cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || exit $?
 # Assigned by the eval (listed for shellcheck): the knobs this script reads directly plus
 # RESOLVED_LINE, CONTAINER_ENV (fixed + forwarded -e pairs) and DIAG_ENV (set-only diagnostics).
