@@ -60,7 +60,7 @@ def test_goldens() -> None:
         "resolved-262k-226-4096.txt": ([], {"DRY_RUN": "1", "CONTEXT_LENGTH": "262144", "MAX_RUNNING_REQUESTS": "1",
                                             "KT_NUM_GPU_EXPERTS": "226", "CHUNKED_PREFILL_SIZE": "4096"}),
         "resolved-dspark-208.txt": ([], {"DRY_RUN": "1", "DSPARK": "1", "KT_NUM_GPU_EXPERTS": "208",
-                                         "MEM_FRACTION_STATIC": "0.935"}),
+                                         "MEM_FRACTION_STATIC": "0.935", "CONTEXT_LENGTH": "65536"}),   # 208 fits 64K x 4 only
         "resolved-ngram.txt": ([], {"DRY_RUN": "1", "NGRAM": "1"}),
         "print-default.txt": (["--print"], {}),
         "print-empties-extras.txt": (["--print"], {"PROFILE": "developer", "CUDA_GRAPH_BS": "", "MAX_TOTAL_TOKENS": "",
@@ -232,7 +232,8 @@ def test_guards_match_launcher_messages() -> None:
                          "Larger multi-slot pools were never run"),
                         ({"CONTEXT_LENGTH": "1048576", "MAX_RUNNING_REQUESTS": "1"},
                          "qualified at MEM_FRACTION_STATIC=0.962"),
-                        ({"NGRAM": "1", "DSPARK": "1", "KT_NUM_GPU_EXPERTS": "208"}, "two speculative algorithms"),
+                        ({"NGRAM": "1", "DSPARK": "1", "KT_NUM_GPU_EXPERTS": "208", "CONTEXT_LENGTH": "65536"},
+                         "two speculative algorithms"),
                         ({"NGRAM": "1", "NGRAM_DRAFT_TOKENS": "13"}, "outside 2..12")):
         try:
             sc.guards(sc.resolve(env))

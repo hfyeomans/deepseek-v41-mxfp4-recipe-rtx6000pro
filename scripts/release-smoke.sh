@@ -6,7 +6,7 @@
 #       run-indexer-tiling-tests.sh, run-moe-workspace-tests.sh, run-prefill-transient-tests.sh.
 #       Refuses to run while the dsv41-kt container exists (it owns both GPUs).
 #
-#   scripts/release-smoke.sh serve --output-dir evidence/<dir> [--context 65536] [--slots 4] [--full]
+#   scripts/release-smoke.sh serve --output-dir evidence/<dir> [--context 262144] [--slots 4] [--full]
 #                            [--url URL] [--model NAME] [--container NAME]   (defaults: serve_config.py endpoint)
 #       Against a server already launched by scripts/serve-hybrid.sh: waits for ready, refuses to
 #       start unless the launch manifest describes the running container and its CONTEXT_LENGTH /
@@ -40,7 +40,7 @@ IDENTITY_CORPUS="${IDENTITY_CORPUS:-$ROOT/evidence/t343b/64k4/corpus}"          
 NLL_Z_MAX="${NLL_Z_MAX:-2.0}"
 NLL_DELTA_MAX="${NLL_DELTA_MAX:-0.002}"
 NLL_REQUIRE_IDENTICAL="${NLL_REQUIRE_IDENTICAL:-1}"   # 0 for a serve whose expert map / experts / chunk differ from IDENTITY_CORPUS
-CONTEXT=65536; SLOTS=4; FULL=0; OUT=""
+CONTEXT=262144; SLOTS=4; FULL=0; OUT=""
 
 usage() { awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"; exit 2; }
 mode="${1:-}"; shift || true
@@ -158,7 +158,7 @@ PY
   if [[ $FULL -eq 1 ]]; then
     # Each bench runs under a 500 ms nvidia-smi sampler (power, clocks, temperature, throttle
     # reasons); summarize-power.py reduces the CSVs to busy-median watts / max temperature.
-    # shellcheck disable=SC2329  # invoked through gate()
+    # shellcheck disable=SC2329,SC2317  # invoked through gate(); SC2317 is the pre-0.10 id of the same warning
     sampled() { bash "$ROOT/scripts/gpu-power-sample.sh" "$OUT/power-$1.csv" -- "${@:2}"; }
     gate "decode C1" sampled decode-c1 python3 "$ROOT/scripts/bench-decode.py" --url "$URL" --model "$MODEL" --concurrency 1 --fixture-offset 6 \
       --max-tokens 512 --runs 6 --warmup 1 --distinct-prompts --seed 4242 --output "$OUT/c1.json" > "$OUT/c1.txt" 2>&1

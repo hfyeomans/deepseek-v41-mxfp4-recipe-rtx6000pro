@@ -51,11 +51,11 @@ restore() {
   # Kill the sampler first: a bench that dies mid-cap (first E8b run: server not up)
   # otherwise leaves a root nvidia-smi loop that keeps appending to the CSV forever and
   # NUL-fills any later run's file of the same name.
-  [ -n "$SAMPLER_PID" ] && kill "$SAMPLER_PID" 2>/dev/null || true
+  if [ -n "$SAMPLER_PID" ]; then kill "$SAMPLER_PID" 2>/dev/null || true; fi
   for g in $GPUS; do nvidia-smi -i "$g" -pl "$DEFAULT_PL" >/dev/null || true; done
   echo "restored -pl $DEFAULT_PL"
   # Running under sudo leaves root-owned evidence; hand it back to the invoking user.
-  [ -n "${SUDO_USER:-}" ] && chown -R "$SUDO_USER" "$OUT" || true
+  if [ -n "${SUDO_USER:-}" ]; then chown -R "$SUDO_USER" "$OUT" || true; fi
 }
 trap restore EXIT
 

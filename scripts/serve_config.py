@@ -217,20 +217,21 @@ REGISTRY: tuple[Knob, ...] = (
          "only has to leave room for prefill transients and capture). 0.962 is the qualified value for the 512K x 1 "
          "rung, where 0.96 silently caps the pool at 505,856 tokens and 400s longer inputs.",
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/b-ii/512k/, evidence/t329/"),
-    Knob("CONTEXT_LENGTH", "int", "65536",
-         "Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K/1M x 1 are qualified rungs "
-         "(T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962, guarded) and 262K x 4 is qualified "
-         "with the expandable lever (T3.31 idea 8, re-qualified 2026-10-10 at a 110-180 MiB VRAM trough: a per-rung "
-         "override, not a default). Values above 1,048,576 are refused: the ladder stops there (T3.43a / R24).",
-         sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/, evidence/t329/README.md"),
+    Knob("CONTEXT_LENGTH", "int", "262144",
+         "Served context. 32K -> 64K on 2026-10-07 (E34a + soak); 64K -> 262K x 4 on 2026-10-11 (T3.37 / T3.46: the "
+         "262K x 4 pool costs no prefill or decode against 64K x 4 on the T3.39 overlay, 12 gates + E27-shape soak passed, "
+         "stress trough 596 MiB after T3.39 removed the per-call FlashInfer workspace). 64K x 4 remains a per-rung "
+         "override (CONTEXT_LENGTH=65536); 128K/512K/1M x 1 are single-slot rungs (T3.29; 512K and 1M need "
+         "MEM_FRACTION_STATIC=0.962, guarded). Values above 1,048,576 are refused: the ladder stops there (T3.43a / R24).",
+         sink=SERVER_ARG, evidence="evidence/t337/, evidence/e34-indexer-memory/, evidence/t329/README.md"),
     Knob("CHUNKED_PREFILL_SIZE", "int", "8192",
          "Prefill chunk. 4096 -> 8192 on 2026-10-08 together with 226 -> 219 experts (E34d-ii, T3.28): first-turn "
          "TTFT is what chunk buys for long coding sessions. 16384 is +22 % prefill but costs 14 experts (E34d-iv); "
          "2048 frees ~1.5 GB per rank but costs 40 % of prefill (E29). The fused-MoE prefill workspace scales with "
          "the chunk (E34d), so 8192 only fits beside <= 219 experts.",
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/d-ii/, evidence/t328/README.md"),
-    Knob("MAX_RUNNING_REQUESTS", "int", "4", "Decode slots. Above 64K context: 1 at any qualified rung (T3.29), "
-         "up to 4 at 262K with the expandable lever (T3.31 idea 8); 512K / 1M x >1 never run.",
+    Knob("MAX_RUNNING_REQUESTS", "int", "4", "Decode slots. 4 at the 262K default and at 64K; above 262K: 1 "
+         "(T3.29; 512K / 1M x >1 never run). 262K x 4 needs the expandable lever (T3.31 idea 8; default on).",
          sink=SERVER_ARG, evidence="evidence/t329/README.md"),
     Knob("SGLANG_LOGPROB_CHUNK_SIZE", "int", "512",
          "A return_logprob request materialises chunk x 129,280-vocab fp32 logits (1.06 GB at SGLang's 2048) and "
@@ -533,17 +534,19 @@ def guards(r: dict[str, str]) -> None:
                 f"beside KT_NUM_GPU_EXPERTS<=219 (E22/E28/E34d-ii; at 226 the fused-MoE prefill workspace OOMs on the "
                 "first 16K prefill, E34d, and expandable_segments breaks the custom all-reduce). Set ALLOW_UNTESTED_FIT=1 "
                 "to try, then run stress-kv-full.py followed by nll-score.py --corpus.")
-        # T3.29 / T3.31: above 64K the multi-slot rung that is qualified is 262K x <=4 at 219 / 8192 with the
-        # expandable-segments lever (idea 8; re-qualified on overlay 682fc6a0, 2026-10-10, every gate passed with
-        # a 110-180 MiB free-VRAM trough during the 4 x 253K stress: at the ceiling, a per-rung override, not a
-        # default). Without the lever 262K x 4 OOMs on the third chunk (fragmentation); 512K / 1M x >1 never run.
+        # T3.29 / T3.31 / T3.37: above 64K the multi-slot rung that is qualified is 262K x <=4 at 219 / 8192 with
+        # the expandable-segments lever (idea 8; re-qualified on overlay 682fc6a0, 2026-10-10, at a 110-180 MiB
+        # free-VRAM trough; on the T3.39 overlay the trough is 596-665 MiB and the rung became the launcher default,
+        # T3.46, 2026-10-11). Without the lever 262K x 4 OOMs on the third chunk (fragmentation); 512K / 1M x >1
+        # never run.
         lever = r["SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE"] == "1"
         if ctx > 65536 and slots > 1 and not (ctx <= 262144 and slots <= 4 and chunk == 8192 and experts == 219 and lever):
             raise ConfigError(
                 f"CONTEXT_LENGTH={ctx} with MAX_RUNNING_REQUESTS={slots}: above 64K the qualified rungs are "
                 "262K / 512K x 1 at 219 / 8192 (T3.29; 512K needs MEM_FRACTION_STATIC=0.962) and 262K x <=4 at 219 / 8192 "
                 "with SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE=1 (T3.31 idea 8, re-qualified 2026-10-10; without the "
-                "lever it OOMs on the third chunk). Larger multi-slot pools were never run. Set MAX_RUNNING_REQUESTS=1, or "
+                "lever it OOMs on the third chunk). Larger multi-slot pools were never run. Set MAX_RUNNING_REQUESTS=1, "
+                "CONTEXT_LENGTH=65536 (the 64K x 4 rung admits every placement the fit guards accept), or "
                 "PROFILE=developer ALLOW_UNTESTED_FIT=1 to try (then stress-kv-full.py at that concurrency, nll-score.py --corpus).")
         # T3.29: at 0.96 the 512K x 1 pool silently caps at 505,856 tokens (prompts near 512K then 400) and the
         # 1M x 1 rung was only ever run at 0.962 (E34d-v (ii)); both rungs are single-slot, so the only other

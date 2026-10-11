@@ -251,7 +251,7 @@ DeepSeek-V4.1 reasoning is on by default at effort 50 in both engines. Every cli
 
 ## Using the server from a coding agent (OMP, Amp, any OpenAI-compatible client)
 
-The server is a plain OpenAI-compatible endpoint: `http://127.0.0.1:8000/v1`, model `dsv41-flash-hybrid`, no key unless the serve was launched with `API_KEY_FILE` (then `Authorization: Bearer <file content>`). Context is whatever rung you launched (64K default; `CONTEXT_LENGTH=262144` for 262K × 4), so tell the client the same number or it will pack prompts the server refuses. Reasoning is on by default (previous entry): a coding-agent client should either send `chat_template_kwargs: {"thinking": false}` or expect `reasoning_content` in the stream.
+The server is a plain OpenAI-compatible endpoint: `http://127.0.0.1:8000/v1`, model `dsv41-flash-hybrid`, no key unless the serve was launched with `API_KEY_FILE` (then `Authorization: Bearer <file content>`). Context is whatever rung you launched (262K × 4 default since 2026-10-11; `CONTEXT_LENGTH=65536` for 64K × 4), so tell the client the same number or it will pack prompts the server refuses. Reasoning is on by default (previous entry): a coding-agent client should either send `chat_template_kwargs: {"thinking": false}` or expect `reasoning_content` in the stream.
 
 OMP (`omp`, oh-my-pi) — add to `~/.omp/agent/models.yml` under `providers:` (explicit entries win over `/v1/models` discovery, which is how the context window and the DeepSeek reasoning field get set):
 
@@ -263,7 +263,7 @@ OMP (`omp`, oh-my-pi) — add to `~/.omp/agent/models.yml` under `providers:` (e
     models:
       - id: dsv41-flash-hybrid
         name: DeepSeek-V4.1-Flash hybrid (local SGLang)
-        contextWindow: 262144      # match CONTEXT_LENGTH of the running serve (65536 at the default rung)
+        contextWindow: 262144      # match CONTEXT_LENGTH of the running serve (262144 at the default rung since T3.46)
         maxTokens: 32768
         reasoning: true
         compat:

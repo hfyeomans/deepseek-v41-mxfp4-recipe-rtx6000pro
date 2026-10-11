@@ -2,14 +2,14 @@
   "_comment": "Rungs shown in the generated headline table of docs/BENCHMARKS.md (scripts/benchmarks_headline.py). Each dir must hold a manifest.json and the stamped JSON files the script reads (c1/c4/prefill-16k/prefill-32k/verify/stress-kv/corpus/pooled). Replace a dir only with a newer serve that passed every gate; the table reports whatever the manifest says the serve was.",
   "rows": [
     {
-      "rung": "64K × 4 (launcher default)",
-      "dir": "evidence/t339/window2/qual",
-      "note": "T3.39 window 2 qualification; the headline serve"
+      "rung": "262K × 4 (launcher default)",
+      "dir": "evidence/t337/262k4-smoke",
+      "note": "T3.37 qualification on the T3.39 overlay; launcher default since T3.46 (2026-10-11)"
     },
     {
-      "rung": "262K × 4 (per-rung override)",
-      "dir": "evidence/t329/262k-4slot-682fc6a0",
-      "note": "T3.29 re-qualification; CONTEXT_LENGTH=262144 on the default profile"
+      "rung": "64K × 4 (per-rung override)",
+      "dir": "evidence/t339/window2/qual",
+      "note": "T3.39 window 2 qualification; the launcher default until 2026-10-11 (CONTEXT_LENGTH=65536)"
     },
     {
       "rung": "1M × 1 (per-rung override)",

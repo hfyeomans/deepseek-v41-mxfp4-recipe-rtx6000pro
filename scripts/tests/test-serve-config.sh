@@ -28,7 +28,8 @@ run_case() {
 }
 
 # Qualified profiles (accepted)
-run_case ok "default 64K x 4 at 219/8192" "" CONTEXT_LENGTH=65536
+run_case ok "default 262K x 4 at 219/8192 with the lever (T3.46)" ""
+run_case ok "64K x 4 at 219/8192 (per-rung override since T3.46)" "" CONTEXT_LENGTH=65536
 run_case ok "262K x 1 at 219/8192 (T3.29)" "" CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=1
 run_case ok "512K x 1 at 219/8192, fraction 0.962 (T3.29)" "" CONTEXT_LENGTH=524288 MAX_RUNNING_REQUESTS=1 MEM_FRACTION_STATIC=0.962
 run_case ok "1M x 1 at 219/8192, fraction 0.962 (E34d-v (ii))" "" CONTEXT_LENGTH=1048576 MAX_RUNNING_REQUESTS=1 MEM_FRACTION_STATIC=0.962

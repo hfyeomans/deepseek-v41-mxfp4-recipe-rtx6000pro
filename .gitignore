@@ -70,3 +70,6 @@ evidence/**/expert_distribution_recorder_*.pt
 evidence/t38/round2/*/*.pt
 evidence/t38b/histogram-el8-mix/*/*.pt
 evidence/t38b/soak-default/*/*.pt
+
+# torch.profiler traces (T3.37 profiling pair, 17 MB each); the kernel summaries beside them are the evidence
+evidence/**/*.trace.json.gz
