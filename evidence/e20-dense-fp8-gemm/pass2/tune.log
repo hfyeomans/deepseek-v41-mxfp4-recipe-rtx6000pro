@@ -1,0 +1,24 @@
+device NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition, torch 2.13.0+cu130, triton 3.7.1
+search space: small-M 480 configs, large-M 144 configs
+N= 16384 K= 1280 M=   32: default     59.8 us -> best     38.9 us ( 1.54x,   541.1 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 4, 'SPLIT_K': 2}
+N= 16384 K= 1280 M=   64: default     63.4 us -> best     55.0 us ( 1.15x,   383.1 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SWAP_AB': True}
+N= 16384 K= 1280 M=  128: default     84.0 us -> best     67.2 us ( 1.25x,   313.4 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 4}
+N=  1792 K= 5120 M=   32: default     86.0 us -> best     26.6 us ( 3.23x,   346.4 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 16}
+N=  1792 K= 5120 M=   64: default     98.1 us -> best     30.7 us ( 3.19x,   299.8 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 8}
+N=  1792 K= 5120 M=  128: default     96.3 us -> best     41.0 us ( 2.35x,   224.9 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 4}
+N=  2304 K= 5120 M=   32: default     88.1 us -> best     28.7 us ( 3.07x,   413.0 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 4, 'SWAP_AB': True, 'SPLIT_K': 16}
+N=  2304 K= 5120 M=   64: default     98.3 us -> best     36.9 us ( 2.66x,   321.0 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 8}
+N=  2304 K= 5120 M=  128: default    100.3 us -> best     49.3 us ( 2.03x,   240.2 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 4}
+N= 25600 K= 6144 M=   32: default    440.3 us -> best    284.7 us ( 1.55x,   554.6 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 3, 'SWAP_AB': True}
+N= 25600 K= 6144 M=   64: default    476.2 us -> best    366.5 us ( 1.30x,   430.8 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 3}
+N= 25600 K= 6144 M=  128: default    648.5 us -> best    532.5 us ( 1.22x,   296.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5}
+N=  4096 K= 1280 M=   32: default     32.8 us -> best     18.4 us ( 1.78x,   285.6 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SPLIT_K': 8}
+N=  4096 K= 1280 M=   64: default     34.8 us -> best     20.5 us ( 1.69x,   256.2 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 4, 'SWAP_AB': True, 'SPLIT_K': 8}
+N=  4096 K= 1280 M=  128: default     38.9 us -> best     26.6 us ( 1.46x,   197.9 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5}
+N=  5120 K= 1152 M=   32: default     32.8 us -> best     18.4 us ( 1.78x,   321.2 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5, 'SPLIT_K': 4}
+N=  5120 K= 1152 M=   64: default     34.7 us -> best     24.5 us ( 1.42x,   242.0 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 4}
+N=  5120 K= 1152 M=  128: default     38.9 us -> best     26.6 us ( 1.46x,   222.4 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5}
+N=  5120 K= 4096 M=   32: default     90.1 us -> best     40.4 us ( 2.23x,   521.3 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 3, 'SPLIT_K': 8}
+N=  5120 K= 4096 M=   64: default     92.1 us -> best     51.2 us ( 1.80x,   411.2 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 4}
+N=  5120 K= 4096 M=  128: default    100.4 us -> best     79.9 us ( 1.26x,   263.6 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SWAP_AB': True}
+done in 363.5 s; configs in /tmp/e20c/configs

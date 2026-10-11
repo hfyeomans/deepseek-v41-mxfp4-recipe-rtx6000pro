@@ -1,0 +1,206 @@
+[2026-10-09 04:38:28] Freezing GC in Tokenizer Manager process. gen0: 776->0, gen1: 2148->0, gen2: 1087132->0
+[2026-10-09 04:38:28] INFO:     127.0.0.1:43714 - "POST /freeze_gc HTTP/1.1" 200 OK
+[2026-10-09 04:38:28] The server is fired up and ready to roll!
+[2026-10-09 04:38:28 TP1] Freezing GC in Scheduler process. gen0: 289->0, gen1: 744->0, gen2: 1182402->0
+[2026-10-09 04:38:28 TP0] Freezing GC in Scheduler process. gen0: 289->0, gen1: 744->0, gen2: 1188242->0
+[2026-10-09 04:38:28] Freezing GC in Detokenizer Manager process. gen0: 358->0, gen1: 2->0, gen2: 902492->0
+[2026-10-09 04:38:47 TP1] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 12.18 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[2026-10-09 04:38:47 TP0] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 12.27 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[rank1]:[W1009 04:38:52.542047729 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 335544320 bytes (free: 278659072, total: 102066159616).
+[rank1]:[W1009 04:38:54.642088462 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 419430400 bytes (free: 133955584, total: 102066159616).
+[rank1]:[W1009 04:38:56.015635954 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 671088640 bytes (free: 50069504, total: 102066159616).
+[rank0]:[W1009 04:38:56.028201870 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 671088640 bytes (free: 5242880, total: 102069305344).
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[rank0]:[W1009 04:38:57.164074563 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 335544320 bytes (free: 95420416, total: 102069305344).
+[rank1]:[W1009 04:38:59.207705827 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 335544320 bytes (free: 29097984, total: 102066159616).
+[rank0]:[W1009 04:39:00.791536922 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 245366784 bytes (free: 189792256, total: 102069305344).
+[rank0]:[W1009 04:39:00.825871989 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 245366784 bytes (free: 191889408, total: 102069305344).
+[2026-10-09 04:39:00 TP0] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5696, in run_scheduler_process
+    scheduler.run_event_loop()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1839, in run_event_loop
+    dispatch_event_loop(self)
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542, in dispatch_event_loop
+    scheduler.event_loop_overlap()
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937, in event_loop_overlap
+    batch_result = self.run_batch(batch)
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181, in run_batch
+    batch_result = self.model_worker.forward_batch_generation(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636, in forward_batch_generation
+    out = self.model_runner.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1652, in forward
+    output = self._forward_raw(
+             ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1839, in _forward_raw
+    ret = self.eager_runner.execute(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 227, in execute
+    return self._execute_extend(forward_batch, pp_proxy_tensors)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 371, in _execute_extend
+    ret = model_runner.model.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4572, in forward
+    hidden_states = self.model.forward(
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4218, in forward
+    hidden_states, last_pre, tail = self._forward_layers_hc_pre_from_prev(
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3901, in _forward_layers_hc_pre_from_prev
+    hidden_states, prev_pre = self.layers[i].forward_hc_pre_from_prev(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3045, in forward_hc_pre_from_prev
+    x = self._run_moe_ffn_dp_sync(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3166, in _run_moe_ffn_dp_sync
+    hidden_states = self.mlp(
+                    ^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 969, in forward
+    return self.forward_normal(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 1275, in forward_normal
+    final_hidden_states = self.experts(
+                          ^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1523, in forward
+    return self.forward_impl(
+           ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1544, in forward_impl
+    combine_input = self.run_moe_core(
+                    ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1615, in run_moe_core
+    return self.quant_method.apply(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_ep_wrapper.py", line 691, in apply
+    output = output + self.streamer.run_layer(self, layer, dispatch_output, streamed_ids)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_prefill.py", line 568, in run_layer
+    self.slots.load(self.host[buf][self.tp_rank])
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_prefill.py", line 329, in load
+    dst.copy_((raw.view(torch.int16).to(torch.int32) >> 7).to(torch.uint8))
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 234.00 MiB. GPU 0 has a total capacity of 95.06 GiB of which 183.00 MiB is free. Including non-PyTorch memory, this process has 94.86 GiB memory in use. Of the allocated memory 92.83 GiB is allocated by PyTorch, with 58.00 MiB allocated in private pools (e.g., CUDA Graphs), and 817.84 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+
+[2026-10-09 04:39:00] SIGQUIT received. signum=None, frame=None. It usually means one child failed.
+[2026-10-09 04:39:00] Sleeping 5 seconds before crash diagnostics to let GPU activity settle.
+[rank0]:[W1009 04:39:01.742183131 ProcessGroupNCCL.cpp:1624] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[2026-10-09 04:39:01 TP1] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5696, in run_scheduler_process
+    scheduler.run_event_loop()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1839, in run_event_loop
+    dispatch_event_loop(self)
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542, in dispatch_event_loop
+    scheduler.event_loop_overlap()
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937, in event_loop_overlap
+    batch_result = self.run_batch(batch)
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181, in run_batch
+    batch_result = self.model_worker.forward_batch_generation(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636, in forward_batch_generation
+    out = self.model_runner.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1652, in forward
+    output = self._forward_raw(
+             ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1839, in _forward_raw
+    ret = self.eager_runner.execute(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 227, in execute
+    return self._execute_extend(forward_batch, pp_proxy_tensors)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/eager_runner.py", line 371, in _execute_extend
+    ret = model_runner.model.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4572, in forward
+    hidden_states = self.model.forward(
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 4218, in forward
+    hidden_states, last_pre, tail = self._forward_layers_hc_pre_from_prev(
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3901, in _forward_layers_hc_pre_from_prev
+    hidden_states, prev_pre = self.layers[i].forward_hc_pre_from_prev(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3045, in forward_hc_pre_from_prev
+    x = self._run_moe_ffn_dp_sync(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v4.py", line 3166, in _run_moe_ffn_dp_sync
+    hidden_states = self.mlp(
+                    ^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 969, in forward
+    return self.forward_normal(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/models/deepseek_v2.py", line 1275, in forward_normal
+    final_hidden_states = self.experts(
+                          ^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1523, in forward
+    return self.forward_impl(
+           ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1544, in forward_impl
+    combine_input = self.run_moe_core(
+                    ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/fused_moe_triton/layer.py", line 1615, in run_moe_core
+    return self.quant_method.apply(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_ep_wrapper.py", line 691, in apply
+    output = output + self.streamer.run_layer(self, layer, dispatch_output, streamed_ids)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_prefill.py", line 598, in run_layer
+    self._submit_export(nxt, self.pipeline.current_buf)
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_prefill.py", line 513, in _submit_export
+    self._barrier()
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/moe/kt_prefill.py", line 502, in _barrier
+    torch.distributed.barrier(group=self.cpu_group)
+  File "/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/sglang/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 5356, in barrier
+    work.wait()
+RuntimeError: [/__w/pytorch/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:553] Connection closed by peer [<docker-bridge-ip>]:40162. This is typically caused by a remote worker crashing. Check the logs of the remote worker before reporting an error. GLHF! 🏖️

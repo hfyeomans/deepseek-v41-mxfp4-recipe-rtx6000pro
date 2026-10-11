@@ -1,0 +1,5 @@
+model=glm-5.3-flash-local  runs=5 warmup=2 max_tokens=512
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1        133.32     58.54    137.65      130.06       0.100  41.59%
+ 16        622.23    618.69    626.23      571.88       0.610  36.99%
+ 32       1161.48   1152.89   1173.15      578.92       0.875  37.33%

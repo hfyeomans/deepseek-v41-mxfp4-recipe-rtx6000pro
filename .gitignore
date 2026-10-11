@@ -1,24 +1,72 @@
-# Local deployment state
+# ---- Local deployment state / secrets ------------------------------------------------------
 .env
+.env.*
+!config/example.env
+*.key
+*.pem
+secrets/
 .cache/
-*.log
-__pycache__/
-*.pyc
-.DS_Store
 results/
 .firecrawl/
+
+# ---- Logs: local serve / bench logs are not evidence; the ones under evidence/ are ---------
+*.log
+!evidence/**/*.log
+
+# ---- Python ----------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# ---- Build / kernel artefacts (kernels/e13 keeps only the .cu source) -------------------------
 kernels/e13/mxf4_grouped_gemm_*
 !kernels/e13/mxf4_grouped_gemm.cu
+build/
+*.o
+*.so
+*.cubin
+*.ptx
+*.fatbin
+.nv/
 
-# Owner BIOS photographs (contain device labels / identifiers)
+# ---- Profiler / scratch output -------------------------------------------------------------
+*.nsys-rep
+*.ncu-rep
+*.sqlite
+*.tmp
+*.bak
+*.orig
+*.rej
+*~
+*.swp
+
+# ---- Editors / OS ----------------------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Model weights never belong in the repo (MODEL_DIR is outside it) ------------------------
+*.safetensors
+*.gguf
+
+# ---- Owner photographs (device labels / identifiers, hostname) --------------------------------
 bios-pictures/
 bios-pictures-2nd-pass/
 bios-pictures-3rd-pass/
-# Owner console/boot photographs (show the hostname)
 *.heic
 *.HEIC
 
-# T3.8 round-2 raw recorder dumps (3.9 GB of per-pass [1000,40,384] int32 tensors; the summed counts are in analysis/counts-and-maps.json)
+# ---- Raw recorder dumps (T3.42): 58-61 MB per pass, 3.3 GB over T3.8 round 1/2 and T3.8b.
+# The summed counts live in each run's analysis/counts-and-maps.json; the small per-layer
+# dumps under evidence/t319/a/dumps/ (6 MB total) stay tracked.
+evidence/**/expert_distribution_recorder_*.pt
 evidence/t38/round2/*/*.pt
 evidence/t38b/histogram-el8-mix/*/*.pt
 evidence/t38b/soak-default/*/*.pt

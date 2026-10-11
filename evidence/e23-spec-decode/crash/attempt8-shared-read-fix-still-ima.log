@@ -1,0 +1,181 @@
+[2026-09-22 19:46:26] The server is fired up and ready to roll!
+/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py:454: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response
+  return await original_handler(ORJSONRequest(request.scope, request.receive))
+[2026-09-22 19:47:14] INFO:     <docker-bridge-ip>:49832 - "GET /v1/models HTTP/1.1" 200 OK
+[2026-09-22 19:47:15 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 5.05
+[2026-09-22 19:47:15] INFO:     <docker-bridge-ip>:49834 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-22 19:47:17 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 1, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 155.81
+[2026-09-22 19:47:17] INFO:     <docker-bridge-ip>:49838 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-22 19:47:20 TP0] Prefill batch, #new-seq: 1, #new-token: 512, #cached-token: 0, full token usage: 0.00, swa token usage: 0.03, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 177.10
+[2026-09-22 19:47:20 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.03, accept len: 2.05, accept rate: 0.53, cuda graph: True, gen throughput (token/s): 1.12, #queue-req: 0
+[2026-09-22 19:47:23] INFO:     <docker-bridge-ip>:49848 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-22 19:47:35 TP0] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 12.30 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[2026-09-22 19:47:36 TP1] Triton kernel '_hc_mix_reduce_sinkhorn_kernel' took 12.43 s to compile after serving started. Serving-time compilation can stall the engine; pre-compile it during engine init.
+[2026-09-22 19:47:39 TP0] [KT probe] TP0 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-22 19:47:39 TP1] [KT probe] TP1 forward: 4096 MoE tokens, streamed=True, threshold=1024
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-09-22 19:47:44 TP0] [KT probe] TP0 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-22 19:47:44 TP1] [KT probe] TP1 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-22 19:47:49 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.03, swa token usage: 0.24, #running-req: 0, #queue-req: 0, #pending-token: 9367, cuda graph: False, input throughput (token/s): 139.69
+[2026-09-22 19:47:49 TP0] [KT probe] TP0 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-22 19:47:49 TP1] [KT probe] TP1 forward: 4096 MoE tokens, streamed=True, threshold=1024
+[2026-09-22 19:47:54 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.04, swa token usage: 0.24, #running-req: 0, #queue-req: 0, #pending-token: 5271, cuda graph: False, input throughput (token/s): 887.56
+[2026-09-22 19:47:54 TP0] [KT probe] TP0 forward: 1175 MoE tokens, streamed=True, threshold=1024
+[2026-09-22 19:47:54 TP1] [KT probe] TP1 forward: 1175 MoE tokens, streamed=True, threshold=1024
+[2026-09-22 19:47:59 TP0] Prefill batch, #new-seq: 1, #new-token: 4096, #cached-token: 0, full token usage: 0.05, swa token usage: 0.09, #running-req: 0, #queue-req: 0, #pending-token: 1175, cuda graph: False, input throughput (token/s): 823.04
+[2026-09-22 19:47:59 TP0] Prefill batch, #new-seq: 1, #new-token: 1280, #cached-token: 0, full token usage: 0.05, swa token usage: 0.03, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 17621.64
+[2026-09-22 19:47:59] INFO:     <docker-bridge-ip>:43884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-09-22 19:47:59 TP1] AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+
+Fail when using backend: breakable for prefill runner.
+Possible suggestions:
+1. change to tc_piecewise by --cuda-graph-backend-prefill=tc_piecewise
+2. disable the prefill CUDA graph by --cuda-graph-backend-prefill=disabled
+3. if it is an OOM problem, set --mem-fraction-static to a smaller value (e.g., 0.8 or 0.7) or set --cuda-graph-max-bs-prefill to a smaller value (e.g., 2048)
+Open an issue on GitHub https://github.com/sgl-project/sglang/issues/new/choose 
+
+[2026-09-22 19:47:59 TP0] AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+
+Fail when using backend: breakable for prefill runner.
+Possible suggestions:
+1. change to tc_piecewise by --cuda-graph-backend-prefill=tc_piecewise
+2. disable the prefill CUDA graph by --cuda-graph-backend-prefill=disabled
+3. if it is an OOM problem, set --mem-fraction-static to a smaller value (e.g., 0.8 or 0.7) or set --cuda-graph-max-bs-prefill to a smaller value (e.g., 2048)
+Open an issue on GitHub https://github.com/sgl-project/sglang/issues/new/choose 
+
+[2026-09-22 19:47:59 TP1] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5696, in run_scheduler_process
+    scheduler.run_event_loop()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1839, in run_event_loop
+    dispatch_event_loop(self)
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542, in dispatch_event_loop
+    scheduler.event_loop_overlap()
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937, in event_loop_overlap
+    batch_result = self.run_batch(batch)
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181, in run_batch
+    batch_result = self.model_worker.forward_batch_generation(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 532, in forward_batch_generation
+    return self._forward_decode(batch, on_publish, grammar_barrier)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 808, in _forward_decode
+    target_verify = self._verify_executor.run_non_compact(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 275, in run_non_compact
+    result = self._forward_prepared_verify(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 305, in _forward_prepared_verify
+    target_out = self.target_worker.forward_batch_generation(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636, in forward_batch_generation
+    out = self.model_runner.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1645, in forward
+    output = self._forward_raw(
+             ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1777, in _forward_raw
+    ret = self.decode_cuda_graph_runner.execute(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py", line 1536, in execute
+    output = self.backend.replay(self._replay_graph_key, forward_batch)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py", line 332, in replay
+    self._graphs[shape_key].replay()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py", line 288, in replay
+    self._break_fns[i]()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py", line 258, in replay_fn
+    new_out = captured_inner(*captured_args, **captured_kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/engram.py", line 784, in _engram_file_rows
+    ids = indices.reshape(-1).to("cpu", dtype=torch.int64)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+
+
+[2026-09-22 19:47:59 TP0] Scheduler hit an exception: Traceback (most recent call last):
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5696, in run_scheduler_process
+    scheduler.run_event_loop()
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1839, in run_event_loop
+    dispatch_event_loop(self)
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 5542, in dispatch_event_loop
+    scheduler.event_loop_overlap()
+  File "/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 1937, in event_loop_overlap
+    batch_result = self.run_batch(batch)
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py", line 109, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py", line 4181, in run_batch
+    batch_result = self.model_worker.forward_batch_generation(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 532, in forward_batch_generation
+    return self._forward_decode(batch, on_publish, grammar_barrier)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py", line 808, in _forward_decode
+    target_verify = self._verify_executor.run_non_compact(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 275, in run_non_compact
+    result = self._forward_prepared_verify(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_verify.py", line 305, in _forward_prepared_verify
+    target_out = self.target_worker.forward_batch_generation(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py", line 636, in forward_batch_generation
+    out = self.model_runner.forward(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1645, in forward
+    output = self._forward_raw(
+             ^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/model_runner.py", line 1777, in _forward_raw
+    ret = self.decode_cuda_graph_runner.execute(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py", line 1536, in execute
+    output = self.backend.replay(self._replay_graph_key, forward_batch)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py", line 332, in replay
+    self._graphs[shape_key].replay()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py", line 288, in replay
+    self._break_fns[i]()
+  File "/sgl-workspace/sglang/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py", line 258, in replay_fn
+    new_out = captured_inner(*captured_args, **captured_kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/sgl-workspace/sglang/python/sglang/srt/layers/engram.py", line 784, in _engram_file_rows
+    ids = indices.reshape(-1).to("cpu", dtype=torch.int64)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+
+
+[2026-09-22 19:47:59] SIGQUIT received. signum=None, frame=None. It usually means one child failed.
+[2026-09-22 19:47:59] Sleeping 5 seconds before crash diagnostics to let GPU activity settle.
+[rank0]:[W922 19:48:00.690077708 ProcessGroupNCCL.cpp:1624] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank1]:[W922 19:48:00.763256214 nccl_devcomm_manager.hpp:225] Failed to destroy the NCCL device communicator, skipping
+[rank0]:[W922 19:48:00.840363317 nccl_devcomm_manager.hpp:225] Failed to destroy the NCCL device communicator, skipping
+[2026-09-22 19:48:04] No live scheduler processes found; skipping py-spy and CUDA coredump.
+[2026-09-22 19:48:04] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-09-22 19:48:04] ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run

@@ -1,0 +1,61 @@
+device NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition, torch 2.13.0+cu130, triton 3.7.1
+search space: small-M 480 configs, large-M 144 configs
+N= 16384 K= 1280 M=    1: default    370.7 us -> best     30.7 us (12.07x,   685.3 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5}
+N= 16384 K= 1280 M=    2: default    192.5 us -> best     30.6 us ( 6.29x,   687.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5}
+N= 16384 K= 1280 M=    3: default    159.7 us -> best     30.7 us ( 5.20x,   685.3 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5}
+N= 16384 K= 1280 M=    4: default    184.3 us -> best     32.7 us ( 5.64x,   644.4 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4, 'SWAP_AB': True}
+N= 16384 K= 1280 M=    8: default     73.7 us -> best     32.4 us ( 2.28x,   650.1 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5}
+N= 16384 K= 1280 M=   16: default     59.3 us -> best     32.8 us ( 1.81x,   641.9 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5}
+N= 16384 K= 1280 M=   32: default     59.4 us -> best     36.9 us ( 1.61x,   571.1 GB/s) {'BLOCK_SIZE_M': 32, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4}
+N= 16384 K= 1280 M=   64: default     63.5 us -> best     40.9 us ( 1.55x,   514.8 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4}
+N= 16384 K= 1280 M=  128: default     79.9 us -> best     45.1 us ( 1.77x,   467.3 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4}
+N= 16384 K= 1280 M=  256: default    137.2 us -> best     73.7 us ( 1.86x,   285.6 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 3}
+N= 16384 K= 1280 M=  512: default    282.6 us -> best    107.5 us ( 2.63x,   195.8 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4}
+N= 16384 K= 1280 M= 1024: default    561.1 us -> best    194.5 us ( 2.88x,   108.2 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 2}
+N= 16384 K= 1280 M= 2048: default   1096.7 us -> best    379.9 us ( 2.89x,    55.4 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 2}
+N= 16384 K= 1280 M= 4096: default   2177.0 us -> best    720.9 us ( 3.02x,    29.2 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 2}
+N=  1792 K= 5120 M=    1: default    118.8 us -> best     14.3 us ( 8.29x,   642.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 16}
+N=  1792 K= 5120 M=    2: default     90.1 us -> best     14.3 us ( 6.29x,   642.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 4, 'SWAP_AB': True, 'SPLIT_K': 16}
+N=  1792 K= 5120 M=    3: default     86.0 us -> best     14.3 us ( 6.00x,   642.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 4, 'SWAP_AB': True, 'SPLIT_K': 16}
+N=  1792 K= 5120 M=    4: default     83.9 us -> best     16.4 us ( 5.13x,   563.3 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SPLIT_K': 16}
+N=  1792 K= 5120 M=    8: default     81.9 us -> best     16.3 us ( 5.03x,   565.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4, 'SWAP_AB': True, 'SPLIT_K': 16}
+N=  1792 K= 5120 M=   16: default     84.0 us -> best     16.4 us ( 5.12x,   561.1 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 5, 'SWAP_AB': True, 'SPLIT_K': 8}
+N=  1792 K= 5120 M=   32: default     86.0 us -> best     67.6 us ( 1.27x,   136.3 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 4}
+N=  1792 K= 5120 M=   64: default     97.8 us -> best     67.6 us ( 1.45x,   136.3 GB/s) {'BLOCK_SIZE_M': 32, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 8, 'num_stages': 4}
+N=  1792 K= 5120 M=  128: default     92.9 us -> best     69.2 us ( 1.34x,   133.1 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 4}
+N=  1792 K= 5120 M=  256: default    104.5 us -> best     69.7 us ( 1.50x,   132.1 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4}
+N=  1792 K= 5120 M=  512: default    122.9 us -> best     84.1 us ( 1.46x,   109.5 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4}
+N=  1792 K= 5120 M= 1024: default    221.2 us -> best    125.0 us ( 1.77x,    73.7 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 3}
+N=  1792 K= 5120 M= 2048: default    481.3 us -> best    221.2 us ( 2.18x,    41.6 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 2}
+N=  1792 K= 5120 M= 4096: default    892.7 us -> best    409.6 us ( 2.18x,    22.5 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 3}
+N=  2304 K= 5120 M=    1: default    149.5 us -> best     16.4 us ( 9.13x,   722.8 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SPLIT_K': 16}
+N=  2304 K= 5120 M=    2: default    118.8 us -> best     18.4 us ( 6.44x,   642.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SPLIT_K': 16}
+N=  2304 K= 5120 M=    3: default     90.2 us -> best     18.4 us ( 4.89x,   642.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 5, 'SPLIT_K': 16}
+N=  2304 K= 5120 M=    4: default     88.1 us -> best     18.4 us ( 4.78x,   642.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 3, 'SWAP_AB': True, 'SPLIT_K': 16}
+N=  2304 K= 5120 M=    8: default     84.1 us -> best     18.4 us ( 4.56x,   642.5 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 3, 'SPLIT_K': 16}
+N=  2304 K= 5120 M=   16: default     85.5 us -> best     20.5 us ( 4.18x,   578.3 GB/s) {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 2, 'num_stages': 4, 'SPLIT_K': 8}
+N=  2304 K= 5120 M=   32: default     88.1 us -> best     71.7 us ( 1.23x,   165.2 GB/s) {'BLOCK_SIZE_M': 32, 'BLOCK_SIZE_N': 32, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 8, 'num_stages': 4}
+N=  2304 K= 5120 M=   64: default     98.3 us -> best     71.7 us ( 1.37x,   165.2 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 4}
+N=  2304 K= 5120 M=  128: default     96.3 us -> best     73.7 us ( 1.31x,   160.6 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 4}
+N=  2304 K= 5120 M=  256: default    104.8 us -> best     77.8 us ( 1.35x,   152.2 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 4}
+N=  2304 K= 5120 M=  512: default    168.0 us -> best    100.4 us ( 1.67x,   118.0 GB/s) {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 4}
+N=  2304 K= 5120 M= 1024: default    311.4 us -> best    141.3 us ( 2.20x,    83.8 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 3}
+N=  2304 K= 5120 M= 2048: default    638.0 us -> best    245.8 us ( 2.60x,    48.2 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 1, 'num_warps': 4, 'num_stages': 2}
+N=  2304 K= 5120 M= 4096: default   1250.5 us -> best    475.9 us ( 2.63x,    24.9 GB/s) {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 32, 'GROUP_SIZE_M': 32, 'num_warps': 4, 'num_stages': 2}
+[W922 01:33:40.950583267 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 629145600 bytes (free: 247922688, total: 102066159616).
+[W922 01:33:40.957106903 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 629145600 bytes (free: 581369856, total: 102066159616).
+[W922 01:33:40.957216588 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 0 while trying to allocate 629145600 bytes (free: 581369856, total: 102066159616).
+Traceback (most recent call last):
+  File "/tmp/tune_w8a8_block32.py", line 277, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/tmp/tune_w8a8_block32.py", line 261, in main
+    best, res = tune_shape(N, K, args.batch_sizes, device, args.warmup, args.rep, args.quick)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tune_w8a8_block32.py", line 173, in tune_shape
+    ref = reference(A, B, As, Bs)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tune_w8a8_block32.py", line 132, in reference
+    b = B.float() * Bs.repeat_interleave(BLOCK_N, dim=0)[:N].repeat_interleave(BLOCK_K, dim=1)[:, :K]
+        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 600.00 MiB. GPU 0 has a total capacity of 95.06 GiB of which 554.44 MiB is free. Process 135 has 90.99 GiB memory in use. Including non-PyTorch memory, this process has 3.44 GiB memory in use. Of the allocated memory 1.35 GiB is allocated by PyTorch, and 499.33 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
