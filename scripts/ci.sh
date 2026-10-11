@@ -85,10 +85,11 @@ if python3 "$ROOT/scripts/benchmarks_headline.py" check >/dev/null; then :; else
 if python3 "$ROOT/scripts/tests/test_dspark_overlap_gate.py"; then :; else
   rc=$?; if [[ $rc -ne 3 ]]; then echo "FAIL dspark overlap gate tests (exit $rc)"; exit 1; fi
 fi
-# The verdict in README must match the calculator: 2 GPUs must not fit GPU-resident, but must fit the hybrid with NVMe Engram.
-if python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout engram-host >/dev/null; then
-  echo 'FAIL calculator says 2 GPUs fit; README verdict is stale'; exit 1
-fi
+# The verdict in README must match the calculator: 2 GPUs must not fit GPU-resident (rc 3 exactly: a crash or a
+# missing budget file is not a "does not fit" verdict, R9), but must fit the hybrid with NVMe Engram.
+rc=0; python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout engram-host >/dev/null || rc=$?
+if [[ $rc -eq 0 ]]; then echo 'FAIL calculator says 2 GPUs fit; README verdict is stale'; exit 1; fi
+if [[ $rc -ne 3 ]]; then echo "FAIL feasibility-calc.py did not run (exit $rc); the README verdict is unverified"; exit 1; fi
 if ! python3 "$ROOT/scripts/feasibility-calc.py" "$ROOT/evidence/budget-upstream-bf16fp8.json" --gpus 2 --layout hybrid-cpu --engram nvme >/dev/null; then
   echo 'FAIL calculator says the 2-GPU hybrid does not fit; README verdict is stale'; exit 1
 fi

@@ -35,8 +35,16 @@ per-token Δlogp over all texts (paired, common token-id prefix only):
   python3 scripts/nll-score.py --corpus scripts/fixtures/nll-corpus \
       --output-dir evidence/t328/cand-219-8192 --compare-dir evidence/t328/baseline-226-4096
 
-Gate: same kernel shapes -> every token bit-identical (tokens_changed == 0);
-shape-changing -> pooled delta_mean_nll <= +0.002 nats/token, reported with se.
+Gate (release-smoke.sh, T3.43b): pooled delta_mean_nll <= +0.002 nats/token AND
+|cluster-robust z| <= 2 over >= 2 texts. tokens_changed is reported, and enforced only
+with NLL_REQUIRE_IDENTICAL=1: bit-identity needs the whole serve shape to match the
+baseline, not just experts/chunk - the same 219/8192 at 262K x 4 moved 65,226 tokens
+by -0.0003 nats (evidence/t329/262k-4slot-682fc6a0/), as did the el8-mix expert map
+(evidence/t38b/qual-el8-mix/), while 64K x 4 on the baseline map reproduces the
+baseline bit for bit (evidence/t339/qual-99128a7e/).
+
+A zero standard error no longer hides a shift: z is 0 only when the mean delta is 0,
+otherwise +/-inf (a one-text corpus has se_cluster == 0 for ANY delta; R7).
 """
 import argparse
 import json
@@ -93,6 +101,14 @@ def common_prefix_len(a: list, b: list) -> int:
     return n
 
 
+def z_score(mean_d: float, se: float) -> float:
+    """mean / se, fail-closed at se == 0: a zero standard error with a non-zero mean is an
+    infinite z (every token moved the same way), not the 0.0 that passed any |z| gate (R7)."""
+    if se:
+        return mean_d / se
+    return 0.0 if mean_d == 0.0 else math.copysign(math.inf, mean_d)
+
+
 def paired_stats(new_lps: list[float], base_lps: list[float], n: int | None = None) -> dict:
     """Paired per-token comparison over the first n tokens (default: shorter list).
 
@@ -110,7 +126,7 @@ def paired_stats(new_lps: list[float], base_lps: list[float], n: int | None = No
     mean_d = sum(d) / n
     sd = math.sqrt(sum((x - mean_d) ** 2 for x in d) / (n - 1)) if n > 1 else 0.0
     se = sd / math.sqrt(n)
-    return {"n": n, "delta_mean_nll": -mean_d, "se": se, "z_paired": mean_d / se if se else 0.0,
+    return {"n": n, "delta_mean_nll": -mean_d, "se": se, "z_paired": z_score(mean_d, se),
             "max_abs_delta_logp": max(abs(x) for x in d), "mean_abs_delta_logp": sum(abs(x) for x in d) / n,
             "sd_delta_logp": sd, "tokens_changed": sum(1 for x in d if x != 0.0),
             "tokens_worse_gt_0p5": sum(1 for x in d if x < -0.5),
@@ -134,7 +150,7 @@ def pooled_stats(pairs: list[tuple[list[float], list[float], int]]) -> dict:
         for new_lps, base_lps, n in pairs:
             acc += (sum(new_lps[i] - base_lps[i] for i in range(n)) - n * mean_d) ** 2
         st["se_cluster"] = math.sqrt(acc) / n_tot
-        st["z_cluster"] = mean_d / st["se_cluster"] if st["se_cluster"] else 0.0
+        st["z_cluster"] = z_score(mean_d, st["se_cluster"])
         st["texts"] = len(pairs)
     return st
 

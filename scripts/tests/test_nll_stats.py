@@ -60,6 +60,21 @@ def test_pooled_is_token_weighted_not_text_weighted():
     assert close(st["se_cluster"], math.sqrt(0.75 ** 2 + 0.75 ** 2) / 4) and st["texts"] == 2
 
 
+def test_zero_se_does_not_hide_a_shift():
+    # R7: one text, every token worse by the same 0.9 nats -> se_cluster == 0 for any delta.
+    # The old code reported z 0.0 and |z| <= 2 passed; now z is +inf (and -inf for an improvement).
+    base = [-1.0] * 5
+    st = m.pooled_stats([([x - 0.9 for x in base], base, 5)])
+    assert close(st["delta_mean_nll"], 0.9) and st["se_cluster"] == 0.0 and st["texts"] == 1
+    assert st["z_cluster"] == -math.inf and st["z_paired"] < -1e6  # iid se is fp residue, not exactly 0
+    better = m.pooled_stats([([x + 0.9 for x in base], base, 5)])
+    assert better["z_cluster"] == math.inf
+    # bit-identical stays z 0 (the qualified 64K x 4 case)
+    same = m.pooled_stats([(base, base, 5)])
+    assert same["z_cluster"] == 0.0 and same["tokens_changed"] == 0
+    assert m.z_score(0.0, 0.0) == 0.0 and m.z_score(0.5, 0.25) == 2.0
+
+
 def test_cluster_se_exceeds_iid_when_texts_disagree():
     # two texts with opposite constant shifts: iid se sees 6 tokens of +-0.1, cluster se sees two blocks
     a = ([-1.1] * 3, [-1.0] * 3, 3)

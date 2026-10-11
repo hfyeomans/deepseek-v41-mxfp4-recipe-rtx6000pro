@@ -15,11 +15,16 @@ the one running. `ci.sh` then checks every stamped file under `evidence/` agains
     python3 scripts/evidence_manifest.py verify PATH                    # recompute the hash; rc 1 on mismatch
     python3 scripts/evidence_manifest.py check-evidence evidence/       # CI: stamped files match their sibling manifest
     python3 scripts/evidence_manifest.py rescrub evidence/<run>/        # re-scrub $HOME from a leaked manifest, re-stamp siblings
+    python3 scripts/evidence_manifest.py serve-shape [PATH]            # MF_CONTEXT= MF_SLOTS= ... lines for release-smoke.sh (R12)
 
 Lookup from the evidence scripts: `EVIDENCE_MANIFEST=<path>` names the manifest, `EVIDENCE_MANIFEST=none`
 records an explicitly unmanifested run (the file says so), unset means `<MANIFEST_DIR>/current.json`.
 `EVIDENCE_MANIFEST_ALLOW_STALE=1` accepts a manifest whose container id differs from the running
-container (recorded in the stamp). Files written before the cut-over (2026-10-08, no `evidence` key) are exempt.
+container, or whose container cannot be inspected at all (docker gone, container removed: a
+hand-started server after `docker rm -f` is not the serve the manifest describes); the stamp records
+`allowed_stale`. Files written before the cut-over (2026-10-08, no `evidence` key) are exempt, and
+`check-evidence` flags a post-2026-10-12 stamp whose container check is neither "match", "skipped"
+nor explicitly allowed (R15).
 
 Everything a collector cannot read is recorded as null plus an entry in `errors`; a manifest is
 written even on a box without docker, HSMP or nvidia-smi. Paths are stored with `$HOME` as `~` so a
@@ -297,10 +302,11 @@ def stamp(report: dict, output: Path, tool: str, *, env: dict[str, str] | None =
             check = "match" if live == m["container"]["id"] else "stale"
         except Exception as e:  # noqa: BLE001 - docker absent or container gone
             check = f"unavailable: {type(e).__name__}"
-        if check == "stale" and not allow_stale:
-            raise ManifestError(f"manifest {path} describes container {m['container']['id'][:12]} but "
-                                f"{m['container']['name']} is now a different container; serve through the launcher "
-                                f"again or set EVIDENCE_MANIFEST_ALLOW_STALE=1 to record it anyway")
+        if check != "match" and not allow_stale:
+            why = (f"{m['container']['name']} is now a different container" if check == "stale"
+                   else f"{m['container']['name']} cannot be inspected ({check})")
+            raise ManifestError(f"manifest {path} describes container {m['container']['id'][:12]} but {why}; "
+                                f"serve through the launcher again or set EVIDENCE_MANIFEST_ALLOW_STALE=1 to record it anyway")
     sibling = output.parent / "manifest.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     if sibling.exists():
@@ -313,7 +319,7 @@ def stamp(report: dict, output: Path, tool: str, *, env: dict[str, str] | None =
     report["evidence"] = {"tool": tool, "recorded_utc": recorded, "manifest_hash": m["content_hash"],
                           "manifest_file": "manifest.json", "container_check": check,
                           "container_id": (m.get("container") or {}).get("id")}
-    if check == "stale":
+    if check != "match" and check != "skipped":
         report["evidence"]["allowed_stale"] = True
     return report
 
@@ -326,6 +332,23 @@ def stamp_or_exit(report: dict, output: Path, tool: str) -> dict:
 
 
 # ---- CI check -------------------------------------------------------------------------------
+
+CONTAINER_CHECK_CUTOVER = "2026-10-12"  # stamps before this could record "unavailable" without opting in (R15)
+
+
+SHAPE_KNOBS = {"MF_CONTEXT": "CONTEXT_LENGTH", "MF_SLOTS": "MAX_RUNNING_REQUESTS", "MF_EXPERTS": "KT_NUM_GPU_EXPERTS",
+               "MF_CHUNK": "CHUNKED_PREFILL_SIZE", "MF_EXPERT_MAP": "KT_EXPERT_MAP"}
+
+
+def serve_shape_lines(m: dict) -> list[str]:
+    """The launch shape a smoke must agree with, as shell assignments (values are knob strings; a
+    null knob prints empty). MF_CONTAINER_ID is the container the manifest describes."""
+    cfg = m.get("config", {})
+    lines = [f"{var}={json.dumps(str(cfg.get(knob) if cfg.get(knob) is not None else ''))}" for var, knob in SHAPE_KNOBS.items()]
+    lines.append(f"MF_CONTAINER_ID={json.dumps((m.get('container') or {}).get('id') or '')}")
+    lines.append(f"MF_HASH={json.dumps(m['content_hash'])}")
+    return lines
+
 
 def check_evidence(root: Path) -> list[str]:
     """Every stamped JSON under root matches its sibling manifest.json, whose hash recomputes."""
@@ -357,6 +380,11 @@ def check_evidence(root: Path) -> list[str]:
         except (ManifestError, ValueError) as e:
             problems.append(str(e))
             continue
+        check = ev.get("container_check", "skipped")
+        if (ev["recorded_utc"] >= CONTAINER_CHECK_CUTOVER and check not in ("match", "skipped")
+                and not ev.get("allowed_stale")):
+            problems.append(f"{path}: stamped with container_check {check!r} and no allowed_stale; "
+                            f"the manifest's container was not the one running")
         if m["content_hash"] != ev["manifest_hash"]:
             problems.append(f"{path}: hash {ev['manifest_hash'][:12]} != sibling manifest {m['content_hash'][:12]}")
     return problems
@@ -442,6 +470,11 @@ def main(argv: list[str]) -> int:
     if cmd == "show":
         path = Path(rest[0]) if rest else manifest_dir() / "current.json"
         print(summary(load(path)))
+        return 0
+    if cmd == "serve-shape":
+        path = Path(rest[0]) if rest else manifest_dir() / "current.json"
+        for line in serve_shape_lines(load(path)):
+            print(line)
         return 0
     if cmd == "verify":
         try:

@@ -7,9 +7,15 @@ prints tok/s, per-GPU busy-median power, SM clock and tok/s per watt.
 `--smoke <dir>` reads the `power-<label>.csv` files release-smoke.sh --full writes. Busy =
 samples with utilization > 50 %, so idle tails between requests do not dilute
 the median. Also works on a single CSV: `summarize-power.py results/x.csv`.
+
+A CSV with no sample rows (sampler died, nvidia-smi missing) is recorded as
+`{"error": "no samples"}` under its label and makes the exit status 1; with
+`--expect-labels a,b,...` a label without a CSV does the same. release-smoke.sh
+gates on that (R10: before T3.43b a `--full` smoke could pass with no power trace).
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import re
@@ -27,6 +33,8 @@ def read_samples(path: Path) -> list[dict[str, str]]:
     """nvidia-smi rows only: a leaked sampler from an earlier run writing into the same
     file leaves NUL holes and stale rows; drop anything that is not `YYYY/MM/DD ...`."""
     lines = path.read_text(errors="replace").splitlines()
+    if not lines:
+        return []
     header, body = lines[0], [l for l in lines[1:] if re.match(r"\d{4}/\d{2}/\d{2} ", l)]
     return list(csv.DictReader([header, *body], skipinitialspace=True))
 
@@ -57,14 +65,22 @@ def summarize_csv(path: Path) -> dict[str, dict]:
     return out
 
 
-def summarize_smoke(out: Path) -> None:
+def summarize_smoke(out: Path, expect_labels: list[str]) -> int:
     """release-smoke.sh --full layout: power-<label>.csv next to c1.json / c4.json /
-    prefill-16k.json; writes power-summary.json and prints one line per bench."""
-    cap = None
+    prefill-16k.json; writes power-summary.json and prints one line per bench. Returns 1
+    when any CSV has no samples or an expected label has no CSV (the summary still records
+    every label, so the failure is readable)."""
     report: dict[str, dict] = {}
-    for csv_path in sorted(out.glob("power-*.csv")):
-        label = csv_path.stem[len("power-"):]
-        power = summarize_csv(csv_path)
+    bad: list[str] = []
+    found = {p.stem[len("power-"):]: p for p in sorted(out.glob("power-*.csv"))}
+    for label in sorted(set(found) | set(expect_labels)):
+        csv_path = found.get(label)
+        power = summarize_csv(csv_path) if csv_path else {}
+        if not power:
+            report[label] = {"error": "no samples" if csv_path else "no csv"}
+            print(f"{label:14s}: {report[label]['error']} ({csv_path.name if csv_path else 'power-' + label + '.csv missing'})")
+            bad.append(label)
+            continue
         total_w = sum(v["power_busy_median_w"] or 0 for v in power.values())
         temp_max = max((v["temp_max_c"] or 0) for v in power.values())
         report[label] = {"gpus": power, "total_busy_w": round(total_w, 1), "temp_max_c": temp_max}
@@ -73,17 +89,23 @@ def summarize_smoke(out: Path) -> None:
               f"thermal-throttle samples {[v.get('thermal_slowdown_samples') for v in power.values()]}, "
               f"power-cap samples {[v.get('power_cap_samples') for v in power.values()]}")
     (out / "power-summary.json").write_text(json.dumps(report, indent=2) + "\n")
-    print(f"wrote {out / 'power-summary.json'}")
+    print(f"wrote {out / 'power-summary.json'}" + (f"; FAIL no samples for: {', '.join(bad)}" if bad else ""))
+    return 1 if bad else 0
 
 
-def main() -> None:
-    if sys.argv[1] == "--smoke":
-        summarize_smoke(Path(sys.argv[2]))
-        return
-    target = Path(sys.argv[1])
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("target", type=Path, help="a power-*.csv, a directory of bench-power-sweep.sh CSVs, or (with --smoke) a release-smoke directory")
+    ap.add_argument("--smoke", action="store_true", help="TARGET is a release-smoke.sh --full output directory")
+    ap.add_argument("--expect-labels", default="", help="--smoke: comma-separated labels that must each have a sampled CSV")
+    args = ap.parse_args()
+    target = args.target
+    if args.smoke:
+        return summarize_smoke(target, [x for x in args.expect_labels.split(",") if x])
     if target.is_file():
-        print(json.dumps({target.name: summarize_csv(target)}, indent=2))
-        return
+        power = summarize_csv(target)
+        print(json.dumps({target.name: power or {"error": "no samples"}}, indent=2))
+        return 0 if power else 1
     report = {}
     for csv_path in sorted(target.glob("power-*.csv")):
         m = re.match(r"power-(decode|prefill)(?:-c(\d+))?-(\d+)w\.csv", csv_path.name)
@@ -135,7 +157,8 @@ def main() -> None:
               f"tok/s/W {report[label]['tps_per_w']}" + (f"  ** {suspect}" if suspect else ""))
     (target / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
     print(f"wrote {target / 'summary.json'}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

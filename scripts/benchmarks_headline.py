@@ -168,7 +168,7 @@ def markdown(config: dict | None = None, root: Path = ROOT) -> str:
         "Decode = median per-sequence / wall tok/s over 5 runs of 512 forced tokens, distinct prompts; prefill = median tok/s "
         "of 3 unique prompts per pass with the client TTFT; needles = `verify.py` exact retrieval at the rung's context; "
         "stress = `stress-kv-full.py` filling every slot; NLL = pooled 65,653-token corpus against the T3.28 baseline "
-        "(gate \\|z\\| ≤ 2). The serve column is the manifest, not a claim.",
+        "(gate ΔNLL ≤ +0.002 and \\|z\\| ≤ 2 since T3.43b; \\|z\\| ≤ 2 alone before). The serve column is the manifest, not a claim.",
         "",
         "| Rung | C1 decode tok/s | C4 decode tok/s | Prefill 16K | Prefill 32K | Needles | Stress | NLL vs baseline | Evidence |",
         "|---|---|---|---|---|---|---|---|---|",

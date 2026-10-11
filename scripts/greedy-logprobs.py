@@ -63,13 +63,16 @@ def ask(url: str, model: str, prompt: str, n: int, logprobs: bool, timeout: int)
                                  headers={"content-type": "application/json", **auth_headers()})
     r = json.load(urllib.request.urlopen(req, timeout=timeout))
     ch = r["choices"][0]
-    if not logprobs or not ch.get("logprobs"):
+    if not logprobs:
         return []
-    return [(c["token"], round(c["logprob"], 4)) for c in ch["logprobs"]["content"]]
+    content = (ch.get("logprobs") or {}).get("content") or []  # `logprobs: {"content": null}` is an empty completion
+    return [(c["token"], round(c["logprob"], 4)) for c in content]
 
 
 def compare(a, b):
-    """a, b: list of (token, logprob). Returns (first divergent index or None, max|Δ| on common prefix, mean|Δ|)."""
+    """a, b: list of (token, logprob). Returns (first divergent index or None, max|Δ| on common prefix, mean|Δ|).
+    A length mismatch is a divergence at the shorter length (R16: an empty or truncated completion used
+    to compare equal to anything, so a broken run printed "same tokens" and exited 0)."""
     n = min(len(a), len(b))
     first = None
     diffs = []
@@ -78,6 +81,8 @@ def compare(a, b):
             first = i
             break
         diffs.append(abs(a[i][1] - b[i][1]))
+    if first is None and len(a) != len(b):
+        first = n
     return first, (max(diffs) if diffs else 0.0), (sum(diffs) / len(diffs) if diffs else 0.0)
 
 
@@ -110,8 +115,12 @@ def main() -> int:
     stamp_or_exit(out, pathlib.Path(a.output), "greedy-logprobs.py")
     pathlib.Path(a.output).write_text(json.dumps(out, indent=1))
 
+    rc = 0
     for p, toks in results.items():
         print(f"[{p[:50]}...] {''.join(t for t, _ in toks)!r}")
+        if not toks:
+            print(f"  INCOMPLETE: no tokens with logprobs for [{p[:50]}...]")
+            rc = 1
     if a.compare:
         base = json.loads(pathlib.Path(a.compare).read_text())["results"]
         print(f"\ncompare vs {a.compare} ({a.batch=} vs baseline batch {json.loads(pathlib.Path(a.compare).read_text()).get('batch')}):")
@@ -121,10 +130,16 @@ def main() -> int:
                 continue
             first, mx, mean = compare(base[p], toks)
             worst = max(worst, mx)
-            status = "same tokens" if first is None else f"DIVERGES at token {first} ('{base[p][first][0]}' -> '{toks[first][0]}')"
+            if first is None:
+                status = "same tokens"
+            elif first >= min(len(base[p]), len(toks)):
+                status = f"INCOMPLETE: {len(toks)} tokens vs baseline {len(base[p])} (identical up to the shorter)"
+                rc = 1
+            else:
+                status = f"DIVERGES at token {first} ('{base[p][first][0]}' -> '{toks[first][0]}')"
             print(f"  {p[:50]:50s} {status}; max|Δlogp| {mx:.3f} mean {mean:.3f} over common prefix")
         print(f"  worst max|Δlogp| {worst:.3f}  (bs=1 run-to-run noise ≈ 0.06)")
-    return 0
+    return rc
 
 
 if __name__ == "__main__":

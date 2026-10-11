@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evidence_manifest import stamp_or_exit  # noqa: E402
 from openai_client import chat_stream, get_json  # noqa: E402
 
+PROMPT_MIN_FRACTION = 0.95  # of --prompt-tokens, by the server's prompt_tokens (R14); the recipe lands at ~97.3 %
 WORDS = ("ledger", "granite", "harbor", "signal", "meadow", "copper", "lantern", "orbit", "timber", "quartz",
          "velvet", "canyon", "pixel", "saffron", "anchor", "glacier", "marble", "cobalt", "ember", "willow",
          "compile", "buffer", "kernel", "socket", "thread", "cache", "vector", "schema", "token", "stride")
@@ -88,21 +89,31 @@ def main() -> int:
         for k, v in s.items():
             if k.endswith("_used_mib"):
                 peak[k] = max(peak.get(k, 0), v)
-    totals = {k: v for k, v in (samples[0] if samples else {}).items() if k.endswith("_total_mib")}
-    ok = all(r["finish_reason"] is not None for r in results)
+    first_good = next((s for s in samples if "error" not in s), {})
+    totals = {k: v for k, v in first_good.items() if k.endswith("_total_mib")}
+    # Fail closed (R14): every slot must have finished, prefilled at least 95 % of the target
+    # (a request the server truncated or that tokenised short did not exercise the KV it claims)
+    # and produced at least one token (decode ran with every slot full, which is the point).
+    min_prompt = int(args.prompt_tokens * PROMPT_MIN_FRACTION)
+    for r in results:
+        r["ok"] = (r["finish_reason"] is not None and (r["prompt_tokens"] or 0) >= min_prompt
+                   and (r["completion_tokens"] or 0) >= 1)
+    ok = all(r["ok"] for r in results)
     report = {"url": args.url, "model": model, "concurrency": args.concurrency, "prompt_tokens_target": args.prompt_tokens,
+              "prompt_tokens_min": min_prompt,
               "max_tokens": args.max_tokens, "seed": args.seed, "wall_s": wall, "all_finished": ok,
               "peak_vram_used_mib": peak, "vram_total_mib": totals, "results": results, "vram_samples": samples,
               "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
-    print(f"{'stream':>6} {'prompt tok':>10} {'out tok':>7} {'TTFT s':>8} {'total s':>8} finish")
+    print(f"{'stream':>6} {'prompt tok':>10} {'out tok':>7} {'TTFT s':>8} {'total s':>8} finish  ok (prompt >= {min_prompt:,}, out >= 1)")
     for r in results:
-        print(f"{r['stream']:>6} {r['prompt_tokens'] or 0:>10,} {r['completion_tokens'] or 0:>7} {r['ttft_s']:8.2f} {r['total_s']:8.2f} {r['finish_reason']}")
+        print(f"{r['stream']:>6} {r['prompt_tokens'] or 0:>10,} {r['completion_tokens'] or 0:>7} {r['ttft_s']:8.2f} {r['total_s']:8.2f} "
+              f"{r['finish_reason']}  {'ok' if r['ok'] else 'FAIL'}")
     for k in sorted(peak):
         g = k.split("_")[0]
         tot = totals.get(f"{g}_total_mib")
         free = f", min free {tot - peak[k]:,} MiB" if tot else ""
         print(f"peak {g}: {peak[k]:,} MiB used{free}")
-    print(f"wall {wall:.1f} s, all finished: {ok}")
+    print(f"wall {wall:.1f} s, all slots finished and filled: {ok}")
     if args.output:
         stamp_or_exit(report, args.output, "stress-kv-full.py")
         args.output.write_text(json.dumps(report, indent=2) + "\n")

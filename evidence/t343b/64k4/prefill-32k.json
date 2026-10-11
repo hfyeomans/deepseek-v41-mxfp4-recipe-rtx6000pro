@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 3,
+  "seed": 777,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization; sizes = cold pass",
+  "sizes": [
+    {
+      "target_tokens": 32768,
+      "median_prompt_tokens": 32004,
+      "median_prefill_tps": 3980.6629410104606,
+      "median_ttft_s": 8.045142348040827,
+      "runs": [
+        {
+          "prompt_tokens": 32004,
+          "ttft_s": 8.181158395949751,
+          "prefill_tps": 3911.9154587991147
+        },
+        {
+          "prompt_tokens": 32025,
+          "ttft_s": 8.045142348040827,
+          "prefill_tps": 3980.6629410104606
+        },
+        {
+          "prompt_tokens": 31932,
+          "ttft_s": 7.921655605081469,
+          "prefill_tps": 4030.975542475833
+        }
+      ]
+    }
+  ],
+  "passes": [
+    {
+      "pass": "cold",
+      "seed": 777,
+      "engram_residency_before": [
+        {
+          "shard": "model-00047-of-00048.safetensors",
+          "resident_bytes": 28355969024,
+          "size_bytes": 101535150936,
+          "resident_pct": 27.93
+        },
+        {
+          "shard": "model-00048-of-00048.safetensors",
+          "resident_bytes": 28269834240,
+          "size_bytes": 101537926640,
+          "resident_pct": 27.84
+        }
+      ],
+      "sizes": [
+        {
+          "target_tokens": 32768,
+          "median_prompt_tokens": 32004,
+          "median_prefill_tps": 3980.6629410104606,
+          "median_ttft_s": 8.045142348040827,
+          "runs": [
+            {
+              "prompt_tokens": 32004,
+              "ttft_s": 8.181158395949751,
+              "prefill_tps": 3911.9154587991147
+            },
+            {
+              "prompt_tokens": 32025,
+              "ttft_s": 8.045142348040827,
+              "prefill_tps": 3980.6629410104606
+            },
+            {
+              "prompt_tokens": 31932,
+              "ttft_s": 7.921655605081469,
+              "prefill_tps": 4030.975542475833
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-10T22:20:20-0400",
+  "evidence": {
+    "tool": "bench-prefill.py",
+    "recorded_utc": "2026-10-11T02:20:20Z",
+    "manifest_hash": "918bf79e6ac9eed9199ba9bd60f1e16356cbc51175a1121351fae7c000ed7f3d",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "d61a5b0f2fe7e64a05ec0d9e1a98cf266025a4bd4a263ab8107ba0680f8eef77"
+  }
+}

@@ -11,7 +11,9 @@ Wrong implementations these are written against:
   - storing /home/<name> paths (ci.sh identifier scan rejects them) -> test_collect_tildes_paths.
   - stamping a report with the hash but not copying the manifest beside it, or letting a second
     serve's evidence overwrite a directory's manifest.json -> test_stamp_sibling_rules.
-  - a stale manifest (launcher restarted by hand) stamped silently -> test_stamp_container_check.
+  - a stale manifest (launcher restarted by hand) stamped silently, or a manifest whose container
+    can no longer be inspected (docker rm -f, then a hand-started server) stamped as if it matched
+    -> test_stamp_container_check.
   - `EVIDENCE_MANIFEST=none` written as if it had a manifest -> test_stamp_none_is_explicit.
   - check_evidence rejecting every pre-cut-over file, or accepting a tampered sibling
     -> test_check_evidence.
@@ -211,8 +213,14 @@ def test_stamp_container_check():
         def gone(name):
             raise RuntimeError("docker: no such container")
 
-        r = em.stamp({}, out, "t.py", env=env, container_id=gone)
-        assert r["evidence"]["container_check"].startswith("unavailable")
+        # R15: an uninspectable container is refused like a stale one, and opting in records it
+        try:
+            em.stamp({}, out, "t.py", env=env, container_id=gone)
+            raise AssertionError("uninspectable container stamped without ALLOW_STALE")
+        except em.ManifestError as e:
+            assert "cannot be inspected" in str(e) and "ALLOW_STALE" in str(e)
+        r = em.stamp({}, out, "t.py", env={**env, "EVIDENCE_MANIFEST_ALLOW_STALE": "1"}, container_id=gone)
+        assert r["evidence"]["container_check"].startswith("unavailable") and r["evidence"]["allowed_stale"] is True
         # a manifest written without a container (bench against a hand-run server) skips the check
         p0, _ = _write_manifest(home, container=None)
         r = em.stamp({}, pathlib.Path(home) / "ev0/a.json", "t.py", env={**env, "EVIDENCE_MANIFEST": str(p0)},
@@ -265,10 +273,23 @@ def test_check_evidence():
         (root / "mismatch").mkdir()
         (root / "mismatch/manifest.json").write_text(json.dumps(make_manifest(home, hsmp_sample=lambda: None)))
         (root / "mismatch/a.json").write_text(json.dumps(r))
+        # R15: a post-cut-over stamp whose container check was "unavailable" without allowed_stale
+        # (hand-edited, or written by the pre-T3.43b stamp); the same before the cut-over is exempt,
+        # as is one that opted in
+        (root / "unverified").mkdir()
+        u = json.loads(json.dumps(r)); u["evidence"]["container_check"] = "unavailable: RuntimeError"
+        u["evidence"]["recorded_utc"] = "2026-10-12T00:00:00Z"
+        (root / "unverified/a.json").write_text(json.dumps(u))
+        (root / "unverified/manifest.json").write_text((good.parent / "manifest.json").read_text())
+        old_u = json.loads(json.dumps(u)); old_u["evidence"]["recorded_utc"] = "2026-10-11T23:59:59Z"
+        (root / "unverified/old.json").write_text(json.dumps(old_u))
+        opted = json.loads(json.dumps(u)); opted["evidence"]["allowed_stale"] = True
+        (root / "unverified/opted.json").write_text(json.dumps(opted))
         problems = em.check_evidence(root)
-        hit = {k for k in ("none/b.json", "orphan/a.json", "tamper/manifest.json", "mismatch/a.json") if any(k in s for s in problems)}
-        assert hit == {"none/b.json", "orphan/a.json", "tamper/manifest.json", "mismatch/a.json"}, problems
-        assert not any("good" in s or "old" in s for s in problems), problems
+        hit = {k for k in ("none/b.json", "orphan/a.json", "tamper/manifest.json", "mismatch/a.json", "unverified/a.json")
+               if any(k in s for s in problems)}
+        assert hit == {"none/b.json", "orphan/a.json", "tamper/manifest.json", "mismatch/a.json", "unverified/a.json"}, problems
+        assert not any("good" in s or "old" in s or "opted" in s for s in problems), problems
 
 
 def test_served_scripts_stamp():

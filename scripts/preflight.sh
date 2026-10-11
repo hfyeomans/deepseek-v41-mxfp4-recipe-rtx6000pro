@@ -25,7 +25,10 @@ gpu_gib="$(awk -v m="$min_mib" 'BEGIN {printf "%.3f", m / 1024}')"
 ok "$n_gpus GPUs, smallest ${gpu_gib} GiB"
 
 if [[ "$n_gpus" -gt 1 ]]; then
-  if nvidia-smi topo -p2p r -i "$GPU_DEVICES" 2>/dev/null | grep -Eq '\b(NS|CNS|GNS|TNS|DR)\b'; then
+  # Fail closed (R18): an nvidia-smi error used to leave the grep empty and print "OK".
+  p2p="$(nvidia-smi topo -p2p r -i "$GPU_DEVICES" 2>&1)" || fail "nvidia-smi topo -p2p failed: ${p2p}"
+  grep -Eq '\bOK\b' <<<"$p2p" || fail "nvidia-smi topo -p2p reported no OK link: ${p2p}"
+  if grep -Eq '\b(NS|CNS|GNS|TNS|DR)\b' <<<"$p2p"; then
     fail "P2P read is not OK between all selected GPUs"
   fi
   ok "P2P read matrix OK"
@@ -71,7 +74,7 @@ layout="engram-host"; [[ "$ENGRAM_PLACEMENT" == "gpu" ]] && layout="gpu-only"
 set +e
 python3 "$ROOT/scripts/feasibility-calc.py" "$budget" --gpus "$n_gpus" --gpu-gib "$gpu_gib" --host-gib "$host_gib" \
   --util "$MEM_FRACTION_STATIC" --gpu-reserve-gib "$GPU_RESERVE_GIB" --host-reserve-gib "$HOST_RESERVE_GIB" \
-  --context-tokens "$MAX_MODEL_LEN" --sequences 1 --layout "$layout"
+  --context-tokens "$MAX_MODEL_LEN" --sequences "$MAX_RUNNING_REQUESTS" --layout "$layout"
 rc=$?
 set -e
 if [[ $rc -eq 3 ]]; then

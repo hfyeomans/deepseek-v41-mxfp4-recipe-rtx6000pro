@@ -23,4 +23,11 @@ rc=$?
 kill "$sampler" 2>/dev/null || true
 wait "$sampler" 2>/dev/null || true
 trap - EXIT
+# The trace is the point of this wrapper: a command that succeeded under a sampler that wrote no
+# rows (nvidia-smi missing, killed early) is a failed measurement, not a pass (R10).
+rows="$(grep -c '^[0-9]\{4\}/[0-9]\{2\}/[0-9]\{2\} ' "$csv" 2>/dev/null || true)"
+if [[ "$rc" -eq 0 && "${rows:-0}" -lt 1 ]]; then
+  echo "gpu-power-sample: $csv has no nvidia-smi sample rows; the command passed but the power trace is empty" >&2
+  exit 1
+fi
 exit "$rc"
