@@ -55,6 +55,18 @@ def anon_gib() -> float:
     return float("nan")
 
 
+def anon_huge_gib() -> float:
+    """Anonymous memory on transparent huge pages (T3.36: is the expert arena on 2 MiB pages?)."""
+    try:
+        with open("/proc/self/smaps_rollup") as f:
+            for line in f:
+                if line.startswith("AnonHugePages:"):
+                    return int(line.split()[1]) / 2**20
+    except OSError:
+        pass
+    return float("nan")
+
+
 class Snapshot:
     """Read individual expert tensors from the HF safetensors shards."""
 
@@ -229,11 +241,13 @@ def main() -> int:
         "anon_gib_before": round(anon0, 3),
         "anon_gib_after": round(anon1, 3),
         "anon_gib_delta": round(anon1 - anon0, 3),
+        "anon_huge_gib_after": round(anon_huge_gib(), 3),
     }
     report["load"]["cpu_experts"] = n_cpu
     report["load"]["anon_mib_per_cpu_expert"] = round((anon1 - anon0) * 1024 / n_cpu, 2)
     print(
         f"load: {t_load:.1f}s  RSS {rss0:.2f}->{rss1:.2f} GiB  anon {anon0:.2f}->{anon1:.2f} GiB  "
+        f"(THP {anon_huge_gib():.2f} GiB)  "
         f"({(anon1 - anon0) * 1024 / n_cpu:.1f} MiB per CPU expert; packed FP4+scale "
         f"in checkpoint = {3 * 2304 * 5120 * (0.5 + 1 / 32) / 2**20:.1f} MiB)"
     )

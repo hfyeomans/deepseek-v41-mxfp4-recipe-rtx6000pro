@@ -33,6 +33,9 @@ ARG BASE=lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b0
 FROM ${BASE} AS ktbuild
 ARG KT_SOURCE_TAG=v0.7.0.post4
 ARG KT_SOURCE_COMMIT=5632f7197e7a9898f0723755c2fc187a946a85a6
+# AVX512 = the wheel's flag set (the qualified image). NATIVE = -march=native (-DLLAMA_NATIVE=ON),
+# the T3.40 A/B variant only. (setup.py's documented CPUINFER_NATIVE is never read; this is the real switch.)
+ARG KT_CPU_INSTRUCT=AVX512
 COPY kt-kernel-patches/0003-weight-arena.patch /tmp/0003-weight-arena.patch
 RUN git clone --quiet --depth 1 --branch "${KT_SOURCE_TAG}" https://github.com/kvcache-ai/ktransformers /tmp/ktsrc \
  && cd /tmp/ktsrc \
@@ -40,11 +43,11 @@ RUN git clone --quiet --depth 1 --branch "${KT_SOURCE_TAG}" https://github.com/k
  && git submodule update --init --depth 1 third_party/pybind11 third_party/llama.cpp \
  && git apply --check /tmp/0003-weight-arena.patch && git apply /tmp/0003-weight-arena.patch \
  && cd kt-kernel \
- && CPUINFER_CPU_INSTRUCT=AVX512 CPUINFER_ENABLE_AVX512=ON CPUINFER_ENABLE_AVX512_VNNI=ON \
+ && CPUINFER_CPU_INSTRUCT="${KT_CPU_INSTRUCT}" CPUINFER_ENABLE_AVX512=ON CPUINFER_ENABLE_AVX512_VNNI=ON \
     CPUINFER_ENABLE_AVX512_BF16=ON CPUINFER_ENABLE_AVX512_VBMI=ON CPUINFER_ENABLE_AMX=OFF \
     CPUINFER_ENABLE_ONEDNN_VNNI=OFF CPUINFER_ENABLE_CPPTRACE=0 \
     CPUINFER_USE_CUDA=1 CPUINFER_CUDA_ARCHS="80;86;89;90;120" CPUINFER_CUDA_STATIC_RUNTIME=1 \
-    CUDA_HOME=/usr/local/cuda CPUINFER_NATIVE=OFF CPUINFER_BUILD_TYPE=Release \
+    CUDA_HOME=/usr/local/cuda CPUINFER_BUILD_TYPE=Release \
     python3 setup.py build_ext --inplace \
  && so="$(find /tmp/ktsrc/kt-kernel/build -name 'kt_kernel_ext.cpython-312-x86_64-linux-gnu.so' | head -1)" \
  && test -n "$so" && cp "$so" /tmp/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so

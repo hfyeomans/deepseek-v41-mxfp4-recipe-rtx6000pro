@@ -22,7 +22,10 @@ to a scratch copy of the wheel's Python), `config/kt_smoke.py` at build time (00
    `pybind11` + `llama.cpp` submodules, `git apply --check` then `git apply` every C++ patch, run
    `python3 setup.py build_ext --inplace` with **the wheel's own flag set** (`CPUINFER_CPU_INSTRUCT=AVX512`,
    AVX512 VNNI / BF16 / VBMI on, AMX / oneDNN off, ~~CUDA off~~ **`CPUINFER_USE_CUDA=1` with static cudart
-   and archs `80;86;89;90;120`**, cpptrace off, `CPUINFER_NATIVE=OFF`), and keep the one resulting `.so`.
+   and archs `80;86;89;90;120`**, cpptrace off), and keep the one resulting `.so`. The build ARG `KT_CPU_INSTRUCT`
+   (default `AVX512`) drives `CPUINFER_CPU_INSTRUCT`; `--build-arg KT_CPU_INSTRUCT=NATIVE` is the T3.40 variant
+   (`-DLLAMA_NATIVE=ON` -> `-march=native`). setup.py's documented `CPUINFER_NATIVE` is never read at the pinned
+   commit (docstring only), so it is not used.
    The flag set is kt-kernel's `.github/workflows/release-pypi.yml` at the pinned commit. `USE_CUDA=1` compiles
    no device code into the extension (`kt-kernel/cuda` is a separate package); it links cudart for the
    `cudaLaunchHostFunc` bridge behind `CPUInfer.submit_with_cuda_stream` / `sync_with_cuda_stream`, which the
@@ -37,7 +40,7 @@ to a scratch copy of the wheel's Python), `config/kt_smoke.py` at build time (00
 3. `config/kt_smoke.py` runs at the end of the build and fails the build if the patched bindings are missing.
 
 The flag set is the wheel's, not `-march=native`, so the only delta between the wheel's extension and ours is
-the patch (one variable per experiment). A `CPUINFER_NATIVE=ON` A/B is registered separately (ROADMAP T3.40,
+the patch (one variable per experiment). A `KT_CPU_INSTRUCT=NATIVE` A/B is registered separately (ROADMAP T3.40,
 low) and is not expected to move the CPU tier: its hot loops are hand-written AVX-512 intrinsics and the
 measured bound is DRAM / fabric bandwidth, not ALU.
 

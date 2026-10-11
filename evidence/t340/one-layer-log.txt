@@ -1,0 +1,33 @@
+== recipe-r1 image=dsv41-kt:recipe 09:48:56
+load: 1.2s  RSS 1.19->4.82 GiB  anon 0.67->4.18 GiB  (THP 0.00 GiB)  (21.7 MiB per CPU expert; packed FP4+scale in checkpoint = 17.9 MiB)
+bench T=   1: median    0.584 ms  min    0.487 ms  (0.584 ms/token)
+bench T=   2: median    1.074 ms  min    0.997 ms  (0.537 ms/token)
+bench T=   4: median    2.035 ms  min    1.860 ms  (0.509 ms/token)
+bench T=   8: median    3.970 ms  min    3.580 ms  (0.496 ms/token)
+bench T=  64: median   23.369 ms  min   22.547 ms  (0.365 ms/token)
+bench T= 256: median   43.197 ms  min   41.516 ms  (0.169 ms/token)
+== native-r1 image=dsv41-kt:native 09:49:14
+load: 1.2s  RSS 1.19->4.82 GiB  anon 0.67->4.18 GiB  (THP 0.00 GiB)  (21.7 MiB per CPU expert; packed FP4+scale in checkpoint = 17.9 MiB)
+bench T=   1: median    0.577 ms  min    0.513 ms  (0.577 ms/token)
+bench T=   2: median    1.089 ms  min    0.952 ms  (0.544 ms/token)
+bench T=   4: median    2.039 ms  min    1.914 ms  (0.510 ms/token)
+bench T=   8: median    3.933 ms  min    3.585 ms  (0.492 ms/token)
+bench T=  64: median   23.496 ms  min   22.720 ms  (0.367 ms/token)
+bench T= 256: median   43.426 ms  min   41.352 ms  (0.170 ms/token)
+== recipe-r2 image=dsv41-kt:recipe 09:49:33
+load: 1.2s  RSS 1.19->4.82 GiB  anon 0.67->4.18 GiB  (THP 0.00 GiB)  (21.7 MiB per CPU expert; packed FP4+scale in checkpoint = 17.9 MiB)
+bench T=   1: median    0.584 ms  min    0.505 ms  (0.584 ms/token)
+bench T=   2: median    1.081 ms  min    1.003 ms  (0.541 ms/token)
+bench T=   4: median    2.026 ms  min    1.861 ms  (0.506 ms/token)
+bench T=   8: median    3.867 ms  min    3.522 ms  (0.483 ms/token)
+bench T=  64: median   23.364 ms  min   22.254 ms  (0.365 ms/token)
+bench T= 256: median   43.278 ms  min   41.330 ms  (0.169 ms/token)
+== native-r2 image=dsv41-kt:native 09:49:51
+load: 1.3s  RSS 1.19->4.82 GiB  anon 0.67->4.18 GiB  (THP 0.00 GiB)  (21.7 MiB per CPU expert; packed FP4+scale in checkpoint = 17.9 MiB)
+bench T=   1: median    0.588 ms  min    0.486 ms  (0.588 ms/token)
+bench T=   2: median    1.125 ms  min    0.983 ms  (0.563 ms/token)
+bench T=   4: median    2.067 ms  min    1.922 ms  (0.517 ms/token)
+bench T=   8: median    3.994 ms  min    3.702 ms  (0.499 ms/token)
+bench T=  64: median   23.335 ms  min   22.261 ms  (0.365 ms/token)
+bench T= 256: median   43.465 ms  min   41.463 ms  (0.170 ms/token)
+== done 09:50:09

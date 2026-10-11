@@ -1,0 +1,52 @@
+== serve a-baseline 09:50:21
+grep: /proc/1905053/smaps_rollup: Permission denied
+     32,768      32,004               1277.89         25.044
+  1         59.74     58.15     60.49       56.35       0.533     n/a
+  4        118.67    105.82    120.26      113.30       0.851     n/a
+     16,384      15,980               3683.29          4.339
+     32,768      31,964               4291.61          7.454
+  C    steps     wall s     kt cpu-s  kt cpu/step main cpu/step kt threads busy
+  1      200        4.8        65.10       0.3255       0.0255        13.62
+      bench:   1         54.69     54.69     54.69       42.54       1.062     n/a
+  4      200       10.2       146.85       0.7342       0.0521        14.39
+      bench:   4         96.96     96.96     96.96       79.03       1.925     n/a
+08-bench-decode-py.txt: tokens scored 2621  mean NLL 0.66168 nats/tok  ppl 1.938  cached_tokens 0  latency 1.4 s
+vs 08-bench-decode-py.json: ΔNLL +0.00145 ± 0.00404 nats/tok (z -0.36, n 2621)  max|Δlogp| 3.343  mean|Δlogp| 0.0739 sd 0.207  changed 2547  tokens >0.5 nats worse/better: 42/45
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t336/serve-ab/a-baseline/corpus/*.json
+== done a-baseline 10:00:20
+== serve b-thp 10:00:20
+grep: /proc/1916767/smaps_rollup: Permission denied
+     32,768      32,004               1259.51         25.410
+  1         61.25     60.63     61.59       58.13       0.466     n/a
+  4        121.35    119.80    122.33      116.49       0.735     n/a
+     16,384      15,980               3197.36          4.999
+     32,768      31,964               3434.59          9.309
+  C    steps     wall s     kt cpu-s  kt cpu/step main cpu/step kt threads busy
+  1      200        4.5        62.48       0.3124       0.0235        13.93
+      bench:   1         56.64     56.64     56.64       45.28       0.902     n/a
+  4      200        9.3       135.13       0.6756       0.0471        14.56
+      bench:   4        105.11    105.11    105.11       86.90       1.645     n/a
+08-bench-decode-py.txt: tokens scored 2621  mean NLL 0.66168 nats/tok  ppl 1.938  cached_tokens 0  latency 1.6 s
+vs 08-bench-decode-py.json: ΔNLL +0.00145 ± 0.00404 nats/tok (z -0.36, n 2621)  max|Δlogp| 3.343  mean|Δlogp| 0.0739 sd 0.207  changed 2547  tokens >0.5 nats worse/better: 42/45
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t336/serve-ab/b-thp/corpus/*.json
+== done b-thp 10:13:16
+== serve c-native 10:13:16
+grep: /proc/1929934/smaps_rollup: Permission denied
+     32,768      32,004               1300.26         24.614
+  1         60.43     60.07     60.94       57.38       0.470     n/a
+  4        119.94    118.69    121.57      115.21       0.740     n/a
+     16,384      15,980               3146.66          5.079
+     32,768      31,964               3413.73          9.365
+  C    steps     wall s     kt cpu-s  kt cpu/step main cpu/step kt threads busy
+  1      200        4.8        66.08       0.3304       0.0249        13.90
+      bench:   1         53.26     53.26     53.26       42.85       0.929     n/a
+  4      200        9.7       140.99       0.7050       0.0490        14.57
+      bench:   4        100.27    100.27    100.27       83.37       1.670     n/a
+08-bench-decode-py.txt: tokens scored 2621  mean NLL 0.66168 nats/tok  ppl 1.938  cached_tokens 0  latency 1.5 s
+vs 08-bench-decode-py.json: ΔNLL +0.00145 ± 0.00404 nats/tok (z -0.36, n 2621)  max|Δlogp| 3.343  mean|Δlogp| 0.0739 sd 0.207  changed 2547  tokens >0.5 nats worse/better: 42/45
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t336/serve-ab/c-native/corpus/*.json
+== done c-native 10:22:12
+== all done 10:22:12

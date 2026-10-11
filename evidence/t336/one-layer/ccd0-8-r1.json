@@ -1,0 +1,92 @@
+{
+  "args": {
+    "weight_path": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+    "layer": 5,
+    "num_experts": 384,
+    "num_gpu_experts": 219,
+    "topk": 6,
+    "hidden": 5120,
+    "intermediate": 2304,
+    "swiglu_limit": 10.0,
+    "threads": 8,
+    "threadpool_count": 1,
+    "chunked_prefill_size": 256,
+    "check_tokens": 8,
+    "bench_tokens": "1,2,4,8,64,256",
+    "bench_iters": 40,
+    "cpu_slots_per_token": 3,
+    "shared_routing": false,
+    "bench_cold": true,
+    "no_loader_patch": false,
+    "skip_reference": true,
+    "seed": 0,
+    "x_scale": 1.0,
+    "json": "/out/ccd0-8-r1.json"
+  },
+  "kt_kernel": "0.7.0.post4",
+  "torch": "2.13.0+cu130",
+  "compact_cpu_view": true,
+  "load": {
+    "seconds": 1.31,
+    "rss_gib_before": 1.187,
+    "rss_gib_after": 4.828,
+    "anon_gib_before": 0.672,
+    "anon_gib_after": 4.184,
+    "anon_gib_delta": 3.512,
+    "anon_huge_gib_after": 0.0,
+    "cpu_experts": 165,
+    "anon_mib_per_cpu_expert": 21.79
+  },
+  "bench_ms_per_layer": {
+    "1": {
+      "ms_median": 1.012,
+      "ms_min": 0.957,
+      "ms_per_token": 1.012,
+      "expert_calls_per_step": 3,
+      "cpu_slots_per_token": 3,
+      "cold_ids": true
+    },
+    "2": {
+      "ms_median": 2.004,
+      "ms_min": 1.77,
+      "ms_per_token": 1.0021,
+      "expert_calls_per_step": 6,
+      "cpu_slots_per_token": 3,
+      "cold_ids": true
+    },
+    "4": {
+      "ms_median": 3.873,
+      "ms_min": 3.483,
+      "ms_per_token": 0.9683,
+      "expert_calls_per_step": 12,
+      "cpu_slots_per_token": 3,
+      "cold_ids": true
+    },
+    "8": {
+      "ms_median": 7.623,
+      "ms_min": 6.985,
+      "ms_per_token": 0.9529,
+      "expert_calls_per_step": 24,
+      "cpu_slots_per_token": 3,
+      "cold_ids": true
+    },
+    "64": {
+      "ms_median": 44.371,
+      "ms_min": 42.601,
+      "ms_per_token": 0.6933,
+      "expert_calls_per_step": 192,
+      "cpu_slots_per_token": 3,
+      "cold_ids": true
+    },
+    "256": {
+      "ms_median": 84.041,
+      "ms_min": 80.069,
+      "ms_per_token": 0.3283,
+      "expert_calls_per_step": 768,
+      "cpu_slots_per_token": 3,
+      "cold_ids": true
+    }
+  },
+  "note": "Every token routes all top-k slots to CPU experts here (worst case); in the hybrid recipe only ~(1 - gpu_share) of slots hit CPU.",
+  "maxrss_gib": 11.067230224609375
+}

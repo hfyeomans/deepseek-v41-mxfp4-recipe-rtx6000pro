@@ -1,0 +1,76 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 2,
+  "seed": 1277,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization; sizes = cold pass",
+  "sizes": [
+    {
+      "target_tokens": 32768,
+      "median_prompt_tokens": 31964.0,
+      "median_prefill_tps": 4291.608653807965,
+      "median_ttft_s": 7.453760967007838,
+      "runs": [
+        {
+          "prompt_tokens": 31926,
+          "ttft_s": 7.242478781961836,
+          "prefill_tps": 4408.159272694744
+        },
+        {
+          "prompt_tokens": 32002,
+          "ttft_s": 7.6650431520538405,
+          "prefill_tps": 4175.058034921186
+        }
+      ]
+    }
+  ],
+  "passes": [
+    {
+      "pass": "cold",
+      "seed": 1277,
+      "engram_residency_before": [
+        {
+          "shard": "model-00047-of-00048.safetensors",
+          "resident_bytes": 38694604800,
+          "size_bytes": 101535150936,
+          "resident_pct": 38.11
+        },
+        {
+          "shard": "model-00048-of-00048.safetensors",
+          "resident_bytes": 38779109376,
+          "size_bytes": 101537926640,
+          "resident_pct": 38.19
+        }
+      ],
+      "sizes": [
+        {
+          "target_tokens": 32768,
+          "median_prompt_tokens": 31964.0,
+          "median_prefill_tps": 4291.608653807965,
+          "median_ttft_s": 7.453760967007838,
+          "runs": [
+            {
+              "prompt_tokens": 31926,
+              "ttft_s": 7.242478781961836,
+              "prefill_tps": 4408.159272694744
+            },
+            {
+              "prompt_tokens": 32002,
+              "ttft_s": 7.6650431520538405,
+              "prefill_tps": 4175.058034921186
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-11T09:59:17-0400",
+  "evidence": {
+    "tool": "bench-prefill.py",
+    "recorded_utc": "2026-10-11T13:59:17Z",
+    "manifest_hash": "c41658ea5c0e33a5a03ba8404c563a0802b050cc50b78171a64a363fa7293dbd",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "3d9ca7939871c1c05610ee888052b101316139b3d9a1b6bcd924c9c24f8d0369"
+  }
+}

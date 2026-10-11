@@ -1,0 +1,18 @@
+== serve a2-baseline 10:24:45
+grep: /proc/1941507/smaps_rollup: Permission denied
+     32,768      32,004               1191.40         26.862
+  1         60.96     60.76     61.27       57.87       0.465     n/a
+  4        119.20    118.66    119.36      114.50       0.727     n/a
+     16,384      15,980               3196.69          5.001
+     32,768      31,964               3404.12          9.392
+  C    steps     wall s     kt cpu-s  kt cpu/step main cpu/step kt threads busy
+  1      200        4.7        64.46       0.3223       0.0244        13.84
+      bench:   1         54.67     54.67     54.67       43.70       0.935     n/a
+  4      200        9.4       135.10       0.6755       0.0475        14.43
+      bench:   4        105.45    105.45    105.45       86.32       1.725     n/a
+08-bench-decode-py.txt: tokens scored 2621  mean NLL 0.66168 nats/tok  ppl 1.938  cached_tokens 0  latency 1.5 s
+vs 08-bench-decode-py.json: ΔNLL +0.00145 ± 0.00404 nats/tok (z -0.36, n 2621)  max|Δlogp| 3.343  mean|Δlogp| 0.0739 sd 0.207  changed 2547  tokens >0.5 nats worse/better: 42/45
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t336/serve-ab/a2-baseline/corpus/*.json
+== done a2-baseline 10:33:47
+== all done 10:33:47

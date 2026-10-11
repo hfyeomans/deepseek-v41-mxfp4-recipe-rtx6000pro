@@ -1,0 +1,7 @@
+load: 1.2s  RSS 1.19->4.83 GiB  anon 0.67->4.18 GiB  (THP 2.79 GiB)  (21.8 MiB per CPU expert; packed FP4+scale in checkpoint = 17.9 MiB)
+bench T=   1: median    6.200 ms  min    4.999 ms  (6.200 ms/token)
+bench T=   2: median    6.838 ms  min    4.979 ms  (3.419 ms/token)
+bench T=   4: median    6.189 ms  min    4.999 ms  (1.547 ms/token)
+bench T=   8: median    6.520 ms  min    5.130 ms  (0.815 ms/token)
+bench T=  64: median   39.799 ms  min   34.138 ms  (0.622 ms/token)
+bench T= 256: median   56.975 ms  min   52.005 ms  (0.223 ms/token)

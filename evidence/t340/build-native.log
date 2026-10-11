@@ -1,0 +1,313 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.dsv41-kt
+#1 transferring dockerfile: 5.57kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [ktbuild 1/3] FROM docker.io/lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860
+#4 resolve docker.io/lmsysorg/sglang:dev-dsv41@sha256:4a5d132a06a77c8331e15845f2e925adc788b00105097ad55409afa3f4fa4860 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 6.47kB done
+#5 DONE 0.0s
+
+#6 [stage-1 2/8] COPY prune_wheel.py /opt/recipe/prune_wheel.py
+#6 CACHED
+
+#7 [stage-1 3/8] RUN pip download --no-cache-dir --no-deps -d /tmp/ktw "kt-kernel==0.7.0.post4"  && python3 /opt/recipe/prune_wheel.py /tmp/ktw/kt_kernel-*.whl /tmp/ktw/pruned kt_kernel  && pip install --no-cache-dir --no-deps /tmp/ktw/pruned/kt_kernel-*.whl  && rm -rf /tmp/ktw
+#7 CACHED
+
+#8 [ktbuild 2/3] COPY kt-kernel-patches/0003-weight-arena.patch /tmp/0003-weight-arena.patch
+#8 CACHED
+
+#9 [stage-1 4/8] COPY kt-kernel-patches /opt/recipe/kt-kernel-patches
+#9 DONE 0.0s
+
+#10 [stage-1 5/8] RUN cd /opt/sglang/lib/python3.12/site-packages  && for p in /opt/recipe/kt-kernel-patches/000[12]-*.patch; do patch -p1 --forward < "$p"; done
+#10 0.136 patching file kt_kernel/experts_base.py
+#10 0.137 patching file kt_kernel/experts_base.py
+#10 DONE 0.1s
+
+#11 [ktbuild 3/3] RUN git clone --quiet --depth 1 --branch "v0.7.0.post4" https://github.com/kvcache-ai/ktransformers /tmp/ktsrc  && cd /tmp/ktsrc  && test "$(git rev-parse HEAD)" = "5632f7197e7a9898f0723755c2fc187a946a85a6"  && git submodule update --init --depth 1 third_party/pybind11 third_party/llama.cpp  && git apply --check /tmp/0003-weight-arena.patch && git apply /tmp/0003-weight-arena.patch  && cd kt-kernel  && CPUINFER_CPU_INSTRUCT="NATIVE" CPUINFER_ENABLE_AVX512=ON CPUINFER_ENABLE_AVX512_VNNI=ON     CPUINFER_ENABLE_AVX512_BF16=ON CPUINFER_ENABLE_AVX512_VBMI=ON CPUINFER_ENABLE_AMX=OFF     CPUINFER_ENABLE_ONEDNN_VNNI=OFF CPUINFER_ENABLE_CPPTRACE=0     CPUINFER_USE_CUDA=1 CPUINFER_CUDA_ARCHS="80;86;89;90;120" CPUINFER_CUDA_STATIC_RUNTIME=1     CUDA_HOME=/usr/local/cuda CPUINFER_BUILD_TYPE=Release     python3 setup.py build_ext --inplace  && so="$(find /tmp/ktsrc/kt-kernel/build -name 'kt_kernel_ext.cpython-312-x86_64-linux-gnu.so' | head -1)"  && test -n "$so" && cp "$so" /tmp/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so
+#11 1.731 Note: switching to '5632f7197e7a9898f0723755c2fc187a946a85a6'.
+#11 1.731 
+#11 1.731 You are in 'detached HEAD' state. You can look around, make experimental
+#11 1.731 changes and commit them, and you can discard any commits you make in this
+#11 1.731 state without impacting any branches by switching back to a branch.
+#11 1.731 
+#11 1.731 If you want to create a new branch to retain commits you create, you may
+#11 1.731 do so (now or later) by using -c with the switch command. Example:
+#11 1.731 
+#11 1.731   git switch -c <new-branch-name>
+#11 1.731 
+#11 1.731 Or undo this operation with:
+#11 1.731 
+#11 1.731   git switch -
+#11 1.731 
+#11 1.731 Turn off this advice by setting config variable advice.detachedHead to false
+#11 1.731 
+#11 1.918 Submodule 'third_party/llama.cpp' (https://github.com/ggerganov/llama.cpp.git) registered for path 'third_party/llama.cpp'
+#11 1.918 Submodule 'third_party/pybind11' (https://github.com/pybind/pybind11.git) registered for path 'third_party/pybind11'
+#11 1.919 Cloning into '/tmp/ktsrc/third_party/llama.cpp'...
+#11 3.335 Cloning into '/tmp/ktsrc/third_party/pybind11'...
+#11 5.180 From https://github.com/ggerganov/llama.cpp
+#11 5.180  * branch            a94e6ff8774b7c9f950d9545baf0ce35e8d1ed2f -> FETCH_HEAD
+#11 5.354 Submodule path 'third_party/llama.cpp': checked out 'a94e6ff8774b7c9f950d9545baf0ce35e8d1ed2f'
+#11 6.053 From https://github.com/pybind/pybind11
+#11 6.053  * branch            bb05e0810b87e74709d9f4c4545f1f57a1b386f5 -> FETCH_HEAD
+#11 6.069 Submodule path 'third_party/pybind11': checked out 'bb05e0810b87e74709d9f4c4545f1f57a1b386f5'
+#11 6.349 /opt/sglang/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: SetuptoolsWarning: `license` overwritten by `pyproject.toml`
+#11 6.349   corresp(dist, value, root_dir)
+#11 6.389 -- Version: 0.7.0.post4
+#11 6.389 -- Building kt-kernel with CUDA support (+ CPU multi-variant)
+#11 6.389 running build_ext
+#11 6.445 -- The C compiler identification is GNU 13.3.0
+#11 6.487 -- The CXX compiler identification is GNU 13.3.0
+#11 6.493 -- Detecting C compiler ABI info
+#11 6.524 -- Detecting C compiler ABI info - done
+#11 6.533 -- Check for working C compiler: /usr/bin/gcc - skipped
+#11 6.533 -- Detecting C compile features
+#11 6.534 -- Detecting C compile features - done
+#11 6.540 -- Detecting CXX compiler ABI info
+#11 6.572 -- Detecting CXX compiler ABI info - done
+#11 6.580 -- Check for working CXX compiler: /usr/bin/g++ - skipped
+#11 6.580 -- Detecting CXX compile features
+#11 6.581 -- Detecting CXX compile features - done
+#11 6.585 -- Detected git worktree at /tmp/ktsrc; installing hooks from kt-kernel/.githooks
+#11 6.694 -- Found OpenMP_C: -fopenmp (found version "4.5")
+#11 6.733 -- Found OpenMP_CXX: -fopenmp (found version "4.5")
+#11 6.734 -- Found OpenMP: TRUE (found version "4.5")
+#11 6.734 -- CMAKE_CXX_FLAGS:  -O3 -ffast-math
+#11 6.735 -- CMAKE_SYSTEM_PROCESSOR: x86_64
+#11 6.735 -- x86 detected
+#11 6.735 -- AVX512 extensions: F=ON, BF16=ON, VNNI=ON, VBMI=ON
+#11 6.735 -- ARCH_FLAGS: -mfma;-mavx;-mavx2;-march=native;-mavx512f;-mavx512bw;-mavx512dq;-mavx512vl;-mfma;-mf16c;-msse3;-mavx512vbmi;-mavx512vnni;-mavx512bf16;-mavx512vl;-mf16c
+#11 6.736 CMake Deprecation Warning at /tmp/ktsrc/third_party/pybind11/CMakeLists.txt:13 (cmake_minimum_required):
+#11 6.736   Compatibility with CMake < 3.10 will be removed from a future version of
+#11 6.736   CMake.
+#11 6.736 
+#11 6.736   Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+#11 6.736   to tell CMake that the project requires at least <min> but has been updated
+#11 6.736   to work with policies introduced by <max> or earlier.
+#11 6.736 
+#11 6.736 
+#11 6.738 -- pybind11 v2.14.0 dev1
+#11 6.755 -- Found PythonInterp: /opt/sglang/bin/python3 (found suitable version "3.12.3", minimum required is "3.7")
+#11 6.771 -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.12.so
+#11 6.772 -- Performing Test HAS_FLTO
+#11 6.836 -- Performing Test HAS_FLTO - Success
+#11 6.847 -- llama.cpp: applied patch /tmp/ktsrc/kt-kernel/third_party_patches/llama.cpp/0001-ggml-mxfp4-type.patch
+#11 6.849 -- llama.cpp: applied patch /tmp/ktsrc/kt-kernel/third_party_patches/llama.cpp/0002-gguf-numpy2-byteorder.patch
+#11 6.851 -- Found Git: /usr/bin/git (found version "2.43.0")
+#11 6.856 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+#11 6.885 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+#11 6.886 -- Found Threads: TRUE
+#11 6.887 -- Found OpenMP_C: -fopenmp (found version "4.5")
+#11 6.888 -- Found OpenMP_CXX: -fopenmp (found version "4.5")
+#11 6.888 -- OpenMP found
+#11 6.888 -- ccache found, compilation results will be cached. Disable with LLAMA_CCACHE=OFF.
+#11 6.896 -- CMAKE_SYSTEM_PROCESSOR: x86_64
+#11 6.896 -- x86 detected
+#11 6.900 -- CUDA detected
+#11 6.909 -- Found CUDAToolkit: /usr/local/cuda/targets/x86_64-linux/include (found version "13.0.88")
+#11 6.942 -- enabling CUDA
+#11 7.431 -- The CUDA compiler identification is NVIDIA 13.0.88 with host compiler GNU 13.3.0
+#11 7.438 -- Detecting CUDA compiler ABI info
+#11 8.333 -- Detecting CUDA compiler ABI info - done
+#11 8.366 -- Check for working CUDA compiler: /usr/local/cuda/bin/nvcc - skipped
+#11 8.368 -- Detecting CUDA compile features
+#11 8.368 -- Detecting CUDA compile features - done
+#11 8.371 -- CUDA architectures (user): 80;86;89;90;120
+#11 8.371 -- CUDA compiler: /usr/local/cuda/bin/nvcc
+#11 8.371 -- CUDA toolkit: 13.0.88
+#11 8.371 -- CUDA flags:  -O3 --use_fast_math --expt-relaxed-constexpr
+#11 8.372 -- SOURCE_DIR7: 
+#11 8.380 -- Using clang-format 16.0.3 at /usr/local/bin/clang-format
+#11 8.380 CMake Warning at CMakeLists.txt:748 (message):
+#11 8.380   clang-format >=18.0.0 required (found 16.0.3 at
+#11 8.380   /usr/local/bin/clang-format).
+#11 8.380 
+#11 8.380   Tip: Ensure your desired clang-format (e.g., conda's /bin/clang-format) is
+#11 8.380   earlier in PATH when running CMake,
+#11 8.380 
+#11 8.380   or pass -DCLANG_FORMAT_BIN=/full/path/to/clang-format.
+#11 8.380 
+#11 8.380 
+#11 8.382 -- Found PkgConfig: /usr/bin/pkg-config (found version "1.8.1")
+#11 8.382 -- Checking for one of the modules 'hwloc'
+#11 8.402 -- LTO: disabled
+#11 8.402 -- CUDA runtime: static (/usr/local/cuda/lib64/libcudart_static.a)
+#11 8.403 -- NUMA library found: /usr/lib/x86_64-linux-gnu/libnuma.so - enabling NUMA support
+#11 8.403 -- Configuring done (2.0s)
+#11 8.415 -- Generating done (0.0s)
+#11 8.416 -- Build files have been written to: /tmp/ktsrc/kt-kernel/build/temp.linux-x86_64-cpython-312/kt_kernel.kt_kernel_ext_Release
+#11 8.429 [  1%] Generating build details from Git
+#11 8.431 [  2%] Building C object third_party/llama.cpp/CMakeFiles/ggml.dir/ggml.c.o
+#11 8.431 [  6%] Building C object third_party/llama.cpp/CMakeFiles/ggml.dir/ggml-backend.c.o
+#11 8.431 [  7%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/flags.cpp.o
+#11 8.431 [  8%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/iqk_mul_mat_amd_avx2.cpp.o
+#11 8.431 [  6%] Building C object third_party/llama.cpp/CMakeFiles/ggml.dir/ggml-alloc.c.o
+#11 8.431 [  8%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/iqk_mul_mat_amd_zen4.cpp.o
+#11 8.431 [ 11%] Building C object third_party/llama.cpp/CMakeFiles/ggml.dir/ggml-quants.c.o
+#11 8.431 [ 11%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/iqk_mul_mat_arm82.cpp.o
+#11 8.431 [ 14%] Building CXX object third_party/llama.cpp/CMakeFiles/ggml.dir/sgemm.cpp.o
+#11 8.431 [ 14%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/sgemm.cpp.o
+#11 8.431 [ 16%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avx.cpp.o
+#11 8.431 [ 16%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avx2.cpp.o
+#11 8.432 [ 17%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avx512f.cpp.o
+#11 8.432 [ 19%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avxvnni.cpp.o
+#11 8.432 -- Found Git: /usr/bin/git (found version "2.43.0")
+#11 8.432 [ 21%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_zen4.cpp.o
+#11 8.432 [ 21%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_fma.cpp.o
+#11 8.432 [ 23%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_arm80.cpp.o
+#11 8.432 [ 25%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_arm82.cpp.o
+#11 8.432 [ 25%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avx.cpp.o
+#11 8.434 [ 26%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avx2.cpp.o
+#11 8.434 [ 28%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avx512f.cpp.o
+#11 8.434 [ 29%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_fma.cpp.o
+#11 8.434 [ 30%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avxvnni.cpp.o
+#11 8.434 [ 32%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_zen4.cpp.o
+#11 8.435 [ 33%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_arm80.cpp.o
+#11 8.435 [ 35%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_unsupported.cpp.o
+#11 8.435 [ 35%] Building CXX object CMakeFiles/llamafile.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_arm82.cpp.o
+#11 8.440 [ 37%] Building CXX object third_party/llama.cpp/common/CMakeFiles/build_info.dir/build-info.cpp.o
+#11 8.458 [ 37%] Built target build_info
+#11 12.56 /tmp/ktsrc/third_party/llama.cpp/ggml.c: In function ‘ggml_compute_forward_clamp’:
+#11 12.56 /tmp/ktsrc/third_party/llama.cpp/ggml.c:13997:5: warning: enumeration value ‘GGML_TYPE_MXFP4’ not handled in switch [-Wswitch]
+#11 12.56 13997 |     switch (src0->type) {
+#11 12.56       |     ^~~~~~
+#11 12.56 [ 37%] Built target ggml
+#11 12.56 [ 41%] Building CXX object third_party/llama.cpp/CMakeFiles/llama.dir/unicode.cpp.o
+#11 12.56 [ 41%] Building CXX object third_party/llama.cpp/CMakeFiles/llama.dir/llama.cpp.o
+#11 12.56 [ 41%] Linking CXX static library libggml_static.a
+#11 12.56 [ 42%] Building CXX object third_party/llama.cpp/CMakeFiles/llama.dir/unicode-data.cpp.o
+#11 12.57 [ 42%] Built target ggml_static
+#11 14.22 [ 43%] Linking CXX static library libllamafile.a
+#11 14.24 [ 43%] Built target llamafile
+#11 24.41 [ 44%] Linking CXX static library libllama.a
+#11 24.42 [ 44%] Built target llama
+#11 24.42 [ 50%] Building CXX object third_party/llama.cpp/common/CMakeFiles/common.dir/sampling.cpp.o
+#11 24.42 [ 50%] Building CXX object third_party/llama.cpp/common/CMakeFiles/common.dir/common.cpp.o
+#11 24.42 [ 50%] Building CXX object third_party/llama.cpp/common/CMakeFiles/common.dir/grammar-parser.cpp.o
+#11 24.42 [ 50%] Building CXX object third_party/llama.cpp/common/CMakeFiles/common.dir/console.cpp.o
+#11 24.42 [ 51%] Building CXX object third_party/llama.cpp/common/CMakeFiles/common.dir/json-schema-to-grammar.cpp.o
+#11 24.42 [ 53%] Building CXX object CMakeFiles/kt_kernel_ext.dir/fp8_layerwise_transport.cpp.o
+#11 24.42 [ 53%] Building CXX object third_party/llama.cpp/common/CMakeFiles/common.dir/train.cpp.o
+#11 24.42 [ 57%] Building CXX object CMakeFiles/kt_kernel_ext.dir/ext_bindings.cpp.o
+#11 24.42 [ 57%] Building CXX object third_party/llama.cpp/common/CMakeFiles/common.dir/ngram-cache.cpp.o
+#11 24.42 [ 57%] Building CXX object CMakeFiles/kt_kernel_ext.dir/cpu_backend/ascend_callback_worker.cpp.o
+#11 24.42 [ 58%] Building CXX object CMakeFiles/kt_kernel_ext.dir/cpu_backend/shared_mem_buffer.cpp.o
+#11 24.42 [ 60%] Building CXX object CMakeFiles/kt_kernel_ext.dir/cpu_backend/worker_pool.cpp.o
+#11 24.42 [ 61%] Building CXX object CMakeFiles/kt_kernel_ext.dir/cpu_backend/task_queue.cpp.o
+#11 24.42 [ 62%] Building CXX object CMakeFiles/kt_kernel_ext.dir/operators/llamafile/linear.cpp.o
+#11 24.42 [ 64%] Building CXX object CMakeFiles/kt_kernel_ext.dir/operators/llamafile/mlp.cpp.o
+#11 24.42 [ 65%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/iqk_mul_mat_amd_avx2.cpp.o
+#11 24.42 [ 67%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/flags.cpp.o
+#11 24.42 [ 67%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/iqk_mul_mat_amd_zen4.cpp.o
+#11 24.42 [ 69%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/iqk_mul_mat_arm82.cpp.o
+#11 24.42 [ 70%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avx.cpp.o
+#11 24.42 [ 74%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avx2.cpp.o
+#11 24.42 [ 74%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avx512f.cpp.o
+#11 24.42 [ 74%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/sgemm.cpp.o
+#11 24.42 [ 75%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_avxvnni.cpp.o
+#11 24.43 [ 76%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_fma.cpp.o
+#11 24.43 [ 79%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_arm80.cpp.o
+#11 24.43 [ 83%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avx2.cpp.o
+#11 24.43 [ 83%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_amd_zen4.cpp.o
+#11 24.43 [ 83%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avx.cpp.o
+#11 24.43 [ 82%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_mixmul_arm82.cpp.o
+#11 24.43 [ 84%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avx512f.cpp.o
+#11 24.43 [ 85%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_avxvnni.cpp.o
+#11 24.44 [ 87%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_fma.cpp.o
+#11 24.44 [ 88%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_amd_zen4.cpp.o
+#11 24.44 [ 89%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_arm80.cpp.o
+#11 24.44 [ 91%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_sgemm_arm82.cpp.o
+#11 24.45 [ 92%] Building CXX object CMakeFiles/kt_kernel_ext.dir/tmp/ktsrc/third_party/llamafile/tinyblas_cpu_unsupported.cpp.o
+#11 24.46 [ 93%] Building CXX object CMakeFiles/kt_kernel_ext.dir/operators/kvcache/kvcache_attn.cpp.o
+#11 24.46 [ 94%] Building CXX object CMakeFiles/kt_kernel_ext.dir/operators/kvcache/kvcache_load_dump.cpp.o
+#11 24.46 [ 96%] Building CXX object CMakeFiles/kt_kernel_ext.dir/operators/kvcache/kvcache_read_write.cpp.o
+#11 24.48 [ 97%] Building CXX object CMakeFiles/kt_kernel_ext.dir/operators/kvcache/kvcache_utils.cpp.o
+#11 30.38 [ 98%] Linking CXX static library libcommon.a
+#11 30.39 [ 98%] Built target common
+#11 103.4 In file included from /tmp/ktsrc/kt-kernel/operators/amx/bf16-moe.hpp:18,
+#11 103.4                  from /tmp/ktsrc/kt-kernel/ext_bindings.cpp:49:
+#11 103.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:324:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 103.4   324 |   static inline std::pair<__m512i, __m512i> fp8x64_to_bf16x64(__m512i bfp8_512) {
+#11 103.4       |                                           ^
+#11 103.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:324:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 103.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:665:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 103.4   665 |   static inline std::pair<__m512i, __m512i> fp8x64_to_bf16x64(__m512i bfp8_512) {
+#11 103.4       |                                           ^
+#11 103.4 /tmp/ktsrc/kt-kernel/operators/amx/la/amx_raw_kernels.hpp:665:43: warning: ignoring attributes on template argument ‘__m512i’ [-Wignored-attributes]
+#11 103.4 [100%] Linking CXX shared module /tmp/ktsrc/kt-kernel/build/lib.linux-x86_64-cpython-312/kt_kernel/kt_kernel_ext.cpython-312-x86_64-linux-gnu.so
+#11 103.5 [100%] Built target kt_kernel_ext
+#11 103.5 -- CPUINFER_USE_ASCEND_NPU not set; auto-detected CANN toolkit: NO
+#11 103.5 Detected CPU info: {'vendor': 'amd', 'arch': 'x86_64', 'features': {'AVX512_VNNI', 'AVX2', 'AVX512_VBMI', 'AVX512', 'AVX512_BF16', 'AVX512_VPOPCNTDQ'}, 'raw': {'flags': {'movdiri', '3dnowprefetch', 'sha_ni', 'vaes', 'avx512_bitalg', 'vmmcall', 'ibpb', 'abm', 'smep', 'wdt', 'skinit', 'de', 'avx', 'cqm_llc', 'cqm_mbm_local', 'mtrr', 'hw_pstate', 'movbe', 'ht', 'cppc', 'mmxext', 'xsave', 'cpuid', 'rdtscp', 'pclmulqdq', 'decodeassists', 'topoext', 'sep', 'x2avic', 'fxsr', 'mba', 'v_vmsave_vmload', 'rdpru', 'svm_lock', 'vmcb_clean', 'ospke', 'vgif', 'rdt_a', 'bus_lock_detect', 'ibrs', 'mca', 'amd_lbr_v2', 'avx512_bf16', 'cqm', 'lahf_lm', 'avx512vbmi', 'bmi1', 'lbrv', 'bmi2', 'nx', 'tsc', 'fsrm', 'lm', 'fpu', 'avx512bw', 'svm', 'tsc_scale', 'monitor', 'msr', 'avx_vnni', 'clzero', 'xgetbv1', 'ibs', 'rdrand', 'arat', 'flushbyasid', 'vme', 'v_spec_ctrl', 'x2apic', 'pge', 'xtopology', 'aes', 'rdpid', 'mce', 'nopl', 'ssse3', 'sse4a', 'pausefilter', 'pdpe1gb', 'apic', 'popcnt', 'gfni', 'avx512_vpopcntdq', 'pcid', 'syscall', 'mmx', 'umip', 'avx2', 'extd_apicid', 'avx512_vbmi2', 'ibrs_enhanced', 'fma', 'pku', 'f16c', 'misalignsse', 'ssbd', 'avx512vl', 'movdir64b', 'cdp_l3', 'avx512dq', 'rapl', 'avx512cd', 'pfthreshold', 'xsaveopt', 'sse2', 'perfctr_llc', 'sse4_2', 'perfctr_nb', 'invpcid', 'perfmon_v2', 'adx', 'avx512_vp2intersect', 'la57', 'wbnoinvd', 'overflow_recov', 'cmov', 'aperfmperf', 'debug_swap', 'extapic', 'cat_l3', 'avic', 'sse', 'bpext', 'cmp_legacy', 'smap', 'erms', 'rdseed', 'mwaitx', 'pse36', 'stibp', 'vnmi', 'cqm_occup_llc', 'clflushopt', 'pni', 'xsavec', 'xsaveerptr', 'smca', 'cqm_mbm_total', 'flush_l1d', 'pse', 'tce', 'pae', 'cpb', 'avx512f', 'tsc_adjust', 'cpuid_fault', 'npt', 'cx16', 'amd_ppin', 'succor', 'fsgsbase', 'sse4_1', 'avx512ifma', 'clwb', 'irperf', 'constant_tsc', 'fxsr_opt', 'avx512_vnni', 'cx8', 'nrip_save', 'pat', 'rep_good', 'osvw', 'amd_lbr_pmc_freeze', 'perfctr_core', 'clflush', 'vpclmulqdq', 'nonstop_tsc', 'xsaves', 'cr8_legacy', 'user_shstk'}}}
+#11 103.5 -- Forward CPUINFER_ENABLE_AMX -> -DKTRANSFORMERS_CPU_USE_AMX=OFF
+#11 103.5 -- Forward CPUINFER_ENABLE_AVX512 -> -DKTRANSFORMERS_CPU_USE_AMX_AVX512=ON
+#11 103.5 -- Forward CPUINFER_ENABLE_AVX512_VNNI -> -DLLAMA_AVX512_VNNI=ON
+#11 103.5 -- Forward CPUINFER_ENABLE_AVX512_BF16 -> -DLLAMA_AVX512_BF16=ON
+#11 103.5 -- Forward CPUINFER_ENABLE_AVX512_VBMI -> -DLLAMA_AVX512_VBMI=ON
+#11 103.5 -- AVX512 extensions enabled; also enabling base AVX512F (-DLLAMA_AVX512=ON)
+#11 103.5 -- CPU detection: vendor=amd arch=x86_64 features=['AVX2', 'AVX512', 'AVX512_BF16', 'AVX512_VBMI', 'AVX512_VNNI', 'AVX512_VPOPCNTDQ']
+#11 103.5 -- Forward CPUINFER_ENABLE_CPPTRACE -> -DKTRANSFORMERS_ENABLE_CPPTRACE=OFF
+#11 103.5 -- Forward CPUINFER_ENABLE_ONEDNN_VNNI -> -DKTRANSFORMERS_CPU_USE_ONEDNN_VNNI=OFF
+#11 103.5 -- Forward CPUINFER_CUDA_STATIC_RUNTIME -> -DKTRANSFORMERS_CUDA_STATIC_RUNTIME=ON
+#11 103.5 -- Enabling CUDA backend (-DKTRANSFORMERS_USE_CUDA=ON)
+#11 103.5 -- Auto-detected nvcc: /usr/local/cuda/bin/nvcc (adding -DCMAKE_CUDA_COMPILER)
+#11 103.5 -- Set CUDA architectures: 80;86;89;90;120
+#11 103.5 -- CMake configure args:
+#11 103.5     -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/tmp/ktsrc/kt-kernel/build/lib.linux-x86_64-cpython-312/kt_kernel/
+#11 103.5     -DPYTHON_EXECUTABLE=/opt/sglang/bin/python3
+#11 103.5     -DCMAKE_BUILD_TYPE=Release
+#11 103.5     -DLLAMA_NATIVE=ON
+#11 103.5     -DKTRANSFORMERS_CPU_USE_AMX=OFF
+#11 103.5     -DKTRANSFORMERS_CPU_USE_AMX_AVX512=ON
+#11 103.5     -DLLAMA_AVX512_VNNI=ON
+#11 103.5     -DLLAMA_AVX512_BF16=ON
+#11 103.5     -DLLAMA_AVX512_VBMI=ON
+#11 103.5     -DLLAMA_AVX512=ON
+#11 103.5     -DKTRANSFORMERS_ENABLE_CPPTRACE=OFF
+#11 103.5     -DKTRANSFORMERS_CPU_USE_ONEDNN_VNNI=OFF
+#11 103.5     -DKTRANSFORMERS_CUDA_STATIC_RUNTIME=ON
+#11 103.5     -DKTRANSFORMERS_USE_CUDA=ON
+#11 103.5     -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc
+#11 103.5     -DCMAKE_CUDA_ARCHITECTURES=80;86;89;90;120
+#11 103.5 -- CMake build args: --build . --config Release --parallel 32
+#11 103.5 copying build/lib.linux-x86_64-cpython-312/kt_kernel/kt_kernel_ext.cpython-312-x86_64-linux-gnu.so -> python
+#11 DONE 103.6s
+
+#12 [stage-1 6/8] COPY --from=ktbuild /tmp/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so      /opt/sglang/lib/python3.12/site-packages/kt_kernel/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so
+#12 DONE 0.0s
+
+#13 [stage-1 7/8] COPY kt_smoke.py /opt/recipe/kt_smoke.py
+#13 DONE 0.0s
+
+#14 [stage-1 8/8] RUN python3 /opt/recipe/kt_smoke.py
+#14 2.112 kt-kernel 0.7.0.post4
+#14 2.112 torch 2.13.0+cu130 cuda 13.0
+#14 2.112 extension /opt/sglang/lib/python3.12/site-packages/kt_kernel/_kt_kernel_ext_avx512_bf16.cpython-312-x86_64-linux-gnu.so
+#14 2.112 sgl_kernel 0.4.6.post1; deep_gemm /opt/sglang/lib/python3.12/site-packages/deep_gemm/__init__.py (470 lines)
+#14 2.112 ok: MXFP4 CPU expert path importable, placement mask helper works
+#14 DONE 2.4s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 0.6s done
+#15 exporting manifest sha256:08e5f230415da34435183ce3b32af49cdaa77bac3a65548389c48974461f3f31 0.0s done
+#15 exporting config sha256:1294c901fe2e17ddd2ea9dc9a97d690c65ce408d0b0ae205ca59d71d32368cf3 0.0s done
+#15 exporting attestation manifest sha256:95466cd8ae5f47432bf5ecfae96cac89e5ae96b59ff1ca38cbb4598488bf3b2a 0.0s done
+#15 exporting manifest list sha256:5f5c0acde2d995c602806c68c80851d59cb8f5abfc2294e49757e61f183b33db 0.0s done
+#15 naming to docker.io/library/dsv41-kt:native done
+#15 unpacking to docker.io/library/dsv41-kt:native
+#15 unpacking to docker.io/library/dsv41-kt:native 0.2s done
+#15 DONE 0.9s
+rc=0
