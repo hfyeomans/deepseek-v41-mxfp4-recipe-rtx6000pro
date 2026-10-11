@@ -44,6 +44,8 @@ def main() -> int:
     )
     pyops = sorted((e for e in ev if e.get("cat") in ("cpu_op", "user_annotation")), key=lambda e: e["ts"])
 
+    if not gpu:
+        raise SystemExit(f"{args.trace}: no kernel / memcpy / memset events (is this a CPU-only trace?)")
     gaps = []
     cur_end = gpu[0]["ts"] + gpu[0]["dur"]
     prev = gpu[0]

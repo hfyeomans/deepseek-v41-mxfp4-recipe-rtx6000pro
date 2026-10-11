@@ -391,7 +391,8 @@ def check_evidence(root: Path) -> list[str]:
 
 
 def rescrub(evidence_dir: Path, home: str | None) -> tuple[str, str, list[Path]]:
-    """Re-apply `_tilde` to an already-written `DIR/manifest.json` and re-stamp its siblings.
+    """Re-apply `_tilde` to an already-written `DIR/manifest.json` and re-stamp its siblings; then
+    the same for every nested directory that has its own manifest.json (R35).
 
     For a manifest whose writer leaked `$HOME` inside a knob value (the `_tilde` before 2026-10-09
     scrubbed string prefixes only). The manifest must still verify: this is the only sanctioned way
@@ -417,6 +418,12 @@ def rescrub(evidence_dir: Path, home: str | None) -> tuple[str, str, list[Path]]
             continue
         sib.write_text(text.replace(f'"manifest_hash": "{old}"', f'"manifest_hash": "{new_m["content_hash"]}"'))
         restamped.append(sib)
+    # Nested runs (the rungs' corpus/ trees carry their own manifest.json copy, which leaked the
+    # same way): each is scrubbed against its own manifest, so check_evidence keeps verifying
+    # every file against the manifest beside it.
+    for nested in sorted(p for p in evidence_dir.rglob("manifest.json") if p != path):
+        _, _, files = rescrub(nested.parent, home)
+        restamped.extend(files)
     return old, new_m["content_hash"], restamped
 
 

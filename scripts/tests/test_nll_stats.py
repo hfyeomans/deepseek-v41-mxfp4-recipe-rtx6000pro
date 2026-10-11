@@ -92,6 +92,21 @@ def test_compare_to_uses_common_token_prefix():
     assert c["n"] == 2 and c["tokens_changed"] == 0 and close(c["delta_full_text_nll"], 4.0)
 
 
+def test_pooled_empty_keeps_cluster_keys():
+    # R34: an empty pairing must not make the gate KeyError on z_cluster; it must see n == 0.
+    st = m.pooled_stats([([], [], 0), ([], [], 0)])
+    assert st["n"] == 0 and st["texts"] == 2 and st["z_cluster"] == 0.0 and st["se_cluster"] == 0.0
+
+
+def test_summarize_refuses_no_tokens():
+    try:
+        m.summarize([], 1024)
+    except SystemExit as e:
+        assert "no tokens scored" in str(e)
+    else:
+        raise AssertionError("summarize([]) must exit, not divide by zero")
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:

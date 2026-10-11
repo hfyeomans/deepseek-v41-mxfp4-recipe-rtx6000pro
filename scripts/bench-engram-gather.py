@@ -76,11 +76,14 @@ def gather_dram(m: mmap.mmap, offsets: list[int], row_bytes: int) -> int:
 
 
 def gather_nvme(fd: int, offsets: list[int]) -> int:
+    # O_DIRECT needs the user buffer aligned too; an anonymous mmap is page-aligned, a `bytes`
+    # object from os.pread is not guaranteed to be.
+    buf = mmap.mmap(-1, ALIGN)
     acc = 0
     for off in offsets:
         aligned = off & ~(ALIGN - 1)
-        buf = os.pread(fd, ALIGN, aligned)
-        acc += len(buf)
+        acc += os.preadv(fd, [buf], aligned)
+    buf.close()
     return acc
 
 

@@ -146,6 +146,7 @@ def gpu_dma_process(gpus: list[int], seconds: int, image: str) -> subprocess.Pop
         f"gpus={gpus}; secs={seconds}\n"
         "def go(d):\n"
         "  torch.cuda.set_device(d); h=torch.empty(2**30,dtype=torch.uint8).pin_memory(); x=torch.empty_like(h,device=f'cuda:{d}')\n"
+        "  x.copy_(h); torch.cuda.synchronize(d); print(f'gpu{d} dma-ready',flush=True)\n"
         "  n=0; t0=time.perf_counter()\n"
         "  while time.perf_counter()-t0<secs:\n"
         "    x.copy_(h,non_blocking=True); n+=1\n"
@@ -155,8 +156,31 @@ def gpu_dma_process(gpus: list[int], seconds: int, image: str) -> subprocess.Pop
         "ts=[threading.Thread(target=go,args=(d,)) for d in gpus]\n"
         "[t.start() for t in ts]; [t.join() for t in ts]\n"
     )
-    cmd = ["docker", "run", "--rm", "--gpus", "all", "--ipc=host", "--entrypoint", "python3", image, "-c", code]
+    # Only the requested GPUs are exposed; inside the container they are renumbered 0..n-1, so the
+    # loop addresses local indices and the caller keeps the host ids for the report.
+    code = code.replace(f"gpus={gpus};", f"gpus={list(range(len(gpus)))};")
+    devices = "device=" + ",".join(str(g) for g in gpus)
+    cmd = ["docker", "run", "--rm", "--gpus", f'"{devices}"', "--ipc=host", "--entrypoint", "python3", image, "-c", code]
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+
+def wait_dma_ready(proc: subprocess.Popen, n_gpus: int, timeout_s: float = 120.0) -> list[str]:
+    """Block until every GPU thread printed `dma-ready` (container start + pin_memory + first copy
+    done), or the process exits / the timeout passes. Returns the lines consumed so far."""
+    lines: list[str] = []
+    deadline = time.perf_counter() + timeout_s
+    ready = 0
+    assert proc.stdout is not None
+    while ready < n_gpus and time.perf_counter() < deadline and proc.poll() is None:
+        line = proc.stdout.readline()
+        if not line:
+            break
+        lines.append(line.rstrip("\n"))
+        if "dma-ready" in line:
+            ready += 1
+    if ready < n_gpus:
+        raise RuntimeError(f"gpu-dma helper: only {ready}/{n_gpus} GPUs reported ready; output so far: {lines}")
+    return lines
 
 
 def main() -> int:
@@ -229,10 +253,10 @@ def main() -> int:
             gpus = [int(g) for g in spec.split(",")]
             secs = 40
             proc = gpu_dma_process(gpus, secs, args.image)
-            time.sleep(18)  # container start + pin_memory; DMA is running by now
+            head = wait_dma_ready(proc, len(gpus))  # DMA is running from here on
             r = run_one(binary, cpus16, "read", args.size_gib, args.iters, hugepage=True)
             out, _ = proc.communicate(timeout=180)
-            dma = [line for line in out.splitlines() if "h2d" in line]
+            dma = [line for line in head + out.splitlines() if "h2d" in line]
             r["gpu_dma"] = {"gpus": gpus, "container_lines": dma}
             rec("gpu-dma", f"cpu read + DMA gpus {spec}", r)
             for line in dma:

@@ -12,7 +12,7 @@ Local observations for immutable profiles on this host. Nothing here is a univer
 
 ## Headline — qualified rungs of the V4.1-Flash hybrid (generated, 2026-10-10)
 
-The launcher default is 64K × 4; 262K × 4 and 1M × 1 are per-rung overrides (`CONTEXT_LENGTH=…`, see [CONFIG](CONFIG.md)). 512K × 1 passed its ladder rung before evidence stamping existed (`evidence/t329/512k-1slot/`, T3.29 paragraph below) and so is not in this table.
+The launcher default is 64K × 4; 262K × 4 is a per-rung override (`CONTEXT_LENGTH=262144`) and 1M × 1 needs three (`CONTEXT_LENGTH=1048576 MAX_RUNNING_REQUESTS=1 MEM_FRACTION_STATIC=0.962`; see [CONFIG](CONFIG.md)). 512K × 1 passed its ladder rung before evidence stamping existed (`evidence/t329/512k-1slot/`, T3.29 paragraph below) and so is not in this table.
 
 <!-- generated: python3 scripts/benchmarks_headline.py markdown -->
 

@@ -22,7 +22,10 @@ def auth_headers() -> dict[str, str]:
     key = os.environ.get("API_KEY", "")
     path = os.environ.get("API_KEY_FILE", "")
     if not key and path:
-        key = read_api_key(path)
+        try:
+            key = read_api_key(path)
+        except (OSError, ValueError) as e:
+            raise SystemExit(f"API_KEY_FILE={path}: {e}") from e
     return {"Authorization": f"Bearer {key}"} if key else {}
 
 

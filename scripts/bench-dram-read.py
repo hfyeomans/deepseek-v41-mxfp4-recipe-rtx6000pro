@@ -1,4 +1,5 @@
-import torch, time, statistics
+import sys, torch, time, statistics
+out_path = sys.argv[1] if len(sys.argv) > 1 else "/w/results/e1b.json"  # /w = the repo mount inside the container
 n = 8 * 2**30 // 4
 out = []
 for th in (8, 16, 32):
@@ -16,4 +17,4 @@ for th in (8, 16, 32):
     r3 = bench(lambda: z.copy_(x), 2*8*2**30)
     line = f"threads={th} f32_sum={r1:.1f} i64_sum={r2:.1f} f32_copy_rw={r3:.1f} GB/s"
     print(line, flush=True); out.append({"threads": th, "f32_sum_gbps": round(r1,1), "i64_sum_gbps": round(r2,1), "f32_copy_rw_gbps": round(r3,1)})
-import json; json.dump({"experiment":"E1b-torch-dram-read","size_gib":8,"note":"read-only sum vs copy(read+write counted); bf16 sum in bench-cpu-expert.py is conversion-bound and not a DRAM probe","results":out}, open("/w/results/e1b.json","w"), indent=1)
+import json; json.dump({"experiment":"E1b-torch-dram-read","size_gib":8,"note":"read-only sum vs copy(read+write counted); bf16 sum in bench-cpu-expert.py is conversion-bound and not a DRAM probe","results":out}, open(out_path,"w"), indent=1)

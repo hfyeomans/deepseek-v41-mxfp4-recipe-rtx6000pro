@@ -68,7 +68,8 @@ def run_pass(url: str, model: str, sizes: list[int], runs: int, seed: int) -> li
                 "median_prefill_tps": statistics.median(tps) if tps else None,
                 "median_ttft_s": statistics.median(x["ttft_s"] for x in rows), "runs": rows}
         out.append(size)
-        print(f"{n:>11,} {int(size['median_prompt_tokens']):>11,} {size['median_prefill_tps'] or 0:21.2f} {size['median_ttft_s']:14.3f}")
+        tps_str = f"{size['median_prefill_tps']:.2f}" if size['median_prefill_tps'] is not None else "n/a"
+        print(f"{n:>11,} {int(size['median_prompt_tokens']):>11,} {tps_str:>21} {size['median_ttft_s']:14.3f}")
     return out
 
 

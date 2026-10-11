@@ -106,7 +106,11 @@ def read_header_remote(repo: str, revision: str, filename: str) -> dict:
 def load_index(source: str, revision: str) -> tuple[dict, bool]:
     p = Path(source)
     if p.is_dir():
-        return json.loads((p / "model.safetensors.index.json").read_text()), True
+        idx = p / "model.safetensors.index.json"
+        if not idx.is_file():
+            raise SystemExit(f"{idx} not found: {source} is a directory without a safetensors index "
+                             "(pass the checkpoint root, or a Hub repo id)")
+        return json.loads(idx.read_text()), True
     data = http_get(f"https://huggingface.co/{source}/resolve/{revision}/model.safetensors.index.json")
     return json.loads(data), False
 

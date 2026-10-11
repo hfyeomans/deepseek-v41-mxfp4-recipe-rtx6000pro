@@ -116,7 +116,7 @@ if git_tree:
     staged = subprocess.check_output(['git', '-C', str(root), 'ls-files', '--stage', 'scripts'], text=True)
     for line in staged.splitlines():
         mode, _, _, path = line.split(maxsplit=3)
-        if path.endswith(('.sh', '.py')) and not path.split('/')[-1].startswith('openai_client') and mode != '100755':
+        if path.endswith(('.sh', '.py')) and path != 'scripts/openai_client.py' and mode != '100755':
             raise SystemExit(f'script is not executable in Git: {path} ({mode})')
 patterns = [
     re.compile(r'gh[pousr]_[A-Za-z0-9_]{20,}'),

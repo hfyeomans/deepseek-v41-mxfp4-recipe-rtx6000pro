@@ -132,7 +132,9 @@ try:
     doc = json.load(open(path))
 except (OSError, ValueError) as e:
     print(f"  no pooled.json from this run: {e}"); sys.exit(1)
-c = doc["compare"]
+c = doc.get("compare") or {}
+if not c.get("n"):
+    print("  no paired tokens in pooled.json (empty corpus or nothing scored)"); sys.exit(1)
 z = c["z_cluster"]
 print(f"  pooled dNLL {c['delta_mean_nll']:+.5f} +/- {c['se']:.5f} nats/tok, z {c['z_paired']:+.2f}, cluster-robust z {z:+.2f}, "
       f"n {c['n']}, texts {c.get('texts')}, moved {c['tokens_changed']}, recorded {doc.get('evidence', {}).get('recorded_utc')}")
@@ -174,13 +176,18 @@ PY
   # clean one (R3).
   # shellcheck disable=SC2016  # $1/$2 are the inner bash's positionals
   gate "container log readable ($CONTAINER)" bash -c 'docker logs "$1" > "$2" 2>&1' _ "$CONTAINER" "$OUT/launch-container.txt"
-  health="$(grep -iE -e ' nan' -e 'probability tensor' -e 'Xid' -e 'Traceback' -e 'KTContract' -e 'Sealed.*Error' -e 'OutOfMemory' -e 'NonFiniteLogits' \
+  # `nan` as a whole word anywhere on the line (column 0 included), plus the overlay's own tags.
+  health="$(grep -iE -e '(^|[^[:alnum:]_])nan([^[:alnum:]_]|$)' -e 'probability tensor' -e 'Xid' -e 'Traceback' -e 'KTContract' \
+             -e 'Sealed.*Error' -e 'OutOfMemory' -e 'NonFiniteLogits' -e 'non-finite-logits' \
              "$OUT/launch-container.txt" | grep -vc 'any later grow raises')"
   echo "health=$health" > "$OUT/health.txt"
   gate "health (0 error lines in the container log)" test "$health" -eq 0
-  { grep -c -iE 'xid' /var/log/kern.log 2>/dev/null || echo 0; } > "$OUT/xid-count.txt"
+  # grep -c prints the count even when it is 0 (rc 1); an unreadable log prints nothing (rc 2).
+  xid="$(grep -c -iE 'xid' /var/log/kern.log 2>/dev/null)"
+  echo "${xid:-unavailable}" > "$OUT/xid-count.txt"
   # Redact the logs the way every evidence directory is (ci.sh refuses home paths and bridge addresses).
-  sed -i 's#/home/linuxbre[w]/#/<brew>/#g; s#/home/[A-Za-z0-9._-]*/#~/#g; s#172\.17\.[0-9]*\.[0-9]*#<docker-bridge-ip>#g' "$OUT"/*.txt
+  find "$OUT" -maxdepth 1 -name '*.txt' -exec \
+    sed -i 's#/home/linuxbre[w]/#/<brew>/#g; s#/home/[A-Za-z0-9._-]*/#~/#g; s#172\.17\.[0-9]*\.[0-9]*#<docker-bridge-ip>#g' {} +
 fi
 
 if [[ ${#fails[@]} -eq 0 ]]; then echo "release-smoke $mode: all gates passed"; exit 0; fi

@@ -148,6 +148,7 @@ def pooled_stats(pairs: list[tuple[list[float], list[float], int]]) -> dict:
     # Cluster-robust se with one cluster per text: per-token deltas are not iid across a text
     # (one prefill batch shape per chunk), so the iid se understates the uncertainty of the mean.
     n_tot = st["n"]
+    st["texts"] = len(pairs)
     if n_tot:
         mean_d = -st["delta_mean_nll"]
         acc = 0.0
@@ -155,7 +156,9 @@ def pooled_stats(pairs: list[tuple[list[float], list[float], int]]) -> dict:
             acc += (sum(new_lps[i] - base_lps[i] for i in range(n)) - n * mean_d) ** 2
         st["se_cluster"] = math.sqrt(acc) / n_tot
         st["z_cluster"] = z_score(mean_d, st["se_cluster"])
-        st["texts"] = len(pairs)
+    else:  # nothing paired: keep the keys so a reader fails on `n == 0`, not on a KeyError
+        st["se_cluster"] = 0.0
+        st["z_cluster"] = 0.0
     return st
 
 
@@ -190,6 +193,8 @@ def score_text(url: str, text_file: pathlib.Path, max_chars: int, seg: int, time
 
 def summarize(lps: list[float], seg: int) -> dict:
     n = len(lps)
+    if n == 0:
+        raise SystemExit("no tokens scored (the text tokenised to fewer than 2 tokens; raise --max-chars)")
     mean = -sum(lps) / n
     segments = []
     for i in range(0, n, seg):

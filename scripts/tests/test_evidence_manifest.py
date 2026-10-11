@@ -140,8 +140,14 @@ def test_rescrub_leaked_manifest():
         a.write_text(json.dumps({"tps": 1, "evidence": {"tool": "t", "recorded_utc": "x", "manifest_hash": old}}, indent=2) + "\n")
         b = d / "b.json"  # stamped with another hash: left alone
         b.write_text(json.dumps({"evidence": {"tool": "t", "recorded_utc": "x", "manifest_hash": "f" * 64}}))
+        (d / "corpus").mkdir()  # R35: a nested run with its own (equally leaked) manifest copy
+        (d / "corpus" / "manifest.json").write_text(json.dumps(m, indent=1) + "\n")
+        c = d / "corpus" / "pooled.json"
+        c.write_text(json.dumps({"evidence": {"tool": "t", "recorded_utc": "x", "manifest_hash": old}}))
         got_old, new, files = em.rescrub(d, home)
-        assert got_old == old and new != old and files == [a]
+        assert got_old == old and new != old and files == [a, c]
+        assert json.loads(c.read_text())["evidence"]["manifest_hash"] == new
+        assert em.load(d / "corpus" / "manifest.json")["content_hash"] == new
         nm = em.load(d / "manifest.json")
         assert nm["rescrubbed_from"] == old and home not in json.dumps(nm)
         assert nm["config"]["EXTRA_DOCKER_ARGS"] == "-v ~/overlay/x.py:/sgl/x.py:ro"

@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
 import time
 from typing import Callable, Dict, List
@@ -422,6 +423,7 @@ def main() -> None:
             )
     report["overlap"] = overlap
     report["wall_s"] = time.time()
+    os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
     with open(args.output, "w") as f:
         json.dump(report, f, indent=1)
     print(f"[b2] wrote {args.output}")

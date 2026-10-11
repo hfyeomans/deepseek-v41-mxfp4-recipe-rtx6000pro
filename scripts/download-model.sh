@@ -12,8 +12,10 @@ command -v hf >/dev/null || { echo "FAIL missing hf CLI (pip install -U huggingf
 [[ -n "$MODEL_DIR" ]] || { echo "FAIL MODEL_DIR not set"; exit 1; }
 mkdir -p "$MODEL_DIR"
 free_gib="$(df -BG --output=avail "$MODEL_DIR" | tail -1 | tr -dc '0-9')"
-if [[ ! -f "$MODEL_DIR/RECIPE_PIN.txt" ]] && (( free_gib < 500 )); then
-  echo "FAIL only ${free_gib} GiB free at MODEL_DIR; need ~500 GiB for the 475.24 GiB checkpoint"; exit 1
+have_gib="$(du -sBG "$MODEL_DIR" 2>/dev/null | cut -f1 | tr -dc '0-9')"
+need_gib=$(( 500 - ${have_gib:-0} ))   # a resumed / re-pinned download only needs what is still missing
+if (( need_gib > 0 && free_gib < need_gib )); then
+  echo "FAIL only ${free_gib} GiB free at MODEL_DIR (${have_gib:-0} GiB already there); need ~${need_gib} GiB more for the 475.24 GiB checkpoint"; exit 1
 fi
 
 echo "downloading $MODEL_PIN to $MODEL_DIR"
