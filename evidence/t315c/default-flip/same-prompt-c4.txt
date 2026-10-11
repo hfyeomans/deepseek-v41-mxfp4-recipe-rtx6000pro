@@ -1,0 +1,10 @@
+== bs=1 references (1 prompts, 96 tok, greedy)
+  ref 'Explain, in three short paragraphs, why the sky ': 96 tok, gib 0.02
+== concurrent run (C=4, cache flushed)
+  slot 0: exact=True prefix=511/511 gib=0.02 tok=96 OK
+  slot 1: exact=False prefix=290/511 gib=0.04 tok=96 OK
+  slot 2: exact=False prefix=290/511 gib=0.04 tok=96 OK
+  slot 3: exact=False prefix=290/511 gib=0.04 tok=96 OK
+  rows identical: False; min pairwise row prefix 290 chars (gate >= 40)
+PASS
+wrote evidence/t315c/default-flip/same-prompt-c4.json

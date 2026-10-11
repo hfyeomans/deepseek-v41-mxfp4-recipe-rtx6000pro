@@ -15,7 +15,7 @@ at 14,775 tokens every run emits the same tokens but 6 of 20 runs (three serves)
 from decode token 109 on (max |Δlogp| 0.012–0.055). That residual is the top-k kernel's
 arrival-order tie-break (`offline/README.md`, T3.15d, upstream sgl-project/sglang #35257), not the
 MoE finalize, not the KV allocator (serve 2 removed that dependence and the residual stayed), and
-not the levers. Recommendation: flip both levers to the launcher default; keep T3.15d for the tie.
+not the levers. Recommendation: flip both levers to the launcher default; keep T3.15d for the tie. **Flipped 2026-10-11 (owner approval): `default-flip/` is the re-measure on the plain launcher — every gate passes, corpus bit-identical to serve 2, greedy bit-identical through 20,554 tokens; it is the new headline row and identity anchor.**
 
 ## Release smoke, `--context 262144 --slots 4 --full`, `NLL_REQUIRE_IDENTICAL=0` (`serve-*/smoke-log.txt`)
 

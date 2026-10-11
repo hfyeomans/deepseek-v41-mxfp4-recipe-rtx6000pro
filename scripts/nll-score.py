@@ -44,7 +44,8 @@ everywhere (the el8-mix map moves 65,226 of 65,653 tokens by -0.0003 nats vs t32
 evidence/t38b/qual-el8-mix/, t329/262k-4slot-682fc6a0/, t335/smoke-262k/, t343b/64k4/,
 all the same 65,226), while runs on one map reproduce each other bit for bit across
 64K x 4 and 262K x 4. The smoke enforces identity.tokens_changed == 0 by default
-(NLL_REQUIRE_IDENTICAL=1, IDENTITY_CORPUS=evidence/t343b/64k4/corpus); a run that
+(NLL_REQUIRE_IDENTICAL=1, IDENTITY_CORPUS=evidence/t315c/default-flip/corpus since the
+T3.15c flip; t343b/64k4/corpus was the fused-finalize anchor before it); a run that
 deliberately changes the arithmetic re-baselines by pointing IDENTITY_CORPUS at itself.
 
 A zero standard error no longer hides a shift: z is 0 only when the mean delta is 0,

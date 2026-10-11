@@ -291,6 +291,21 @@ REGISTRY: tuple[Knob, ...] = (
          "The scheduler already clamps the same way, so accepted requests are unchanged; over-length prompts are "
          "still rejected. 0 = stock 400.",
          sink=CONTAINER_ENV, evidence="evidence/t335/"),
+    # ---- bit-reproducible greedy decode (T3.15b / T3.15c; default-on since 2026-10-11) ----
+    Knob("SGLANG_FLASHINFER_MOE_FUSED_FINALIZE", "flag", "0",
+         "T3.15b / E38: the FlashInfer cutlass MXFP4 fused-MoE *fused finalize* sums the top-k expert outputs "
+         "in a run-dependent order on every decode step, one of the two sources of the bs=1 greedy drift. 0 "
+         "(default since 2026-10-11, T3.15c) takes the unfused finalize; with SGLANG_DSV41_SORT_DECODE_TOPK=1 "
+         "temperature-0 output is bit-identical run to run (C1 / C4 / prefill unchanged, pooled dNLL -0.0003 "
+         "bit-stable across serves). 1 = the upstream default (fused; greedy drifts 320-390 chars at bs=1).",
+         sink=CONTAINER_ENV, evidence="evidence/t315b/, evidence/t315c/"),
+    Knob("SGLANG_DSV41_SORT_DECODE_TOPK", "flag", "1",
+         "T3.15b / E38, overlay patches 0053 / 0054: past 512 prompt tokens the indexer top-k emits the same "
+         "sparse slots in a run-dependent order and the SM120 sparse decode kernel is order-sensitive; 1 "
+         "(default since 2026-10-11, T3.15c) sorts the decode top-k by logical position, the other half of "
+         "bit-reproducible greedy decode. 0 = the unsorted stock order. Residual past ~14K tokens: the top-k "
+         "kernel's own tie-break (T3.15d), logprobs only.",
+         sink=CONTAINER_ENV, evidence="evidence/t315b/, evidence/t315c/"),
     # ---- overlay diagnostics (forwarded into the container only when set) ---------------
     Knob("KT_NAN_INJECT", "str", "",
          "T3.13 / C10 test hook: row=<r>,bs=<b>,step=<n>,layer=<l> adds NaN to row r's hidden state after MoE "
@@ -342,6 +357,8 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']}",
         f"SGLANG_DSV41_REJECT_NAN_ROWS={r['KT_REJECT_NAN_ROWS']}",
         f"SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS={r['SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS']}",
+        f"SGLANG_FLASHINFER_MOE_FUSED_FINALIZE={r['SGLANG_FLASHINFER_MOE_FUSED_FINALIZE']}",
+        f"SGLANG_DSV41_SORT_DECODE_TOPK={r['SGLANG_DSV41_SORT_DECODE_TOPK']}",
     ] + ([f"SGLANG_API_KEY_FILE={API_KEY_MOUNT}"] if r["API_KEY_FILE"] else [])
 
 
@@ -590,6 +607,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"gpu_prefill_min={r['KT_GPU_PREFILL_MIN_TOKENS']} logprob_chunk={r['SGLANG_LOGPROB_CHUNK_SIZE']} "
             f"reject_nan_rows={r['KT_REJECT_NAN_ROWS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
+            f"fused_finalize={r['SGLANG_FLASHINFER_MOE_FUSED_FINALIZE']} sort_decode_topk={r['SGLANG_DSV41_SORT_DECODE_TOPK']} "
             f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} engram_chunk_ahead={r['ENGRAM_CHUNK_AHEAD']} "
             f"expert_map={emap} image={r['IMAGE']} profile={r['PROFILE']} overrides=[{r['PROFILE_OVERRIDES']}]")
 

@@ -36,7 +36,7 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 # scan docker's "no such container" text as a clean log (T3.43a / R3).
 eval "$(python3 "$ROOT/scripts/serve_config.py" endpoint)" || { echo "serve_config.py endpoint failed; pass --url/--model/--container" >&2; exit 2; }
 BASELINE_CORPUS="${BASELINE_CORPUS:-$ROOT/evidence/t328/default-219-8192/corpus}"   # quality anchor: 219/8192 before any expert map
-IDENTITY_CORPUS="${IDENTITY_CORPUS:-$ROOT/evidence/t343b/64k4/corpus}"              # bit-identity baseline: the launcher default (el8-mix map, 219/8192)
+IDENTITY_CORPUS="${IDENTITY_CORPUS:-$ROOT/evidence/t315c/default-flip/corpus}"      # bit-identity baseline: the launcher default (el8-mix map, 219/8192, unfused finalize + sorted top-k since T3.15c)
 NLL_Z_MAX="${NLL_Z_MAX:-2.0}"
 NLL_DELTA_MAX="${NLL_DELTA_MAX:-0.002}"
 NLL_REQUIRE_IDENTICAL="${NLL_REQUIRE_IDENTICAL:-1}"   # 0 for a serve whose expert map / experts / chunk differ from IDENTITY_CORPUS

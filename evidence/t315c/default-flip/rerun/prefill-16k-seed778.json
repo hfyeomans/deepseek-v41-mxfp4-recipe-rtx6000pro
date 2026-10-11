@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 3,
+  "seed": 778,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization; sizes = cold pass",
+  "sizes": [
+    {
+      "target_tokens": 16384,
+      "median_prompt_tokens": 16063,
+      "median_prefill_tps": 4520.1839866087585,
+      "median_ttft_s": 3.553616411983967,
+      "runs": [
+        {
+          "prompt_tokens": 16063,
+          "ttft_s": 3.553616411983967,
+          "prefill_tps": 4520.1839866087585
+        },
+        {
+          "prompt_tokens": 16069,
+          "ttft_s": 3.5476180700352415,
+          "prefill_tps": 4529.518026679905
+        },
+        {
+          "prompt_tokens": 15869,
+          "ttft_s": 4.476410547969863,
+          "prefill_tps": 3545.0278364652886
+        }
+      ]
+    }
+  ],
+  "passes": [
+    {
+      "pass": "cold",
+      "seed": 778,
+      "engram_residency_before": [
+        {
+          "shard": "model-00047-of-00048.safetensors",
+          "resident_bytes": 16427397120,
+          "size_bytes": 101535150936,
+          "resident_pct": 16.18
+        },
+        {
+          "shard": "model-00048-of-00048.safetensors",
+          "resident_bytes": 16563249152,
+          "size_bytes": 101537926640,
+          "resident_pct": 16.31
+        }
+      ],
+      "sizes": [
+        {
+          "target_tokens": 16384,
+          "median_prompt_tokens": 16063,
+          "median_prefill_tps": 4520.1839866087585,
+          "median_ttft_s": 3.553616411983967,
+          "runs": [
+            {
+              "prompt_tokens": 16063,
+              "ttft_s": 3.553616411983967,
+              "prefill_tps": 4520.1839866087585
+            },
+            {
+              "prompt_tokens": 16069,
+              "ttft_s": 3.5476180700352415,
+              "prefill_tps": 4529.518026679905
+            },
+            {
+              "prompt_tokens": 15869,
+              "ttft_s": 4.476410547969863,
+              "prefill_tps": 3545.0278364652886
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-11T14:34:59-0400",
+  "evidence": {
+    "tool": "bench-prefill.py",
+    "recorded_utc": "2026-10-11T18:34:59Z",
+    "manifest_hash": "f2f7dca7770d6e8fd3d1156572eef0cb6fc8c62dcd5fe8ecaf8183c5f6d4c278",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "2fdd14f237cb88092f9791a51ee42031ae9e98a3c29dc9a52267685f9a053cf4"
+  }
+}
