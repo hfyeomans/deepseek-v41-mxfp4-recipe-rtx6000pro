@@ -79,7 +79,11 @@ a systemd drop-in (`systemd/dsv41-flash.service.in` shows the `Environment=` for
 `stop.sh`, `wait-ready.py` and `release-smoke.sh` resolve the same environment through
 `python3 scripts/serve_config.py endpoint` (`URL= MODEL= CONTAINER=`), so the probe and the stop
 address the container the launcher started; the legacy chain passes `--url` / `--container`
-explicitly. An environment variable in an owned name family (`KT_*`, `DSPARK*`, `NGRAM*`,
+explicitly. After `/health` answers, `wait-ready.py` drops the page cache of the 46 non-Engram shards
+(`--keep-shard-cache` opts out) and sends one chunk + 1,000-token prime prefill (`--no-prime`), see
+T3.10 / E40; `KERNEL_CACHE_DIR` below persists the kernel caches across serves (clear with
+`docker run --rm -v ~/.cache/dsv41-recipe/kernel-cache:/c alpine sh -c 'rm -rf /c/*'`, the
+container writes it as root). An environment variable in an owned name family (`KT_*`, `DSPARK*`, `NGRAM*`,
 `ENGRAM_*`, `SGLANG_DSV41_*`, `CUDA_GRAPH_*`, `EXTRA_*`, `ALLOW_*`, `MEM_FRACTION*`,
 `CONTEXT_LENGTH*`, `CHUNKED_PREFILL*`, `MAX_RUNNING*`, `MAX_TOTAL*`, …; the full list is
 `OWNED_PREFIXES` in `serve_config.py`) that is not a declared knob is refused, so a typo cannot
@@ -100,6 +104,7 @@ launch the default while the log claims the override; variables outside those fa
 | `HF_MODEL_DIR` | str | `derived` | launcher | HF hub model dir (bind-mounted read-only at /hfm). |  |
 | `SNAPSHOT` | str | `dba1be0a40aa45a94ad051997016db3960a90277` | launcher | Checkpoint snapshot under HF_MODEL_DIR/snapshots. | PROVENANCE.md |
 | `OVERLAY_DIR` | str | `derived` | launcher | SGLang overlay checkout; its python/sglang is bind-mounted over the image's. |  |
+| `KERNEL_CACHE_DIR` | str | `derived` | launcher | Host directory bind-mounted at the container's /root/.cache/sglang (Triton, DeepGEMM, FlashInfer autotune and the CUDA JIT caches). Before 2026-10-11 the cache died with the container, so every serve re-compiled the first prefill's Triton kernels on the first user request (+14 s on a 16K prompt, T3.47 / E40). Keyed by kernel source hash, so an overlay or image change is a miss, not a stale hit. Empty = ephemeral, as before. | evidence/t310/ |
 | `MANIFEST_DIR` | str | `derived` | launcher | Where each launch writes its evidence manifest (scripts/evidence_manifest.py); current.json is the one the evidence scripts stamp with. |  |
 | `BIOS_SLOT` | str | `3` | launcher | BIOS profile the operator booted, as declared (not read from firmware): 3 = FCLK 2100 / VSOC 1.05 V / VDDG 950 mV / EXPO 6400 (BIOS guide T3-F1v, Boot 12). The manifest records it beside the HSMP-measured FCLK/MCLK so a mismatch is visible. | docs/BIOS-OPTIMIZATION-GUIDE.md |
 | `KT_NUM_GPU_EXPERTS` | int | `219` | server-arg | Routed experts per layer resident on the GPUs (contiguous IDs 0..N-1 of 384; the rest run on the CPU through kt-kernel). ~0.33 GB per expert per rank. 208 -> 226 at T3.6g once the KV pool was capped; 230 rejected (E29: needs chunk 2048 + fraction 0.975, fails the NLL gate); 226 -> 219 on 2026-10-08 (E34d-ii + T3.28) to afford CHUNKED_PREFILL_SIZE=8192: prefill +38/+47 % at 16K/32K, C1 wall -1.9 %, pooled NLL +0.00075 +- 0.00098. 226/158 + 4096 is the measured fallback. | evidence/t328/README.md, evidence/t36g-placement/, evidence/t36g2-placement-r2/ |

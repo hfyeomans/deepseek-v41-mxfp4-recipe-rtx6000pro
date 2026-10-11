@@ -54,7 +54,7 @@ OWNED_PREFIXES = (
     "KT_", "DSPARK", "NGRAM", "ENGRAM_", "SGLANG_DSV41_", "SGLANG_BCG_", "SGLANG_LOGPROB_",
     "CUDA_GRAPH_", "EXTRA_", "ALLOW_", "MEM_FRACTION", "CONTEXT_LENGTH", "CHUNKED_PREFILL",
     "MAX_RUNNING", "MAX_TOTAL", "CONTAINER_NAME", "SERVED_MODEL", "BIND_ADDRESS", "API_KEY_FILE",
-    "HF_MODEL_DIR", "OVERLAY_DIR", "MANIFEST_DIR", "BIOS_SLOT",
+    "HF_MODEL_DIR", "OVERLAY_DIR", "KERNEL_CACHE_DIR", "MANIFEST_DIR", "BIOS_SLOT",
 )
 MAX_CONTEXT_LENGTH = 1_048_576   # the top of the single-slot ladder (E34d-v (ii)); nothing larger was ever run
 LOOPBACK_BINDS = ("127.0.0.1", "localhost", "::1")
@@ -144,6 +144,12 @@ REGISTRY: tuple[Knob, ...] = (
          evidence="PROVENANCE.md"),
     Knob("OVERLAY_DIR", "str", lambda r: _home("dev/src/sglang-dsv41-overlay"),
          "SGLang overlay checkout; its python/sglang is bind-mounted over the image's."),
+    Knob("KERNEL_CACHE_DIR", "str", lambda r: _home(".cache/dsv41-recipe/kernel-cache"),
+         "Host directory bind-mounted at the container's /root/.cache/sglang (Triton, DeepGEMM, FlashInfer "
+         "autotune and the CUDA JIT caches). Before 2026-10-11 the cache died with the container, so every serve "
+         "re-compiled the first prefill's Triton kernels on the first user request (+14 s on a 16K prompt, T3.47 / "
+         "E40). Keyed by kernel source hash, so an overlay or image change is a miss, not a stale hit. "
+         "Empty = ephemeral, as before.", empty_disables=True, evidence="evidence/t310/"),
     # ---- evidence manifest (T3.19f) ----------------------------------------------------
     Knob("MANIFEST_DIR", "str", lambda r: _home(".cache/dsv41-recipe/manifests"),
          "Where each launch writes its evidence manifest (scripts/evidence_manifest.py); current.json is the "

@@ -40,7 +40,7 @@ cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || ex
 declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_EXPERT_MAP KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K NGRAM NGRAM_DRAFT_TOKENS NGRAM_BREADTH \
   MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS \
   CUDA_GRAPH_BS MAX_TOTAL_TOKENS EXTRA_SERVER_ARGS EXTRA_DOCKER_ENV EXTRA_DOCKER_ARGS DRY_RUN \
-  CONTAINER_NAME BIND_ADDRESS API_KEY_FILE PORT HF_MODEL_DIR OVERLAY_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
+  CONTAINER_NAME BIND_ADDRESS API_KEY_FILE PORT HF_MODEL_DIR OVERLAY_DIR KERNEL_CACHE_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
 eval "$cfg"
 
 snapshot_dir="/hfm/snapshots/${SNAPSHOT}"
@@ -84,6 +84,13 @@ expert_map_mount=()
 if [[ -n "$KT_EXPERT_MAP" ]]; then
   server_args+=(--kt-expert-map /expert-map.json)
   expert_map_mount=(-v "${KT_EXPERT_MAP}:/expert-map.json:ro")
+fi
+# Kernel caches (T3.47 / E40): /root/.cache/sglang holds the Triton, DeepGEMM, FlashInfer-autotune and
+# CUDA JIT caches. Ephemeral before 2026-10-11, so every serve paid the first prefill's Triton
+# compiles (14 s for `_hc_mix_reduce_sinkhorn_kernel` alone) on the first user request.
+kernel_cache_mount=()
+if [[ -n "$KERNEL_CACHE_DIR" ]]; then
+  kernel_cache_mount=(-v "${KERNEL_CACHE_DIR}:/root/.cache/sglang")
 fi
 if [[ "$DSPARK" == "1" ]]; then
   server_args+=(--speculative-algorithm DSPARK --speculative-dspark-block-size "$DSPARK_K")
@@ -139,6 +146,7 @@ docker_cmd=(
   -v "${HF_MODEL_DIR}:/hfm:ro"
   -v "${OVERLAY_DIR}/python/sglang:/sgl-workspace/sglang/python/sglang:ro"
   "${expert_map_mount[@]}"
+  "${kernel_cache_mount[@]}"
   "${api_key_mount[@]}"
   "${container_env_flags[@]}"
   "${extra_env_flags[@]}"
@@ -158,6 +166,10 @@ for path in "$HF_MODEL_DIR/snapshots/$SNAPSHOT" "$OVERLAY_DIR/python/sglang"; do
 done
 if [[ -n "$KT_EXPERT_MAP" && ! -f "$KT_EXPERT_MAP" ]]; then
   echo "FAIL KT_EXPERT_MAP=$KT_EXPERT_MAP is not a file"; exit 1
+fi
+# Created here so it belongs to the operator; docker would create a missing mount source as root.
+if [[ -n "$KERNEL_CACHE_DIR" ]]; then
+  mkdir -p -- "$KERNEL_CACHE_DIR" || { echo "FAIL cannot create KERNEL_CACHE_DIR=$KERNEL_CACHE_DIR"; exit 1; }
 fi
 # A same-name container that is still running is a conflict; one that has exited (reboot, OOM,
 # a killed serve) is debris and is removed here so a relaunch does not need a manual `docker rm`

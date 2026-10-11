@@ -1,0 +1,15 @@
+PASS stress 4x260096
+PASS same-prompt C4
+PASS NLL corpus run
+  pooled dNLL -0.00033 +/- 0.00101 nats/tok, z +0.33, cluster-robust z +0.26, n 65653, texts 8, moved 65226, recorded 2026-10-11T19:34:57Z
+  identity: 0 of 65653 tokens moved vs evidence/t315c/default-flip/corpus
+PASS NLL corpus dNLL <= 0.002, |z| <= 2.0, identical
+PASS needles at 262144
+PASS decode C1
+PASS decode C4
+PASS prefill 16K
+PASS prefill 32K
+PASS power summary (4 sampled benches)
+PASS container log readable (dsv41-kt)
+PASS health (0 error lines in the container log)
+rc=0

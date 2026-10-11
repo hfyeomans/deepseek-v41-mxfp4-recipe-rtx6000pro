@@ -1,0 +1,285 @@
+{
+ "model_dir": "/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277",
+ "requests": 9,
+ "tokens": 66329,
+ "rows_per_token_per_layer": 24,
+ "page_bytes": 4096,
+ "layers": [
+  {
+   "layer_id": 1,
+   "shard": "model-00047-of-00048.safetensors",
+   "table_rows": 384006168,
+   "lookups": 1591896,
+   "distinct_rows": 1040327,
+   "distinct_rows_by_ngram": [
+    {
+     "ngram": 2,
+     "lookups": 530632,
+     "distinct_rows": 231926
+    },
+    {
+     "ngram": 3,
+     "lookups": 530632,
+     "distinct_rows": 372169
+    },
+    {
+     "ngram": 4,
+     "lookups": 530632,
+     "distinct_rows": 436232
+    }
+   ],
+   "distinct_pages": 1569584,
+   "weight_pages": 1018373,
+   "scale_pages": 551211,
+   "footprint_gib": 5.98748779296875,
+   "rows_per_page_touched": 1.021557916401947,
+   "lru_request_level": {
+    "16": {
+     "cache_gib": 16,
+     "page_hits": 700016,
+     "page_misses": 1569584,
+     "hit_rate": 0.30843144166372927
+    },
+    "32": {
+     "cache_gib": 32,
+     "page_hits": 700016,
+     "page_misses": 1569584,
+     "hit_rate": 0.30843144166372927
+    },
+    "64": {
+     "cache_gib": 64,
+     "page_hits": 700016,
+     "page_misses": 1569584,
+     "hit_rate": 0.30843144166372927
+    },
+    "86": {
+     "cache_gib": 86,
+     "page_hits": 700016,
+     "page_misses": 1569584,
+     "hit_rate": 0.30843144166372927
+    }
+   }
+  },
+  {
+   "layer_id": 14,
+   "shard": "model-00048-of-00048.safetensors",
+   "table_rows": 384016682,
+   "lookups": 1591896,
+   "distinct_rows": 1040420,
+   "distinct_rows_by_ngram": [
+    {
+     "ngram": 2,
+     "lookups": 530632,
+     "distinct_rows": 231911
+    },
+    {
+     "ngram": 3,
+     "lookups": 530632,
+     "distinct_rows": 372238
+    },
+    {
+     "ngram": 4,
+     "lookups": 530632,
+     "distinct_rows": 436271
+    }
+   ],
+   "distinct_pages": 1570216,
+   "weight_pages": 1018289,
+   "scale_pages": 551927,
+   "footprint_gib": 5.989898681640625,
+   "rows_per_page_touched": 1.0217335157307994,
+   "lru_request_level": {
+    "16": {
+     "cache_gib": 16,
+     "page_hits": 699284,
+     "page_misses": 1570216,
+     "hit_rate": 0.3081224939413968
+    },
+    "32": {
+     "cache_gib": 32,
+     "page_hits": 699284,
+     "page_misses": 1570216,
+     "hit_rate": 0.3081224939413968
+    },
+    "64": {
+     "cache_gib": 64,
+     "page_hits": 699284,
+     "page_misses": 1570216,
+     "hit_rate": 0.3081224939413968
+    },
+    "86": {
+     "cache_gib": 86,
+     "page_hits": 699284,
+     "page_misses": 1570216,
+     "hit_rate": 0.3081224939413968
+    }
+   }
+  }
+ ],
+ "total_footprint_gib": 11.977386474609375,
+ "per_request": [
+  {
+   "request": "text-0-01-readme-early.txt",
+   "tokens": 4796,
+   "layers": [
+    {
+     "distinct_rows": 87133,
+     "distinct_pages": 169113,
+     "new_pages": 169113,
+     "cumulative_pages": 169113
+    },
+    {
+     "distinct_rows": 87144,
+     "distinct_pages": 169133,
+     "new_pages": 169133,
+     "cumulative_pages": 169133
+    }
+   ]
+  },
+  {
+   "request": "text-0-02-learning.txt",
+   "tokens": 10005,
+   "layers": [
+    {
+     "distinct_rows": 194510,
+     "distinct_pages": 364571,
+     "new_pages": 285811,
+     "cumulative_pages": 454924
+    },
+    {
+     "distinct_rows": 194513,
+     "distinct_pages": 364933,
+     "new_pages": 286070,
+     "cumulative_pages": 455203
+    }
+   ]
+  },
+  {
+   "request": "text-0-03-experiments.txt",
+   "tokens": 11054,
+   "layers": [
+    {
+     "distinct_rows": 200512,
+     "distinct_pages": 375037,
+     "new_pages": 300629,
+     "cumulative_pages": 755553
+    },
+    {
+     "distinct_rows": 200533,
+     "distinct_pages": 374922,
+     "new_pages": 300614,
+     "cumulative_pages": 755817
+    }
+   ]
+  },
+  {
+   "request": "text-0-04-benchmarks.txt",
+   "tokens": 12029,
+   "layers": [
+    {
+     "distinct_rows": 196450,
+     "distinct_pages": 367523,
+     "new_pages": 241511,
+     "cumulative_pages": 997064
+    },
+    {
+     "distinct_rows": 196441,
+     "distinct_pages": 367520,
+     "new_pages": 241727,
+     "cumulative_pages": 997544
+    }
+   ]
+  },
+  {
+   "request": "text-0-05-troubleshooting.txt",
+   "tokens": 9669,
+   "layers": [
+    {
+     "distinct_rows": 187878,
+     "distinct_pages": 353272,
+     "new_pages": 220329,
+     "cumulative_pages": 1217393
+    },
+    {
+     "distinct_rows": 187875,
+     "distinct_pages": 353014,
+     "new_pages": 220697,
+     "cumulative_pages": 1218241
+    }
+   ]
+  },
+  {
+   "request": "text-0-06-bios-guide.txt",
+   "tokens": 9547,
+   "layers": [
+    {
+     "distinct_rows": 172450,
+     "distinct_pages": 325507,
+     "new_pages": 190714,
+     "cumulative_pages": 1408107
+    },
+    {
+     "distinct_rows": 172448,
+     "distinct_pages": 325544,
+     "new_pages": 190345,
+     "cumulative_pages": 1408586
+    }
+   ]
+  },
+  {
+   "request": "text-0-07-serve-hybrid-sh.txt",
+   "tokens": 5939,
+   "layers": [
+    {
+     "distinct_rows": 97792,
+     "distinct_pages": 189183,
+     "new_pages": 91910,
+     "cumulative_pages": 1500017
+    },
+    {
+     "distinct_rows": 97786,
+     "distinct_pages": 189152,
+     "new_pages": 92115,
+     "cumulative_pages": 1500701
+    }
+   ]
+  },
+  {
+   "request": "text-0-08-bench-decode-py.txt",
+   "tokens": 2622,
+   "layers": [
+    {
+     "distinct_rows": 49883,
+     "distinct_pages": 98198,
+     "new_pages": 56612,
+     "cumulative_pages": 1556629
+    },
+    {
+     "distinct_rows": 49887,
+     "distinct_pages": 98066,
+     "new_pages": 56470,
+     "cumulative_pages": 1557171
+    }
+   ]
+  },
+  {
+   "request": "text-0-README.md",
+   "tokens": 668,
+   "layers": [
+    {
+     "distinct_rows": 13672,
+     "distinct_pages": 27196,
+     "new_pages": 12955,
+     "cumulative_pages": 1569584
+    },
+    {
+     "distinct_rows": 13671,
+     "distinct_pages": 27216,
+     "new_pages": 13045,
+     "cumulative_pages": 1570216
+    }
+   ]
+  }
+ ],
+ "elapsed_s": 11.82688856124878
+}

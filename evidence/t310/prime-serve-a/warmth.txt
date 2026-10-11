@@ -1,0 +1,25 @@
+    real-16384-0  cold:  17927 tok, TTFT   7.801 s,   2297.9 tok/s, loaded  1049479 pages (4.003 GiB), resident 6.52 GiB
+    real-16384-0 warm1:  17927 tok, TTFT   4.826 s,   3714.7 tok/s, loaded        0 pages (0.000 GiB), resident 6.52 GiB
+    real-16384-0 warm2:  17927 tok, TTFT   4.807 s,   3729.1 tok/s, loaded        0 pages (0.000 GiB), resident 6.52 GiB
+                   cold - warm = +2.994 s (+62.3 % of warm TTFT)
+    real-16384-1  cold:  17068 tok, TTFT   7.153 s,   2386.3 tok/s, loaded   731055 pages (2.789 GiB), resident 9.31 GiB
+    real-16384-1 warm1:  17068 tok, TTFT   4.923 s,   3467.1 tok/s, loaded        0 pages (0.000 GiB), resident 9.31 GiB
+    real-16384-1 warm2:  17068 tok, TTFT   4.918 s,   3470.6 tok/s, loaded        0 pages (0.000 GiB), resident 9.31 GiB
+                   cold - warm = +2.235 s (+45.4 % of warm TTFT)
+ synthetic-16384  cold:  15946 tok, TTFT   5.643 s,   2825.9 tok/s, loaded   728561 pages (2.779 GiB), resident 12.08 GiB
+ synthetic-16384 warm1:  15946 tok, TTFT   3.487 s,   4572.5 tok/s, loaded        0 pages (0.000 GiB), resident 12.08 GiB
+ synthetic-16384 warm2:  15946 tok, TTFT   3.478 s,   4585.3 tok/s, loaded        0 pages (0.000 GiB), resident 12.08 GiB
+                   cold - warm = +2.165 s (+62.2 % of warm TTFT)
+    real-32768-0  cold:  34922 tok, TTFT  10.700 s,   3263.8 tok/s, loaded  1056184 pages (4.029 GiB), resident 16.11 GiB
+    real-32768-0 warm1:  34922 tok, TTFT   8.334 s,   4190.5 tok/s, loaded        0 pages (0.000 GiB), resident 16.11 GiB
+    real-32768-0 warm2:  34922 tok, TTFT   8.338 s,   4188.4 tok/s, loaded        0 pages (0.000 GiB), resident 16.11 GiB
+                   cold - warm = +2.366 s (+28.4 % of warm TTFT)
+    real-32768-1  cold:  34613 tok, TTFT   9.915 s,   3491.0 tok/s, loaded   786326 pages (3.000 GiB), resident 19.11 GiB
+    real-32768-1 warm1:  34613 tok, TTFT   8.331 s,   4154.5 tok/s, loaded        0 pages (0.000 GiB), resident 19.11 GiB
+    real-32768-1 warm2:  34613 tok, TTFT   8.314 s,   4163.3 tok/s, loaded        0 pages (0.000 GiB), resident 19.11 GiB
+                   cold - warm = +1.601 s (+19.3 % of warm TTFT)
+ synthetic-32768  cold:  31834 tok, TTFT   9.569 s,   3326.8 tok/s, loaded   988635 pages (3.771 GiB), resident 22.88 GiB
+ synthetic-32768 warm1:  31834 tok, TTFT   6.862 s,   4639.3 tok/s, loaded        0 pages (0.000 GiB), resident 22.88 GiB
+ synthetic-32768 warm2:  31834 tok, TTFT   6.864 s,   4638.1 tok/s, loaded        0 pages (0.000 GiB), resident 22.88 GiB
+                   cold - warm = +2.707 s (+39.4 % of warm TTFT)
+wrote evidence/t310/prime-serve-a/warmth.json

@@ -3,8 +3,8 @@
   "rows": [
     {
       "rung": "262K × 4 (launcher default)",
-      "dir": "evidence/t315c/default-flip",
-      "note": "T3.15c default flip (bit-reproducible greedy decode) re-measured on the plain launcher; 262K x 4 is the launcher default since T3.46 (2026-10-11); evidence/t337/262k4-smoke was the previous row"
+      "dir": "evidence/t310/default-wait-ready",
+      "note": "T3.10 qualification on the plain launcher after wait-ready.py started dropping the stale shard page cache (the Engram tables get the host page cache: prefill 16K +28 %, stress -20 %); evidence/t315c/default-flip was the previous row"
     },
     {
       "rung": "64K × 4 (per-rung override)",

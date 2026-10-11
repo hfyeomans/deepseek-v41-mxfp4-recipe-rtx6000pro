@@ -1,0 +1,122 @@
+{
+  "decode-c1": {
+    "gpus": {
+      "0": {
+        "samples": 129,
+        "busy_samples": 125,
+        "power_busy_median_w": 206.2,
+        "power_max_w": 215.5,
+        "sm_clock_busy_median_mhz": 2280,
+        "temp_max_c": 84.0,
+        "util_median_pct": 74.0,
+        "fan_max_pct": 60.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 0
+      },
+      "1": {
+        "samples": 129,
+        "busy_samples": 128,
+        "power_busy_median_w": 219.8,
+        "power_max_w": 230.0,
+        "sm_clock_busy_median_mhz": 2325,
+        "temp_max_c": 81.0,
+        "util_median_pct": 96.0,
+        "fan_max_pct": 56.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 0
+      }
+    },
+    "total_busy_w": 426.0,
+    "temp_max_c": 84.0
+  },
+  "decode-c4": {
+    "gpus": {
+      "0": {
+        "samples": 139,
+        "busy_samples": 74,
+        "power_busy_median_w": 188.2,
+        "power_max_w": 198.4,
+        "sm_clock_busy_median_mhz": 2280,
+        "temp_max_c": 79.0,
+        "util_median_pct": 51.0,
+        "fan_max_pct": 58.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 0
+      },
+      "1": {
+        "samples": 139,
+        "busy_samples": 138,
+        "power_busy_median_w": 197.8,
+        "power_max_w": 211.7,
+        "sm_clock_busy_median_mhz": 2317,
+        "temp_max_c": 76.0,
+        "util_median_pct": 97.0,
+        "fan_max_pct": 55.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 0
+      }
+    },
+    "total_busy_w": 386.0,
+    "temp_max_c": 79.0
+  },
+  "prefill-16k": {
+    "gpus": {
+      "0": {
+        "samples": 23,
+        "busy_samples": 20,
+        "power_busy_median_w": 244.9,
+        "power_max_w": 250.8,
+        "sm_clock_busy_median_mhz": 2152,
+        "temp_max_c": 80.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 56.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 0
+      },
+      "1": {
+        "samples": 23,
+        "busy_samples": 21,
+        "power_busy_median_w": 249.9,
+        "power_max_w": 256.5,
+        "sm_clock_busy_median_mhz": 2160,
+        "temp_max_c": 77.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 53.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 3
+      }
+    },
+    "total_busy_w": 494.8,
+    "temp_max_c": 80.0
+  },
+  "prefill-32k": {
+    "gpus": {
+      "0": {
+        "samples": 46,
+        "busy_samples": 44,
+        "power_busy_median_w": 242.1,
+        "power_max_w": 256.1,
+        "sm_clock_busy_median_mhz": 2145,
+        "temp_max_c": 83.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 56.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 6
+      },
+      "1": {
+        "samples": 46,
+        "busy_samples": 41,
+        "power_busy_median_w": 251.4,
+        "power_max_w": 260.6,
+        "sm_clock_busy_median_mhz": 2160,
+        "temp_max_c": 78.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 52.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 10
+      }
+    },
+    "total_busy_w": 493.5,
+    "temp_max_c": 83.0
+  }
+}

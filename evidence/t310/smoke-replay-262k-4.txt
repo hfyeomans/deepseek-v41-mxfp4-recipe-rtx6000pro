@@ -1,0 +1,49 @@
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq/awq.py:53: UserWarning: Only CUDA, HIP and XPU support AWQ currently.
+  warnings.warn(f"Only CUDA, HIP and XPU support AWQ currently.")
+/sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:69: UserWarning: Only CUDA, MUSA and NPU support GGUF quantization currently.
+  warnings.warn(f"Only CUDA, MUSA and NPU support GGUF quantization currently.")
+hasher ready in 10.2s: layers [1, 14], rows/layer [384006168, 384016682], 24 rows per token per layer, shards ['model-00047-of-00048.safetensors', 'model-00048-of-00048.safetensors']
+                    stress-0   253238 tok  L1: rows   3221414  pages   3659014  new   3659014  cum    3659014 ( 13.96 GiB)   1.2s
+                    stress-1   253398 tok  L1: rows   3225684  pages   3664120  new   2009331  cum    5668345 ( 21.62 GiB)   1.3s
+                    stress-2   253920 tok  L1: rows   3245780  pages   3680507  new   1573537  cum    7241882 ( 27.63 GiB)   1.2s
+                    stress-3   253451 tok  L1: rows   3225090  pages   3662106  new   1261832  cum    8503714 ( 32.44 GiB)   1.2s
+                 same-prompt      162 tok  L1: rows      3720  pages      7432  new      2625  cum    8506339 ( 32.45 GiB)   0.0s
+      corpus-01-readme-early     4796 tok  L1: rows     87133  pages    169113  new     59159  cum    8565498 ( 32.67 GiB)   0.0s
+          corpus-02-learning    10005 tok  L1: rows    194510  pages    364571  new    106213  cum    8671711 ( 33.08 GiB)   0.2s
+       corpus-03-experiments    11054 tok  L1: rows    200512  pages    375037  new    119248  cum    8790959 ( 33.53 GiB)   0.1s
+        corpus-04-benchmarks    12029 tok  L1: rows    196450  pages    367523  new    100916  cum    8891875 ( 33.92 GiB)   0.1s
+   corpus-05-troubleshooting     9669 tok  L1: rows    187878  pages    353272  new    101258  cum    8993133 ( 34.31 GiB)   0.1s
+        corpus-06-bios-guide     9547 tok  L1: rows    172450  pages    325507  new     91659  cum    9084792 ( 34.66 GiB)   0.1s
+   corpus-07-serve-hybrid-sh     5939 tok  L1: rows     97792  pages    189183  new     44778  cum    9129570 ( 34.83 GiB)   0.1s
+   corpus-08-bench-decode-py     2622 tok  L1: rows     49883  pages     98198  new     27222  cum    9156792 ( 34.93 GiB)   0.0s
+              needles-262144   255384 tok  L1: rows    871740  pages   1131163  new    192214  cum    9349006 ( 35.66 GiB)   0.9s
+                 decode-c1-0       46 tok  L1: rows      1104  pages      2208  new        63  cum    9349069 ( 35.66 GiB)   0.0s
+                 decode-c4-0       46 tok  L1: rows      1104  pages      2208  new         0  cum    9349069 ( 35.66 GiB)   0.0s
+                 decode-c4-1       27 tok  L1: rows       648  pages      1296  new        27  cum    9349096 ( 35.66 GiB)   0.0s
+                 decode-c4-2      162 tok  L1: rows      3720  pages      7432  new         0  cum    9349096 ( 35.66 GiB)   0.0s
+                 decode-c4-3       38 tok  L1: rows       912  pages      1823  new        76  cum    9349172 ( 35.66 GiB)   0.0s
+             prefill-16384-0    15974 tok  L1: rows    281227  pages    508845  new     64794  cum    9413966 ( 35.91 GiB)   0.1s
+             prefill-16384-1    16059 tok  L1: rows    282954  pages    512281  new     64990  cum    9478956 ( 36.16 GiB)   0.1s
+             prefill-16384-2    16065 tok  L1: rows    283829  pages    513190  new     64540  cum    9543496 ( 36.41 GiB)   0.1s
+             prefill-32768-0    32000 tok  L1: rows    533173  pages    892790  new    124163  cum    9667659 ( 36.88 GiB)   0.2s
+             prefill-32768-1    32021 tok  L1: rows    535827  pages    897295  new    122784  cum    9790443 ( 37.35 GiB)   0.2s
+             prefill-32768-2    31928 tok  L1: rows    532191  pages    891376  new    117187  cum    9907630 ( 37.79 GiB)   0.2s
+
+layer 1 (model-00047-of-00048.safetensors): 35,509,920 lookups, 13,015,191 distinct rows (36.7 %), pages 9,907,630 (weight 9,171,881, scale 735,749) = 37.79 GiB, 1.42 rows per touched weight page
+    2-gram columns: 714,722 distinct of 11,836,640
+    3-gram columns: 4,148,046 distinct of 11,836,640
+    4-gram columns: 8,152,423 distinct of 11,836,640
+    LRU  16 GiB: hit rate 38.4 % (8,565,605 / 22,277,490 page touches)
+    LRU  32 GiB: hit rate 48.2 % (10,728,201 / 22,277,490 page touches)
+    LRU  64 GiB: hit rate 54.4 % (12,120,336 / 22,277,490 page touches)
+    LRU  86 GiB: hit rate 55.5 % (12,369,860 / 22,277,490 page touches)
+layer 14 (model-00048-of-00048.safetensors): 35,509,920 lookups, 13,016,218 distinct rows (36.7 %), pages 9,909,992 (weight 9,174,306, scale 735,686) = 37.80 GiB, 1.42 rows per touched weight page
+    2-gram columns: 714,809 distinct of 11,836,640
+    3-gram columns: 4,148,023 distinct of 11,836,640
+    4-gram columns: 8,153,386 distinct of 11,836,640
+    LRU  16 GiB: hit rate 38.4 % (8,564,230 / 22,278,427 page touches)
+    LRU  32 GiB: hit rate 48.1 % (10,725,271 / 22,278,427 page touches)
+    LRU  64 GiB: hit rate 54.4 % (12,118,608 / 22,278,427 page touches)
+    LRU  86 GiB: hit rate 55.5 % (12,368,435 / 22,278,427 page touches)
+total footprint both layers 75.60 GiB for 1,479,580 tokens in 25 requests (53.6 KiB per token); 59s
+wrote /out/smoke-replay-262k-4.json
