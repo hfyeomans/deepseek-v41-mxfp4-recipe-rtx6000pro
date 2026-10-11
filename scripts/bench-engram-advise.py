@@ -101,8 +101,12 @@ class FileTable:
     # -- page sets ---------------------------------------------------------------
     def pages(self, ids: np.ndarray) -> np.ndarray:
         """Sorted unique page offsets (into the mapping) the rows' weight and scale bytes touch."""
-        w = (self.loc["w_off"] + ids * DIM) // PAGE * PAGE
-        s = (self.loc["s_off"] + ids * SCALE_COLS) // PAGE * PAGE
+        w0 = self.loc["w_off"] + ids * DIM
+        s0 = self.loc["s_off"] + ids * SCALE_COLS
+        # First and last page of each row's bytes (a 256 B row straddles a page boundary ~6 % of
+        # the time; the scale row is 8 B and straddles ~0.2 %); np.unique dedupes the overlap.
+        w = np.concatenate([w0 // PAGE * PAGE, (w0 + DIM - 1) // PAGE * PAGE])
+        s = np.concatenate([s0 // PAGE * PAGE, (s0 + SCALE_COLS - 1) // PAGE * PAGE])
         return np.unique(np.concatenate([w, s]))
 
     def resident_fraction(self, pages: np.ndarray) -> float:

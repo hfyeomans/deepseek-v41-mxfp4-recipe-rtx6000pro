@@ -70,6 +70,11 @@ class StreamResult:
         n = self.completion_tokens if self.completion_tokens is not None else self.stream_token_events
         if n is None or n <= 1:
             return None
+        if self.stream_token_events == 0:
+            # No token ever arrived on the stream, so ttft_s is the whole call and decode_s is the
+            # 1e-9 floor: usage alone (a keyed 401 body, a server that reports tokens but streams
+            # no deltas) would otherwise read as ~1e10 tok/s (T3.43c / R27).
+            return None
         return (n - 1) / self.decode_s
 
 

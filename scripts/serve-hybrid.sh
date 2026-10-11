@@ -70,13 +70,14 @@ server_args=(
   --reasoning-parser deepseek-v41
   --tool-call-parser deepseekv41
 )
-# API key (T3.35): the file's content, never the path, reaches the server; `--print` shows it
-# redacted so a pasted launch line cannot leak it. The registry already validated the file
-# (one non-empty line); this reads it through the same function the clients use (R4).
+# API key (T3.35): the file is mounted read-only at the path the registry puts in
+# SGLANG_API_KEY_FILE (CONTAINER_ENV) and the server reads it itself (overlay patch 0052).
+# Until T3.43c / R23 the key went on the container argv, where `ps` on the host and
+# `docker inspect` showed it; now only the path is visible anywhere. The registry already
+# validated the file (one non-empty line, the rule the server applies too).
+api_key_mount=()
 if [[ -n "$API_KEY_FILE" ]]; then
-  api_key="$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from openai_client import read_api_key; print(read_api_key(sys.argv[2]))' \
-             "$(dirname -- "${BASH_SOURCE[0]}")" "$API_KEY_FILE")" || { echo "FAIL API_KEY_FILE=$API_KEY_FILE unreadable"; exit 1; }
-  server_args+=(--api-key "$api_key")
+  api_key_mount=(-v "$(realpath -- "$API_KEY_FILE"):/run/secrets/api-key:ro")
 fi
 # Expert placement map (T3.8b): mounted read-only, named to the overlay's kt_remap.py.
 expert_map_mount=()
@@ -138,6 +139,7 @@ docker_cmd=(
   -v "${HF_MODEL_DIR}:/hfm:ro"
   -v "${OVERLAY_DIR}/python/sglang:/sgl-workspace/sglang/python/sglang:ro"
   "${expert_map_mount[@]}"
+  "${api_key_mount[@]}"
   "${container_env_flags[@]}"
   "${extra_env_flags[@]}"
   "${extra_docker_args[@]}"
@@ -146,6 +148,7 @@ docker_cmd=(
 )
 
 if [[ $print_only -eq 1 ]]; then
+  # EXTRA_SERVER_ARGS may still carry a literal --api-key; keep it out of the printed line.
   printf '%q ' "${docker_cmd[@]}" | sed "s/--api-key [^ ]*/--api-key <redacted>/"; echo
   exit 0
 fi

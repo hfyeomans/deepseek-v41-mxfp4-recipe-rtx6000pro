@@ -24,7 +24,10 @@ told a different story.
 
 Exit 0 when every concurrent slot shares at least --min-prefix characters with
 its bs=1 reference, no slot exceeds --max-gibberish, and (with --same-prompt)
-all concurrent rows are identical to each other.
+every pair of concurrent rows shares at least --min-prefix characters with each
+other.  Whether the rows are byte-identical is reported (``rows_identical``) but
+not gated: sampling-free decode of the same prompt is identical in practice, but
+the gate only promises the prefix bound.
 
 Prefix cache caveat (E24/T3.15): with the radix cache on (the launcher default),
 the reference request prefills the whole prompt while the later identical

@@ -1,7 +1,7 @@
 From c639cbeed31ec34c4ed32c8edeefa5aa1dc5b793 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 7 Oct 2026 22:36:29 -0400
-Subject: [PATCH 26/51] dsv4 indexer: tile the dense fp4 prefill scoring over
+Subject: [PATCH 26/52] dsv4 indexer: tile the dense fp4 prefill scoring over
  query rows under the score budget (recipe E34b)
 
 _low_ratio_index_topk_dense scored a whole prefill chunk in one [rows, width] fp32

@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
 # Source this. Loads $ENV_FILE (default: repo .env) if present, then defaults.
 # Only KEY=VALUE lines are accepted; anything else is rejected so a stray
-# command in .env cannot execute.
+# command in .env cannot execute. A trailing unquoted " # comment" is dropped
+# and a fully "quoted"/'quoted' value is unquoted (R21); nothing is expanded.
 ROOT="${ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
 ENV_FILE="${ENV_FILE:-${ROOT}/.env}"
 if [[ -f "$ENV_FILE" ]]; then
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*=[^\`\$\(\)\;\&\|]*$ ]]; then
-      export "${line?}"
+      key="${line%%=*}"; val="${line#*=}"
+      # A fully quoted value keeps everything inside the quotes (including '#');
+      # otherwise a trailing unquoted " # comment" and trailing blanks are dropped.
+      if [[ "$val" =~ ^\"([^\"]*)\"[[:space:]]*(#.*)?$ ]] || [[ "$val" =~ ^\'([^\']*)\'[[:space:]]*(#.*)?$ ]]; then
+        val="${BASH_REMATCH[1]}"
+      else
+        val="${val%%[[:space:]]#*}"
+        val="${val%"${val##*[![:space:]]}"}"
+      fi
+      export "${key?}=${val}"
     else
       echo "FAIL invalid line in $ENV_FILE: $line" >&2
       # shellcheck disable=SC2317  # exit is reached when this file is executed rather than sourced
@@ -31,7 +41,8 @@ fi
 : "${MEM_FRACTION_STATIC:=0.90}"
 : "${CHUNKED_PREFILL_SIZE:=8192}"
 : "${MAX_RUNNING_REQUESTS:=8}"
-: "${DSPARK_BLOCK_SIZE:=5}"
+: "${DSPARK_K:=${DSPARK_BLOCK_SIZE:-5}}"  # DSPARK_BLOCK_SIZE is the pre-R21 name; DSPARK_K matches the hybrid knob
+unset DSPARK_BLOCK_SIZE
 : "${KV_CACHE_DTYPE:=auto}"
 : "${ENGRAM_PLACEMENT:=dram}"
 : "${ENGRAM_HOST_TABLE_LAYOUT:=shared}"
@@ -40,7 +51,7 @@ fi
 : "${ALLOW_UNQUALIFIED:=0}"
 : "${NCCL_DEBUG:=WARN}"
 export MODEL_DIR HF_CACHE_DIR GPU_DEVICES BIND_ADDRESS PORT CONTAINER_NAME SERVED_MODEL_NAME RUNTIME_IMAGE \
-  PROFILE TP_SIZE MAX_MODEL_LEN MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE MAX_RUNNING_REQUESTS DSPARK_BLOCK_SIZE \
+  PROFILE TP_SIZE MAX_MODEL_LEN MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE MAX_RUNNING_REQUESTS DSPARK_K \
   KV_CACHE_DTYPE ENGRAM_PLACEMENT ENGRAM_HOST_TABLE_LAYOUT GPU_RESERVE_GIB HOST_RESERVE_GIB ALLOW_UNQUALIFIED NCCL_DEBUG
 
 # Pinned identities. Change only with a PROVENANCE.md update.

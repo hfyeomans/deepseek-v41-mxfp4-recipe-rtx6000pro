@@ -101,6 +101,9 @@ def test_decode_tps_uses_usage_and_excludes_ttft():
     assert abs(r2.decode_tps() - 25.0) < 1e-9
     r3 = StreamResult(text="", ttft_s=1.0, total_s=1.5, completion_tokens=1, prompt_tokens=1, finish_reason=None, stream_token_events=1)
     assert r3.decode_tps() is None
+    # R27: usage says 512 tokens but nothing was streamed (ttft_s == total_s): not 5e11 tok/s, None
+    r4 = StreamResult(text="", ttft_s=3.0, total_s=3.0, completion_tokens=512, prompt_tokens=1, finish_reason="stop", stream_token_events=0)
+    assert r4.decode_tps() is None
 
 
 if __name__ == "__main__":

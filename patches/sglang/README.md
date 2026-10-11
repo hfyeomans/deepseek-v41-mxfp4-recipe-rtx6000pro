@@ -1,12 +1,12 @@
 # SGLang overlay as a patch series (T3.24c)
 
-Everything this recipe changes in SGLang, as 50 `git format-patch` files on top of one upstream commit. With this directory, the public `dev-dsv41` image and the model snapshot, the exact serving stack can be rebuilt without access to the local overlay clone. The kt-kernel side of the hybrid is a separate, much smaller series in [`config/kt-kernel-patches/`](../../config/kt-kernel-patches/) (three patches applied by `config/Dockerfile.dsv41-kt`).
+Everything this recipe changes in SGLang, as 52 `git format-patch` files on top of one upstream commit. With this directory, the public `dev-dsv41` image and the model snapshot, the exact serving stack can be rebuilt without access to the local overlay clone. The kt-kernel side of the hybrid is a separate, much smaller series in [`config/kt-kernel-patches/`](../../config/kt-kernel-patches/) (three patches applied by `config/Dockerfile.dsv41-kt`).
 
 | | |
 |---|---|
 | Upstream base | `sgl-project/sglang` commit `da64c5cbb8cf6bfd39be19da43573fdfd484c43a` — "[DSV4.1] Support raw-index output in TopK v2 (port of #33672) (#39098)", the commit the `lmsysorg/sglang:dev-dsv41` image was built from (`ai.sglang.build.commit` label; see `PROVENANCE.md`) |
 | Overlay branch | `dsv41-kt-hybrid` in the local clone `~/dev/src/sglang-dsv41-overlay` (no fork, no push) |
-| Exported head | commit `90ae890e33f33cce57dee98ba4cec27516318d15`, tree `90df91d06413bebf1612abc9a3b68a0f6837cbb3`, 51 patches (the `recipe-2026-10` tag stays at `682fc6a0`, patch 0050; 0051 is T3.35's request-admission clamp) (`SERIES.env` is the machine-readable copy) |
+| Exported head | commit `05f9e88b73e9c9a8625212afdc84af79dfd800fa`, tree `18e0c73fccacb1f2ff637a07017d0c790b624815`, 52 patches (the `recipe-2026-10` tag stays at `682fc6a0`, patch 0050; 0051 is T3.35's request-admission clamp, 0052 T3.43c's API-key file read) (`SERIES.env` is the machine-readable copy) |
 | Commits as written | no history rewrite: author, dates and messages are the overlay's. A themed rebase into ≈ 8 reviewable units is **T3.24c-ii**, an owner decision |
 
 ## Apply
@@ -83,3 +83,4 @@ Recipe tasks and experiments are in `plan/TASKS.md` and `plan/ROADMAP.md`; the u
 | 0049 | `124ca1de` | `kt_prefill`: down scales staged as whole rows in one copy, sliced on device | T3.39 window 2 qual | — |
 | 0050 | `682fc6a0` | Sampler/scheduler: a NaN/Inf logits row aborts that request, not the server | T3.13 / C10 | — |
 | 0051 | `90ae890e` | `tokenizer_manager`: clamp `max_new_tokens` to the remaining context instead of HTTP 400 (`SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS`) | T3.35 | upstream candidate |
+| 0052 | `05f9e88b` | `server_args`: read the bearer token from the file named by `SGLANG_API_KEY_FILE` when `--api-key` is absent, so the key is on neither the argv (`ps`) nor the env (`docker inspect`) | T3.43c / R23 | upstream candidate |

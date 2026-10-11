@@ -49,13 +49,15 @@ def write_rung(root: pathlib.Path, name: str, c1_median: float = 57.25, bad_stam
     (d / "corpus").mkdir(parents=True)
     m = fake_manifest()
     (d / "manifest.json").write_text(json.dumps(m))
-    c1 = {"distinct_prompts": True, "levels": [{"concurrency": 1, "median_tps": c1_median, "median_wall_tps": 55.5}]}
+    c1 = {"distinct_prompts": True, "runs": 6, "warmup": 1, "max_tokens": 512,
+          "levels": [{"concurrency": 1, "median_tps": c1_median, "median_wall_tps": 55.5}]}
     c1s = stamped(c1, m)
     if bad_stamp:
         c1s["evidence"]["manifest_hash"] = "0" * 64
     (d / "c1.json").write_text(json.dumps(c1 if unstamped else c1s))
     (d / "prefill-16k.json").write_text(json.dumps(stamped({"passes": [
-        {"pass": "cold", "sizes": [{"median_prefill_tps": 2934.4, "median_ttft_s": 5.51}]},
+        {"pass": "cold", "sizes": [{"median_prefill_tps": 2934.4, "median_ttft_s": 5.51,
+                                    "runs": [{"prefill_tps": 662.0, "ttft_s": 24.1}, {"prefill_tps": 2934.4, "ttft_s": 5.51}]}]},
         {"pass": "warm", "sizes": [{"median_prefill_tps": 3264.0, "median_ttft_s": 4.9}]}]}, m)))
     (d / "verify.json").write_text(json.dumps(stamped({"checks": [
         {"name": "context_ceiling", "pass": True, "max_model_len": 65536},
@@ -74,7 +76,10 @@ def test_numbers_come_from_the_stamped_files():
         cfg = {"rows": [write_rung(root, "r1", c1_median=57.25)]}
         md = bh.markdown(cfg, root)
         assert "| 57.2 / 55.5 |" in md, md  # c1 median / wall, from c1.json
-        assert "2,934 cold (TTFT 5.5 s) / 3,264 warm (TTFT 4.9 s)" in md, md
+        # R28: the first (truly cold) run is named beside the cold median; the warm pass has no first run
+        assert "2,934 cold (TTFT 5.5 s; first run 662, TTFT 24.1 s) / 3,264 warm (TTFT 4.9 s)" in md, md
+        # R28: the caption's runs / warmups / tokens come from the stamped files, not a typed sentence
+        assert "over 6 runs (C1) and ? runs (C4) of 512 forced tokens after 1 warmup, distinct prompts" in md, md
         assert "6/6 at 55,206 tokens, TTFT 13 s, ceiling 65,536" in md, md
         assert "C4 × 61,764 tokens, wall 80 s, TTFT max 73 s, all finished" in md, md
         assert "z +0.26, 65,226 of 65,653 moved" in md, md

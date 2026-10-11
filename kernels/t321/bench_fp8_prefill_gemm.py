@@ -146,7 +146,10 @@ def candidates(a, b, a_s, b_s, out_bf16: torch.Tensor) -> Dict[str, Tuple[Callab
     bt = b.t()  # (k, n) column-major view, what _scaled_mm wants for the second operand
 
     def scaled_mm():
-        return torch._scaled_mm(a, bt, scale_a=one, scale_b=one, out_dtype=torch.bfloat16)
+        # Written into the shared out_bf16 so the timed region holds no allocation, matching the
+        # flashinfer candidates.  (triton_tuned is sglang's wrapper, which allocates its output
+        # internally on every call; its number therefore includes one caching-allocator hit.)
+        return torch._scaled_mm(a, bt, scale_a=one, scale_b=one, out_dtype=torch.bfloat16, out=out_bf16)
 
     cands["scaled_mm"] = (scaled_mm, False)
     return cands
@@ -197,7 +200,8 @@ def main() -> int:
                     results["rows"].append({"N": n, "K": k, "M": m, "candidate": name, "error": str(exc)[:400]})
                     continue
                 med = statistics.median(times)
-                q = statistics.quantiles(times, n=10)
+                # quantiles() needs >= 2 samples; with --iters 1 report the single value as p10 = p90.
+                q = statistics.quantiles(times, n=10) if len(times) >= 2 else [med, med]
                 tflops = flops / med / 1e6
                 print(f"{n:>6} {k:>5} {m:>6} {name:<13} {med:>10.1f} {q[0]:>7.1f}-{q[-1]:<8.1f} {tflops:>8.1f} {err:>9.2e} {'y' if exact else 'n'}")
                 results["rows"].append({

@@ -35,7 +35,7 @@ The bytes are read from the shard headers of `deepseek-ai/DeepSeek-V4.1-Flash@db
 
 Engram tiering on 2 GPUs: full FP8 tables in DRAM do **not** fit (−78 GiB); FP4 (+13 GiB) or q3_K (+32 GiB) tables do; NVMe + 64 GiB cache (+47 GiB) is the default because E3 showed both drives sustain decode-rate lookups. Full derivation, options and the 3/4-GPU columns: [docs/FEASIBILITY.md](docs/FEASIBILITY.md).
 
-Measured so far on this host ([docs/BENCHMARKS.md](docs/BENCHMARKS.md)): CPU DRAM read 125 GB/s (E1b; a two-CCD fabric limit, 30 % of the 409.6 theoretical — E25 measured it directly: 62–63 GB/s per CCD, 235 GB/s with both GPUs' DMA on top); GPU DMA reads of the same DRAM 114 GB/s over both x16 links and **additive** with the CPU's (E4/E4b, 234 GB/s together); GDDR7 ≈1,470 GB/s per card (E2); Engram-style random row gather 4.15 M rows/s from DRAM, 403K reads/s from the Samsung 9100 PRO, 347K from the Crucial T705 (E3); a native MXFP4×MXFP4 grouped GEMM for SM120 (`kernels/e13/`) that verifies and streams expert weights at 1,397 GB/s at decode shapes and reaches 1,060 TFLOPS dense at 300 W (E13).
+Measured so far on this host ([docs/BENCHMARKS.md](docs/BENCHMARKS.md)): CPU DRAM read 125 GB/s (E1b; a two-CCD fabric limit, 30 % of the 409.6 theoretical — E25 measured it directly: 62–63 GB/s per CCD, 235 GB/s with both GPUs' DMA on top); GPU DMA reads of the same DRAM 114 GB/s over both x16 links and **additive** with the CPU's (E4/E4b, 234 GB/s together); GDDR7 ≈1,470 GB/s per card (E2); Engram-style random row gather 3.15 M whole rows/s from DRAM (Python-bound lower bound; re-measured 2026-10-11), 403K reads/s from the Samsung 9100 PRO, 347K from the Crucial T705 (E3); a native MXFP4×MXFP4 grouped GEMM for SM120 (`kernels/e13/`) that verifies and streams expert weights at 1,397 GB/s at decode shapes and reaches 1,060 TFLOPS dense at 300 W (E13).
 
 ### Paths, ranked
 
@@ -72,7 +72,7 @@ Runnable now, no model download, no GPU contention:
 | `bench-dram.py` | E1: host copy bandwidth |
 | `evidence_manifest.py write\|show\|verify\|check-evidence` | T3.19f: the per-serve provenance manifest (recipe/overlay SHA, image + container id, resolved knobs, BIOS slot + HSMP clocks, GPU caps, pre-serve memory and Engram page-cache state, content hash). The launcher writes one; the evidence scripts stamp their JSON with its hash and copy it beside the output as `manifest.json`; `ci.sh` checks `evidence/` |
 | `hsmp-clocks.py [--watch 1 --n 30]` | live FCLK / MCLK / DDR-controller GB/s / socket W from the kernel `hsmp_acpi` driver, unprivileged — the BIOS Tier 3 clock check (E27) |
-| `export-sglang-series.sh` | T3.24c: re-exports the SGLang overlay branch as `patches/sglang/*.patch` + `SERIES.env` (51 patches on upstream `da64c5cb`; the README there has the apply recipe and a patch → task index); `ci.sh` re-applies the series and checks the tree hash |
+| `export-sglang-series.sh` | T3.24c: re-exports the SGLang overlay branch as `patches/sglang/*.patch` + `SERIES.env` (52 patches on upstream `da64c5cb`; the README there has the apply recipe and a patch → task index); `ci.sh` re-applies the series and checks the tree hash |
 
 Need a GPU window (stop the GLM container first):
 
@@ -108,7 +108,7 @@ scripts/hardware-inventory.sh
 scripts/feasibility-calc.py evidence/budget-upstream-bf16fp8.json --gpus 2,3,4            # resident layouts: only 4 GPUs fit
 scripts/feasibility-calc.py evidence/budget-upstream-bf16fp8.json --gpus 2,3,4 --layout hybrid-cpu --engram nvme --dram-gbps 125
 scripts/bench-engram-gather.py --backend dram --rows 20000000
-scripts/bench-engram-gather.py --backend nvme --path results/engram-nvme0.bin --rows 20000000   # results/ lives on nvme0
+scripts/bench-engram-gather.py --backend nvme --path results/engram-nvme0.bin --rows 20000000   # results/ lives on nvme0; the file is created and deleted by the run (--keep-file keeps it; an existing foreign file is refused unless --force)
 ```
 
 When two more cards are installed:
@@ -155,4 +155,4 @@ Evidence in this repository was gathered on Ubuntu 26.04.1, kernel 7.0.0-31, dri
 
 Progression: C1 **14 → 58 tok/s**, C4 **— → 118 wall**, 16K prefill **216 → 2,934–3,264 tok/s**, qualified context **32K × 4 → 64K × 4 default + 262K × 4 / 512K × 1 / 1M × 1** over 2026-09-22 → 2026-10-10 (same hardware; FCLK 2000 → 2100).
 
-**2026-10-10: the recipe is out of experimental-overlay form** — the six-point completion definition of the migration roadmap's gate ledger (G6, T3.24) holds: typed profiles, no unsafe flag in a release profile, the overlay as a 50-patch series on upstream `da64c5cb` re-applied and tree-hashed by `ci.sh`, every CPU suite in `ci.sh` plus the GPU smoke in `release-smoke.sh`, provenance for every artefact, and a generated headline table whose every number is read from manifest-stamped evidence ([docs/BENCHMARKS.md](docs/BENCHMARKS.md#headline--qualified-rungs-of-the-v41-flash-hybrid-generated-2026-10-10)). Qualified rungs: 64K × 4 (launcher default), 262K × 4 and 512K × 1 / 1M × 1 as per-rung overrides. The overlay is tagged `recipe-2026-10` at `682fc6a0`. What remains is throughput work and strengthening (T3.30 onwards in [plan/TASKS.md](plan/TASKS.md)); the earlier phase history is in [plan/README.md](plan/README.md).
+**2026-10-10: the recipe is out of experimental-overlay form** — the six-point completion definition of the migration roadmap's gate ledger (G6, T3.24) holds: typed profiles, no unsafe flag in a release profile, the overlay as a patch series on upstream `da64c5cb` (50 at the gate; 52 as of T3.43c) re-applied and tree-hashed by `ci.sh`, every CPU suite in `ci.sh` plus the GPU smoke in `release-smoke.sh`, provenance for every artefact, and a generated headline table whose every number is read from manifest-stamped evidence ([docs/BENCHMARKS.md](docs/BENCHMARKS.md#headline--qualified-rungs-of-the-v41-flash-hybrid-generated-2026-10-10)). Qualified rungs: 64K × 4 (launcher default), 262K × 4 and 512K × 1 / 1M × 1 as per-rung overrides. The overlay is tagged `recipe-2026-10` at `682fc6a0`. What remains is throughput work and strengthening (T3.30 onwards in [plan/TASKS.md](plan/TASKS.md)); the earlier phase history is in [plan/README.md](plan/README.md).

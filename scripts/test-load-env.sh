@@ -15,6 +15,18 @@ EOF
 out="$(ENV_FILE="$tmp/good.env" bash -c 'source "$1"; echo "$PORT $TP_SIZE $MODEL_PIN $(gpu_count)"' _ "$ROOT/scripts/load-env.sh")"
 [[ "$out" == "9999 4 deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a40aa45a94ad051997016db3960a90277 4" ]] || { echo "FAIL good env: $out"; exit 1; }
 
+# R21: trailing comments and quotes are stripped, a quoted '#' is kept, nothing expands,
+# and the legacy DSPARK_BLOCK_SIZE name maps onto DSPARK_K (no collision with the hybrid registry).
+cat >"$tmp/comment.env" <<'EOF'
+PORT=8123 # the comment must not become part of the port
+MODEL_DIR="/srv/with space"
+SERVED_MODEL_NAME='single # inside quotes'
+HF_CACHE_DIR=/srv/hf   
+DSPARK_BLOCK_SIZE=3
+EOF
+out="$(ENV_FILE="$tmp/comment.env" bash -c 'source "$1"; printf "%s|%s|%s|%s|%s|%s" "$PORT" "$MODEL_DIR" "$SERVED_MODEL_NAME" "$HF_CACHE_DIR" "$DSPARK_K" "${DSPARK_BLOCK_SIZE-unset}"' _ "$ROOT/scripts/load-env.sh")"
+[[ "$out" == "8123|/srv/with space|single # inside quotes|/srv/hf|3|unset" ]] || { echo "FAIL comment/quote handling: $out"; exit 1; }
+
 # shellcheck disable=SC2016  # these strings are intentionally literal; they must NOT expand
 for bad in 'PORT=$(rm -rf /)' 'PORT=1; echo pwned' 'echo hi' 'PORT=`id`'; do
   printf '%s\n' "$bad" >"$tmp/bad.env"

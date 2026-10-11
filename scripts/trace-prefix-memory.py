@@ -78,6 +78,7 @@ def summarise_snapshot(snap: dict) -> dict:
     per_dev: dict[int, dict] = {}
     for seg in snap.get("segments", []):
         d = per_dev.setdefault(seg["device"], {"reserved_bytes": 0, "allocated_bytes": 0, "inactive_bytes": 0,
+                                               "pending_free_bytes": 0,
                                                "segments": 0, "live_sites": defaultdict(lambda: [0, 0]),
                                                "inactive_blocks": 0, "largest_inactive_bytes": 0})
         d["reserved_bytes"] += seg["total_size"]
@@ -92,8 +93,13 @@ def summarise_snapshot(snap: dict) -> dict:
                 d["inactive_bytes"] += b["size"]
                 d["inactive_blocks"] += 1
                 d["largest_inactive_bytes"] = max(d["largest_inactive_bytes"], b["size"])
+            else:
+                # active_pending_free: freed by the caller, still owned by an in-flight stream
+                # (R26: uncounted before 2026-10-11, so reserved != allocated + inactive).
+                d["pending_free_bytes"] += b["size"]
     for dev, traces in enumerate(snap.get("device_traces", []) or []):
-        d = per_dev.setdefault(dev, {"reserved_bytes": 0, "allocated_bytes": 0, "inactive_bytes": 0, "segments": 0,
+        d = per_dev.setdefault(dev, {"reserved_bytes": 0, "allocated_bytes": 0, "inactive_bytes": 0,
+                                     "pending_free_bytes": 0, "segments": 0,
                                      "live_sites": defaultdict(lambda: [0, 0]), "inactive_blocks": 0,
                                      "largest_inactive_bytes": 0})
         cur = peak = 0
@@ -141,7 +147,7 @@ def diff_devices(prev: dict | None, cur: dict) -> dict:
         moved = [{"site": k, "delta_bytes": cs.get(k, 0) - ps.get(k, 0)} for k in set(ps) | set(cs)]
         moved = [m for m in moved if m["delta_bytes"] != 0]
         moved.sort(key=lambda m: -abs(m["delta_bytes"]))
-        out[dev] = {k: c[k] - p[k] for k in ("reserved_bytes", "allocated_bytes", "inactive_bytes")}
+        out[dev] = {k: c[k] - p[k] for k in ("reserved_bytes", "allocated_bytes", "inactive_bytes", "pending_free_bytes")}
         out[dev]["sites"] = moved[:TOP_SITES]
     return out
 
@@ -207,7 +213,8 @@ def main() -> int:
     args.snapshot_dir.mkdir(parents=True, exist_ok=True)
     samples: list[dict] = []
     stop = threading.Event()
-    threading.Thread(target=sample_vram, args=(stop, samples), daemon=True).start()
+    sampler = threading.Thread(target=sample_vram, args=(stop, samples), daemon=True)
+    sampler.start()
     time.sleep(2)
 
     steps = []
@@ -247,6 +254,7 @@ def main() -> int:
                 for m in dd.get("sites", [])[:6]:
                     print(f"    {m['delta_bytes'] / 2**20:+9.0f} MiB  {m['site']}")
     stop.set()
+    sampler.join()  # R26: the last sample must be in `samples` before it is serialised
     report = {"url": args.url, "model": model, "container": args.container, "prefixes": prefixes,
               "max_tokens": args.max_tokens, "seed": args.seed, "steps": steps, "vram_samples": samples,
               "snapshot_dir": str(args.snapshot_dir), "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z")}

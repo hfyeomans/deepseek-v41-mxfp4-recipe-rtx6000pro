@@ -19,7 +19,9 @@ and a fits/does-not-fit verdict for each supported layout:
 The math is deliberately simple and conservative. Overheads are explicit
 parameters so the numbers can be audited and re-run. Standard library only.
 
-Exit status: 0 if the requested layout fits, 3 if it does not, 2 on input error.
+Exit status: 0 if every evaluated row (each --gpus count x each requested layout) fits,
+3 if any row does not, 2 on input error. With --layout all (the default) that means all
+four layouts; use a specific --layout for a yes/no about one of them (as scripts/ci.sh does).
 """
 from __future__ import annotations
 
@@ -45,10 +47,13 @@ MOE_LAYERS = 40
 ROUTED_EXPERTS = 384
 EXPERTS_PER_TOKEN = 6
 ATTENTION_HEADS = 64  # TP degree must divide this for plain tensor parallelism
-# Engram host footprint per mode, as a fraction of the checkpoint's FP8 tables.
-# fp4: LibertAIDAI NVFP4 tables are 97.28 / 188.83 GiB of the FP8 ones.
+# Engram host footprint per mode. "dram" is the checkpoint's own tables (read from the
+# budget JSON, 188.83 GiB for the FP8 shards); the others are absolute sizes of re-quantised
+# tables measured elsewhere, so they do not scale with the budget (R25: before 2026-10-11
+# they were fractions of a hard-coded 188.83 and would have silently drifted on another budget).
+# fp4: LibertAI's NVFP4 tables total 97.28 GiB.
 # q3k: vcruz305's GGUF ladder quotes ~40,284 MiB per table at q3_K (2 tables).
-ENGRAM_FRACTION = {"dram": 1.0, "dram-fp4": 97.28 / 188.83, "dram-q3k": 2 * 40284 / 1024 / 188.83}
+ENGRAM_HOST_GIB = {"dram": None, "dram-fp4": 97.28, "dram-q3k": 2 * 40284 / 1024}
 # Measured on this host: E1b read-only DRAM bandwidth from the CPU cores is
 # ~125 GB/s at 16 threads (evidence/e1b-dram-read-bandwidth.json); E1's 146 GB/s
 # counted read+write of a copy. Theoretical 8ch DDR5-6400 is 409.6; the gap is a
@@ -163,7 +168,7 @@ def evaluate_hybrid(budget: dict, *, gpus: int, gpu_gib: float, host_gib: float,
     if engram == "nvme":
         engram_host = engram_cache_gib * GIB
     else:
-        engram_host = budget["engram_tables"] * ENGRAM_FRACTION[engram]
+        engram_host = budget["engram_tables"] if ENGRAM_HOST_GIB[engram] is None else ENGRAM_HOST_GIB[engram] * GIB
     host_need = cpu_bytes + engram_host + host_reserve_gib * GIB
     host_margin = host_gib * GIB - host_need
 
@@ -227,7 +232,7 @@ def main() -> int:
     ap.add_argument("--vision", action="store_true", help="include vision encoder + aligner")
     ap.add_argument("--layout", choices=["gpu-only", "engram-host", "engram-nvme", "hybrid-cpu", "all"], default="all")
     ap.add_argument("--engram-cache-gib", type=float, default=64.0, help="host row cache for engram-nvme layout and hybrid --engram nvme")
-    ap.add_argument("--engram", choices=sorted(ENGRAM_FRACTION) + ["nvme"], default="nvme",
+    ap.add_argument("--engram", choices=sorted(ENGRAM_HOST_GIB) + ["nvme"], default="nvme",
                     help="hybrid-cpu: where the Engram tables live (dram = FP8 as shipped, dram-fp4, dram-q3k, nvme + cache)")
     ap.add_argument("--dram-gbps", type=float, default=DEFAULT_DRAM_GBPS, help="hybrid-cpu: host DRAM read bandwidth for CPU experts")
     ap.add_argument("--pcie-gbps-per-gpu", type=float, default=DEFAULT_PCIE_GBPS_PER_GPU, help="hybrid-cpu: H2D bandwidth per card for the streaming comparison")

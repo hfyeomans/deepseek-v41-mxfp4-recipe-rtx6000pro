@@ -123,10 +123,14 @@ class FileTable:
         def advise(lo: int, hi: int) -> None:
             for j in range(lo, hi):
                 r = idl[j]
-                a = (w_off + r * DIM) // page * page
-                self.mm.madvise(mmap.MADV_WILLNEED, a, page)
-                b = (s_off + r * (DIM // FP8_BLOCK)) // page * page
-                self.mm.madvise(mmap.MADV_WILLNEED, b, page)
+                # Advise the whole byte range of each row, not just its first page: a 256 B
+                # weight row starts in one page and ends in the next ~6 % of the time.
+                a0 = w_off + r * DIM
+                a = a0 // page * page
+                self.mm.madvise(mmap.MADV_WILLNEED, a, (a0 + DIM - 1) // page * page - a + page)
+                b0 = s_off + r * (DIM // FP8_BLOCK)
+                b = b0 // page * page
+                self.mm.madvise(mmap.MADV_WILLNEED, b, (b0 + DIM // FP8_BLOCK - 1) // page * page - b + page)
 
         n = len(idl)
         step = (n + threads - 1) // threads

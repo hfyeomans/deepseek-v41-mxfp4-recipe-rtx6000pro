@@ -128,7 +128,9 @@ REGISTRY: tuple[Knob, ...] = (
          "Host interface the port is published on. Empty = loopback (T3.43a / R5: before 2026-10-11 an empty value "
          "published on every interface). A non-loopback bind is refused without API_KEY_FILE unless PROFILE=developer."),
     Knob("API_KEY_FILE", "str", "",
-         "Path to a file holding one bearer token; non-empty passes its content as --api-key, after which every "
+         "Path to a file holding one bearer token; non-empty mounts it read-only into the container, where the "
+         "server reads it (SGLANG_API_KEY_FILE, overlay patch 0052; T3.43c / R23: before, the key sat on the "
+         "container argv, visible to `ps` and `docker inspect`), after which every "
          "endpoint but /health* and /metrics needs `Authorization: Bearer`. A path, not the key, so the manifest "
          "and the resolved line never carry the secret. The evidence scripts read the same variable "
          "(openai_client.auth_headers). Set it whenever the port is exposed beyond this host (T3.35: tailscale funnel). "
@@ -339,12 +341,18 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']}",
         f"SGLANG_DSV41_REJECT_NAN_ROWS={r['KT_REJECT_NAN_ROWS']}",
         f"SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS={r['SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS']}",
-    ]
+    ] + ([f"SGLANG_API_KEY_FILE={API_KEY_MOUNT}"] if r["API_KEY_FILE"] else [])
+
+
+# Where serve-hybrid.sh mounts API_KEY_FILE (read-only) and where the server reads it (overlay
+# patch 0052, SGLANG_API_KEY_FILE). The path is the only key-related string on the container.
+API_KEY_MOUNT = "/run/secrets/api-key"
 
 
 FIXED_CONTAINER_ENV: tuple[str, ...] = (
     "SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE", "SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT",
     "SGLANG_DSV41_ENGRAM_FILE_DIR", "SGLANG_OPT_USE_TILELANG_INDEXER", "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH",
+    "SGLANG_API_KEY_FILE",
 )
 
 

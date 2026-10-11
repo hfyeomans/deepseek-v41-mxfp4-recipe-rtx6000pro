@@ -117,7 +117,9 @@ def test_bind_and_key() -> None:
             p = launcher([], DRY_RUN="1", API_KEY_FILE=path)
             assert p.returncode == 2 and f"API_KEY_FILE={path}: {msg}" in p.stderr, (path, p.returncode, p.stderr)
         p = launcher(["--print"], BIND_ADDRESS="0.0.0.0", API_KEY_FILE=str(one))
-        assert p.returncode == 0 and "--api-key <redacted>" in p.stdout and "sk-test-token" not in p.stdout, (p.stdout, p.stderr)
+        # R23: the key never reaches the docker command line; the file is mounted and the server reads it.
+        assert p.returncode == 0 and "sk-test-token" not in p.stdout and "--api-key" not in p.stdout, (p.stdout, p.stderr)
+        assert f"{one}:/run/secrets/api-key:ro" in p.stdout and "SGLANG_API_KEY_FILE=/run/secrets/api-key" in p.stdout, p.stdout
         # the client reads the same file to the same key
         import openai_client
         assert openai_client.read_api_key(str(one)) == "sk-test-token"

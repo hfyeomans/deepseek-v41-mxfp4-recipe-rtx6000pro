@@ -1,7 +1,7 @@
 From cad73914d706035cef37274a37cd69639610031f Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 23 Sep 2026 17:47:44 -0400
-Subject: [PATCH 17/51] kt_ep_wrapper: skip the E22d NaN probe while a CUDA
+Subject: [PATCH 17/52] kt_ep_wrapper: skip the E22d NaN probe while a CUDA
  graph is capturing (host sync is forbidden there; KT_NAN_PROBE_MIN_TOKENS=1
  killed decode-graph capture)
 

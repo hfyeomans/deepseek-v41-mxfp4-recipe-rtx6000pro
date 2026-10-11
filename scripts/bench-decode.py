@@ -162,9 +162,11 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--output", type=Path)
-    ap.add_argument("--distinct-prompts", action="store_true",
+    ap.add_argument("--distinct-prompts", action="store_true", default=True,
                     help="give each concurrent stream a different-domain prompt (defeats expert-routing overlap "
-                         "between streams; use for CPU/DRAM-offloaded MoE)")
+                         "between streams; the default since T3.43c / R28, as every recorded C2+ figure is)")
+    ap.add_argument("--same-prompt", dest="distinct_prompts", action="store_false",
+                    help="every stream gets the same fixture (the pre-R28 default; the headline marks such rows)")
     ap.add_argument("--fixture-offset", type=int, default=0,
                     help="with --distinct-prompts, start the fixture cycle at this index (isolate one prompt at C=1)")
     ap.add_argument("--fixture-set", choices=sorted(FIXTURE_SETS), default="distinct",

@@ -1,0 +1,26 @@
+# T3.43c R23: API key off the container argv (one 64K x 4 serve, launcher default, API_KEY_FILE=/tmp/r23key)
+date_utc=2026-10-11T03:01:58Z
+container=6d36bbdfa8b1  image=dsv41-kt:recipe
+launch manifest: 20261011T025546Z-dsv41-kt.json
+
+## key copies visible on the host
+docker inspect dsv41-kt | grep -c sk-r23      -> 0
+ps -ef | grep sk-r23 | grep -v grep | wc -l   -> 0
+pgrep -fc 'sk-r23[-]test' (any host process cmdline)  -> 0
+
+## how the key reaches the server instead
+Config.Cmd api-key flag count: 0
+Config.Env: SGLANG_API_KEY_FILE=/run/secrets/api-key
+Mount: /tmp/r23key -> /run/secrets/api-key (ro)
+
+## the key is enforced
+unkeyed  GET /v1/models -> HTTP 401
+keyed    GET /v1/models -> HTTP 200
+wrong    GET /v1/models -> HTTP 401
+unkeyed  POST /v1/chat/completions -> HTTP 401
+keyed    POST /v1/chat/completions -> HTTP 200
+unkeyed  GET /health -> HTTP 200  (SGLang exempts /health*)
+
+## wait-ready with API_KEY_FILE exported
+ready: model=dsv41-flash-hybrid ttft=1.24s reply='READY'
+(without the export, wait-ready's /v1/models probe gets 401 until the timeout - the clients read API_KEY_FILE from the environment, so export it alongside the serve.)

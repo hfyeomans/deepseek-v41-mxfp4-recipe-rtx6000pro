@@ -43,8 +43,9 @@ def snapshot():
                 block(100, "active_allocated", None),            # predates recording
                 block(400, "inactive"),
             ]},
-            {"device": 0, "total_size": 500, "stream": 0, "blocks": [
+            {"device": 0, "total_size": 560, "stream": 0, "blocks": [
                 block(500, "active_allocated", [TORCH, KT, SGL]),  # innermost own frame is KT
+                block(60, "active_pending_free"),                  # freed, still owned by a stream (R26)
             ]},
         ],
         "device_traces": [[
@@ -57,9 +58,12 @@ def snapshot():
 
 def test_reserved_allocated_inactive():
     s = tpm.summarise_snapshot(snapshot())["0"]
-    assert s["reserved_bytes"] == 1500 and s["segments"] == 2
+    assert s["reserved_bytes"] == 1560 and s["segments"] == 2
     assert s["allocated_bytes"] == 900, s
     assert s["inactive_bytes"] == 600 and s["inactive_blocks"] == 2 and s["largest_inactive_bytes"] == 400
+    # R26: every block lands in exactly one bucket, so the buckets account for the reservation
+    assert s["pending_free_bytes"] == 60
+    assert s["allocated_bytes"] + s["inactive_bytes"] + s["pending_free_bytes"] == s["reserved_bytes"]
 
 
 def test_site_attribution():

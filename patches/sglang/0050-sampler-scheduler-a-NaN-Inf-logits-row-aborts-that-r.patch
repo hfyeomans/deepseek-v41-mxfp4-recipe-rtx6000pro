@@ -1,7 +1,7 @@
 From 682fc6a02b3e3585738e870dcbbee7460adeceb9 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Sat, 10 Oct 2026 14:36:47 -0400
-Subject: [PATCH 50/51] sampler/scheduler: a NaN/Inf logits row aborts that
+Subject: [PATCH 50/52] sampler/scheduler: a NaN/Inf logits row aborts that
  request, not the server (recipe T3.13 / C10)
 
 - Sampler.forward (outside the decode graph): under SGLANG_DSV41_REJECT_NAN_ROWS (default on)

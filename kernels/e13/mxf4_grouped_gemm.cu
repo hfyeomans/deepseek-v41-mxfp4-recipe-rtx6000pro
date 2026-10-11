@@ -871,7 +871,6 @@ int main(int argc, char const **args) {
   int current_device_id;
   CUDA_CHECK(cudaGetDevice(&current_device_id));
   CUDA_CHECK(cudaGetDeviceProperties(&props, current_device_id));
-  cudaError_t error = cudaGetDeviceProperties(&props, 0);
   if (!(props.major == 12 && (props.minor == 0 || props.minor == 1))) {
     std::cerr
       << "This example requires a GPU of NVIDIA's Blackwell Architecture (compute capability 120 or 121).\n";

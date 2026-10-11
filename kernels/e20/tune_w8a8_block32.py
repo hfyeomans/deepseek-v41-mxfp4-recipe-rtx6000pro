@@ -140,22 +140,37 @@ def matches_reference(out: torch.Tensor, A, B, As, Bs, n_chunk: int = 2048) -> b
             BLOCK_K, dim=1
         )[:, :K]
         ref = a @ b.t()
-        if not torch.allclose(out[:, n0:n1].float(), ref, rtol=2e-2, atol=2e-2):
+        # bf16 output carries ~3 significant digits (2^-8 relative); 1e-2 leaves room for fp32
+        # accumulation-order differences between split-K and serial-K but rejects real tile bugs.
+        # (The E20 configs shipped in the overlay were selected under the earlier 2e-2 tolerance;
+        # they are not re-tuned here.)
+        if not torch.allclose(out[:, n0:n1].float(), ref, rtol=1e-2, atol=1e-2):
             return False
     return True
 
 
-def run_config(A, B, As, Bs, C, config: Dict[str, Any]) -> torch.Tensor:
-    """Mirror of sglang's w8a8_block_fp8_matmul_triton dispatch, minus the is_sm90 gate."""
+def run_config(
+    A, B, As, Bs, C, config: Dict[str, Any], partials: Optional[torch.Tensor] = None
+) -> torch.Tensor:
+    """Mirror of sglang's w8a8_block_fp8_matmul_triton dispatch, minus the is_sm90 gate.
+
+    `partials` is the (split_k, M, N) fp32 scratch for SPLIT_K > 1.  Callers that time this
+    function should preallocate it (see `tune_shape`) so the measurement covers only the kernels;
+    sglang's production wrapper allocates it per call through the caching allocator, which is
+    host-side work the CUDA-event timing would not see anyway.
+    """
     M, K = A.shape
     N = B.shape[0]
     split_k = config.get("SPLIT_K", 1)
     swap_ab = config.get("SWAP_AB", False)
     tuned_path = swap_ab or split_k > 1
     kernel = _w8a8_block_fp8_matmul_hopper if tuned_path else _w8a8_block_fp8_matmul
-    partials = (
-        torch.empty((split_k, M, N), device=A.device, dtype=torch.float32) if split_k > 1 else C
-    )
+    if split_k > 1:
+        if partials is None:
+            partials = torch.empty((split_k, M, N), device=A.device, dtype=torch.float32)
+        assert partials.shape == (split_k, M, N) and partials.dtype == torch.float32
+    else:
+        partials = C
     needs_masking = bool(K % config["BLOCK_SIZE_K"] != 0)
     blocks = triton.cdiv(M, config["BLOCK_SIZE_M"]) * triton.cdiv(N, config["BLOCK_SIZE_N"])
     grid = (blocks, split_k) if tuned_path else (blocks,)
@@ -189,11 +204,19 @@ def tune_shape(
             space = space[:: max(1, len(space) // 40)]
         timings: List[Tuple[float, Dict[str, Any]]] = []
         failed = 0
+        scratch: Dict[int, torch.Tensor] = {}  # split_k -> preallocated fp32 partials
         for cfg in space:
+            split_k = cfg.get("SPLIT_K", 1)
+            partials = None
+            if split_k > 1:
+                partials = scratch.get(split_k)
+                if partials is None:
+                    partials = torch.empty((split_k, M, N), device=device, dtype=torch.float32)
+                    scratch[split_k] = partials
             try:
-                run_config(A, B, As, Bs, C, cfg)
+                run_config(A, B, As, Bs, C, cfg, partials)
                 torch.cuda.synchronize()
-                us = bench(lambda: run_config(A, B, As, Bs, C, cfg), warmup, rep)
+                us = bench(lambda: run_config(A, B, As, Bs, C, cfg, partials), warmup, rep)
             except Exception:  # out of shared memory / bad tile combo: skip
                 failed += 1
                 continue
@@ -231,7 +254,7 @@ def tune_shape(
             f"({base_us / best_us:5.2f}x, {results[str(M)]['weight_GBps_best']:7.1f} GB/s) {best_cfg}",
             flush=True,
         )
-        del A, B, As, Bs, C
+        del A, B, As, Bs, C, scratch
         torch.cuda.empty_cache()
     return best_configs, results
 

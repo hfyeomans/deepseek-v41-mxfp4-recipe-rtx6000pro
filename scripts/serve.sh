@@ -60,7 +60,7 @@ server_args=(
   --reasoning-parser deepseek-v41
   --tool-call-parser deepseekv41
   --speculative-algorithm DSPARK
-  --speculative-dspark-block-size "$DSPARK_BLOCK_SIZE"
+  --speculative-dspark-block-size "$DSPARK_K"
 )
 
 docker_cmd=(

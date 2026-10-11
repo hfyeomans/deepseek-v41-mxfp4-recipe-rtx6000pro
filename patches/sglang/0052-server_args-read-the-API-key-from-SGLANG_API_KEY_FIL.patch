@@ -1,0 +1,64 @@
+From 05f9e88b73e9c9a8625212afdc84af79dfd800fa Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sat, 10 Oct 2026 22:46:49 -0400
+Subject: [PATCH 52/52] server_args: read the API key from SGLANG_API_KEY_FILE
+ when --api-key is absent (recipe T3.43c / R23)
+
+A key on argv is visible to every host user through ps and to docker inspect;
+one in an environment variable is in docker inspect too. With the file mounted
+read-only into the container only its path is visible. Exactly one non-empty
+line, the same rule as the recipe launcher's reader.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/server_args.py | 29 ++++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/server_args.py b/python/sglang/srt/server_args.py
+index 74ee4ebc..ca2a9124 100644
+--- a/python/sglang/srt/server_args.py
++++ b/python/sglang/srt/server_args.py
+@@ -39,6 +39,7 @@ import dataclasses
+ import functools
+ import json
+ import logging
++import os
+ import tempfile
+ import uuid
+ from typing import Any, Callable, Dict, List, Literal, Optional, Union
+@@ -4303,7 +4304,33 @@ def prepare_server_args(argv: List[str]) -> ServerArgs:
+         force=True,
+     )
+ 
+-    return ServerArgs.from_cli_args(raw_args)
++    server_args = ServerArgs.from_cli_args(raw_args)
++    if server_args.api_key is None:
++        key_file = os.environ.get("SGLANG_API_KEY_FILE")
++        if key_file:
++            server_args.api_key = _read_api_key_file(key_file)
++    return server_args
++
++
++def _read_api_key_file(path: str) -> str:
++    """Bearer token from a file named by SGLANG_API_KEY_FILE: exactly one non-empty line.
++
++    A key passed as ``--api-key`` is on the process argv and therefore readable by every
++    user on the host (``ps``) and by ``docker inspect``; a key in an environment variable is
++    in ``docker inspect`` too. Reading the file inside the server keeps the secret off both,
++    only its path is visible (recipe T3.43c / R23). The one-line rule matches the launcher's
++    reader so a multi-line file fails the launch instead of 401-ing every client.
++    """
++    try:
++        with open(path, encoding="utf-8") as f:
++            lines = [ln.strip() for ln in f.read().splitlines() if ln.strip()]
++    except OSError as e:
++        raise ValueError(f"SGLANG_API_KEY_FILE={path}: {e.strerror}") from None
++    if len(lines) != 1:
++        raise ValueError(
++            f"SGLANG_API_KEY_FILE={path}: expected exactly one non-empty line, found {len(lines)}"
++        )
++    return lines[0]
+ 
+ 
+ # --------------------------------------------------------------------------
