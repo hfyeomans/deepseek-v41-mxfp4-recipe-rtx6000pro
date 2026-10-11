@@ -1,0 +1,122 @@
+== CUDA ==
+==========
+
+CUDA Version 13.0.3
+
+Container image Copyright (c) 2016-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+A copy of this license is made available in this container at /NGC-DL-CONTAINER-LICENSE for your convenience.
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+== hist/decode-distinct: 7 rank-0 dumps, decode 1818 passes (4,968 tokens), prefill 8 passes (1,690 tokens)
+== hist/humaneval-c4: 11 rank-0 dumps, decode 1996 passes (7,758 tokens), prefill 50 passes (7,209 tokens)
+== hist/prefill-random: 2 rank-0 dumps, decode 1 passes (1 tokens), prefill 2 passes (15,978 tokens)
+== hist/prefill-text: 5 rank-0 dumps, decode 8 passes (8 tokens), prefill 13 passes (65,661 tokens)
+== soak/decode-distinct: 6 rank-0 dumps, decode 1532 passes (3,827 tokens), prefill 7 passes (1,392 tokens)
+== soak/humaneval-full-c4: 35 rank-0 dumps, decode 7958 passes (31,465 tokens), prefill 164 passes (29,418 tokens)
+== soak/humaneval-think-c1: 6 rank-0 dumps, decode 2168 passes (2,168 tokens), prefill 6 passes (1,032 tokens)
+== soak/humaneval-think-c4: 15 rank-0 dumps, decode 4585 passes (15,895 tokens), prefill 35 passes (5,971 tokens)
+== soak/prefill-text: 5 rank-0 dumps, decode 8 passes (8 tokens), prefill 13 passes (65,661 tokens)
+== soak/reasoning-c1: 11 rank-0 dumps, decode 4988 passes (4,988 tokens), prefill 4 passes (326 tokens)
+== soak/reasoning-c4: 20 rank-0 dumps, decode 8596 passes (17,854 tokens), prefill 5 passes (741 tokens)
+
+decode tokens recorded: 88,940; prefill tokens: 195,079
+
+sanity (el8 map on un-permuted counts = the serve's live CPU share, must match routes-soak.txt):
+  hist/decode-distinct/decode                      el8  14.7 %   oracle   3.0 %
+  hist/decode-distinct/prefill                     el8  14.2 %   oracle   1.2 %
+  hist/humaneval-c4/decode                         el8  15.1 %   oracle   1.6 %
+  hist/humaneval-c4/prefill                        el8  12.0 %   oracle   1.5 %
+  hist/prefill-random/decode                       el8  13.8 %   oracle   0.0 %
+  hist/prefill-random/prefill                      el8  23.2 %   oracle   0.0 %
+  hist/prefill-text/decode                         el8  24.5 %   oracle   0.0 %
+  hist/prefill-text/prefill                        el8  15.0 %   oracle   4.2 %
+  soak/decode-distinct/decode                      el8  13.8 %   oracle   3.0 %
+  soak/decode-distinct/prefill                     el8  14.2 %   oracle   1.2 %
+  soak/humaneval-full-c4/decode                    el8  15.0 %   oracle   2.3 %
+  soak/humaneval-full-c4/prefill                   el8  11.8 %   oracle   2.6 %
+  soak/humaneval-think-c1/decode                   el8  12.8 %   oracle   2.0 %
+  soak/humaneval-think-c1/prefill                  el8  12.6 %   oracle   1.2 %
+  soak/humaneval-think-c4/decode                   el8  12.5 %   oracle   2.7 %
+  soak/humaneval-think-c4/prefill                  el8  12.4 %   oracle   1.5 %
+  soak/prefill-text/decode                         el8  24.9 %   oracle   0.0 %
+  soak/prefill-text/prefill                        el8  15.0 %   oracle   4.2 %
+  soak/reasoning-c1/decode                         el8   9.6 %   oracle   1.1 %
+  soak/reasoning-c1/prefill                        el8  12.5 %   oracle   0.1 %
+  soak/reasoning-c4/decode                         el8  10.7 %   oracle   2.7 %
+  soak/reasoning-c4/prefill                        el8  13.0 %   oracle   1.4 %
+
+el8 mix map rebuilt from counts-A..E agrees with config/expert-map-el8-mix-219.json on 100.0 % of slots
+
+leave-one-traffic-family-out (every set sharing the held-out set's prompts, both phases, excluded from the fit), CPU share of routes, N_GPU=219:
+  held-out set                                      el8 map  own fit  own+el8   oracle   tokens
+  hist/decode-distinct/decode                         14.7%    26.1%    16.6%     3.0%   4,968   [distinct]
+  hist/decode-distinct/prefill                        14.2%    17.6%    13.7%     1.2%   1,690   [distinct]
+  hist/humaneval-c4/decode                            15.1%    20.2%    16.4%     1.6%   7,758   [humaneval]
+  hist/humaneval-c4/prefill                           12.0%    18.9%    13.7%     1.5%   7,209   [humaneval]
+  hist/prefill-random/decode                          13.8%     9.2%    10.4%     0.0%   1   [random]
+  hist/prefill-random/prefill                         23.2%    28.8%    25.4%     0.0%   15,978   [random]
+  hist/prefill-text/decode                            24.5%    22.6%    21.5%     0.0%   8   [text]
+  hist/prefill-text/prefill                           15.0%    29.5%    18.4%     4.2%   65,661   [text]
+  soak/decode-distinct/decode                         13.8%    24.7%    15.5%     3.0%   3,827   [distinct]
+  soak/decode-distinct/prefill                        14.2%    17.0%    13.5%     1.2%   1,392   [distinct]
+  soak/humaneval-full-c4/decode                       15.0%    20.0%    16.2%     2.3%   31,465   [humaneval]
+  soak/humaneval-full-c4/prefill                      11.8%    18.2%    13.2%     2.6%   29,418   [humaneval]
+  soak/humaneval-think-c1/decode                      12.8%    15.1%    12.9%     2.0%   2,168   [humaneval]
+  soak/humaneval-think-c1/prefill                     12.6%    20.5%    14.7%     1.2%   1,032   [humaneval]
+  soak/humaneval-think-c4/decode                      12.5%    13.8%    12.4%     2.7%   15,895   [humaneval]
+  soak/humaneval-think-c4/prefill                     12.4%    19.9%    14.5%     1.5%   5,971   [humaneval]
+  soak/prefill-text/decode                            24.9%    23.2%    21.8%     0.0%   8   [text]
+  soak/prefill-text/prefill                           15.0%    29.5%    18.4%     4.2%   65,661   [text]
+  soak/reasoning-c1/decode                             9.6%     8.1%     8.6%     1.1%   4,988   [reasoning]
+  soak/reasoning-c1/prefill                           12.5%    12.9%    12.1%     0.1%   326   [reasoning]
+  soak/reasoning-c4/decode                            10.7%     8.7%     9.3%     2.7%   17,854   [reasoning]
+  soak/reasoning-c4/prefill                           13.0%    13.0%    12.5%     1.4%   741   [reasoning]
+  token-weighted held-out mean, decode                  13.3%    16.4%    13.6%     2.4%
+  token-weighted held-out mean, prefill                 15.0%    26.8%    17.8%     3.3%
+
+blend weight sweep (alpha * own leave-family-out fit + (1 - alpha) * el8 mix), token-weighted held-out CPU share:
+  alpha 0.0: decode  13.3 %  prefill  15.0 %
+  alpha 0.1: decode  13.4 %  prefill  15.4 %
+  alpha 0.2: decode  13.4 %  prefill  16.0 %
+  alpha 0.3: decode  13.5 %  prefill  16.5 %
+  alpha 0.5: decode  13.6 %  prefill  17.8 %
+  alpha 0.7: decode  14.5 %  prefill  19.8 %
+  alpha 1.0: decode  16.4 %  prefill  26.8 %
+
+fit on all own counts: 81.4 % of GPU slots shared with the el8 map (1627 experts move GPU<-CPU in total, 40.7 per layer)
+  in-sample CPU share (not a held-out number):
+    hist/decode-distinct/decode                      el8  14.7 %  own  16.3 %
+    hist/decode-distinct/prefill                     el8  14.2 %  own  14.7 %
+    hist/humaneval-c4/decode                         el8  15.1 %  own   6.1 %
+    hist/humaneval-c4/prefill                        el8  12.0 %  own   6.9 %
+    hist/prefill-random/decode                       el8  13.8 %  own   8.3 %
+    hist/prefill-random/prefill                      el8  23.2 %  own   7.4 %
+    hist/prefill-text/decode                         el8  24.5 %  own  14.9 %
+    hist/prefill-text/prefill                        el8  15.0 %  own   9.2 %
+    soak/decode-distinct/decode                      el8  13.8 %  own  15.4 %
+    soak/decode-distinct/prefill                     el8  14.2 %  own  14.3 %
+    soak/humaneval-full-c4/decode                    el8  15.0 %  own   6.5 %
+    soak/humaneval-full-c4/prefill                   el8  11.8 %  own   7.4 %
+    soak/humaneval-think-c1/decode                   el8  12.8 %  own   6.1 %
+    soak/humaneval-think-c1/prefill                  el8  12.6 %  own   8.9 %
+    soak/humaneval-think-c4/decode                   el8  12.5 %  own   6.2 %
+    soak/humaneval-think-c4/prefill                  el8  12.4 %  own   8.5 %
+    soak/prefill-text/decode                         el8  24.9 %  own  15.2 %
+    soak/prefill-text/prefill                        el8  15.0 %  own   9.2 %
+    soak/reasoning-c1/decode                         el8   9.6 %  own   5.6 %
+    soak/reasoning-c1/prefill                        el8  12.5 %  own  11.6 %
+    soak/reasoning-c4/decode                         el8  10.7 %  own   6.0 %
+    soak/reasoning-c4/prefill                        el8  13.0 %  own  11.8 %
+  the own-fit map on el8's own counts (A/B prefill text, C random ids, D prose decode, E code decode):
+    el8 map       A  18.1 %  B  13.7 %  C  38.9 %  D  10.0 %  E   8.9 %
+    own fit       A  19.2 %  B  14.4 %  C  35.8 %  D  29.0 %  E  15.9 %
+
+wrote evidence/t38c/analysis/maps.json
