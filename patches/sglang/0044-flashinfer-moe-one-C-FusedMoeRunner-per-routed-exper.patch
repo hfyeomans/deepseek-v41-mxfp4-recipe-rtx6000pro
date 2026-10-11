@@ -1,7 +1,7 @@
 From 99128a7e4cbdd625461c418c2ffd368881726853 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 23:34:13 -0400
-Subject: [PATCH 44/54] flashinfer moe: one C++ FusedMoeRunner per
+Subject: [PATCH 44/55] flashinfer moe: one C++ FusedMoeRunner per
  routed-expert count
 
 The hybrid prefill alternates the streamed (165) and resident (219) expert

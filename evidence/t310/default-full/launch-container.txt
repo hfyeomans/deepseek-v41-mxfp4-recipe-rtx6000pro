@@ -1,0 +1,1039 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:63: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+  Example: sglang serve --model-path <model> [options]
+  warnings.warn(
+[2026-10-11 20:28:45] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-11 20:28:45] Hybrid SWA model detected. architectures=['DeepseekV4ForCausalLM']
+[2026-10-11 20:28:45] Breakable CUDA graph is incompatible with DeepSeek-V4 (heavy capture-pool memory pressure); disabling prefill CUDA graph.
+[2026-10-11 20:28:45] Use dsv4 attention backend for DeepseekV4ForCausalLM, setting page_size to 256.
+[2026-10-11 20:28:45] Setting KV cache dtype to fp8_e4m3 for DeepseekV4ForCausalLM.
+[2026-10-11 20:28:47] server_args={'model_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': True, 'context_length': 262144, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'auto', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.96, 'max_running_requests': 4, 'max_queued_requests': None, 'max_total_tokens': 1064960, 'chunked_prefill_size': 8192, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 256, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.8, 'swa_prefix_tails': None, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache': False, 'disable_overlap_schedule': False, 'num_continuous_decode_steps': 1, 'scheduler_recv_interval': 1, 'enable_mixed_chunk': False, 'nccl_port': None, 'dist_timeout': None, 'dist_init_addr': None, 'gated_launch_port': None, 'nnodes': 1, 'node_rank': 0, 'tp_size': 2, 'dcp_size': 1, 'pp_size': 1, 'pp_max_micro_batch_size': None, 'pp_async_batch_depth': 0, 'dp_size': 1, 'load_balance_method': 'round_robin', 'attn_cp_size': 1, 'moe_dp_size': 1, 'dwdp_size': 1, 'dcp_comm_backend': 'ag_rs', 'dcp_replicate_q_proj': None, 'enable_prefill_cp': False, 'cp_strategy': None, 'enable_dsa_cache_layer_split': False, 'enable_dsa_prefill_context_parallel': False, 'dsa_prefill_cp_mode': 'round-robin-split', 'enable_prefill_context_parallel': False, 'prefill_cp_mode': 'in-seq-split', 'enable_cp_decode_attn_tp': False, 'enable_dp_attention': False, 'enable_dp_attention_local_control_broadcast': False, 'enable_dp_lm_head': False, 'enable_tp_lm_head_all_to_all': False, 'enable_attn_tp_input_scattered': False, 'enable_shared_experts_attn_tp': False, 'enable_dense_mlp_attn_tp': False, 'enable_layernorm_sp': False, 'disable_attn_tp_gather': False, 'enable_p2p_check': False, 'device': 'cuda', 'base_gpu_id': 0, 'gpu_id_step': 1, 'random_seed': 9777053, 'mlx_enable_sampling': False, 'watchdog_timeout': 300, 'soft_watchdog_timeout': None, 'sleep_on_idle': False, 'use_ray': False, 'custom_sigquit_handler': None, 'numa_node': None, 'gc_threshold': None, 'host': '0.0.0.0', 'port': 30000, 'fastapi_root_path': '', 'smg_grpc_mode': False, 'grpc_mode': False, 'grpc_port': None, 'grpc_worker_threads': 4, 'sidecar': None, 'sidecar_args': None, 'skip_server_warmup': False, 'warmups': None, 'enable_http2': False, 'http2_max_concurrent_streams': 200, 'http2_initial_connection_window_size': 1048576, 'ssl_keyfile': None, 'ssl_certfile': None, 'ssl_ca_certs': None, 'ssl_keyfile_password': None, 'enable_ssl_refresh': False, 'api_key': None, 'admin_api_key': None, 'served_model_name': 'dsv41-flash-hybrid', 'weight_version': 'default', 'chat_template': None, 'hf_chat_template_name': None, 'completion_template': None, 'file_storage_path': 'sglang_storage', 'enable_cache_report': False, 'reasoning_parser': 'deepseek-v41', 'default_chat_template_kwargs': None, 'strip_thinking_cache': False, 'enable_strict_thinking': False, 'tool_call_parser': 'deepseekv41', 'tool_server': None, 'sampling_defaults': 'model', 'asr_max_buffer_seconds': 60, 'asr_max_concurrent_sessions': 32, 'preferred_sampling_params': None, 'allow_auto_truncate': False, 'stream_interval': 1, 'batch_notify_size': 16, 'stream_response_default_include_usage': False, 'incremental_streaming_output': False, 'enable_streaming_session': False, 'enable_session_radix_cache': False, 'log_level': 'info', 'log_level_http': None, 'log_requests': False, 'log_requests_level': 2, 'log_requests_format': 'text', 'log_requests_target': None, 'uvicorn_access_log_exclude_prefixes': [], 'crash_dump_folder': None, 'show_time_cost': False, 'enable_metrics': False, 'smg_http_sidecar_port': None, 'enable_mfu_metrics': False, 'enable_metrics_for_all_schedulers': False, 'load_snapshot_publish_interval': 15, 'tokenizer_metrics_custom_labels_header': 'x-custom-labels', 'tokenizer_metrics_allowed_custom_labels': None, 'extra_metric_labels': None, 'bucket_time_to_first_token': None, 'bucket_inter_token_latency': None, 'bucket_e2e_request_latency': None, 'prompt_tokens_buckets': None, 'generation_tokens_buckets': None, 'gc_warning_threshold_secs': 0.0, 'decode_log_interval': 40, 'enable_request_time_stats_logging': False, 'kv_events_config': None, 'load_publish_endpoint': None, 'enable_forward_pass_metrics': False, 'forward_pass_metrics_worker_id': '', 'forward_pass_metrics_ipc_name': None, 'enable_trace': False, 'trace_modules': 'request', 'otlp_traces_endpoint': 'localhost:4317', 'export_metrics_to_file': False, 'export_metrics_to_file_dir': None, 'stat_loggers': None, 'constrained_json_whitespace_pattern': None, 'constrained_json_disable_any_whitespace': False, 'attention_backend': 'dsv4', 'decode_attention_backend': None, 'enable_lean_attention': None, 'prefill_attention_backend': None, 'sampling_backend': 'flashinfer', 'grammar_backend': 'xgrammar', 'radix_cache_backend': None, 'mm_attention_backend': None, 'fp8_gemm_runner_backend': 'auto', 'fp4_gemm_runner_backend': 'auto', 'bf16_gemm_backend': 'auto', 'dsa_prefill_backend': None, 'dsv4_prefill_backend': 'auto', 'dsa_decode_backend': None, 'dsa_paged_mqa_logits_backend': 'auto', 'dsa_topk_backend': 'sgl-kernel', 'disable_flashinfer_autotune': False, 'flashinfer_autotune_skip_ops': None, 'mamba_backend': 'triton', 'cuda_graph_config': {'decode': {'backend': 'breakable', 'max_bs': 4, 'bs': [1, 2, 3, 4], 'tc_compiler': 'eager', 'full_prefill_max_req': None, 'full_prefill_prefix_chunk_tokens': None, 'max_seq_len': None}, 'prefill': {'backend': 'disabled', 'max_bs': 8192, 'bs': [4, 8, 12, 16, 20, 24, 28, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 288, 320, 352, 384, 416, 448, 480, 512, 576, 640, 704, 768, 832, 896, 960, 1024, 1280, 1536, 1792, 2048, 2304, 2560, 2816, 3072, 3328, 3584, 3840, 4096, 4608, 5120, 5632, 6144, 6656, 7168, 7680, 8192], 'tc_compiler': 'eager', 'full_prefill_max_req': None, 'full_prefill_prefix_chunk_tokens': None, 'max_seq_len': None}}, 'cuda_graph_backend_decode': 'breakable', 'cuda_graph_backend_prefill': None, 'cuda_graph_max_bs_decode': 4, 'cuda_graph_max_bs_prefill': None, 'cuda_graph_max_seq_len_prefill': None, 'cuda_graph_bs_decode': [1, 2, 3, 4], 'cuda_graph_bs_prefill': None, 'cuda_graph_tc_compiler': None, 'disable_prefill_cuda_graph': False, 'disable_decode_cuda_graph': False, 'disable_cuda_graph': False, 'disable_cuda_graph_padding': False, 'enable_profile_cuda_graph': False, 'enable_cudagraph_gc': False, 'debug_cuda_graph': False, 'enable_layerwise_nvtx_marker': False, 'enable_nccl_nvls': False, 'enable_symm_mem': False, 'triton_attention_reduce_in_fp32': False, 'triton_attention_num_kv_splits': 8, 'triton_attention_split_tile_size': None, 'flashinfer_mla_disable_ragged': False, 'enable_fused_qk_norm_rope': False, 'enable_precise_embedding_interpolation': False, 'enable_fused_moe_sum_all_reduce': False, 'enable_deepseek_v4_fp4_indexer': True, 'disable_custom_all_reduce': False, 'enable_mscclpp': False, 'enable_torch_symm_mem': False, 'enable_scattered_sconv': False, 'pre_warm_nccl': False, 'enable_quant_communications': False, 'enable_flashinfer_allreduce_fusion': False, 'enforce_disable_flashinfer_allreduce_fusion': False, 'flashinfer_allreduce_fusion_backend': None, 'enable_aiter_allreduce_fusion': False, 'enable_torch_compile': False, 'enable_torch_compile_debug_mode': False, 'torch_compile_max_bs': 32, 'speculative_algorithm': None, 'uno_lora_path': None, 'speculative_draft_model_path': None, 'speculative_draft_model_revision': None, 'speculative_draft_load_format': None, 'speculative_num_steps': None, 'speculative_eagle_topk': None, 'speculative_num_draft_tokens': None, 'speculative_dflash_block_size': None, 'speculative_dspark_block_size': None, 'speculative_dspark_sps_table_path': None, 'speculative_dspark_confidence_sts_path': None, 'speculative_dspark_align_verify_tokens_to_graph_tier': False, 'speculative_accept_threshold_single': 1.0, 'speculative_accept_threshold_acc': 1.0, 'speculative_use_rejection_sampling': False, 'speculative_token_map': None, 'speculative_attention_mode': 'prefill', 'speculative_draft_attention_backend': None, 'speculative_dsa_topk_backend': 'sgl-kernel', 'speculative_draft_kv_cache_dtype': None, 'speculative_draft_window_size': None, 'speculative_moe_runner_backend': 'flashinfer_mxfp4', 'speculative_moe_a2a_backend': None, 'speculative_draft_model_quantization': None, '_speculative_draft_quantization_explicitly_set': False, 'speculative_skip_dp_mlp_sync': False, 'enable_multi_layer_eagle': False, 'speculative_adaptive': False, 'speculative_adaptive_config': None, 'decoupled_spec_bind_endpoint': None, 'decoupled_spec_connect_endpoints': None, 'decoupled_spec_rank': None, 'decoupled_spec_role': 'null', 'spec_trace_dir': None, 'speculative_ngram_min_bfs_breadth': 1, 'speculative_ngram_max_bfs_breadth': 10, 'speculative_ngram_match_type': 'BFS', 'speculative_ngram_max_trie_depth': 18, 'speculative_ngram_capacity': 10000000, 'speculative_ngram_external_corpus_path': None, 'speculative_ngram_external_sam_budget': 0, 'speculative_ngram_external_corpus_max_tokens': 10000000, 'ep_size': 1, 'moe_a2a_backend': 'none', 'enable_w4a4_mxfp4_megamoe': False, 'deepep_v2_mode': 'direct', 'moe_runner_backend': 'flashinfer_mxfp4', 'flashinfer_mxfp4_moe_precision': 'default', 'deepep_mode': 'auto', 'fuseep_mode': 2, 'deepep_dispatcher_output_dtype': 'auto', 'ep_num_redundant_experts': 0, 'ep_dispatch_algorithm': None, 'init_expert_location': 'trivial', 'enable_eplb': False, 'eplb_algorithm': 'auto', 'eplb_rebalance_num_iterations': 1000, 'eplb_rebalance_layers_per_chunk': None, 'eplb_min_rebalancing_utilization_threshold': 1.0, 'expert_distribution_recorder_mode': None, 'expert_distribution_recorder_buffer_size': 1000, 'expert_balancedness_report_mode': 'off', 'deepep_config': None, 'moe_dense_tp_size': None, 'elastic_ep_backend': None, 'enable_elastic_expert_backup': False, 'mooncake_ib_device': None, 'enable_waterfill': False, 'ep_join_mode': None, 'ep_join_rank_offset': 0, 'elastic_ep_initial_size': None, 'max_ep_size': None, 'elastic_ep_scale_timeout': 600, 'elastic_ep_rejoin': False, 'disable_flashinfer_cutlass_moe_fp4_allgather': False, 'disable_shared_experts_fusion': False, 'enforce_shared_experts_fusion': False, 'max_mamba_cache_size': None, 'mamba_ssm_dtype': None, 'mamba_max_states_per_path': -1, 'enable_mamba_cache_stochastic_rounding': False, 'mamba_cache_philox_rounds': 0, 'mamba_full_memory_ratio': 0.9, 'mamba_radix_cache_strategy': 'auto', 'uses_mamba_radix_cache': False, 'mamba_track_interval': 256, 'enable_int8_mamba_checkpoint': False, 'int8_mamba_ckpt_size': None, 'linear_attn_backend': 'triton', 'linear_attn_decode_backend': None, 'linear_attn_prefill_backend': None, 'linear_attn_verify_backend': None, 'enable_linear_replayssm': False, 'linear_replayssm_cache_len': 16, 'enable_linear_replayssm_spec': False, 'enable_hierarchical_cache': False, 'hicache_host_memory_mode': 'cache', 'hicache_ratio': 2.0, 'hicache_size': 0, 'hicache_write_policy': 'write_through', 'hicache_io_backend': 'kernel', 'hicache_mem_layout': 'page_first', 'hicache_storage_backend': None, 'hicache_storage_prefetch_policy': 'timeout', 'hicache_storage_backend_extra_config': None, 'hicache_storage_prefetch_retry_poll_interval': 0, 'hicache_storage_prefetch_retry_max_attempts': 4, 'enable_unified_cache_external_linker': False, 'unified_cache_external_linker_backend': 'mooncake', 'enable_hisparse': False, 'hisparse_config': None, 'enable_broadcast_mm_inputs_process': False, 'enable_prefix_mm_cache': False, 'mm_enable_dp_encoder': False, 'mm_process_config': {}, 'mm_processor_worker_num': 0, 'mm_io_worker_num': 0, 'allowed_media_domains': [], 'media_url_max_file_size_mb': 64, 'mm_preprocess_cache_size_mb': None, 'trust_mm_content_hashes': False, 'limit_mm_data_per_request': None, 'enable_mm_global_cache': False, 'image_processor_backend': 'auto', 'mm_global_cache_backend': 'mooncake', 'disable_fast_image_processor': False, 'mm_feature_transport': 'cpu', 'keep_mm_feature_on_device': False, 'enable_lora': None, 'enable_lora_overlap_loading': None, 'max_lora_rank': None, 'lora_target_modules': None, 'lora_paths': None, 'max_loaded_loras': None, 'max_loras_per_batch': 8, 'lora_eviction_policy': 'lru', 'lora_backend': 'csgmv', 'max_lora_chunk_size': 16, 'experts_shared_outer_loras': None, 'lora_use_virtual_experts': False, 'lora_strict_loading': False, 'lora_drain_wait_threshold': 0.0, 'enable_two_batch_overlap': False, 'enable_single_batch_overlap': False, 'tbo_token_distribution_threshold': 0.48, 'cpu_offload_gb': 0, 'offload_group_size': -1, 'offload_num_in_group': 1, 'offload_prefetch_step': 1, 'offload_mode': 'cpu', 'enable_lmcache': False, 'lmcache_config_file': None, 'enable_flexkv': False, 'flexkv_config_file': None, 'kt_weight_path': '/hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277', 'kt_method': 'MXFP4', 'kt_cpuinfer': 16, 'kt_threadpool_count': 1, 'kt_num_gpu_experts': 219, 'kt_max_deferred_experts_per_token': 4, 'kt_expert_map': '/expert-map.json', 'dllm_algorithm': None, 'dllm_algorithm_config': None, 'dllm_fdfo': True, 'disaggregation_mode': 'null', 'disaggregation_transfer_backend': 'mooncake', 'disaggregation_bootstrap_port': 8998, 'disaggregation_ib_device': None, 'disaggregation_decode_enable_radix_cache': False, 'disaggregation_decode_enable_offload_kvcache': False, 'disaggregation_decode_retraction_backup': None, 'num_reserved_decode_tokens': 512, 'disaggregation_decode_extra_slots': None, 'disaggregation_decode_polling_interval': 1, 'optimistic_prefill_attempts': 0, 'encoder_only': False, 'language_only': False, 'language_model_only': False, 'encoder_transfer_backend': 'zmq_to_scheduler', 'encoder_urls': [], 'encoder_bootstrap_port': 8997, 'encoder_register_urls': [], 'enable_adaptive_dispatch_to_encoder': False, 'enable_pdmux': False, 'pdmux_config_path': None, 'sm_group_num': 8, 'startup_weight_load_mode': 'serial', 'custom_weight_loader': [], 'weight_loader_disable_mmap': False, 'weight_loader_prefetch_checkpoints': False, 'weight_loader_prefetch_num_threads': 4, 'weight_loader_drop_cache_after_load': False, 'remote_instance_weight_loader_seed_instance_ip': None, 'remote_instance_weight_loader_seed_instance_service_port': None, 'remote_instance_weight_loader_send_weights_group_ports': None, 'remote_instance_weight_loader_backend': 'nccl', 'remote_instance_weight_loader_start_seed_via_transfer_engine': False, 'engine_info_bootstrap_port': 6789, 'modelexpress_config': None, 'download_dir': None, 'model_checksum': None, 'delete_ckpt_after_loading': False, 'decrypted_config_file': None, 'decrypted_draft_config_file': None, 'checkpoint_engine_wait_weights_before_ready': False, 'enable_prefill_delayer': False, 'prefill_delayer_max_delay_passes': 30, 'prefill_delayer_token_usage_low_watermark': None, 'prefill_delayer_forward_passes_buckets': None, 'prefill_delayer_wait_seconds_buckets': None, 'prefill_delayer_queue_min_ratio': None, 'prefill_delayer_max_delay_ms': None, 'min_free_slots_delay': None, 'enable_deterministic_inference': False, 'rl_on_policy_target': None, 'kv_canary': 'none', 'kv_canary_real_data': 'none', 'kv_canary_sweep_interval': 0, 'enable_dynamic_batch_tokenizer': False, 'dynamic_batch_tokenizer_batch_size': 32, 'dynamic_batch_tokenizer_batch_timeout': 0.002, 'enable_tokenizer_batch_encode': False, 'disable_tokenizer_batch_decode': False, 'debug_tensor_dump_output_folder': None, 'debug_tensor_dump_layers': None, 'debug_tensor_dump_input_file': None, 'enable_memory_saver': False, 'enable_weights_cpu_backup': False, 'enable_draft_weights_cpu_backup': False, 'enable_custom_logit_processor': False, 'enable_return_hidden_states': False, 'return_hidden_states_mode': None, 'enable_return_routed_experts': False, 'enable_return_indexer_topk': False, 'enable_encoder_swa_bounded_replay': False, 'enable_decoder_swa_bounded_replay': False, 'disable_outlines_disk_cache': False, 'enable_mis': False, 'weight_cache_mode': 'off', 'weight_cache_socket': None, 'weight_cache_timeout': 1800, 'forward_hooks': None, 'msprobe_dump_config': None}
+[2026-10-11 20:28:47] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-11 20:28:50] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:28:51] Multimodal processor concurrency enabled with 2 isolated worker threads (auto).
+[2026-10-11 20:28:51] No HuggingFace chat template found
+[2026-10-11 20:28:51] No chat template found, defaulting to 'string' content format
+[2026-10-11 20:28:53 TP0] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-11 20:28:53 TP1] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-11 20:28:53] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:28:55 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:28:55 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:28:56 TP1] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-11 20:28:56 TP0] Auto-detected DSV4 routed-expert layout: is_fp4_experts=True
+[2026-10-11 20:28:56 TP1] Init torch distributed begin.
+[2026-10-11 20:28:56 TP0] Init torch distributed begin.
+[2026-10-11 20:28:56 TP0] sglang is using nccl==2.30.7
+[2026-10-11 20:28:57 TP0] Init torch distributed ends. elapsed=0.64 s, mem usage=0.49 GB
+[2026-10-11 20:28:57 TP1] Init torch distributed ends. elapsed=0.64 s, mem usage=0.49 GB
+[2026-10-11 20:28:57 TP1] Load weight begin. avail mem=93.85 GB
+[2026-10-11 20:28:57 TP0] Load weight begin. avail mem=93.94 GB
+[2026-10-11 20:28:57 TP0] Detected fp8 checkpoint.
+[2026-10-11 20:28:57 TP0] Config does not support fused shared expert(s). Shared experts fusion optimization is disabled.
+[2026-10-11 20:28:57 TP0] Multimodal attention backend not set. Use triton_attn.
+[2026-10-11 20:28:57 TP0] Using triton_attn as multimodal attention backend.
+[2026-10-11 20:28:57 TP1] Multimodal attention backend not set. Use triton_attn.
+[2026-10-11 20:28:57 TP1] Using triton_attn as multimodal attention backend.
+[2026-10-11 20:28:57 TP0] FlashInfer TRTLLM MoE deferred finalize is disabled (moe_runner_backend=flashinfer_mxfp4, quant_method=KTEPWrapperMethod).
+[2026-10-11 20:28:57 TP1] FlashInfer TRTLLM MoE deferred finalize is disabled (moe_runner_backend=flashinfer_mxfp4, quant_method=KTEPWrapperMethod).
+set_mempolicy: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+hwloc_set_membind_nodeset: Operation not permitted
+/sgl-workspace/sglang/python/sglang/srt/layers/engram.py:781: UserWarning: The given buffer is not writable, and PyTorch does not support non-writable tensors. This means you can write to the underlying (supposedly non-writable) buffer using the tensor. You may want to copy the buffer to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:1556.)
+  raw = torch.frombuffer(self.mm, dtype=torch.uint8)
+/sgl-workspace/sglang/python/sglang/srt/layers/engram.py:781: UserWarning: The given buffer is not writable, and PyTorch does not support non-writable tensors. This means you can write to the underlying (supposedly non-writable) buffer using the tensor. You may want to copy the buffer to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_new.cpp:1556.)
+  raw = torch.frombuffer(self.mm, dtype=torch.uint8)
+[2026-10-11 20:28:59 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:28:59 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:28:59 TP1] Engram file layout: rows of layers [1, 14] fetched ahead of use
+[2026-10-11 20:28:59 TP0] Engram file layout: rows of layers [1, 14] fetched ahead of use
+[2026-10-11 20:28:59 TP0] Expert remap from el8 mix map 0.3D+0.3E+0.2A+0.2B (original-el8 dgx-station-gb300-research calibration counts; evidence/t38/el8-counts/), top-219 per layer; built by evidence/t38/round2/analysis/routes.py (T3.8): 40 layers, 219/384 experts per layer on GPU.
+Multi-thread loading shards:   0% Completed | 0/48 [00:00<?, ?it/s]Multi-thread loading shards:   2% Completed | 1/48 [00:00<00:10,  4.53it/s]Multi-thread loading shards:   6% Completed | 3/48 [00:01<00:22,  2.01it/s]Multi-thread loading shards:   8% Completed | 4/48 [00:01<00:17,  2.52it/s]Multi-thread loading shards:  10% Completed | 5/48 [00:01<00:14,  2.98it/s]Multi-thread loading shards:  12% Completed | 6/48 [00:02<00:18,  2.33it/s]Multi-thread loading shards:  15% Completed | 7/48 [00:02<00:14,  2.75it/s]Multi-thread loading shards:  17% Completed | 8/48 [00:02<00:12,  3.15it/s]Multi-thread loading shards:  19% Completed | 9/48 [00:03<00:11,  3.48it/s]Multi-thread loading shards:  21% Completed | 10/48 [00:03<00:10,  3.69it/s]Multi-thread loading shards:  23% Completed | 11/48 [00:03<00:09,  3.84it/s]Multi-thread loading shards:  25% Completed | 12/48 [00:03<00:08,  4.07it/s]Multi-thread loading shards:  27% Completed | 13/48 [00:04<00:08,  4.20it/s]Multi-thread loading shards:  29% Completed | 14/48 [00:04<00:12,  2.72it/s]Multi-thread loading shards:  31% Completed | 15/48 [00:04<00:11,  3.00it/s]Multi-thread loading shards:  33% Completed | 16/48 [00:05<00:09,  3.31it/s]Multi-thread loading shards:  35% Completed | 17/48 [00:05<00:09,  3.40it/s]Multi-thread loading shards:  38% Completed | 18/48 [00:05<00:08,  3.67it/s]Multi-thread loading shards:  40% Completed | 19/48 [00:05<00:07,  3.82it/s]Multi-thread loading shards:  42% Completed | 20/48 [00:06<00:08,  3.46it/s]Multi-thread loading shards:  44% Completed | 21/48 [00:06<00:07,  3.75it/s]Multi-thread loading shards:  46% Completed | 22/48 [00:07<00:10,  2.50it/s]Multi-thread loading shards:  48% Completed | 23/48 [00:07<00:08,  2.90it/s]Multi-thread loading shards:  50% Completed | 24/48 [00:07<00:07,  3.16it/s]Multi-thread loading shards:  52% Completed | 25/48 [00:07<00:07,  3.12it/s]Multi-thread loading shards:  54% Completed | 26/48 [00:08<00:06,  3.49it/s]Multi-thread loading shards:  56% Completed | 27/48 [00:08<00:05,  3.77it/s]Multi-thread loading shards:  58% Completed | 28/48 [00:08<00:05,  3.86it/s]Multi-thread loading shards:  60% Completed | 29/48 [00:08<00:04,  4.09it/s]Multi-thread loading shards:  62% Completed | 30/48 [00:09<00:04,  4.29it/s]Multi-thread loading shards:  65% Completed | 31/48 [00:09<00:04,  4.20it/s]Multi-thread loading shards:  67% Completed | 32/48 [00:09<00:03,  4.32it/s]Multi-thread loading shards:  69% Completed | 33/48 [00:10<00:06,  2.22it/s]Multi-thread loading shards:  71% Completed | 34/48 [00:10<00:05,  2.62it/s]Multi-thread loading shards:  73% Completed | 35/48 [00:10<00:04,  3.04it/s]Multi-thread loading shards:  75% Completed | 36/48 [00:11<00:03,  3.15it/s]Multi-thread loading shards:  77% Completed | 37/48 [00:11<00:03,  3.54it/s]Multi-thread loading shards:  79% Completed | 38/48 [00:11<00:02,  3.90it/s]Multi-thread loading shards:  81% Completed | 39/48 [00:11<00:02,  4.24it/s]Multi-thread loading shards:  83% Completed | 40/48 [00:11<00:01,  4.51it/s]Multi-thread loading shards:  85% Completed | 41/48 [00:12<00:01,  4.71it/s]Multi-thread loading shards:  88% Completed | 42/48 [00:12<00:02,  2.80it/s]Multi-thread loading shards:  92% Completed | 44/48 [00:12<00:00,  4.48it/s]Multi-thread loading shards:  94% Completed | 45/48 [00:13<00:00,  4.99it/s]Multi-thread loading shards:  96% Completed | 46/48 [00:13<00:00,  5.45it/s]Multi-thread loading shards: 100% Completed | 48/48 [00:13<00:00,  3.62it/s]
+[2026-10-11 20:29:13 TP0] Finished streaming dequant fp8 wo_a
+[2026-10-11 20:29:13 TP1] Finished streaming dequant fp8 wo_a
+[2026-10-11 20:30:21 TP0] engram host table layer 1: layout=file, model-00047-of-00048.safetensors rows [0, 192003084) of 384006168, 47.2 GiB mapped read-only, WILLNEED + gather ahead of use on the shared worker from the post-hasher break, page cache is the row cache
+[2026-10-11 20:30:21 TP0] engram host table layer 14: layout=file, model-00048-of-00048.safetensors rows [0, 192008341) of 384016682, 47.2 GiB mapped read-only, WILLNEED + gather ahead of use on the shared worker from the post-hasher break, page cache is the row cache
+[2026-10-11 20:30:22 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.0.mlp.experts)...
+[2026-10-11 20:30:22 TP0] [KT layerwise prefill] enabled: min_tokens=1024, 165 CPU experts/layer, shared weight arenas, GPU staging 1.50 GiB/rank, tp=2
+[2026-10-11 20:30:22 TP1] engram host table layer 1: layout=file, model-00047-of-00048.safetensors rows [192003084, 384006168) of 384006168, 47.2 GiB mapped read-only, WILLNEED + gather ahead of use on the shared worker from the post-hasher break, page cache is the row cache
+[2026-10-11 20:30:22 TP1] engram host table layer 14: layout=file, model-00048-of-00048.safetensors rows [192008341, 384016682) of 384016682, 47.2 GiB mapped read-only, WILLNEED + gather ahead of use on the shared worker from the post-hasher break, page cache is the row cache
+[2026-10-11 20:30:22 TP0] [KT] Released NativeMoEWrapper loader: safetensors mmap handles freed.
+[2026-10-11 20:30:22 TP1] [KT layerwise prefill] enabled: min_tokens=1024, 165 CPU experts/layer, shared weight arenas, GPU staging 1.50 GiB/rank, tp=2
+[2026-10-11 20:30:23 TP0] [KT] Released NativeMoEWrapper loader after layer 0: safetensors mmap handles freed.
+[2026-10-11 20:30:23 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.1.mlp.experts)...
+[2026-10-11 20:30:25 TP0] [KT] Released NativeMoEWrapper loader after layer 1: safetensors mmap handles freed.
+[2026-10-11 20:30:25 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.2.mlp.experts)...
+[2026-10-11 20:30:26 TP0] [KT] Released NativeMoEWrapper loader after layer 2: safetensors mmap handles freed.
+[2026-10-11 20:30:26 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.3.mlp.experts)...
+[2026-10-11 20:30:27 TP0] [KT] Released NativeMoEWrapper loader after layer 3: safetensors mmap handles freed.
+[2026-10-11 20:30:27 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.4.mlp.experts)...
+[2026-10-11 20:30:29 TP0] [KT] Released NativeMoEWrapper loader after layer 4: safetensors mmap handles freed.
+[2026-10-11 20:30:29 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.5.mlp.experts)...
+[2026-10-11 20:30:31 TP0] [KT] Released NativeMoEWrapper loader after layer 5: safetensors mmap handles freed.
+[2026-10-11 20:30:31 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.6.mlp.experts)...
+[2026-10-11 20:30:32 TP0] [KT] Released NativeMoEWrapper loader after layer 6: safetensors mmap handles freed.
+[2026-10-11 20:30:33 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.7.mlp.experts)...
+[2026-10-11 20:30:35 TP0] [KT] Released NativeMoEWrapper loader after layer 7: safetensors mmap handles freed.
+[2026-10-11 20:30:35 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.8.mlp.experts)...
+[2026-10-11 20:30:39 TP0] [KT] Released NativeMoEWrapper loader after layer 8: safetensors mmap handles freed.
+[2026-10-11 20:30:39 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.9.mlp.experts)...
+[2026-10-11 20:30:40 TP0] [KT] Released NativeMoEWrapper loader after layer 9: safetensors mmap handles freed.
+[2026-10-11 20:30:41 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.10.mlp.experts)...
+[2026-10-11 20:30:42 TP0] [KT] Released NativeMoEWrapper loader after layer 10: safetensors mmap handles freed.
+[2026-10-11 20:30:42 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.11.mlp.experts)...
+[2026-10-11 20:30:44 TP0] [KT] Released NativeMoEWrapper loader after layer 11: safetensors mmap handles freed.
+[2026-10-11 20:30:44 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.12.mlp.experts)...
+[2026-10-11 20:30:45 TP0] [KT] Released NativeMoEWrapper loader after layer 12: safetensors mmap handles freed.
+[2026-10-11 20:30:45 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.13.mlp.experts)...
+[2026-10-11 20:30:47 TP0] [KT] Released NativeMoEWrapper loader after layer 13: safetensors mmap handles freed.
+[2026-10-11 20:30:47 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.14.mlp.experts)...
+[2026-10-11 20:30:49 TP0] [KT] Released NativeMoEWrapper loader after layer 14: safetensors mmap handles freed.
+[2026-10-11 20:30:49 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.15.mlp.experts)...
+[2026-10-11 20:30:50 TP0] [KT] Released NativeMoEWrapper loader after layer 15: safetensors mmap handles freed.
+[2026-10-11 20:30:50 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.16.mlp.experts)...
+[2026-10-11 20:30:52 TP0] [KT] Released NativeMoEWrapper loader after layer 16: safetensors mmap handles freed.
+[2026-10-11 20:30:52 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.17.mlp.experts)...
+[2026-10-11 20:30:53 TP0] [KT] Released NativeMoEWrapper loader after layer 17: safetensors mmap handles freed.
+[2026-10-11 20:30:53 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.18.mlp.experts)...
+[2026-10-11 20:30:55 TP0] [KT] Released NativeMoEWrapper loader after layer 18: safetensors mmap handles freed.
+[2026-10-11 20:30:55 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.19.mlp.experts)...
+[2026-10-11 20:30:56 TP0] [KT] Released NativeMoEWrapper loader after layer 19: safetensors mmap handles freed.
+[2026-10-11 20:30:56 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.20.mlp.experts)...
+[2026-10-11 20:30:58 TP0] [KT] Released NativeMoEWrapper loader after layer 20: safetensors mmap handles freed.
+[2026-10-11 20:30:58 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.21.mlp.experts)...
+[2026-10-11 20:30:59 TP0] [KT] Released NativeMoEWrapper loader after layer 21: safetensors mmap handles freed.
+[2026-10-11 20:30:59 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.22.mlp.experts)...
+CPUInfer[0x3e6aa760]: Hello
+WorkerPool[0x5d4b4640] 1 subpools, [numa:threads][0:16] 
+===========In NumaPool============
+In Numa Worker Pool at NUMA 0, 16 threads
+TP MOE layer 0, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 1, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 2, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 3, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 4, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 5, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 6, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 7, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 8, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 9, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 10, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 11, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 12, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 13, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 14, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 15, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 16, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 17, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 18, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 19, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 20, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 21, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 22, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+[2026-10-11 20:31:01 TP0] [KT] Released NativeMoEWrapper loader after layer 22: safetensors mmap handles freed.
+[2026-10-11 20:31:01 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.23.mlp.experts)...
+[2026-10-11 20:31:02 TP0] [KT] Released NativeMoEWrapper loader after layer 23: safetensors mmap handles freed.
+[2026-10-11 20:31:02 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.24.mlp.experts)...
+[2026-10-11 20:31:04 TP0] [KT] Released NativeMoEWrapper loader after layer 24: safetensors mmap handles freed.
+[2026-10-11 20:31:04 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.25.mlp.experts)...
+[2026-10-11 20:31:05 TP0] [KT] Released NativeMoEWrapper loader after layer 25: safetensors mmap handles freed.
+[2026-10-11 20:31:05 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.26.mlp.experts)...
+TP 0 load w[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.0.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 0] load_experts: 157.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 685.2ms, cleanup: 363.8ms, total: 1207.1ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.1.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 1] load_experts: 149.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 688.5ms, cleanup: 355.8ms, total: 1194.7ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.2.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 2] load_experts: 158.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 672.3ms, cleanup: 377.0ms, total: 1208.0ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.3.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 3] load_experts: 157.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 691.6ms, cleanup: 363.3ms, total: 1213.3ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.4.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 4] load_experts: 149.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 706.3ms, cleanup: 371.9ms, total: 1227.9ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.5.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 5] load_experts: 162.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 1121.2ms, cleanup: 369.5ms, total: 1653.4ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.6.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 6] load_experts: 156.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 1053.1ms, cleanup: 358.0ms, total: 1568.0ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.7.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 7] load_experts: 156.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 1510.1ms, cleanup: 366.6ms, total: 2033.5ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.8.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 8] load_experts: 155.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 2981.1ms, cleanup: 480.6ms, total: 3617.6ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.9.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 9] load_experts: 201.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 744.4ms, cleanup: 370.3ms, total: 1317.1ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.10.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 10] load_experts: 232.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 771.9ms, cleanup: 373.0ms, total: 1377.7ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.11.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 11] load_experts: 224.5ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 756.1ms, cleanup: 354.0ms, total: 1335.3ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.12.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 12] load_experts: 233.5ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 753.6ms, cleanup: 377.0ms, total: 1364.8ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.13.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 13] load_experts: 233.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 750.6ms, cleanup: 379.0ms, total: 1363.9ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.14.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 14] load_experts: 232.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 708.2ms, cleanup: 377.7ms, total: 1318.9ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.15.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 15] load_experts: 238.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 738.8ms, cleanup: 376.4ms, total: 1354.3ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.16.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 16] load_experts: 226.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 727.9ms, cleanup: 350.0ms, total: 1304.6ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.17.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 17] load_experts: 231.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 742.2ms, cleanup: 359.7ms, total: 1334.3ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.18.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 18] load_experts: 230.7ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.5ms, cpp_load_weights: 737.1ms, cleanup: 350.0ms, total: 1318.5ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.19.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 19] load_experts: 228.5ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 730.0ms, cleanup: 360.9ms, total: 1320.0ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.20.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 20] load_experts: 220.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 696.6ms, cleanup: 355.9ms, total: 1274.0ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.21.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 21] load_experts: 228.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.4ms, cpp_load_weights: 747.6ms, cleanup: 373.6ms, total: 1350.1ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.22.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 22] load_experts: 229.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 739.8ms, cleanup: 359.8ms, total: 1329.6ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.23.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 23] load_experts: 232.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.5ms, cpp_load_weights: 740.7ms, cleanup: 371.1ms, total: 1344.8ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.24.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 24] load_experts: 224.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 691.0ms, cleanup: 370.0ms, total: 1285.7ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.25.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 25] load_experts: 231.0ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.5ms, cpp_load_weights: 731.3ms, cleanup: 359.9ms, total: 1323.0ms
+[2026-10-11 20:31:07 TP0] [KT] Released NativeMoEWrapper loader after layer 26: safetensors mmap handles freed.
+[2026-10-11 20:31:07 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.27.mlp.experts)...
+[2026-10-11 20:31:08 TP0] [KT] Released NativeMoEWrapper loader after layer 27: safetensors mmap handles freed.
+[2026-10-11 20:31:08 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.28.mlp.experts)...
+[2026-10-11 20:31:10 TP0] [KT] Released NativeMoEWrapper loader after layer 28: safetensors mmap handles freed.
+[2026-10-11 20:31:10 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.29.mlp.experts)...
+[2026-10-11 20:31:11 TP0] [KT] Released NativeMoEWrapper loader after layer 29: safetensors mmap handles freed.
+[2026-10-11 20:31:11 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.30.mlp.experts)...
+[2026-10-11 20:31:13 TP0] [KT] Released NativeMoEWrapper loader after layer 30: safetensors mmap handles freed.
+[2026-10-11 20:31:13 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.31.mlp.experts)...
+[2026-10-11 20:31:14 TP0] [KT] Released NativeMoEWrapper loader after layer 31: safetensors mmap handles freed.
+[2026-10-11 20:31:14 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.32.mlp.experts)...
+[2026-10-11 20:31:16 TP0] [KT] Released NativeMoEWrapper loader after layer 32: safetensors mmap handles freed.
+[2026-10-11 20:31:16 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.33.mlp.experts)...
+[2026-10-11 20:31:17 TP0] [KT] Released NativeMoEWrapper loader after layer 33: safetensors mmap handles freed.
+[2026-10-11 20:31:17 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.34.mlp.experts)...
+[2026-10-11 20:31:19 TP0] [KT] Released NativeMoEWrapper loader after layer 34: safetensors mmap handles freed.
+[2026-10-11 20:31:19 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.35.mlp.experts)...
+[2026-10-11 20:31:20 TP0] [KT] Released NativeMoEWrapper loader after layer 35: safetensors mmap handles freed.
+[2026-10-11 20:31:21 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.36.mlp.experts)...
+[2026-10-11 20:31:22 TP0] [KT] Released NativeMoEWrapper loader after layer 36: safetensors mmap handles freed.
+[2026-10-11 20:31:22 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.37.mlp.experts)...
+[2026-10-11 20:31:24 TP0] [KT] Released NativeMoEWrapper loader after layer 37: safetensors mmap handles freed.
+[2026-10-11 20:31:24 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.38.mlp.experts)...
+[2026-10-11 20:31:26 TP0] [KT] Released NativeMoEWrapper loader after layer 38: safetensors mmap handles freed.
+[2026-10-11 20:31:26 TP0] Preparing DSv4 MXFP4 experts for FlashInfer SM120 CUTLASS W4A8 (layer: model.layers.39.mlp.experts)...
+[2026-10-11 20:31:28 TP0] [KT] Released NativeMoEWrapper loader after layer 39: safetensors mmap handles freed.
+[2026-10-11 20:31:28 TP0] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0. This may lead to less accurate results!
+[2026-10-11 20:31:28 TP0] Load weight end. elapsed=150.33 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=7.64 GB, mem usage=86.30 GB.
+[2026-10-11 20:31:28 TP1] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0. This may lead to less accurate results!
+[2026-10-11 20:31:28 TP1] Load weight end. elapsed=150.44 s, type=DeepseekV4ForCausalLM, quant=fp8, avail mem=7.56 GB, mem usage=86.30 GB.
+[2026-10-11 20:31:29 TP0] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:31:29 TP1] Tokenizer for /hfm/snapshots/dba1be0a40aa45a94ad051997016db3960a90277 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+[2026-10-11 20:31:30 TP1] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-10-11 20:31:30 TP0] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-10-11 20:31:30 TP0] DSV4 SWA sizing: mode=cap, swa_tokens=25856, request_cap+headroom=25856, prefix_tails=16
+[2026-10-11 20:31:30 TP1] DSV4 SWA sizing: mode=cap, swa_tokens=25856, request_cap+headroom=25856, prefix_tails=16
+[2026-10-11 20:31:30 TP1] DSV4 memory calculation: bytes_per_full_token=1630.00, available_bytes=3.70 GB, c128_state_fixed=0.00 GB, swa_fixed=0.56 GB, full_token=2067456
+[2026-10-11 20:31:30 TP0] DSV4 memory calculation: bytes_per_full_token=1630.00, available_bytes=3.70 GB, c128_state_fixed=0.00 GB, swa_fixed=0.56 GB, full_token=2067456
+[2026-10-11 20:31:30 TP1] DSV4 pool sizes: full=2067456, swa=25856, c4=516864, c128=16152, c4_state=1616, c128_state=0
+[2026-10-11 20:31:30 TP0] DSV4 pool sizes: full=2067456, swa=25856, c4=516864, c128=16152, c4_state=1616, c128_state=0
+[2026-10-11 20:31:30 TP1] DSV4 SWA sizing: mode=cap, swa_tokens=25856, request_cap+headroom=25856, prefix_tails=16
+[2026-10-11 20:31:30 TP0] DSV4 SWA sizing: mode=cap, swa_tokens=25856, request_cap+headroom=25856, prefix_tails=16
+[2026-10-11 20:31:30 TP1] DSV4 pool sizes: full=1064960, swa=25856, c4=266240, c128=8320, c4_state=1616, c128_state=0
+[2026-10-11 20:31:30 TP0] DSV4 pool sizes: full=1064960, swa=25856, c4=266240, c128=8320, c4_state=1616, c128_state=0
+[2026-10-11 20:31:30 TP0] Initialize DeepSeekV4TokenToKVPool with max_num_reqs=4 swa_size=25856 c4_size=266240 c4_logical_size=266240 c128_size=8320 c4_state_pool_size=1616 c128_state_pool_size=640
+[2026-10-11 20:31:30 TP1] Initialize DeepSeekV4TokenToKVPool with max_num_reqs=4 swa_size=25856 c4_size=266240 c4_logical_size=266240 c128_size=8320 c4_state_pool_size=1616 c128_state_pool_size=640
+[2026-10-11 20:31:30 TP0] DSV4 SWA storage: worker=target, storage=paged, paged_allocator=True
+[2026-10-11 20:31:30 TP1] DSV4 SWA storage: worker=target, storage=paged, paged_allocator=True
+[2026-10-11 20:31:30 TP0] Memory pool end. avail mem=5.38 GB
+[2026-10-11 20:31:30 TP1] Memory pool end. avail mem=5.30 GB
+[2026-10-11 20:31:30 TP0] Using DeepseekV4AttnBackend for dsv4 attention backend (CUDA).
+[2026-10-11 20:31:30 TP1] Using DeepseekV4AttnBackend for dsv4 attention backend (CUDA).
+[2026-10-11 20:31:30 TP0] [sm120-split] page mask N=4161 allocated: flash_mla_sm120_mask:cuda:0 ptr=0x7815907f8800 capturing=False
+[2026-10-11 20:31:30 TP1] [sm120-split] page mask N=4161 allocated: flash_mla_sm120_mask:cuda:1 ptr=0x75fbb07f8800 capturing=False
+[2026-10-11 20:31:30 TP0] [sm120-split] split buffer pages=408 allocated: flash_mla_sm120_split:cuda:0 ptr=0x781414800000 capturing=False
+[2026-10-11 20:31:30 TP1] [sm120-split] split buffer pages=408 allocated: flash_mla_sm120_split:cuda:1 ptr=0x75fa34800000 capturing=False
+[2026-10-11 20:31:30 TP0] [sm120-split] split buffer pages=16644 allocated: flash_mla_sm120_splitextra:cuda:0 ptr=0x7872e0000000 capturing=False
+[2026-10-11 20:31:30 TP0] [sm120-split] sealed page-split buffers: mask N=4161, split pages={'': 408, 'extra': 16644} (any later grow raises SM120SplitBufferSealedError)
+[2026-10-11 20:31:30 TP0] [sm120-split] reserved page-split buffers from pools (num_pages, page_size, tag): [(102, 256, ''), (4161, 256, 'extra'), (4161, 128, 'extra')]
+[2026-10-11 20:31:30 TP1] [sm120-split] split buffer pages=16644 allocated: flash_mla_sm120_splitextra:cuda:1 ptr=0x75d460000000 capturing=False
+[2026-10-11 20:31:30 TP1] [sm120-split] sealed page-split buffers: mask N=4161, split pages={'': 408, 'extra': 16644} (any later grow raises SM120SplitBufferSealedError)
+[2026-10-11 20:31:30 TP1] [sm120-split] reserved page-split buffers from pools (num_pages, page_size, tag): [(102, 256, ''), (4161, 256, 'extra'), (4161, 128, 'extra')]
+[2026-10-11 20:31:30 TP0] KT_BUF capture sizes registered: requested=[1, 2, 3, 4] previously=[] now=[1, 2, 3, 4] cached=[]
+[2026-10-11 20:31:30 TP1] KT_BUF capture sizes registered: requested=[1, 2, 3, 4] previously=[] now=[1, 2, 3, 4] cached=[]
+[2026-10-11 20:31:30 TP0] FlashInfer autotune: per-rank caches disagree, discarding them and tuning from scratch so all ranks agree on the tactics.
+[2026-10-11 20:31:30 TP0] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.6.18/sm120/2855c2b3ca52ae93/rank_tp0_pp0_dp0.json
+[2026-10-11 20:31:30 TP1] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.6.18/sm120/2855c2b3ca52ae93/rank_tp1_pp0_dp0.json
+[2026-10-11 20:31:31 TP0] Disable CP decode attention TP
+[2026-10-11 20:31:31 TP1] Disable CP decode attention TP
+[2026-10-11 20:31:31 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-11 20:31:31 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.26.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 26] load_experts: 236.9ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.4ms, cpp_load_weights: 718.2ms, cleanup: 364.7ms, total: 1320.4ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.27.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 27] load_experts: 233.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 722.7ms, cleanup: 366.8ms, total: 1324.0ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.28.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 28] load_experts: 235.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 694.1ms, cleanup: 370.3ms, total: 1300.4ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.29.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 29] load_experts: 233.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 719.9ms, cleanup: 373.0ms, total: 1326.6ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.30.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 30] load_experts: 225.9ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 734.2ms, cleanup: 364.9ms, total: 1325.7ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.31.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 31] load_experts: 231.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 737.0ms, cleanup: 370.0ms, total: 1338.8ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.32.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 32] load_experts: 224.8ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 677.9ms, cleanup: 372.9ms, total: 1276.3ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.33.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 33] load_experts: 227.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 738.4ms, cleanup: 369.7ms, total: 1336.2ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.34.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 34] load_experts: 231.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.5ms, cpp_load_weights: 743.5ms, cleanup: 371.5ms, total: 1347.2ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.35.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 35] load_experts: 221.3ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 762.8ms, cleanup: 385.7ms, total: 1370.5ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.36.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 36] load_experts: 224.2ms, prepare_tensors: 0.0ms, build_ptrs: 0.2ms, create_moe: 0.4ms, cpp_load_weights: 829.1ms, cleanup: 385.8ms, total: 1439.7ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.37.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 37] load_experts: 225.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.9ms, cpp_load_weights: 779.3ms, cleanup: 382.8ms, total: 1388.6ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.38.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 38] load_experts: 235.4ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.4ms, cpp_load_weights: 811.6ms, cleanup: 365.7ms, total: 1413.4ms
+[MXFP4SafeTensorLoader] Loaded 165 CPU experts from layers.39.ffn.experts as compact ids 0..164 (219 GPU experts not loaded, remapped order)
+[NativeMoEWrapper Layer 39] load_experts: 224.1ms, prepare_tensors: 0.0ms, build_ptrs: 0.3ms, create_moe: 0.5ms, cpp_load_weights: 850.9ms, cleanup: 411.8ms, total: 1487.6ms
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 417.04profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 416.78profile/s]
+
+[2026-10-11 20:31:31 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-11 20:31:31 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-11 20:31:31 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[TensorRT-LLM][INFO] Set logger level to INFO
+[2026-10-11 20:31:32 TP1] FlashInfer MoE workspace: 979.4 MiB persistent on cuda:1 for up to 8192 rows (hidden=5120 inter=1152 experts=219 top_k=6)
+eight done.
+TP MOE layer 23, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 24, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 25, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 26, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 27, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 28, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 29, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 30, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 31, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 32, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 33, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 34, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 35, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 36, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 37, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 38, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+TP MOE layer 39, pool: 0x5d4b4640, expert num: 165, num_experts_per_tok: 6
+Creating AMX_FP4_MOE_TP 0 at numa 0
+From per-expert pointers (gate_projs)
+TP 0 load weight done.
+[TensorRT-LLM][INFO] Set logger level to INFO
+[AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/3 [00:00<?, ?profile/s][2026-10-11 20:31:35 TP0] FlashInfer MoE workspace: 979.4 MiB persistent on cuda:0 for up to 8192 rows (hidden=5120 inter=1152 experts=219 top_k=6)
+[AutoTuner]: Tuning trtllm::fused_moe::gemm1:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1:  33%|███▎      | 1/3 [00:03<00:06,  3.26s/profile][AutoTuner]: Tuning trtllm::fused_moe::gemm1:  67%|██████▋   | 2/3 [00:00<00:00, 14.68profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 3/3 [00:00<00:00, 16.62profile/s]
+[AutoTuner]: Tuning trtllm::fused_moe::gemm1: 100%|██████████| 3/3 [00:03<00:00,  1.12s/profile]
+[AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2:   0%|          | 0/3 [00:00<?, ?profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00, 22.57profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00, 22.51profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00, 22.50profile/s][AutoTuner]: Tuning trtllm::fused_moe::gemm2: 100%|██████████| 3/3 [00:00<00:00, 22.56profile/s]
+
+[2026-10-11 20:31:35 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[2026-10-11 20:31:36 TP0] Using configuration from /sgl-workspace/sglang/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json for W8A8 Block FP8 kernel.
+[AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4:   0%|          | 0/6 [00:00<?, ?profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 116.80profile/s][AutoTuner]: Tuning sparse_mla_sm120_decode_dsv4: 100%|██████████| 6/6 [00:00<00:00, 115.79profile/s]
+
+[2026-10-11 20:31:38 TP1] FlashInfer autotune completed.
+[2026-10-11 20:31:38 TP1] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-10-11 20:31:38 TP0] FlashInfer autotune completed.
+[2026-10-11 20:31:38 TP0] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-10-11 20:31:38 TP1] Capture target decode CUDA graph begin. backend=breakable, num_tokens_per_req=1, bs=[1, 2, 3, 4], avail mem=3.45 GB
+[2026-10-11 20:31:38 TP1] Candidate indexer graph limits: [('candidate_all', 512), ('candidate_c2_all', 1024), ('candidate_unfiltered', 16384)]; use full filtering above 16384.
+[2026-10-11 20:31:38 TP1] KT_BUF capture sizes registered: requested=[1, 2, 3, 4] previously=[1, 2, 3, 4] now=[1, 2, 3, 4] cached=[]
+[2026-10-11 20:31:38 TP0] Capture target decode CUDA graph begin. backend=breakable, num_tokens_per_req=1, bs=[1, 2, 3, 4], avail mem=3.54 GB
+[2026-10-11 20:31:38 TP0] Candidate indexer graph limits: [('candidate_all', 512), ('candidate_c2_all', 1024), ('candidate_unfiltered', 16384)]; use full filtering above 16384.
+[2026-10-11 20:31:38 TP0] KT_BUF capture sizes registered: requested=[1, 2, 3, 4] previously=[1, 2, 3, 4] now=[1, 2, 3, 4] cached=[4]
+  0%|          | 0/4 [00:00<?, ?it/s]Capturing batches (bs=4 avail_mem=3.54 GB):   0%|          | 0/4 [00:00<?, ?it/s][2026-10-11 20:31:39 TP0] multimem all-gather disabled (no multicast for world_size=2)
+[2026-10-11 20:31:39 TP1] multimem all-gather disabled (no multicast for world_size=2)
+Capturing batches (bs=4 avail_mem=3.54 GB):  25%|██▌       | 1/4 [00:01<00:03,  1.20s/it]Capturing batches (bs=3 avail_mem=3.38 GB):  25%|██▌       | 1/4 [00:01<00:03,  1.20s/it]Capturing batches (bs=3 avail_mem=3.38 GB):  50%|█████     | 2/4 [00:02<00:02,  1.16s/it]Capturing batches (bs=2 avail_mem=3.34 GB):  50%|█████     | 2/4 [00:02<00:02,  1.16s/it]Capturing batches (bs=2 avail_mem=3.34 GB):  75%|███████▌  | 3/4 [00:03<00:01,  1.15s/it]Capturing batches (bs=1 avail_mem=3.31 GB):  75%|███████▌  | 3/4 [00:03<00:01,  1.15s/it][2026-10-11 20:31:44 TP1] KT_BUF post-capture: captured=[1, 2, 3, 4] registered=[1, 2, 3, 4] cached=[] temp_bs=0
+Capturing batches (bs=1 avail_mem=3.31 GB): 100%|██████████| 4/4 [00:05<00:00,  1.52s/it]Capturing batches (bs=1 avail_mem=3.31 GB): 100%|██████████| 4/4 [00:05<00:00,  1.39s/it]
+[2026-10-11 20:31:44 TP0] KT_BUF post-capture: captured=[1, 2, 3, 4] registered=[1, 2, 3, 4] cached=[1, 2, 3, 4] temp_bs=1
+[2026-10-11 20:31:44 TP0] Registering 1328 cuda graph addresses
+[2026-10-11 20:31:45 TP0] Capture target decode CUDA graph end. elapsed=6.41 s, mem usage=0.24 GB, avail mem=3.29 GB.
+[2026-10-11 20:31:45 TP0] expandable_segments enabled after graph capture (idea 8): reserved 92482 -> 92482 MiB, allocated 92198 MiB; segments created from now on are expandable, existing ones are not
+[2026-10-11 20:31:45 TP0] max_total_num_tokens=1064960, chunked_prefill_size=8192, max_prefill_tokens=16384, max_running_requests=4, context_len=262144, available_gpu_mem=3.29 GB
+[2026-10-11 20:31:45 TP1] Capture target decode CUDA graph end. elapsed=6.41 s, mem usage=0.22 GB, avail mem=3.23 GB.
+[2026-10-11 20:31:45 TP0] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: UnifiedTreeCore
+[2026-10-11 20:31:45 TP0] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False streaming_wrapped=False
+[2026-10-11 20:31:45 TP1] expandable_segments enabled after graph capture (idea 8): reserved 92482 -> 92482 MiB, allocated 92197 MiB; segments created from now on are expandable, existing ones are not
+[2026-10-11 20:31:45 TP1] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: UnifiedTreeCore
+[2026-10-11 20:31:45 TP1] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False streaming_wrapped=False
+[2026-10-11 20:31:45] Engine startup timings (s): load_weight=150.44, kv_cache_allocation=0.44, scheduler_e2e=171.57, cuda_graph={prefill=0.00, decode=6.41, target_verify=0.00, draft_prefill=0.00, draft_decode=0.00, draft_extend=0.00}, tokenizer_e2e=178.06
+[2026-10-11 20:31:45] INFO:     Started server process [63]
+[2026-10-11 20:31:45] INFO:     Waiting for application startup.
+[2026-10-11 20:31:45] INFO:     Application startup complete.
+[2026-10-11 20:31:45] INFO:     Uvicorn running on http://0.0.0.0:30000 (Press CTRL+C to quit)
+/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py:454: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+  return await original_handler(ORJSONRequest(request.scope, request.receive))
+[2026-10-11 20:31:45] INFO:     <docker-bridge-ip>:60880 - "GET /v1/models HTTP/1.1" 200 OK
+[2026-10-11 20:31:46] INFO:     127.0.0.1:44260 - "GET /model_info HTTP/1.1" 200 OK
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-10-11 20:31:50 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.02, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 45.56
+[2026-10-11 20:31:50] INFO:     <docker-bridge-ip>:60888 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:31:50 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.02, #running-req: 1, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 2718.97
+[2026-10-11 20:31:51] INFO:     127.0.0.1:44274 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:31:51 TP1] Freezing GC in Scheduler process. gen0: 320->0, gen1: 1574->0, gen2: 1117787->0
+[2026-10-11 20:31:51 TP0] Freezing GC in Scheduler process. gen0: 320->0, gen1: 1946->0, gen2: 1122562->0
+[2026-10-11 20:31:51] Freezing GC in Tokenizer Manager process. gen0: 584->0, gen1: 1630->0, gen2: 1087995->0
+[2026-10-11 20:31:51] INFO:     127.0.0.1:44288 - "POST /freeze_gc HTTP/1.1" 200 OK
+[2026-10-11 20:31:51] The server is fired up and ready to roll!
+[2026-10-11 20:31:51] Freezing GC in Detokenizer Manager process. gen0: 358->0, gen1: 2->0, gen2: 902544->0
+[2026-10-11 20:31:56 TP0] FlashInfer MoE: dedicated runner for 165 experts on cuda:0
+[2026-10-11 20:31:56 TP1] FlashInfer MoE: dedicated runner for 165 experts on cuda:1
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/opt/sglang/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+[2026-10-11 20:31:58 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.62 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:31:58 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.37 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:31:58 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.37 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:31:58 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.62 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:31:58 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.37 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:31:58 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.62 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:31:58 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.62 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:31:58 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.37 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:32:00 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.01, swa token usage: 0.05, #running-req: 0, #queue-req: 0, #pending-token: 1013, cuda graph: False, input throughput (token/s): 816.85
+[2026-10-11 20:32:01 TP0] Prefill batch, #new-seq: 1, #new-token: 1024, #cached-token: 0, full token usage: 0.01, swa token usage: 0.02, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 3214.62
+[2026-10-11 20:32:01] INFO:     <docker-bridge-ip>:60902 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:32:01] INFO:     <docker-bridge-ip>:41814 - "GET /v1/models HTTP/1.1" 200 OK
+[2026-10-11 20:32:01 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 893.68
+[2026-10-11 20:32:01] INFO:     <docker-bridge-ip>:41824 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:32:02 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 8960, full token usage: 0.01, swa token usage: 0.02, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 288.06
+[2026-10-11 20:32:02] INFO:     <docker-bridge-ip>:41836 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:32:02] INFO:     <docker-bridge-ip>:41840 - "GET /v1/models HTTP/1.1" 200 OK
+[2026-10-11 20:32:03 TP0] Triton kernel '_engram_hash_kernel' device-loaded after serving started (free device mem: 0.37 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:32:03 TP1] Triton kernel '_engram_hash_kernel' device-loaded after serving started (free device mem: 0.61 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:32:08 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 245050, cuda graph: False, input throughput (token/s): 1319.28
+[2026-10-11 20:32:11 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 997639, cuda graph: False, input throughput (token/s): 3149.02
+[2026-10-11 20:32:13 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.03, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 989447, cuda graph: False, input throughput (token/s): 3184.70
+[2026-10-11 20:32:16 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.04, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 981255, cuda graph: False, input throughput (token/s): 3281.93
+[2026-10-11 20:32:18 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.05, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 973063, cuda graph: False, input throughput (token/s): 3248.97
+[2026-10-11 20:32:21 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.05, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 964871, cuda graph: False, input throughput (token/s): 3303.93
+[2026-10-11 20:32:23 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.06, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 956679, cuda graph: False, input throughput (token/s): 3383.68
+[2026-10-11 20:32:26 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.07, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 948487, cuda graph: False, input throughput (token/s): 3301.71
+[2026-10-11 20:32:28 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.08, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 940295, cuda graph: False, input throughput (token/s): 3290.31
+[2026-10-11 20:32:30 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.08, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 932103, cuda graph: False, input throughput (token/s): 3443.68
+[2026-10-11 20:32:33 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.09, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 923911, cuda graph: False, input throughput (token/s): 3526.54
+[2026-10-11 20:32:35 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.10, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 915719, cuda graph: False, input throughput (token/s): 3443.52
+[2026-10-11 20:32:37 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.11, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 907527, cuda graph: False, input throughput (token/s): 3459.55
+[2026-10-11 20:32:40 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.12, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 899335, cuda graph: False, input throughput (token/s): 3535.61
+[2026-10-11 20:32:42 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.12, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 891143, cuda graph: False, input throughput (token/s): 3508.19
+[2026-10-11 20:32:44 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.13, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 882951, cuda graph: False, input throughput (token/s): 3480.04
+[2026-10-11 20:32:47 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.14, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 874759, cuda graph: False, input throughput (token/s): 3511.23
+[2026-10-11 20:32:49 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.15, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 866567, cuda graph: False, input throughput (token/s): 3502.59
+[2026-10-11 20:32:51 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.15, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 858375, cuda graph: False, input throughput (token/s): 3508.28
+[2026-10-11 20:32:54 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.16, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 850183, cuda graph: False, input throughput (token/s): 3453.14
+[2026-10-11 20:32:56 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.17, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 841991, cuda graph: False, input throughput (token/s): 3515.78
+[2026-10-11 20:32:59 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.18, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 833799, cuda graph: False, input throughput (token/s): 3491.40
+[2026-10-11 20:33:01 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.18, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 825607, cuda graph: False, input throughput (token/s): 3394.79
+[2026-10-11 20:33:03 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.19, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 817415, cuda graph: False, input throughput (token/s): 3326.08
+[2026-10-11 20:33:06 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.20, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 809223, cuda graph: False, input throughput (token/s): 3329.96
+[2026-10-11 20:33:08 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.21, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 801031, cuda graph: False, input throughput (token/s): 3316.97
+[2026-10-11 20:33:11 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.22, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 792839, cuda graph: False, input throughput (token/s): 3421.76
+[2026-10-11 20:33:13 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.22, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 784647, cuda graph: False, input throughput (token/s): 3401.53
+[2026-10-11 20:33:16 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.23, swa token usage: 0.33, #running-req: 0, #queue-req: 3, #pending-token: 776455, cuda graph: False, input throughput (token/s): 3377.96
+[2026-10-11 20:33:16 TP1] Triton kernel 'alloc_extend_kernel' device-loaded after serving started (free device mem: 0.12 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:16 TP0] Triton kernel 'alloc_extend_kernel' device-loaded after serving started (free device mem: 0.19 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:16 TP0] Triton kernel '_expand_prefill_causally_kernel' device-loaded after serving started (free device mem: 0.19 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:16 TP1] Triton kernel '_expand_prefill_causally_kernel' device-loaded after serving started (free device mem: 0.12 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:16 TP0] Triton kernel '_hc_mix_stats_partial_kernel' device-loaded after serving started (free device mem: 0.19 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:16 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.19 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:16 TP1] Triton kernel '_hc_mix_stats_partial_kernel' device-loaded after serving started (free device mem: 0.12 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:16 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.12 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:33:18 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.24, swa token usage: 0.33, #running-req: 0, #queue-req: 2, #pending-token: 768263, cuda graph: False, input throughput (token/s): 2947.62
+[2026-10-11 20:33:21 TP0] Prefill batch, #new-seq: 2, #new-token: 8192, #cached-token: 0, full token usage: 0.25, swa token usage: 0.35, #running-req: 0, #queue-req: 2, #pending-token: 760269, cuda graph: False, input throughput (token/s): 3792.90
+[2026-10-11 20:33:21] INFO:     <docker-bridge-ip>:41846 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:33:23 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.25, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 752077, cuda graph: False, input throughput (token/s): 4085.79
+[2026-10-11 20:33:25 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.26, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 743885, cuda graph: False, input throughput (token/s): 3903.99
+[2026-10-11 20:33:27 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.27, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 735693, cuda graph: False, input throughput (token/s): 3827.30
+[2026-10-11 20:33:29 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.28, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 727501, cuda graph: False, input throughput (token/s): 3826.12
+[2026-10-11 20:33:31 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.28, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 719309, cuda graph: False, input throughput (token/s): 3822.36
+[2026-10-11 20:33:33 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.29, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 711117, cuda graph: False, input throughput (token/s): 3891.75
+[2026-10-11 20:33:35 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.30, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 702925, cuda graph: False, input throughput (token/s): 3941.15
+[2026-10-11 20:33:37 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.31, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 694733, cuda graph: False, input throughput (token/s): 3866.00
+[2026-10-11 20:33:39 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.32, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 686541, cuda graph: False, input throughput (token/s): 3847.54
+[2026-10-11 20:33:42 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.32, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 678349, cuda graph: False, input throughput (token/s): 3884.43
+[2026-10-11 20:33:44 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.33, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 670157, cuda graph: False, input throughput (token/s): 3892.66
+[2026-10-11 20:33:46 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.34, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 661965, cuda graph: False, input throughput (token/s): 3880.56
+[2026-10-11 20:33:48 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.35, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 653773, cuda graph: False, input throughput (token/s): 3860.90
+[2026-10-11 20:33:50 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.35, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 645581, cuda graph: False, input throughput (token/s): 3872.69
+[2026-10-11 20:33:52 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.36, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 637389, cuda graph: False, input throughput (token/s): 3835.49
+[2026-10-11 20:33:54 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.37, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 629197, cuda graph: False, input throughput (token/s): 3794.44
+[2026-10-11 20:33:56 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.38, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 621005, cuda graph: False, input throughput (token/s): 3817.35
+[2026-10-11 20:33:59 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.38, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 612813, cuda graph: False, input throughput (token/s): 3785.40
+[2026-10-11 20:34:01 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.39, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 604621, cuda graph: False, input throughput (token/s): 3777.59
+[2026-10-11 20:34:03 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.40, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 596429, cuda graph: False, input throughput (token/s): 3727.66
+[2026-10-11 20:34:05 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.41, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 588237, cuda graph: False, input throughput (token/s): 3769.30
+[2026-10-11 20:34:07 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.42, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 580045, cuda graph: False, input throughput (token/s): 3697.97
+[2026-10-11 20:34:10 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.42, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 571853, cuda graph: False, input throughput (token/s): 3701.89
+[2026-10-11 20:34:12 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.43, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 563661, cuda graph: False, input throughput (token/s): 3723.81
+[2026-10-11 20:34:14 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.44, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 555469, cuda graph: False, input throughput (token/s): 3709.55
+[2026-10-11 20:34:16 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.45, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 547277, cuda graph: False, input throughput (token/s): 3668.52
+[2026-10-11 20:34:18 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.45, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 539085, cuda graph: False, input throughput (token/s): 3654.48
+[2026-10-11 20:34:21 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.46, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 530893, cuda graph: False, input throughput (token/s): 3598.59
+[2026-10-11 20:34:23 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.47, swa token usage: 0.35, #running-req: 1, #queue-req: 2, #pending-token: 522701, cuda graph: False, input throughput (token/s): 3626.44
+[2026-10-11 20:34:26 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.48, swa token usage: 0.35, #running-req: 1, #queue-req: 1, #pending-token: 514509, cuda graph: False, input throughput (token/s): 3183.83
+[2026-10-11 20:34:28 TP0] Prefill batch, #new-seq: 2, #new-token: 8192, #cached-token: 0, full token usage: 0.48, swa token usage: 0.37, #running-req: 1, #queue-req: 1, #pending-token: 506355, cuda graph: False, input throughput (token/s): 4058.48
+[2026-10-11 20:34:28] INFO:     <docker-bridge-ip>:41844 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:34:29 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.49, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 498163, cuda graph: False, input throughput (token/s): 4463.02
+[2026-10-11 20:34:31 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.50, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 489971, cuda graph: False, input throughput (token/s): 4145.08
+[2026-10-11 20:34:33 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.51, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 481779, cuda graph: False, input throughput (token/s): 4150.07
+[2026-10-11 20:34:35 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.52, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 473587, cuda graph: False, input throughput (token/s): 4150.48
+[2026-10-11 20:34:37 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.52, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 465395, cuda graph: False, input throughput (token/s): 4123.08
+[2026-10-11 20:34:39 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.53, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 457203, cuda graph: False, input throughput (token/s): 4186.37
+[2026-10-11 20:34:41 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.54, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 449011, cuda graph: False, input throughput (token/s): 4112.95
+[2026-10-11 20:34:43 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.55, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 440819, cuda graph: False, input throughput (token/s): 4146.48
+[2026-10-11 20:34:45 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.55, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 432627, cuda graph: False, input throughput (token/s): 4113.12
+[2026-10-11 20:34:47 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.56, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 424435, cuda graph: False, input throughput (token/s): 4085.00
+[2026-10-11 20:34:49 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.57, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 416243, cuda graph: False, input throughput (token/s): 4097.56
+[2026-10-11 20:34:51 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.58, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 408051, cuda graph: False, input throughput (token/s): 4164.44
+[2026-10-11 20:34:53 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.58, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 399859, cuda graph: False, input throughput (token/s): 4086.71
+[2026-10-11 20:34:55 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.59, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 391667, cuda graph: False, input throughput (token/s): 4035.32
+[2026-10-11 20:34:57 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.60, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 383475, cuda graph: False, input throughput (token/s): 4047.06
+[2026-10-11 20:34:59 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.61, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 375283, cuda graph: False, input throughput (token/s): 4025.00
+[2026-10-11 20:35:01 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.62, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 367091, cuda graph: False, input throughput (token/s): 3985.24
+[2026-10-11 20:35:03 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.62, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 358899, cuda graph: False, input throughput (token/s): 3996.00
+[2026-10-11 20:35:06 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.63, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 350707, cuda graph: False, input throughput (token/s): 3977.65
+[2026-10-11 20:35:08 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.64, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 342515, cuda graph: False, input throughput (token/s): 3935.79
+[2026-10-11 20:35:10 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.65, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 334323, cuda graph: False, input throughput (token/s): 3926.65
+[2026-10-11 20:35:12 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.65, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 326131, cuda graph: False, input throughput (token/s): 3936.69
+[2026-10-11 20:35:14 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.66, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 317939, cuda graph: False, input throughput (token/s): 3850.29
+[2026-10-11 20:35:16 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.67, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 309747, cuda graph: False, input throughput (token/s): 3849.84
+[2026-10-11 20:35:18 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.68, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 301555, cuda graph: False, input throughput (token/s): 3856.79
+[2026-10-11 20:35:20 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.68, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 293363, cuda graph: False, input throughput (token/s): 3846.51
+[2026-10-11 20:35:22 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.69, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 285171, cuda graph: False, input throughput (token/s): 3793.15
+[2026-10-11 20:35:25 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.70, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 276979, cuda graph: False, input throughput (token/s): 3801.44
+[2026-10-11 20:35:27 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.71, swa token usage: 0.37, #running-req: 2, #queue-req: 1, #pending-token: 268787, cuda graph: False, input throughput (token/s): 3796.46
+[2026-10-11 20:35:29 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.71, swa token usage: 0.33, #running-req: 2, #queue-req: 1, #pending-token: 260595, cuda graph: False, input throughput (token/s): 4013.77
+[2026-10-11 20:35:31 TP0] Prefill batch, #new-seq: 1, #new-token: 7168, #cached-token: 0, full token usage: 0.72, swa token usage: 0.38, #running-req: 2, #queue-req: 0, #pending-token: 253455, cuda graph: False, input throughput (token/s): 3162.22
+[2026-10-11 20:35:31] INFO:     <docker-bridge-ip>:41848 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:35:33 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.73, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 245263, cuda graph: False, input throughput (token/s): 4780.91
+[2026-10-11 20:35:35 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.74, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 237071, cuda graph: False, input throughput (token/s): 4354.32
+[2026-10-11 20:35:37 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.75, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 228879, cuda graph: False, input throughput (token/s): 4406.12
+[2026-10-11 20:35:38 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.75, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 220687, cuda graph: False, input throughput (token/s): 4375.69
+[2026-10-11 20:35:40 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.76, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 212495, cuda graph: False, input throughput (token/s): 4400.22
+[2026-10-11 20:35:42 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.77, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 204303, cuda graph: False, input throughput (token/s): 4382.74
+[2026-10-11 20:35:44 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.78, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 196111, cuda graph: False, input throughput (token/s): 4365.39
+[2026-10-11 20:35:46 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.78, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 187919, cuda graph: False, input throughput (token/s): 4346.93
+[2026-10-11 20:35:48 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.79, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 179727, cuda graph: False, input throughput (token/s): 4331.70
+[2026-10-11 20:35:50 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.80, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 171535, cuda graph: False, input throughput (token/s): 4363.34
+[2026-10-11 20:35:52 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.81, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 163343, cuda graph: False, input throughput (token/s): 4306.94
+[2026-10-11 20:35:53 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.81, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 155151, cuda graph: False, input throughput (token/s): 4300.54
+[2026-10-11 20:35:55 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.82, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 146959, cuda graph: False, input throughput (token/s): 4254.99
+[2026-10-11 20:35:57 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.83, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 138767, cuda graph: False, input throughput (token/s): 4231.03
+[2026-10-11 20:35:59 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.84, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 130575, cuda graph: False, input throughput (token/s): 4202.56
+[2026-10-11 20:36:01 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.85, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 122383, cuda graph: False, input throughput (token/s): 4177.92
+[2026-10-11 20:36:03 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.85, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 114191, cuda graph: False, input throughput (token/s): 4087.95
+[2026-10-11 20:36:05 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.86, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 105999, cuda graph: False, input throughput (token/s): 4072.31
+[2026-10-11 20:36:08 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.87, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 97807, cuda graph: False, input throughput (token/s): 2515.29
+[2026-10-11 20:36:11 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.88, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 89615, cuda graph: False, input throughput (token/s): 3908.56
+[2026-10-11 20:36:13 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.88, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 81423, cuda graph: False, input throughput (token/s): 3959.25
+[2026-10-11 20:36:15 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.89, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 73231, cuda graph: False, input throughput (token/s): 3831.73
+[2026-10-11 20:36:17 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.90, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 65039, cuda graph: False, input throughput (token/s): 3891.06
+[2026-10-11 20:36:19 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.91, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 56847, cuda graph: False, input throughput (token/s): 3635.64
+[2026-10-11 20:36:22 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.91, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 48655, cuda graph: False, input throughput (token/s): 2994.89
+[2026-10-11 20:36:24 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.92, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 40463, cuda graph: False, input throughput (token/s): 3749.47
+[2026-10-11 20:36:26 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.93, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 32271, cuda graph: False, input throughput (token/s): 3496.72
+[2026-10-11 20:36:29 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.94, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 24079, cuda graph: False, input throughput (token/s): 3156.37
+[2026-10-11 20:36:31 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.95, swa token usage: 0.39, #running-req: 3, #queue-req: 0, #pending-token: 15887, cuda graph: False, input throughput (token/s): 3554.04
+[2026-10-11 20:36:34 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.95, swa token usage: 0.38, #running-req: 3, #queue-req: 0, #pending-token: 7695, cuda graph: False, input throughput (token/s): 3148.32
+[2026-10-11 20:36:34 TP0] Triton kernel 'alloc_decode_kernel' device-loaded after serving started (free device mem: 0.17 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:34 TP1] Triton kernel 'alloc_decode_kernel' device-loaded after serving started (free device mem: 0.12 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:34 TP1] Triton kernel 'alloc_decode_kernel' device-loaded after serving started (free device mem: 0.12 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:34 TP0] Triton kernel 'alloc_decode_kernel' device-loaded after serving started (free device mem: 0.17 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:34 TP0] Prefill batch, #new-seq: 1, #new-token: 7936, #cached-token: 0, full token usage: 0.95, swa token usage: 0.08, #running-req: 3, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 27534.33
+[2026-10-11 20:36:34] INFO:     <docker-bridge-ip>:41876 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:36:35 TP0] Decode batch, #running-req: 4, #full token: 1014528, full token usage: 0.95, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 0.39, #queue-req: 0
+[2026-10-11 20:36:36 TP0] Decode batch, #running-req: 4, #full token: 1015040, full token usage: 0.95, #swa token: 2560, swa token usage: 0.10, cuda graph: True, gen throughput (token/s): 152.48, #queue-req: 0
+[2026-10-11 20:36:37 TP0] Decode batch, #running-req: 4, #full token: 1015040, full token usage: 0.95, #swa token: 2560, swa token usage: 0.10, cuda graph: True, gen throughput (token/s): 149.33, #queue-req: 0
+[2026-10-11 20:36:38 TP0] Decode batch, #running-req: 4, #full token: 1015040, full token usage: 0.95, #swa token: 2560, swa token usage: 0.10, cuda graph: True, gen throughput (token/s): 139.80, #queue-req: 0
+[2026-10-11 20:36:39 TP0] Decode batch, #running-req: 4, #full token: 1015040, full token usage: 0.95, #swa token: 2560, swa token usage: 0.10, cuda graph: True, gen throughput (token/s): 128.29, #queue-req: 0
+[2026-10-11 20:36:41 TP0] Decode batch, #running-req: 4, #full token: 1015296, full token usage: 0.95, #swa token: 2816, swa token usage: 0.11, cuda graph: True, gen throughput (token/s): 124.77, #queue-req: 0
+[2026-10-11 20:36:42 TP0] Cache flushed successfully!
+[2026-10-11 20:36:42] INFO:     <docker-bridge-ip>:44634 - "POST /flush_cache HTTP/1.1" 200 OK
+[2026-10-11 20:36:43 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 28.63
+[2026-10-11 20:36:43] INFO:     <docker-bridge-ip>:44644 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:36:44 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 12.34, #queue-req: 0
+[2026-10-11 20:36:44 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 63.47, #queue-req: 0
+[2026-10-11 20:36:45 TP0] Cache flushed successfully!
+[2026-10-11 20:36:45] INFO:     <docker-bridge-ip>:48028 - "POST /flush_cache HTTP/1.1" 200 OK
+[2026-10-11 20:36:46 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 84.40
+[2026-10-11 20:36:46] INFO:     <docker-bridge-ip>:48034 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:36:46 TP0] Prefill batch, #new-seq: 3, #new-token: 768, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 1, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 37642.73
+[2026-10-11 20:36:46] INFO:     <docker-bridge-ip>:48042 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:36:46] INFO:     <docker-bridge-ip>:48058 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:36:46] INFO:     <docker-bridge-ip>:48072 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:36:47 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 58.90, #queue-req: 0
+[2026-10-11 20:36:48 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 166.16, #queue-req: 0
+[2026-10-11 20:36:50 TP0] Prefill batch, #new-seq: 1, #new-token: 4864, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 1152.26
+[2026-10-11 20:36:50] INFO:     <docker-bridge-ip>:48074 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:36:53 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.42 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:53 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.48 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:53 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.48 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:53 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.42 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:53 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.48 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:53 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.42 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:53 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.48 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:53 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.42 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:36:54 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.01, swa token usage: 0.09, #running-req: 0, #queue-req: 0, #pending-token: 1813, cuda graph: False, input throughput (token/s): 2063.11
+[2026-10-11 20:36:54 TP0] Prefill batch, #new-seq: 1, #new-token: 2048, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 95032.77
+[2026-10-11 20:36:54] INFO:     <docker-bridge-ip>:48086 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:36:58 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.01, swa token usage: 0.13, #running-req: 0, #queue-req: 0, #pending-token: 2862, cuda graph: False, input throughput (token/s): 2069.06
+[2026-10-11 20:36:58 TP0] Prefill batch, #new-seq: 1, #new-token: 3072, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 145292.81
+[2026-10-11 20:36:58] INFO:     <docker-bridge-ip>:50648 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:37:02 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.01, swa token usage: 0.16, #running-req: 0, #queue-req: 0, #pending-token: 3837, cuda graph: False, input throughput (token/s): 2131.23
+[2026-10-11 20:37:02 TP0] Prefill batch, #new-seq: 1, #new-token: 3840, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 180921.09
+[2026-10-11 20:37:02] INFO:     <docker-bridge-ip>:50650 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:37:06 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.01, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 1477, cuda graph: False, input throughput (token/s): 2052.28
+[2026-10-11 20:37:06 TP0] Prefill batch, #new-seq: 1, #new-token: 1536, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 70299.16
+[2026-10-11 20:37:06] INFO:     <docker-bridge-ip>:50652 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:37:10 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.01, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 1355, cuda graph: False, input throughput (token/s): 2163.03
+[2026-10-11 20:37:10 TP0] Prefill batch, #new-seq: 1, #new-token: 1536, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 75272.04
+[2026-10-11 20:37:10] INFO:     <docker-bridge-ip>:44656 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:37:12 TP0] Prefill batch, #new-seq: 1, #new-token: 6144, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 3249.18
+[2026-10-11 20:37:12] INFO:     <docker-bridge-ip>:44672 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:37:14 TP0] Prefill batch, #new-seq: 1, #new-token: 2816, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 1817.26
+[2026-10-11 20:37:14] INFO:     <docker-bridge-ip>:44678 - "POST /generate HTTP/1.1" 200 OK
+[2026-10-11 20:37:14] INFO:     <docker-bridge-ip>:33430 - "GET /v1/models HTTP/1.1" 200 OK
+[2026-10-11 20:37:14 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 520.52
+[2026-10-11 20:37:14] INFO:     <docker-bridge-ip>:33438 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:37:14 TP0] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_w8a8_block_fp8_matmul' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:14 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP0] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP1] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP1] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP0] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP1] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP0] Triton kernel '_w8a8_block_fp8_matmul_hopper' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.34 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.28 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:37:15 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 224.91
+[2026-10-11 20:37:15] INFO:     <docker-bridge-ip>:33454 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:37:15 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 3.22, #queue-req: 0
+[2026-10-11 20:37:16 TP0] Prefill batch, #new-seq: 1, #new-token: 512, #cached-token: 0, full token usage: 0.00, swa token usage: 0.02, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 431.88
+[2026-10-11 20:37:17 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 25.54, #queue-req: 0
+[2026-10-11 20:37:17] INFO:     <docker-bridge-ip>:33460 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:37:21 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 247196, cuda graph: False, input throughput (token/s): 1673.00
+[2026-10-11 20:37:23 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 239004, cuda graph: False, input throughput (token/s): 4800.17
+[2026-10-11 20:37:25 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.03, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 230812, cuda graph: False, input throughput (token/s): 4785.56
+[2026-10-11 20:37:26 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.04, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 222620, cuda graph: False, input throughput (token/s): 4754.86
+[2026-10-11 20:37:28 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.05, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 214428, cuda graph: False, input throughput (token/s): 4743.92
+[2026-10-11 20:37:30 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.05, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 206236, cuda graph: False, input throughput (token/s): 4720.59
+[2026-10-11 20:37:32 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.06, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 198044, cuda graph: False, input throughput (token/s): 4716.54
+[2026-10-11 20:37:33 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.07, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 189852, cuda graph: False, input throughput (token/s): 4671.26
+[2026-10-11 20:37:35 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.08, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 181660, cuda graph: False, input throughput (token/s): 4629.96
+[2026-10-11 20:37:37 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.08, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 173468, cuda graph: False, input throughput (token/s): 4647.18
+[2026-10-11 20:37:39 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.09, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 165276, cuda graph: False, input throughput (token/s): 4614.27
+[2026-10-11 20:37:40 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.10, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 157084, cuda graph: False, input throughput (token/s): 4571.02
+[2026-10-11 20:37:42 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.11, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 148892, cuda graph: False, input throughput (token/s): 4538.39
+[2026-10-11 20:37:44 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.12, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 140700, cuda graph: False, input throughput (token/s): 4504.77
+[2026-10-11 20:37:46 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.12, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 132508, cuda graph: False, input throughput (token/s): 4461.65
+[2026-10-11 20:37:48 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.13, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 124316, cuda graph: False, input throughput (token/s): 4430.03
+[2026-10-11 20:37:50 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.14, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 116124, cuda graph: False, input throughput (token/s): 4386.04
+[2026-10-11 20:37:51 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.15, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 107932, cuda graph: False, input throughput (token/s): 4357.43
+[2026-10-11 20:37:53 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.15, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 99740, cuda graph: False, input throughput (token/s): 4311.49
+[2026-10-11 20:37:55 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.16, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 91548, cuda graph: False, input throughput (token/s): 4277.34
+[2026-10-11 20:37:57 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.17, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 83356, cuda graph: False, input throughput (token/s): 4268.54
+[2026-10-11 20:37:59 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.18, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 75164, cuda graph: False, input throughput (token/s): 4226.59
+[2026-10-11 20:38:01 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.18, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 66972, cuda graph: False, input throughput (token/s): 4185.01
+[2026-10-11 20:38:03 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.19, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 58780, cuda graph: False, input throughput (token/s): 4153.08
+[2026-10-11 20:38:05 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.20, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 50588, cuda graph: False, input throughput (token/s): 4115.10
+[2026-10-11 20:38:07 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.21, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 42396, cuda graph: False, input throughput (token/s): 4068.28
+[2026-10-11 20:38:09 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.22, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 34204, cuda graph: False, input throughput (token/s): 4029.70
+[2026-10-11 20:38:11 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.22, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 26012, cuda graph: False, input throughput (token/s): 3988.37
+[2026-10-11 20:38:13 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.23, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 17820, cuda graph: False, input throughput (token/s): 3927.64
+[2026-10-11 20:38:15 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.24, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 9628, cuda graph: False, input throughput (token/s): 3898.90
+[2026-10-11 20:38:17 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.24, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 1436, cuda graph: False, input throughput (token/s): 5985.72
+[2026-10-11 20:38:17 TP0] Prefill batch, #new-seq: 1, #new-token: 1536, #cached-token: 0, full token usage: 0.24, swa token usage: 0.02, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 10900.50
+[2026-10-11 20:38:17] INFO:     <docker-bridge-ip>:33462 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:38:17 TP0] Decode batch, #running-req: 1, #full token: 255488, full token usage: 0.24, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 0.66, #queue-req: 0
+[2026-10-11 20:38:18] INFO:     <docker-bridge-ip>:43406 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:18 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.15 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:18 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.20 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:18 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.15 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:18 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.20 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:18 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.20 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:18 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.15 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:18 TP0] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.20 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:18 TP1] Triton kernel '_reduce_block_fp8_split_k' device-loaded after serving started (free device mem: 0.15 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-10-11 20:38:19 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 131.52
+[2026-10-11 20:38:19] INFO:     <docker-bridge-ip>:43420 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:38:19 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 24.89, #queue-req: 0
+[2026-10-11 20:38:20 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 60.36, #queue-req: 0
+[2026-10-11 20:38:20 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.09, #queue-req: 0
+[2026-10-11 20:38:21 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 63.35, #queue-req: 0
+[2026-10-11 20:38:21 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.76, #queue-req: 0
+[2026-10-11 20:38:22 TP0] engram file table model-00047-of-00048.safetensors: 1024 lookups, ahead hit 1024 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 4.389 ms per lookup in the break
+[2026-10-11 20:38:22 TP1] engram file table model-00047-of-00048.safetensors: 1024 lookups, ahead hit 1024 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 25.464 ms per lookup in the break
+[2026-10-11 20:38:22 TP1] engram file table model-00048-of-00048.safetensors: 1024 lookups, ahead hit 1024 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 24.476 ms per lookup in the break
+[2026-10-11 20:38:22 TP0] engram file table model-00048-of-00048.safetensors: 1024 lookups, ahead hit 1024 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 2.577 ms per lookup in the break
+[2026-10-11 20:38:22 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 61.62, #queue-req: 0
+[2026-10-11 20:38:23 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.14, #queue-req: 0
+[2026-10-11 20:38:23 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 63.09, #queue-req: 0
+[2026-10-11 20:38:24 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.75, #queue-req: 0
+[2026-10-11 20:38:25 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 55.71, #queue-req: 0
+[2026-10-11 20:38:25 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.70, #queue-req: 0
+[2026-10-11 20:38:26 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.49, #queue-req: 0
+[2026-10-11 20:38:27 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.43, #queue-req: 0
+[2026-10-11 20:38:27] INFO:     <docker-bridge-ip>:58358 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:27] INFO:     <docker-bridge-ip>:58362 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:28 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 29.46
+[2026-10-11 20:38:28] INFO:     <docker-bridge-ip>:58378 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:38:28 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 42.52, #queue-req: 0
+[2026-10-11 20:38:28 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 60.84, #queue-req: 0
+[2026-10-11 20:38:29 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.96, #queue-req: 0
+[2026-10-11 20:38:30 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 64.34, #queue-req: 0
+[2026-10-11 20:38:30 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 61.81, #queue-req: 0
+[2026-10-11 20:38:31 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 62.73, #queue-req: 0
+[2026-10-11 20:38:32 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 58.51, #queue-req: 0
+[2026-10-11 20:38:32 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 55.25, #queue-req: 0
+[2026-10-11 20:38:33 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.05, #queue-req: 0
+[2026-10-11 20:38:34 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.57, #queue-req: 0
+[2026-10-11 20:38:34 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.32, #queue-req: 0
+[2026-10-11 20:38:35 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.07, #queue-req: 0
+[2026-10-11 20:38:36 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 58.61, #queue-req: 0
+[2026-10-11 20:38:36] INFO:     <docker-bridge-ip>:37482 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:36] INFO:     <docker-bridge-ip>:37486 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:36 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 29.11
+[2026-10-11 20:38:36] INFO:     <docker-bridge-ip>:37494 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:38:37 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 41.30, #queue-req: 0
+[2026-10-11 20:38:37 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 60.21, #queue-req: 0
+[2026-10-11 20:38:38 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.69, #queue-req: 0
+[2026-10-11 20:38:39 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.52, #queue-req: 0
+[2026-10-11 20:38:39 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.67, #queue-req: 0
+[2026-10-11 20:38:39 TP0] engram file table model-00047-of-00048.safetensors: 2048 lookups, ahead hit 2048 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 2.305 ms per lookup in the break
+[2026-10-11 20:38:39 TP1] engram file table model-00047-of-00048.safetensors: 2048 lookups, ahead hit 2048 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 12.852 ms per lookup in the break
+[2026-10-11 20:38:39 TP1] engram file table model-00048-of-00048.safetensors: 2048 lookups, ahead hit 2048 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 12.245 ms per lookup in the break
+[2026-10-11 20:38:39 TP0] engram file table model-00048-of-00048.safetensors: 2048 lookups, ahead hit 2048 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 1.296 ms per lookup in the break
+[2026-10-11 20:38:40 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 55.16, #queue-req: 0
+[2026-10-11 20:38:41 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.25, #queue-req: 0
+[2026-10-11 20:38:41 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 63.39, #queue-req: 0
+[2026-10-11 20:38:42 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 57.93, #queue-req: 0
+[2026-10-11 20:38:43 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.48, #queue-req: 0
+[2026-10-11 20:38:43 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.52, #queue-req: 0
+[2026-10-11 20:38:44 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.50, #queue-req: 0
+[2026-10-11 20:38:45 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 57.82, #queue-req: 0
+[2026-10-11 20:38:45] INFO:     <docker-bridge-ip>:56706 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:45] INFO:     <docker-bridge-ip>:56708 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:45 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 29.12
+[2026-10-11 20:38:45] INFO:     <docker-bridge-ip>:56716 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:38:46 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 41.72, #queue-req: 0
+[2026-10-11 20:38:46 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 61.01, #queue-req: 0
+[2026-10-11 20:38:47 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 61.80, #queue-req: 0
+[2026-10-11 20:38:48 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 63.04, #queue-req: 0
+[2026-10-11 20:38:48 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 61.95, #queue-req: 0
+[2026-10-11 20:38:49 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.60, #queue-req: 0
+[2026-10-11 20:38:49 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.54, #queue-req: 0
+[2026-10-11 20:38:50 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 58.77, #queue-req: 0
+[2026-10-11 20:38:51 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.78, #queue-req: 0
+[2026-10-11 20:38:51 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 58.77, #queue-req: 0
+[2026-10-11 20:38:52 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 53.67, #queue-req: 0
+[2026-10-11 20:38:53 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.64, #queue-req: 0
+[2026-10-11 20:38:54 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.41, #queue-req: 0
+[2026-10-11 20:38:54] INFO:     <docker-bridge-ip>:52954 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:54] INFO:     <docker-bridge-ip>:52968 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:38:54 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 29.10
+[2026-10-11 20:38:54] INFO:     <docker-bridge-ip>:52984 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:38:55 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 41.78, #queue-req: 0
+[2026-10-11 20:38:55 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.12, #queue-req: 0
+[2026-10-11 20:38:56 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.20, #queue-req: 0
+[2026-10-11 20:38:56 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 62.16, #queue-req: 0
+[2026-10-11 20:38:57 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 63.48, #queue-req: 0
+[2026-10-11 20:38:58 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 54.05, #queue-req: 0
+[2026-10-11 20:38:58 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 58.25, #queue-req: 0
+[2026-10-11 20:38:59 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.10, #queue-req: 0
+[2026-10-11 20:39:00 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.72, #queue-req: 0
+[2026-10-11 20:39:00 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.81, #queue-req: 0
+[2026-10-11 20:39:01 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 57.77, #queue-req: 0
+[2026-10-11 20:39:02 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 56.48, #queue-req: 0
+[2026-10-11 20:39:02] INFO:     <docker-bridge-ip>:52996 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:02] INFO:     <docker-bridge-ip>:53012 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:03 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 28.79
+[2026-10-11 20:39:03] INFO:     <docker-bridge-ip>:53022 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:03 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 40.06, #queue-req: 0
+[2026-10-11 20:39:04 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 60.78, #queue-req: 0
+[2026-10-11 20:39:04 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 60.16, #queue-req: 0
+[2026-10-11 20:39:05 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 59.70, #queue-req: 0
+[2026-10-11 20:39:06 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 57.40, #queue-req: 0
+[2026-10-11 20:39:06 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 54.80, #queue-req: 0
+[2026-10-11 20:39:07 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 57.45, #queue-req: 0
+[2026-10-11 20:39:08 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 55.96, #queue-req: 0
+[2026-10-11 20:39:08 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 52.14, #queue-req: 0
+[2026-10-11 20:39:09 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 62.09, #queue-req: 0
+[2026-10-11 20:39:10 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 62.25, #queue-req: 0
+[2026-10-11 20:39:10 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.16, #queue-req: 0
+[2026-10-11 20:39:11 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 58.44, #queue-req: 0
+[2026-10-11 20:39:12] INFO:     <docker-bridge-ip>:53412 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:12] INFO:     <docker-bridge-ip>:53426 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:12 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 28.20
+[2026-10-11 20:39:12] INFO:     <docker-bridge-ip>:53440 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:12 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 40.94, #queue-req: 0
+[2026-10-11 20:39:13 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 61.73, #queue-req: 0
+[2026-10-11 20:39:13 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 61.34, #queue-req: 0
+[2026-10-11 20:39:14 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 59.50, #queue-req: 0
+[2026-10-11 20:39:15 TP0] Decode batch, #running-req: 1, #full token: 256, full token usage: 0.00, #swa token: 256, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 57.95, #queue-req: 0
+[2026-10-11 20:39:15 TP0] engram file table model-00047-of-00048.safetensors: 4096 lookups, ahead hit 4096 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 1.240 ms per lookup in the break
+[2026-10-11 20:39:15 TP1] engram file table model-00047-of-00048.safetensors: 4096 lookups, ahead hit 4096 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 6.538 ms per lookup in the break
+[2026-10-11 20:39:15 TP0] engram file table model-00048-of-00048.safetensors: 4096 lookups, ahead hit 4096 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 0.658 ms per lookup in the break
+[2026-10-11 20:39:15 TP1] engram file table model-00048-of-00048.safetensors: 4096 lookups, ahead hit 4096 / miss 0 / dropped 0, chunk-ahead hit 157 / dropped 2, 6.132 ms per lookup in the break
+[2026-10-11 20:39:16 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 52.98, #queue-req: 0
+[2026-10-11 20:39:16 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 57.27, #queue-req: 0
+[2026-10-11 20:39:17 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.63, #queue-req: 0
+[2026-10-11 20:39:18 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 59.90, #queue-req: 0
+[2026-10-11 20:39:18 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.39, #queue-req: 0
+[2026-10-11 20:39:19 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 57.82, #queue-req: 0
+[2026-10-11 20:39:20 TP0] Decode batch, #running-req: 1, #full token: 512, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 61.82, #queue-req: 0
+[2026-10-11 20:39:20 TP0] Decode batch, #running-req: 1, #full token: 768, full token usage: 0.00, #swa token: 512, swa token usage: 0.02, cuda graph: True, gen throughput (token/s): 60.30, #queue-req: 0
+[2026-10-11 20:39:21] INFO:     <docker-bridge-ip>:36034 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:21] INFO:     <docker-bridge-ip>:36036 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:22 TP0] Prefill batch, #new-seq: 1, #new-token: 256, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 26.01
+[2026-10-11 20:39:22] INFO:     <docker-bridge-ip>:36052 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:22 TP0] Prefill batch, #new-seq: 3, #new-token: 768, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 1, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 11571.68
+[2026-10-11 20:39:22] INFO:     <docker-bridge-ip>:36060 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:22] INFO:     <docker-bridge-ip>:36062 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:22] INFO:     <docker-bridge-ip>:36076 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:22 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 46.30, #queue-req: 0
+[2026-10-11 20:39:24 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 126.06, #queue-req: 0
+[2026-10-11 20:39:25 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 139.65, #queue-req: 0
+[2026-10-11 20:39:26 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 135.99, #queue-req: 0
+[2026-10-11 20:39:27 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 126.31, #queue-req: 0
+[2026-10-11 20:39:28 TP0] Decode batch, #running-req: 4, #full token: 1792, full token usage: 0.00, #swa token: 1792, swa token usage: 0.07, cuda graph: True, gen throughput (token/s): 135.69, #queue-req: 0
+[2026-10-11 20:39:30 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 126.16, #queue-req: 0
+[2026-10-11 20:39:31 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 123.51, #queue-req: 0
+[2026-10-11 20:39:32 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 127.91, #queue-req: 0
+[2026-10-11 20:39:34 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 125.72, #queue-req: 0
+[2026-10-11 20:39:35 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 119.69, #queue-req: 0
+[2026-10-11 20:39:36 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 120.99, #queue-req: 0
+[2026-10-11 20:39:38 TP0] Decode batch, #running-req: 4, #full token: 3072, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 120.80, #queue-req: 0
+[2026-10-11 20:39:38] INFO:     <docker-bridge-ip>:39588 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:38] INFO:     <docker-bridge-ip>:39596 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:39 TP0] Prefill batch, #new-seq: 4, #new-token: 1024, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 60.77
+[2026-10-11 20:39:39] INFO:     <docker-bridge-ip>:39604 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:39] INFO:     <docker-bridge-ip>:39616 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:39] INFO:     <docker-bridge-ip>:39620 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:39] INFO:     <docker-bridge-ip>:39636 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:40 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 80.25, #queue-req: 0
+[2026-10-11 20:39:41 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 134.19, #queue-req: 0
+[2026-10-11 20:39:42 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 139.60, #queue-req: 0
+[2026-10-11 20:39:43 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 129.44, #queue-req: 0
+[2026-10-11 20:39:44 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 125.59, #queue-req: 0
+[2026-10-11 20:39:46 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 119.80, #queue-req: 0
+[2026-10-11 20:39:47 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 111.76, #queue-req: 0
+[2026-10-11 20:39:49 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 108.95, #queue-req: 0
+[2026-10-11 20:39:50 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 115.33, #queue-req: 0
+[2026-10-11 20:39:51 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 125.98, #queue-req: 0
+[2026-10-11 20:39:53 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 127.28, #queue-req: 0
+[2026-10-11 20:39:54 TP0] Decode batch, #running-req: 4, #full token: 2560, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 116.50, #queue-req: 0
+[2026-10-11 20:39:55 TP0] Decode batch, #running-req: 4, #full token: 3072, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 113.46, #queue-req: 0
+[2026-10-11 20:39:55] INFO:     <docker-bridge-ip>:40284 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:55] INFO:     <docker-bridge-ip>:40298 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:39:56 TP0] Prefill batch, #new-seq: 4, #new-token: 1024, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 58.51
+[2026-10-11 20:39:56] INFO:     <docker-bridge-ip>:40322 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:56] INFO:     <docker-bridge-ip>:40314 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:56] INFO:     <docker-bridge-ip>:40334 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:56] INFO:     <docker-bridge-ip>:40336 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:39:57 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 83.31, #queue-req: 0
+[2026-10-11 20:39:58 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 138.80, #queue-req: 0
+[2026-10-11 20:40:00 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 137.24, #queue-req: 0
+[2026-10-11 20:40:01 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 121.79, #queue-req: 0
+[2026-10-11 20:40:02 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 118.70, #queue-req: 0
+[2026-10-11 20:40:03 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 125.66, #queue-req: 0
+[2026-10-11 20:40:05 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 109.22, #queue-req: 0
+[2026-10-11 20:40:06 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 106.63, #queue-req: 0
+[2026-10-11 20:40:08 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 113.59, #queue-req: 0
+[2026-10-11 20:40:09 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 117.98, #queue-req: 0
+[2026-10-11 20:40:11 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 117.59, #queue-req: 0
+[2026-10-11 20:40:12 TP0] Decode batch, #running-req: 4, #full token: 2816, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 113.56, #queue-req: 0
+[2026-10-11 20:40:13] INFO:     <docker-bridge-ip>:48230 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:40:13] INFO:     <docker-bridge-ip>:48238 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:40:14 TP0] Prefill batch, #new-seq: 4, #new-token: 1024, #cached-token: 0, full token usage: 0.00, swa token usage: 0.04, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 57.61
+[2026-10-11 20:40:14] INFO:     <docker-bridge-ip>:48252 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:14] INFO:     <docker-bridge-ip>:48262 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:14] INFO:     <docker-bridge-ip>:48268 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:14] INFO:     <docker-bridge-ip>:48284 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:14 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 77.00, #queue-req: 0
+[2026-10-11 20:40:15 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 133.00, #queue-req: 0
+[2026-10-11 20:40:16 TP0] Decode batch, #running-req: 4, #full token: 1024, full token usage: 0.00, #swa token: 1024, swa token usage: 0.04, cuda graph: True, gen throughput (token/s): 139.24, #queue-req: 0
+[2026-10-11 20:40:18 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 141.47, #queue-req: 0
+[2026-10-11 20:40:19 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 131.90, #queue-req: 0
+[2026-10-11 20:40:20 TP0] Decode batch, #running-req: 4, #full token: 1280, full token usage: 0.00, #swa token: 1280, swa token usage: 0.05, cuda graph: True, gen throughput (token/s): 127.04, #queue-req: 0
+[2026-10-11 20:40:21 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 114.00, #queue-req: 0
+[2026-10-11 20:40:23 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 116.72, #queue-req: 0
+[2026-10-11 20:40:24 TP0] Decode batch, #running-req: 4, #full token: 2048, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 126.00, #queue-req: 0
+[2026-10-11 20:40:25 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 129.82, #queue-req: 0
+[2026-10-11 20:40:27 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 119.36, #queue-req: 0
+[2026-10-11 20:40:28 TP0] Decode batch, #running-req: 4, #full token: 2304, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 130.87, #queue-req: 0
+[2026-10-11 20:40:29 TP0] Decode batch, #running-req: 4, #full token: 3072, full token usage: 0.00, #swa token: 2048, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 122.72, #queue-req: 0
+[2026-10-11 20:40:30] INFO:     <docker-bridge-ip>:36780 - "GET /metrics HTTP/1.1" 404 Not Found
+[2026-10-11 20:40:35 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.32, #running-req: 0, #queue-req: 0, #pending-token: 7786, cuda graph: False, input throughput (token/s): 395.42
+[2026-10-11 20:40:35 TP0] Prefill batch, #new-seq: 1, #new-token: 7936, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 50474.70
+[2026-10-11 20:40:35] INFO:     <docker-bridge-ip>:36794 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:39 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.32, #running-req: 0, #queue-req: 0, #pending-token: 7871, cuda graph: False, input throughput (token/s): 2032.02
+[2026-10-11 20:40:39 TP0] Prefill batch, #new-seq: 1, #new-token: 7936, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 54188.35
+[2026-10-11 20:40:39] INFO:     <docker-bridge-ip>:52836 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:43 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.32, #running-req: 0, #queue-req: 0, #pending-token: 7877, cuda graph: False, input throughput (token/s): 2044.70
+[2026-10-11 20:40:43 TP0] Prefill batch, #new-seq: 1, #new-token: 7936, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 54348.55
+[2026-10-11 20:40:43] INFO:     <docker-bridge-ip>:52852 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:48 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 23812, cuda graph: False, input throughput (token/s): 1776.83
+[2026-10-11 20:40:50 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 15620, cuda graph: False, input throughput (token/s): 4172.96
+[2026-10-11 20:40:51 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.03, swa token usage: 0.31, #running-req: 0, #queue-req: 0, #pending-token: 7428, cuda graph: False, input throughput (token/s): 4592.46
+[2026-10-11 20:40:52 TP0] Prefill batch, #new-seq: 1, #new-token: 7680, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 52398.59
+[2026-10-11 20:40:52] INFO:     <docker-bridge-ip>:46772 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:40:56 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 23833, cuda graph: False, input throughput (token/s): 2030.39
+[2026-10-11 20:40:58 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 15641, cuda graph: False, input throughput (token/s): 4162.75
+[2026-10-11 20:40:59 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.03, swa token usage: 0.31, #running-req: 0, #queue-req: 0, #pending-token: 7449, cuda graph: False, input throughput (token/s): 4448.71
+[2026-10-11 20:41:00 TP0] Prefill batch, #new-seq: 1, #new-token: 7680, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 49928.25
+[2026-10-11 20:41:00] INFO:     <docker-bridge-ip>:46778 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[2026-10-11 20:41:04 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 23740, cuda graph: False, input throughput (token/s): 2034.70
+[2026-10-11 20:41:06 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.02, swa token usage: 0.33, #running-req: 0, #queue-req: 0, #pending-token: 15548, cuda graph: False, input throughput (token/s): 4345.14
+[2026-10-11 20:41:07 TP0] Prefill batch, #new-seq: 1, #new-token: 8192, #cached-token: 0, full token usage: 0.03, swa token usage: 0.30, #running-req: 0, #queue-req: 0, #pending-token: 7356, cuda graph: False, input throughput (token/s): 4521.19
+[2026-10-11 20:41:07 TP0] Prefill batch, #new-seq: 1, #new-token: 7424, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 48525.39
+[2026-10-11 20:41:07] INFO:     <docker-bridge-ip>:39752 - "POST /v1/chat/completions HTTP/1.1" 200 OK

@@ -1,0 +1,66 @@
+A) relu rows: n_pos distinct positives, the rest exactly 0.0 (k-th score inside the zero tie)
+  zero tie, n_pos=0                                L=    700: exact=True  moves=0/9     12.3 us/call
+  zero tie, n_pos=100                              L=    700: exact=True  moves=0/9     12.6 us/call
+  zero tie, n_pos=411                              L=    700: exact=True  moves=0/9     12.3 us/call
+  zero tie, n_pos=511                              L=    700: exact=True  moves=0/9     12.2 us/call
+  zero tie, n_pos=0                                L=   1001: exact=True  moves=0/9     12.1 us/call
+  zero tie, n_pos=100                              L=   1001: exact=True  moves=0/9     12.6 us/call
+  zero tie, n_pos=411                              L=   1001: exact=True  moves=0/9     12.4 us/call
+  zero tie, n_pos=511                              L=   1001: exact=True  moves=0/9     12.3 us/call
+  zero tie, n_pos=0                                L=   4099: exact=True  moves=0/9     15.5 us/call
+  zero tie, n_pos=100                              L=   4099: exact=True  moves=0/9     15.9 us/call
+  zero tie, n_pos=411                              L=   4099: exact=True  moves=0/9     16.4 us/call
+  zero tie, n_pos=511                              L=   4099: exact=True  moves=0/9     16.2 us/call
+  zero tie, n_pos=0                                L=  14884: exact=True  moves=0/9     21.8 us/call
+  zero tie, n_pos=100                              L=  14884: exact=True  moves=0/9     22.5 us/call
+  zero tie, n_pos=411                              L=  14884: exact=True  moves=0/9     23.9 us/call
+  zero tie, n_pos=511                              L=  14884: exact=True  moves=0/9     23.5 us/call
+  zero tie, n_pos=0                                L=  65537: exact=True  moves=0/9     55.5 us/call
+  zero tie, n_pos=100                              L=  65537: exact=True  moves=0/9     58.9 us/call
+  zero tie, n_pos=411                              L=  65537: exact=True  moves=0/9     60.5 us/call
+  zero tie, n_pos=511                              L=  65537: exact=True  moves=0/9     61.3 us/call
+  zero tie, n_pos=0                                L= 262144: exact=True  moves=0/9    183.1 us/call
+  zero tie, n_pos=100                              L= 262144: exact=True  moves=0/9    183.7 us/call
+  zero tie, n_pos=411                              L= 262144: exact=True  moves=0/9    185.9 us/call
+  zero tie, n_pos=511                              L= 262144: exact=True  moves=0/9    187.1 us/call
+  zero tie, n_pos=0                                L= 262147: exact=True  moves=0/9    185.2 us/call
+  zero tie, n_pos=100                              L= 262147: exact=True  moves=0/9    186.0 us/call
+  zero tie, n_pos=411                              L= 262147: exact=True  moves=0/9    187.9 us/call
+  zero tie, n_pos=511                              L= 262147: exact=True  moves=0/9    188.3 us/call
+B) one positive value shared by t positions (tie of exact size t straddling slot 512)
+  tie value 1.5 x100                               L=   4099: exact=True  moves=0/9     10.0 us/call
+  tie value 1.5 x1000                              L=   4099: exact=True  moves=0/9     12.8 us/call
+  tie value 1.5 x2048                              L=   4099: exact=True  moves=0/9     13.7 us/call
+  tie value 1.5 x2049                              L=   4099: exact=True  moves=0/9     15.3 us/call
+  tie value 1.5 x100                               L=  14884: exact=True  moves=0/9     12.9 us/call
+  tie value 1.5 x1000                              L=  14884: exact=True  moves=0/9     14.9 us/call
+  tie value 1.5 x2048                              L=  14884: exact=True  moves=0/9     15.9 us/call
+  tie value 1.5 x2049                              L=  14884: exact=True  moves=0/9     22.9 us/call
+  tie value 1.5 x5000                              L=  14884: exact=True  moves=0/9     22.4 us/call
+  tie value 1.5 x100                               L=  65537: exact=True  moves=0/9     19.2 us/call
+  tie value 1.5 x1000                              L=  65537: exact=True  moves=0/9     21.5 us/call
+  tie value 1.5 x2048                              L=  65537: exact=True  moves=0/9     23.8 us/call
+  tie value 1.5 x2049                              L=  65537: exact=True  moves=0/9     49.0 us/call
+  tie value 1.5 x5000                              L=  65537: exact=True  moves=0/9     56.6 us/call
+  tie value 1.5 x60000                             L=  65537: exact=True  moves=0/9     61.7 us/call
+  tie value 1.5 x100                               L= 262147: exact=True  moves=0/9    114.2 us/call
+  tie value 1.5 x1000                              L= 262147: exact=True  moves=0/9     41.9 us/call
+  tie value 1.5 x2048                              L= 262147: exact=True  moves=0/9     44.6 us/call
+  tie value 1.5 x2049                              L= 262147: exact=True  moves=0/9    114.5 us/call
+  tie value 1.5 x5000                              L= 262147: exact=True  moves=0/9    134.3 us/call
+  tie value 1.5 x60000                             L= 262147: exact=True  moves=0/9    197.7 us/call
+C) > 2,048 distinct values inside one coarse bin (1.0 + U(0,1)*5e-4)
+  dense bin                                        L=   2049: exact=True  moves=0/9     14.9 us/call
+  dense bin                                        L=   4099: exact=True  moves=0/9     18.2 us/call
+  dense bin                                        L=  14884: exact=True  moves=0/9     33.7 us/call
+  dense bin                                        L=  65537: exact=True  moves=0/9    102.6 us/call
+  dense bin                                        L= 262147: exact=True  moves=0/9    362.5 us/call
+D) controls: randn, and rows shorter than k
+  randn                                            L=  14884: exact=True  moves=0/9     11.7 us/call
+  randn                                            L=  65537: exact=True  moves=0/9     18.1 us/call
+  randn                                            L= 262147: exact=True  moves=0/9     40.0 us/call
+  short row, relu                                  L=      1: exact=True  moves=0/9      7.3 us/call
+  short row, relu                                  L=      3: exact=True  moves=0/9      7.3 us/call
+  short row, relu                                  L=    300: exact=True  moves=0/9      7.3 us/call
+  short row, relu                                  L=    511: exact=True  moves=0/9      7.3 us/call
+ALL EXACT AND STABLE: True

@@ -1,7 +1,7 @@
 From d681172827499f10ca05769e9776933431fe9f84 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 7 Oct 2026 23:26:37 -0400
-Subject: [PATCH 27/54] dsv4 indexer: publish prefill candidate masks at block
+Subject: [PATCH 27/55] dsv4 indexer: publish prefill candidate masks at block
  granularity (E34b-ii)
 
 select_candidate_block_keep returns the [rows, ceil(width/block_size)] keep mask;

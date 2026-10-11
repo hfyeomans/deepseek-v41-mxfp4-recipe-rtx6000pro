@@ -1,20 +1,20 @@
 {
-  "_comment": "Rungs shown in the generated headline table of docs/BENCHMARKS.md (scripts/benchmarks_headline.py). Each dir must hold a manifest.json and the stamped JSON files the script reads (c1/c4/prefill-16k/prefill-32k/verify/stress-kv/corpus/pooled). Replace a dir only with a newer serve that passed every gate; the table reports whatever the manifest says the serve was.",
-  "rows": [
-    {
-      "rung": "262K × 4 (launcher default)",
-      "dir": "evidence/t310/default-wait-ready",
-      "note": "T3.10 qualification on the plain launcher after wait-ready.py started dropping the stale shard page cache (the Engram tables get the host page cache: prefill 16K +28 %, stress -20 %); evidence/t315c/default-flip was the previous row"
-    },
-    {
-      "rung": "64K × 4 (per-rung override)",
-      "dir": "evidence/t339/window2/qual",
-      "note": "T3.39 window 2 qualification; the launcher default until 2026-10-11 (CONTEXT_LENGTH=65536)"
-    },
-    {
-      "rung": "1M × 1 (per-rung override)",
-      "dir": "evidence/e34-indexer-memory/d-v-ii/1m",
-      "note": "E34d-v (ii), pre-T3.8b map and pre-T3.39 arenas; the only stamped 1M serve"
-    }
-  ]
+ "_comment": "Rungs shown in the generated headline table of docs/BENCHMARKS.md (scripts/benchmarks_headline.py). Each dir must hold a manifest.json and the stamped JSON files the script reads (c1/c4/prefill-16k/prefill-32k/verify/stress-kv/corpus/pooled). Replace a dir only with a newer serve that passed every gate; the table reports whatever the manifest says the serve was.",
+ "rows": [
+  {
+   "rung": "262K × 4 (launcher default)",
+   "dir": "evidence/t315d/serve-a",
+   "note": "T3.15d qualification of overlay a8804318 (exact top-k) on the plain launcher with the kernel cache and prime; every number at or above evidence/t310/default-wait-ready, the previous row (Engram residency at smoke start 32.8 % vs 42.5 %, see E40)"
+  },
+  {
+   "rung": "64K × 4 (per-rung override)",
+   "dir": "evidence/t339/window2/qual",
+   "note": "T3.39 window 2 qualification; the launcher default until 2026-10-11 (CONTEXT_LENGTH=65536)"
+  },
+  {
+   "rung": "1M × 1 (per-rung override)",
+   "dir": "evidence/e34-indexer-memory/d-v-ii/1m",
+   "note": "E34d-v (ii), pre-T3.8b map and pre-T3.39 arenas; the only stamped 1M serve"
+  }
+ ]
 }

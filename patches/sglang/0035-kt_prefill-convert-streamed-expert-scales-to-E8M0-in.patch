@@ -1,7 +1,7 @@
 From 1eeb48cdc421b52d652a324f49923d68862b7dfd Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 09:16:07 -0400
-Subject: [PATCH 35/54] kt_prefill: convert streamed expert scales to E8M0 in
+Subject: [PATCH 35/55] kt_prefill: convert streamed expert scales to E8M0 in
  place on the landing zone (E34d-v (ii))
 
 (raw.view(int16).to(int32) >> 7).to(uint8) made two int32 temporaries per
