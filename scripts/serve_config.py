@@ -258,6 +258,13 @@ REGISTRY: tuple[Knob, ...] = (
          "stays up. Well-formed rows are bit-identical (-Inf masks are kept). 0 = stock SGLang: sample from "
          "sanitized logits / finish silently on an out-of-vocab id.",
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_REJECT_NAN_ROWS", evidence="evidence/e24-nan/c10/"),
+    Knob("SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS", "flag", "1",
+         "T3.35: a request whose prompt fits the context but whose max_tokens would overrun it gets max_new_tokens "
+         "clamped to the remaining budget (one logger.info line) instead of the stock HTTP 400. Coding agents send "
+         "a fixed ceiling (Amp: max_completion_tokens 128000), which otherwise turns a 262K server into a 134K one. "
+         "The scheduler already clamps the same way, so accepted requests are unchanged; over-length prompts are "
+         "still rejected. 0 = stock 400.",
+         sink=CONTAINER_ENV, evidence="evidence/t335/"),
     # ---- overlay diagnostics (forwarded into the container only when set) ---------------
     Knob("KT_NAN_INJECT", "str", "",
          "T3.13 / C10 test hook: row=<r>,bs=<b>,step=<n>,layer=<l> adds NaN to row r's hidden state after MoE "
@@ -308,6 +315,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"KT_GPU_PREFILL_LOG={r['KT_GPU_PREFILL_LOG']}",
         f"SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']}",
         f"SGLANG_DSV41_REJECT_NAN_ROWS={r['KT_REJECT_NAN_ROWS']}",
+        f"SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS={r['SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS']}",
     ]
 
 

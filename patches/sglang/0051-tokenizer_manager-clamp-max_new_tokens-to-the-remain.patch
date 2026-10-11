@@ -1,0 +1,65 @@
+From 90ae890e33f33cce57dee98ba4cec27516318d15 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sat, 10 Oct 2026 19:23:01 -0400
+Subject: [PATCH 51/51] tokenizer_manager: clamp max_new_tokens to the
+ remaining context instead of HTTP 400 (recipe T3.35)
+
+- SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS (EnvBool, default off; the recipe launcher sets 1): when
+  input_tokens + max_new_tokens > context_len and the input itself fits, clamp max_new_tokens
+  to max_req_len - input_tokens (the bound the scheduler's init_req_max_new_tokens applies
+  anyway) and log one INFO line, instead of rejecting with the 400 "Requested token count
+  exceeds the model's maximum context length".
+- Unlike --allow-auto-truncate this never truncates the input: prompts at/over the context
+  length still get the input-too-long error.
+
+Why: coding-agent clients send a fixed completion ceiling on every turn (Amp:
+max_completion_tokens 128000), so a 262,144-token server refused every request past 134,144
+input tokens (T3.35 C4-3: 142,334 and 160,663 input tokens -> 400).
+
+Co-authored-by: Amp <amp@ampcode.com>
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+---
+ python/sglang/srt/environ.py                    |  7 +++++++
+ python/sglang/srt/managers/tokenizer_manager.py | 11 +++++++++++
+ 2 files changed, 18 insertions(+)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 890c214d..c0bd474a 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1466,6 +1466,13 @@ class Envs:
+     # silently truncated by the vocab-boundary check. The row flags are computed
+     # on the device (graph-safe) and ride the existing D2H of the token ids.
+     SGLANG_DSV41_REJECT_NAN_ROWS = EnvBool(True)
++    # Recipe T3.35: a request whose input + max_new_tokens exceeds the context
++    # length gets max_new_tokens clamped to the remaining room (the scheduler's
++    # own bound, init_req_max_new_tokens) instead of HTTP 400. Coding-agent
++    # clients send a fixed max_completion_tokens (Amp: 128000) on every turn,
++    # which turned a 262K server into a 134K one. Inputs at/over the context
++    # length are still refused. Off = stock SGLang.
++    SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS = EnvBool(False)
+     SGLANG_FP8_PAGED_MQA_LOGITS_TORCH = EnvBool(False)
+     SGLANG_OPT_FLASHMLA_SPARSE_PREFILL = EnvBool(True)
+ 
+diff --git a/python/sglang/srt/managers/tokenizer_manager.py b/python/sglang/srt/managers/tokenizer_manager.py
+index 00024281..404a679c 100644
+--- a/python/sglang/srt/managers/tokenizer_manager.py
++++ b/python/sglang/srt/managers/tokenizer_manager.py
+@@ -1228,6 +1228,17 @@ class TokenizerManager(TokenizerControlMixin, TokenizerManagerScoreMixin):
+                 obj.sampling_params["max_new_tokens"] = max(
+                     0, _max_req_len - input_token_num
+                 )
++            elif envs.SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS.get():
++                # Recipe T3.35: same clamp the scheduler applies anyway
++                # (init_req_max_new_tokens), without allow_auto_truncate's
++                # silent input truncation. The input-length check above still
++                # refuses prompts at/over the context length.
++                clamped = max(0, _max_req_len - input_token_num)
++                logger.info(
++                    f"max_new_tokens {max_new_tokens} clamped to {clamped} "
++                    f"({input_token_num} input tokens, context {self.context_len})"
++                )
++                obj.sampling_params["max_new_tokens"] = clamped
+             else:
+                 total_tokens = max_new_tokens + input_token_num
+                 error_msg = (

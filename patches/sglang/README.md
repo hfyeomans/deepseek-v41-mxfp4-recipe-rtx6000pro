@@ -6,7 +6,7 @@ Everything this recipe changes in SGLang, as 50 `git format-patch` files on top 
 |---|---|
 | Upstream base | `sgl-project/sglang` commit `da64c5cbb8cf6bfd39be19da43573fdfd484c43a` — "[DSV4.1] Support raw-index output in TopK v2 (port of #33672) (#39098)", the commit the `lmsysorg/sglang:dev-dsv41` image was built from (`ai.sglang.build.commit` label; see `PROVENANCE.md`) |
 | Overlay branch | `dsv41-kt-hybrid` in the local clone `~/dev/src/sglang-dsv41-overlay` (no fork, no push) |
-| Exported head | commit `682fc6a02b3e3585738e870dcbbee7460adeceb9`, tree `73ed0bd4333144bc8dfdb512b82b145baf32a654`, 50 patches (`SERIES.env` is the machine-readable copy) |
+| Exported head | commit `90ae890e33f33cce57dee98ba4cec27516318d15`, tree `90df91d06413bebf1612abc9a3b68a0f6837cbb3`, 51 patches (the `recipe-2026-10` tag stays at `682fc6a0`, patch 0050; 0051 is T3.35's request-admission clamp) (`SERIES.env` is the machine-readable copy) |
 | Commits as written | no history rewrite: author, dates and messages are the overlay's. A themed rebase into ≈ 8 reviewable units is **T3.24c-ii**, an owner decision |
 
 ## Apply
@@ -15,7 +15,7 @@ Everything this recipe changes in SGLang, as 50 `git format-patch` files on top 
 git clone https://github.com/sgl-project/sglang && cd sglang
 git checkout --detach da64c5cbb8cf6bfd39be19da43573fdfd484c43a
 git am /path/to/recipe/patches/sglang/*.patch
-git rev-parse 'HEAD^{tree}'        # must print 73ed0bd4333144bc8dfdb512b82b145baf32a654
+git rev-parse 'HEAD^{tree}'        # must print 90df91d06413bebf1612abc9a3b68a0f6837cbb3
 ```
 
 Only `python/sglang/` changes. The runtime image never contains these patches: [`scripts/serve-hybrid.sh`](../../scripts/serve-hybrid.sh) bind-mounts `$OVERLAY_DIR/python/sglang` read-only over `/sgl-workspace/sglang/python/sglang` inside `dsv41-kt:recipe`, so a checkout produced by the commands above can serve by setting `OVERLAY_DIR` to it. `config/Dockerfile.dsv41-kt` builds the image (base image digest + pruned kt-kernel wheel + the kt patches); the overlay is applied at run time, not build time.
@@ -82,3 +82,4 @@ Recipe tasks and experiments are in `plan/TASKS.md` and `plan/ROADMAP.md`; the u
 | 0048 | `a8537fe7` | `kt_prefill`: shared weight arenas replace the kt export (pairs with kt patch 0003) | T3.39 window 2 K2 | — |
 | 0049 | `124ca1de` | `kt_prefill`: down scales staged as whole rows in one copy, sliced on device | T3.39 window 2 qual | — |
 | 0050 | `682fc6a0` | Sampler/scheduler: a NaN/Inf logits row aborts that request, not the server | T3.13 / C10 | — |
+| 0051 | `90ae890e` | `tokenizer_manager`: clamp `max_new_tokens` to the remaining context instead of HTTP 400 (`SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS`) | T3.35 | upstream candidate |
