@@ -155,5 +155,7 @@ launch the default while the log claims the override; variables outside those fa
 | `SGLANG_BCG_DEBUG_EAGER` | flag | `0` | diagnostic-env | Breakable CUDA graph: run segments eagerly. |  |
 | `SGLANG_BCG_DEBUG_INPUTS` | flag | `0` | diagnostic-env | Breakable CUDA graph: log segment inputs. |  |
 | `SGLANG_BCG_DEBUG_LAYER_BREAKS` | flag | `0` | diagnostic-env | Breakable CUDA graph: log where the graph breaks. |  |
+| `SGLANG_DSV41_STEP_FINGERPRINT_DIR` | str | `""` | diagnostic-env | T3.15e per-step per-layer decode fingerprint recorder (dsv4/step_fingerprint.py): each rank writes <dir>/rank<r>.pt with order-independent sums of the indexer input / logits / selected slots / sparse q / o for every decode step and layer (container path; bind-mount a host dir with EXTRA_DOCKER_ARGS). Bisects the 14,775-token greedy residual. Never set in a serve that is measured. | evidence/t315e/ |
+| `SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN` | int | `0` | diagnostic-env | With the recorder on: when row 0's compressed indexer sequence length equals this value, also dump that step's full top-k input row and selected set for every indexer source layer (ring of 128). | evidence/t315e/ |
 | `KT_B2_UVA_EXPERTS` *(removed)* | str | `""` | guard | KT_B2_UVA_EXPERTS / KT_B2_MAX_TOKENS were removed at T3.16j (B2 rejected, E30); unset them. |  |
 | `KT_B2_MAX_TOKENS` *(removed)* | str | `""` | guard | KT_B2_UVA_EXPERTS / KT_B2_MAX_TOKENS were removed at T3.16j (B2 rejected, E30); unset them. |  |

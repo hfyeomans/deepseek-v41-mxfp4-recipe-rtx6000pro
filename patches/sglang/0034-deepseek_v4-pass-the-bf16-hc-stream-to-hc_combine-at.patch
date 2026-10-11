@@ -1,7 +1,7 @@
 From f18dc961719bdb9016810a82a6aa32710b7f86d6 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 08:34:50 -0400
-Subject: [PATCH 34/55] deepseek_v4: pass the bf16 hc stream to hc_combine at
+Subject: [PATCH 34/58] deepseek_v4: pass the bf16 hc stream to hc_combine at
  the model tail (E34d-v (ii))
 
 The kernel casts each load to fp32; the explicit .float() copy of the

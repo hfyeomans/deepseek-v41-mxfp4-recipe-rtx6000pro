@@ -1,0 +1,137 @@
+From 3caa0182247445fc727e1d73ac85f2f4f93cf46a Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sun, 11 Oct 2026 18:20:31 -0400
+Subject: [PATCH 58/58] dsv4 step fingerprints: trigger dump of the full top-k
+ input/output row at one compressed seq_len (recipe T3.15e)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                  |  4 ++
+ .../layers/attention/deepseek_v4_backend.py   |  1 +
+ .../layers/attention/dsv4/step_fingerprint.py | 60 ++++++++++++++++++-
+ 3 files changed, 62 insertions(+), 3 deletions(-)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 2c8d0065..549e0a39 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1423,6 +1423,10 @@ class Envs:
+     # Diagnostic (recipe T3.15e): record per-step, per-layer decode fingerprints to
+     # <dir>/rank<r>.pt so run-to-run drift can be localised to a (step, layer, stage).
+     SGLANG_DSV41_STEP_FINGERPRINT_DIR = EnvStr(None)
++    # With the recorder on: when row 0's compressed indexer sequence length equals
++    # this value, also dump that step's full top-k input row and selected set for
++    # every indexer source layer (the fingerprints say where; this says what).
++    SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN = EnvInt(0)
+     # Keep the DeepSeek-V4.1 engram tables in host memory (layout below) and gather
+     # rows from the GPU instead of sharding them over HBM.
+     SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE = EnvBool(False)
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index 29c81b65..66f2e8a2 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -3599,6 +3599,7 @@ class DeepseekV4AttnBackend(
+             selected = selected.sort(dim=-1, descending=True).values
+         if fp is not None and logical_first:
+             fp.record(layer.layer_id, "sel_sum", selected[0])
++            fp.record_topk_trigger(layer.layer_id, metadata.c4_seq_lens, logits, selected)
+         if logical_first:
+             if logits.is_cuda and torch.version.cuda is not None:
+                 from sglang.kernels.ops.attention.dsv4.indexer_postprocess import (
+diff --git a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
+index 7eb2b928..01344370 100644
+--- a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
++++ b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
+@@ -69,12 +69,14 @@ class StepFingerprints:
+             self.rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else 0
+         except Exception:
+             self.rank = 0
++        trigger = envs.SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN.get()
++        self.trigger: Optional[TriggerDump] = TriggerDump(trigger, device) if trigger > 0 else None
+         os.makedirs(out_dir, exist_ok=True)
+         self._stop = False
+         self._thread = threading.Thread(target=self._dump_loop, name="dsv41-fingerprint-dump", daemon=True)
+         self._thread.start()
+-        logger.info("step fingerprints on: %s rank %d (%d steps x %d layers x %d columns)",
+-                    out_dir, self.rank, MAX_STEPS, MAX_LAYERS, len(COLUMNS))
++        logger.info("step fingerprints on: %s rank %d (%d steps x %d layers x %d columns; trigger seq_len %d)",
++                    out_dir, self.rank, MAX_STEPS, MAX_LAYERS, len(COLUMNS), trigger)
+ 
+     # ---- out-of-graph, once per decode step ------------------------------------------
+     def advance(self) -> None:
+@@ -103,6 +105,11 @@ class StepFingerprints:
+         v = torch.where(pos < seq_lens[0].to(torch.int64), v, torch.zeros_like(v))
+         self._put(layer_id, col, _pair(v))
+ 
++    def record_topk_trigger(self, layer_id: int, seq_lens: torch.Tensor,
++                            logits: torch.Tensor, selected: torch.Tensor) -> None:
++        if self.trigger is not None:
++            self.trigger.record(self.step, layer_id, seq_lens, logits, selected)
++
+     def record_scalar(self, layer_id: int, col: str, value: torch.Tensor | int) -> None:
+         if layer_id >= MAX_LAYERS:
+             return
+@@ -126,14 +133,61 @@ class StepFingerprints:
+             try:
+                 with torch.cuda.stream(stream):
+                     snap = self.buf[: n + 1].to("cpu", copy=True)
++                    trig = self.trigger.snapshot() if self.trigger is not None else None
+                 stream.synchronize()
+-                torch.save({"columns": COLUMNS, "steps": n + 1, "rank": self.rank, "buf": snap}, tmp)
++                torch.save({"columns": COLUMNS, "steps": n + 1, "rank": self.rank, "buf": snap,
++                            "trigger": trig}, tmp)
+                 os.replace(tmp, path)
+                 self._dumped_step = n
+             except Exception as e:  # diagnostic only: never take the server down
+                 logger.warning("step fingerprint dump failed: %r", e)
+ 
+ 
++class TriggerDump:
++    """Full-row capture of the top-k input and output at one compressed sequence length.
++
++    Every in-graph call tests ``seq_lens[0] == trigger`` on the device and, when it
++    holds, writes the row into the next ring slot; the slot counter advances by the
++    0/1 hit so the graph needs no host decision. ``logits`` rows are truncated or
++    zero-padded to ``width`` columns.
++    """
++
++    SLOTS = 128
++    META = ("step", "layer", "seq_len", "hit")
++
++    def __init__(self, trigger: int, device: torch.device, width: int = 131072, topk: int = 512):
++        self.trigger = trigger
++        self.width = width
++        self.logits = torch.zeros((self.SLOTS, width), dtype=torch.float32, device=device)
++        self.selected = torch.full((self.SLOTS, topk), -2, dtype=torch.int32, device=device)
++        self.meta = torch.zeros((self.SLOTS, len(self.META)), dtype=torch.int64, device=device)
++        self.hits = torch.zeros((), dtype=torch.int64, device=device)
++        self._trigger_t = torch.full((), trigger, dtype=torch.int64, device=device)
++
++    def record(self, step: torch.Tensor, layer_id: int, seq_lens: torch.Tensor,
++               logits: torch.Tensor, selected: torch.Tensor) -> None:
++        hit = (seq_lens[0].to(torch.int64) == self._trigger_t)
++        slot = (self.hits % self.SLOTS).reshape(1)
++        row = logits[0].detach().to(torch.float32).reshape(-1)
++        if row.numel() >= self.width:
++            row = row[: self.width]
++        else:
++            row = torch.nn.functional.pad(row, (0, self.width - row.numel()))
++        self.logits.index_copy_(0, slot, torch.where(hit, row, self.logits.index_select(0, slot)[0]).unsqueeze(0))
++        sel = selected[0].detach().to(torch.int32).reshape(-1)[: self.selected.shape[1]]
++        if sel.numel() < self.selected.shape[1]:
++            sel = torch.nn.functional.pad(sel, (0, self.selected.shape[1] - sel.numel()), value=-2)
++        self.selected.index_copy_(0, slot, torch.where(hit, sel, self.selected.index_select(0, slot)[0]).unsqueeze(0))
++        meta = torch.stack([step, torch.full_like(step, layer_id), seq_lens[0].to(torch.int64), hit.to(torch.int64)])
++        self.meta.index_copy_(0, slot, torch.where(hit, meta, self.meta.index_select(0, slot)[0]).unsqueeze(0))
++        self.hits.add_(hit.to(torch.int64))
++
++    def snapshot(self) -> dict:
++        return {"trigger": self.trigger, "meta_columns": self.META, "hits": int(self.hits.item()),
++                "logits": self.logits.to("cpu", copy=True), "selected": self.selected.to("cpu", copy=True),
++                "meta": self.meta.to("cpu", copy=True)}
++
++
+ _FP: Optional[StepFingerprints] = None
+ _RESOLVED = False
+ 

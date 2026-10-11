@@ -1,7 +1,7 @@
 From a8804318866231a27450c94ced50e2471e068c93 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 17:28:30 -0400
-Subject: [PATCH 55/55] dsv4 topk_v2: exact, deterministic top-k (ties by
+Subject: [PATCH 55/58] dsv4 topk_v2: exact, deterministic top-k (ties by
  lowest index; no 2,048-candidate cap) (recipe T3.15d)
 
 topk_impl.cuh breaks exact score ties by atomicAdd arrival order and keeps at most

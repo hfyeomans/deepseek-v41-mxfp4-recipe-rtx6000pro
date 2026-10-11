@@ -32,6 +32,8 @@ import json
 import pathlib
 import statistics
 import sys
+import time
+import urllib.error
 import urllib.request
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -48,8 +50,17 @@ CORPUS = pathlib.Path(__file__).resolve().parent / "fixtures" / "nll-corpus"
 
 
 def flush_cache(url: str) -> None:
-    req = urllib.request.Request(f"{url.rstrip('/')}/flush_cache", data=b"", headers=auth_headers(), method="POST")
-    urllib.request.urlopen(req, timeout=60).read()
+    # The server answers 400 while the previous request is still being retired
+    # ("Cache not flushed because there are pending requests"); wait it out.
+    for attempt in range(20):
+        req = urllib.request.Request(f"{url.rstrip('/')}/flush_cache", data=b"", headers=auth_headers(), method="POST")
+        try:
+            urllib.request.urlopen(req, timeout=60).read()
+            return
+        except urllib.error.HTTPError as e:
+            if e.code != 400 or attempt == 19:
+                raise
+            time.sleep(0.5)
 
 
 def ask(url: str, model: str, prompt: str, n: int, timeout: int):

@@ -330,6 +330,16 @@ REGISTRY: tuple[Knob, ...] = (
     Knob("SGLANG_BCG_DEBUG_EAGER", "flag", "0", "Breakable CUDA graph: run segments eagerly.", sink=DIAGNOSTIC_ENV),
     Knob("SGLANG_BCG_DEBUG_INPUTS", "flag", "0", "Breakable CUDA graph: log segment inputs.", sink=DIAGNOSTIC_ENV),
     Knob("SGLANG_BCG_DEBUG_LAYER_BREAKS", "flag", "0", "Breakable CUDA graph: log where the graph breaks.", sink=DIAGNOSTIC_ENV),
+    Knob("SGLANG_DSV41_STEP_FINGERPRINT_DIR", "str", "",
+         "T3.15e per-step per-layer decode fingerprint recorder (dsv4/step_fingerprint.py): each rank writes "
+         "<dir>/rank<r>.pt with order-independent sums of the indexer input / logits / selected slots / sparse "
+         "q / o for every decode step and layer (container path; bind-mount a host dir with EXTRA_DOCKER_ARGS). "
+         "Bisects the 14,775-token greedy residual. Never set in a serve that is measured.",
+         sink=DIAGNOSTIC_ENV, evidence="evidence/t315e/"),
+    Knob("SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN", "int", "0",
+         "With the recorder on: when row 0's compressed indexer sequence length equals this value, also dump "
+         "that step's full top-k input row and selected set for every indexer source layer (ring of 128).",
+         sink=DIAGNOSTIC_ENV, evidence="evidence/t315e/"),
     # ---- removed ------------------------------------------------------------------------
     Knob("KT_B2_UVA_EXPERTS", "str", "", "", sink=GUARD,
          removed="KT_B2_UVA_EXPERTS / KT_B2_MAX_TOKENS were removed at T3.16j (B2 rejected, E30); unset them."),

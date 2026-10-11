@@ -1,0 +1,41 @@
+rank0: 8192 steps, 40 layers, 21 requests, 17 repeats of prompt_tokens=7388
+  0 vs 1: identical
+  0 vs 2: identical
+  0 vs 3: identical
+  0 vs 4: identical
+  0 vs 5: identical
+  0 vs 6: identical
+  0 vs 7: identical
+  0 vs 8: identical
+  0 vs 9: identical
+  0 vs 10: identical
+  0 vs 11: step 108 layer 37 stage q (seq_len 7442)
+      q       first step 108 layer 37, 20 steps differ
+      o       first step 108 layer 37, 20 steps differ
+  0 vs 12: identical
+  0 vs 13: identical
+  0 vs 14: identical
+  0 vs 15: identical
+  0 vs 16: identical
+rank1: 8192 steps, 40 layers, 21 requests, 17 repeats of prompt_tokens=7388
+  0 vs 1: identical
+  0 vs 2: identical
+  0 vs 3: identical
+  0 vs 4: identical
+  0 vs 5: identical
+  0 vs 6: identical
+  0 vs 7: identical
+  0 vs 8: identical
+  0 vs 9: identical
+  0 vs 10: identical
+  0 vs 11: step 108 layer 36 stage sel (seq_len 7442)
+      sel     first step 108 layer 36, 1 steps differ
+      slots   first step 108 layer 36, 1 steps differ
+      q       first step 108 layer 37, 20 steps differ
+      o       first step 108 layer 36, 20 steps differ
+  0 vs 12: identical
+  0 vs 13: identical
+  0 vs 14: identical
+  0 vs 15: identical
+  0 vs 16: identical
+wrote evidence/t315e/fingerprint-diff-serve1.json

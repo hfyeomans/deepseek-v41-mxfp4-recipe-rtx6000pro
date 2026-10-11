@@ -1,7 +1,7 @@
 From 1953a92e05ef3fa67342d1c91cdf5dfc22132fb2 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 7 Oct 2026 19:02:54 -0400
-Subject: [PATCH 25/55] dsv4 indexer: lower _TORCH_INDEXER_SCORE_BUDGET_BYTES
+Subject: [PATCH 25/58] dsv4 indexer: lower _TORCH_INDEXER_SCORE_BUDGET_BYTES
  to 256 MiB (recipe E34a)
 
 The dense fp4 indexer path pads a copy of its [step, lc] fp32 scores in

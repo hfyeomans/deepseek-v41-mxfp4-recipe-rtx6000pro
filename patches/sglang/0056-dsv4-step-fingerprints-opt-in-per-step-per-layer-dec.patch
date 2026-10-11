@@ -1,0 +1,264 @@
+From 8b86a84f8df72d3882b4b6e7e2b7e856a3f83d8d Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sun, 11 Oct 2026 17:56:01 -0400
+Subject: [PATCH 56/58] dsv4 step fingerprints: opt-in per-step per-layer
+ decode fingerprint recorder (recipe T3.15e)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                  |   3 +
+ .../layers/attention/deepseek_v4_backend.py   |  28 ++++
+ .../layers/attention/dsv4/step_fingerprint.py | 148 ++++++++++++++++++
+ 3 files changed, 179 insertions(+)
+ create mode 100644 python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index fa4dc216..2c8d0065 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1420,6 +1420,9 @@ class Envs:
+     # order-sensitive, so greedy decode past 512 tokens is not bit-reproducible
+     # without this (recipe T3.15b). Costs one sort per layer per decode step.
+     SGLANG_DSV41_SORT_DECODE_TOPK = EnvBool(False)
++    # Diagnostic (recipe T3.15e): record per-step, per-layer decode fingerprints to
++    # <dir>/rank<r>.pt so run-to-run drift can be localised to a (step, layer, stage).
++    SGLANG_DSV41_STEP_FINGERPRINT_DIR = EnvStr(None)
+     # Keep the DeepSeek-V4.1 engram tables in host memory (layout below) and gather
+     # rows from the GPU instead of sharding them over HBM.
+     SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE = EnvBool(False)
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index 09d32c93..29c81b65 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -51,6 +51,7 @@ from sglang.kernels.ops.speculative.dspark.dspark_attn_metadata import (
+     ComputeDsparkWindowGather,
+ )
+ from sglang.srt.environ import envs
++from sglang.srt.layers.attention.dsv4.step_fingerprint import get_step_fingerprints
+ from sglang.srt.layers.attention.base_attn_backend import (
+     AttentionBackend,
+     SharedReadEnds,
+@@ -255,6 +256,14 @@ def _fp4_paged_mqa_logits(
+     )
+ 
+ 
++def _advance_step_fingerprints(forward_batch) -> None:
++    # Recipe T3.15e diagnostic: one device counter tick per decode step, outside
++    # the graph, so the in-graph records land in a fresh row. Off: one None test.
++    fp = get_step_fingerprints(forward_batch.seq_lens.device)
++    if fp is not None:
++        fp.advance()
++
++
+ def two_level_decode_logits(
+     logits: torch.Tensor,
+     seq_lens: torch.Tensor,
+@@ -2219,6 +2228,8 @@ class DeepseekV4AttnBackend(
+         req_pool_indices = forward_batch.req_pool_indices
+         seq_lens = forward_batch.seq_lens
+         uses_cpu_seq_lens = self.needs_cpu_seq_lens or self.is_dspark_draft
++        if not in_capture and forward_batch.forward_mode.is_decode():
++            _advance_step_fingerprints(forward_batch)
+ 
+         if in_capture:
+             # Captured graph does no real cache writes, so synthesize a dummy
+@@ -2411,6 +2422,8 @@ class DeepseekV4AttnBackend(
+             return
+ 
+         self.encoder_replay = forward_batch.encoder_swa_replay
++        if forward_batch.forward_mode.is_decode():
++            _advance_step_fingerprints(forward_batch)
+         self.forward_metadata = self._build_forward_metadata(forward_batch)
+         self.init_forward_metadata_in_graph(forward_batch)
+         self.tail_forward_metadata = (
+@@ -3549,6 +3562,12 @@ class DeepseekV4AttnBackend(
+ 
+         page_indices = core.sparse_page_indices(ratio)
+         raw_indices = core.sparse_raw_indices(ratio)
++        fp = get_step_fingerprints(x.device)
++        if fp is not None:
++            fp.record(layer.layer_id, "x_sum", x)
++            fp.record_row0_masked(layer.layer_id, "logits_sum", logits, metadata.c4_seq_lens)
++            fp.record_scalar(layer.layer_id, "seq_len", metadata.c4_seq_lens[0])
++            fp.record_scalar(layer.layer_id, "bs", bs)
+         filter_candidates = indexer.uses_candidates and not indexer.is_candidate_source
+         # SGLANG_DSV41_SORT_DECODE_TOPK (recipe T3.15b): the top-k kernel emits the
+         # same set in a run-dependent order past top-k entries and the sparse decode
+@@ -3578,6 +3597,8 @@ class DeepseekV4AttnBackend(
+             )
+         if sort_topk:
+             selected = selected.sort(dim=-1, descending=True).values
++        if fp is not None and logical_first:
++            fp.record(layer.layer_id, "sel_sum", selected[0])
+         if logical_first:
+             if logits.is_cuda and torch.version.cuda is not None:
+                 from sglang.kernels.ops.attention.dsv4.indexer_postprocess import (
+@@ -3967,6 +3988,13 @@ class DeepseekV4AttnBackend(
+                     extra_indices_in_kvcache=extra_indices,
+                     extra_topk_length=extra_topk_lengths,
+                 )[0]
++                fp = get_step_fingerprints(q.device)
++                if fp is not None and forward_batch.forward_mode.is_decode():
++                    nh = layer.tp_q_head_num  # the pad heads are zero but skip them anyway
++                    fp.record(layer_id, "q_sum", q[..., :nh, :])
++                    fp.record(layer_id, "o_sum", o[..., :nh, :])
++                    if extra_indices is not None:
++                        fp.record(layer_id, "slots_sum", extra_indices[0])
+             else:
+                 if _is_xpu:
+                     from sgl_kernel import flash_mla_with_kvcache
+diff --git a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
+new file mode 100644
+index 00000000..aa3f3902
+--- /dev/null
++++ b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
+@@ -0,0 +1,148 @@
++"""Per-step, per-layer decode fingerprints for localising run-to-run drift (recipe T3.15e).
++
++Opt-in with ``SGLANG_DSV41_STEP_FINGERPRINT_DIR=<dir>``; off, every hook is one
++``is None`` test. When on, each decode step records, for every attention layer,
++order-independent integer fingerprints (bit-pattern sum and sum of squares, so the
++value does not depend on the reduction order of the fingerprint itself) of the
++attention query and output, the sparse KV slot list, the indexer logits (row 0,
++masked to its sequence length), the selected logical positions and the indexer
++input. All records are device ops into a fixed buffer indexed by a device step
++counter, so they replay inside the decode CUDA graphs; the counter advances once
++per decode step outside the graph. A background thread snapshots the buffer to
++``<dir>/rank<r>.pt`` every few seconds. ``scripts/fingerprint-diff.py`` in the
++recipe aligns repeats of one prompt and names the first (step, layer, stage)
++that differs.
++"""
++
++from __future__ import annotations
++
++import logging
++import os
++import threading
++import time
++from typing import Optional
++
++import torch
++
++from sglang.srt.environ import envs
++
++logger = logging.getLogger(__name__)
++
++COLUMNS = (
++    "q_sum", "q_sq",            # attention query, this rank's heads
++    "o_sum", "o_sq",            # attention output, this rank's heads
++    "slots_sum", "slots_sq",    # sparse KV slot list fed to attention (allocator-dependent)
++    "logits_sum", "logits_sq",  # indexer logits row 0 after two_level_decode_logits, masked to seq_len
++    "sel_sum", "sel_sq",        # selected logical positions (sorted), row 0
++    "x_sum", "x_sq",            # indexer input hidden state
++    "seq_len", "bs",            # row 0 c4 seq_len (request boundary marker), batch size
++)
++_COL = {name: i for i, name in enumerate(COLUMNS)}
++MAX_STEPS = 8192
++MAX_LAYERS = 64
++_INT_OF_SIZE = {1: torch.int8, 2: torch.int16, 4: torch.int32, 8: torch.int64}
++
++
++def _bits(t: torch.Tensor) -> torch.Tensor:
++    t = t.detach()
++    if not t.is_contiguous():
++        t = t.contiguous()
++    return t.view(_INT_OF_SIZE[t.element_size()]).reshape(-1).to(torch.int64)
++
++
++def _pair(v: torch.Tensor) -> torch.Tensor:
++    # int64 wraps on overflow; the sum stays exact modulo 2^64 and order-independent.
++    return torch.stack([v.sum(), (v * v).sum()])
++
++
++class StepFingerprints:
++    def __init__(self, out_dir: str, device: torch.device):
++        self.out_dir = out_dir
++        self.buf = torch.zeros((MAX_STEPS, MAX_LAYERS, len(COLUMNS)), dtype=torch.int64, device=device)
++        self.step = torch.zeros((), dtype=torch.int64, device=device)
++        self._flat = self.buf.view(-1)
++        self._stride_step = MAX_LAYERS * len(COLUMNS)
++        self._host_step = 0
++        self._dumped_step = -1
++        self._lock = threading.Lock()
++        try:
++            self.rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else 0
++        except Exception:
++            self.rank = 0
++        os.makedirs(out_dir, exist_ok=True)
++        self._stop = False
++        self._thread = threading.Thread(target=self._dump_loop, name="dsv41-fingerprint-dump", daemon=True)
++        self._thread.start()
++        logger.info("step fingerprints on: %s rank %d (%d steps x %d layers x %d columns)",
++                    out_dir, self.rank, MAX_STEPS, MAX_LAYERS, len(COLUMNS))
++
++    # ---- out-of-graph, once per decode step ------------------------------------------
++    def advance(self) -> None:
++        if self._host_step + 1 >= MAX_STEPS:
++            return
++        self._host_step += 1
++        self.step.fill_(self._host_step)
++
++    # ---- in-graph records -------------------------------------------------------------
++    def _put(self, layer_id: int, col: str, pair: torch.Tensor) -> None:
++        if layer_id >= MAX_LAYERS:
++            return
++        base = self.step * self._stride_step + (layer_id * len(COLUMNS) + _COL[col])
++        idx = base + torch.arange(2, device=pair.device, dtype=torch.int64)
++        self._flat.index_copy_(0, idx, pair)
++
++    def record(self, layer_id: int, col: str, t: Optional[torch.Tensor]) -> None:
++        if t is None:
++            return
++        self._put(layer_id, col, _pair(_bits(t)))
++
++    def record_row0_masked(self, layer_id: int, col: str, t: torch.Tensor, seq_lens: torch.Tensor) -> None:
++        """Row 0 of a [bs, L] tensor, positions >= seq_lens[0] zeroed (padding may be garbage)."""
++        v = _bits(t[0])
++        pos = torch.arange(v.numel(), device=v.device, dtype=torch.int64)
++        v = torch.where(pos < seq_lens[0].to(torch.int64), v, torch.zeros_like(v))
++        self._put(layer_id, col, _pair(v))
++
++    def record_scalar(self, layer_id: int, col: str, value: torch.Tensor | int) -> None:
++        if layer_id >= MAX_LAYERS:
++            return
++        v = torch.as_tensor(value, device=self.buf.device, dtype=torch.int64).reshape(1)
++        idx = (self.step * self._stride_step + (layer_id * len(COLUMNS) + _COL[col])).reshape(1)
++        self._flat.index_copy_(0, idx, v)
++
++    # ---- background snapshot ------------------------------------------------------------
++    def _dump_loop(self) -> None:
++        stream = torch.cuda.Stream(device=self.buf.device)
++        path = os.path.join(self.out_dir, f"rank{self.rank}.pt")
++        tmp = path + ".tmp"
++        while not self._stop:
++            time.sleep(3.0)
++            n = self._host_step
++            if n == self._dumped_step:
++                continue
++            try:
++                with torch.cuda.stream(stream):
++                    snap = self.buf[: n + 1].to("cpu", copy=True)
++                stream.synchronize()
++                torch.save({"columns": COLUMNS, "steps": n + 1, "rank": self.rank, "buf": snap}, tmp)
++                os.replace(tmp, path)
++                self._dumped_step = n
++            except Exception as e:  # diagnostic only: never take the server down
++                logger.warning("step fingerprint dump failed: %r", e)
++
++
++_FP: Optional[StepFingerprints] = None
++_RESOLVED = False
++
++
++def get_step_fingerprints(device: Optional[torch.device] = None) -> Optional[StepFingerprints]:
++    global _FP, _RESOLVED
++    if _RESOLVED:
++        return _FP
++    out_dir = envs.SGLANG_DSV41_STEP_FINGERPRINT_DIR.get()
++    if out_dir and device is not None:
++        _FP = StepFingerprints(out_dir, device)
++        _RESOLVED = True
++    elif not out_dir:
++        _RESOLVED = True
++    return _FP
