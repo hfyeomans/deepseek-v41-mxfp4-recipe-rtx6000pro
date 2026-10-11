@@ -1,0 +1,41 @@
+A) relu-style scores: n_pos distinct positives, the rest exactly 0.0
+  L=  1000 n_pos=   412: set differs 29/29, n_valid=512, zero-score members=100, selected-score multiset exact=True
+  L=  1000 n_pos=   511: set differs 29/29, n_valid=512, zero-score members=1, selected-score multiset exact=True
+  L=  1000 n_pos=   512: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=  1000 n_pos=   513: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=  1000 n_pos=   612: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=  1000 n_pos=  1000: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=  4096 n_pos=   412: set differs 29/29, n_valid=512, zero-score members=100, selected-score multiset exact=True
+  L=  4096 n_pos=   511: set differs 29/29, n_valid=512, zero-score members=1, selected-score multiset exact=True
+  L=  4096 n_pos=   512: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=  4096 n_pos=   513: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=  4096 n_pos=   612: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=  4096 n_pos=  4096: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 14884 n_pos=   412: set differs 29/29, n_valid=512, zero-score members=100, selected-score multiset exact=True
+  L= 14884 n_pos=   511: set differs 29/29, n_valid=512, zero-score members=1, selected-score multiset exact=True
+  L= 14884 n_pos=   512: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 14884 n_pos=   513: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 14884 n_pos=   612: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 14884 n_pos= 14884: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 65536 n_pos=   412: set differs 29/29, n_valid=512, zero-score members=100, selected-score multiset exact=True
+  L= 65536 n_pos=   511: set differs 28/29, n_valid=512, zero-score members=1, selected-score multiset exact=True
+  L= 65536 n_pos=   512: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 65536 n_pos=   513: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 65536 n_pos=   612: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L= 65536 n_pos= 65536: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=262144 n_pos=   412: set differs 29/29, n_valid=512, zero-score members=100, selected-score multiset exact=True
+  L=262144 n_pos=   511: set differs 28/29, n_valid=512, zero-score members=1, selected-score multiset exact=True
+  L=262144 n_pos=   512: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=262144 n_pos=   513: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=262144 n_pos=   612: set differs 0/29, n_valid=512, zero-score members=0, selected-score multiset exact=True
+  L=262144 n_pos=262144: set differs 29/29, n_valid=512, zero-score members=0, selected-score multiset exact=False
+B) distinct dense scores: all L values inside one fp16 bin (1.0 + U(0,1)*5e-4)
+  L=  1000: set differs 26/29, selected-score multiset exact=True
+  L=  2048: set differs 0/29, selected-score multiset exact=True
+  L=  2049: set differs 26/29, selected-score multiset exact=False
+  L=  4096: set differs 0/29, selected-score multiset exact=False
+  L= 14884: set differs 0/29, selected-score multiset exact=False
+  L= 65536: set differs 29/29, selected-score multiset exact=False
+C) control: distinct scores spread over many bins (randn)
+  L= 14884: set differs 0/29, selected-score multiset exact=True
+  L= 65536: set differs 0/29, selected-score multiset exact=True

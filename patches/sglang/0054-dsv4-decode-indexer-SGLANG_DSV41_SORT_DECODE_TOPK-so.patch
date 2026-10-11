@@ -1,0 +1,64 @@
+From 743f8fa99ab616e9727406d0440499b09ae7c4a3 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sun, 11 Oct 2026 13:15:59 -0400
+Subject: [PATCH 54/54] dsv4 decode indexer: SGLANG_DSV41_SORT_DECODE_TOPK
+ sorts logical positions before the slot map (order independent of the KV
+ allocator; recipe T3.15c)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ .../layers/attention/deepseek_v4_backend.py   | 22 +++++++++++--------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index 7ef85983..09d32c93 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -3550,13 +3550,20 @@ class DeepseekV4AttnBackend(
+         page_indices = core.sparse_page_indices(ratio)
+         raw_indices = core.sparse_raw_indices(ratio)
+         filter_candidates = indexer.uses_candidates and not indexer.is_candidate_source
+-        selected = torch.empty_like(page_indices) if filter_candidates else raw_indices
++        # SGLANG_DSV41_SORT_DECODE_TOPK (recipe T3.15b): the top-k kernel emits the
++        # same set in a run-dependent order past top-k entries and the sparse decode
++        # kernel's reduction is order-sensitive. Select logical positions first,
++        # sort them (descending: -1 padding last), then map to KV slots, so the
++        # order depends on the request's tokens and not on the KV allocator.
++        sort_topk = envs.SGLANG_DSV41_SORT_DECODE_TOPK.get()
++        logical_first = filter_candidates or sort_topk
++        selected = torch.empty_like(page_indices) if logical_first else raw_indices
+         if metadata.use_topk_v2 and raw_indices is None:
+             topk_transform_paged_v2(
+                 logits,
+                 metadata.c4_seq_lens,
+-                None if filter_candidates else metadata.page_table,
+-                selected if filter_candidates else page_indices,
++                None if logical_first else metadata.page_table,
++                selected if logical_first else page_indices,
+                 page_size,
+                 metadata.topk_metadata,
+             )
+@@ -3569,7 +3576,9 @@ class DeepseekV4AttnBackend(
+                 page_size,
+                 selected,
+             )
+-        if filter_candidates:
++        if sort_topk:
++            selected = selected.sort(dim=-1, descending=True).values
++        if logical_first:
+             if logits.is_cuda and torch.version.cuda is not None:
+                 from sglang.kernels.ops.attention.dsv4.indexer_postprocess import (
+                     filter_topk_pages,
+@@ -3591,11 +3600,6 @@ class DeepseekV4AttnBackend(
+                 page_indices.copy_(torch.where(selected >= 0, slots, -1))
+                 if raw_indices is not None:
+                     raw_indices.copy_(selected)
+-        if envs.SGLANG_DSV41_SORT_DECODE_TOPK.get():
+-            # Same set, fixed order: the top-k kernel's order is run-dependent past
+-            # top-k entries and the sparse decode kernel is order-sensitive.
+-            # Descending keeps the -1 padding after the valid slots.
+-            page_indices.copy_(page_indices.sort(dim=-1, descending=True).values)
+ 
+     def _low_ratio_index_topk_sm90_decode(self, layer, x, q_lora, req, pos) -> None:
+         """Hopper decode indexer: one token per request, every request scored at

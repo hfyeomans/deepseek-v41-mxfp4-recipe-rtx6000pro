@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 3,
+  "seed": 777,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization; sizes = cold pass",
+  "sizes": [
+    {
+      "target_tokens": 16384,
+      "median_prompt_tokens": 16063,
+      "median_prefill_tps": 3326.7466504888876,
+      "median_ttft_s": 4.812050033011474,
+      "runs": [
+        {
+          "prompt_tokens": 15978,
+          "ttft_s": 4.812050033011474,
+          "prefill_tps": 3320.414353630621
+        },
+        {
+          "prompt_tokens": 16063,
+          "ttft_s": 4.8284410228952765,
+          "prefill_tps": 3326.7466504888876
+        },
+        {
+          "prompt_tokens": 16069,
+          "ttft_s": 4.733585470006801,
+          "prefill_tps": 3394.6783261477503
+        }
+      ]
+    }
+  ],
+  "passes": [
+    {
+      "pass": "cold",
+      "seed": 777,
+      "engram_residency_before": [
+        {
+          "shard": "model-00047-of-00048.safetensors",
+          "resident_bytes": 16659296256,
+          "size_bytes": 101535150936,
+          "resident_pct": 16.41
+        },
+        {
+          "shard": "model-00048-of-00048.safetensors",
+          "resident_bytes": 16676216832,
+          "size_bytes": 101537926640,
+          "resident_pct": 16.42
+        }
+      ],
+      "sizes": [
+        {
+          "target_tokens": 16384,
+          "median_prompt_tokens": 16063,
+          "median_prefill_tps": 3326.7466504888876,
+          "median_ttft_s": 4.812050033011474,
+          "runs": [
+            {
+              "prompt_tokens": 15978,
+              "ttft_s": 4.812050033011474,
+              "prefill_tps": 3320.414353630621
+            },
+            {
+              "prompt_tokens": 16063,
+              "ttft_s": 4.8284410228952765,
+              "prefill_tps": 3326.7466504888876
+            },
+            {
+              "prompt_tokens": 16069,
+              "ttft_s": 4.733585470006801,
+              "prefill_tps": 3394.6783261477503
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-11T13:08:28-0400",
+  "evidence": {
+    "tool": "bench-prefill.py",
+    "recorded_utc": "2026-10-11T17:08:28Z",
+    "manifest_hash": "694080d6f7074b1cf81f20456ab2ea0fdb87affd0a4fa3c834620068ced93314",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "283268642ca9bf894efa15019cb07a6a2df7e0b2109ccfd1c1019f1fc5b81985"
+  }
+}

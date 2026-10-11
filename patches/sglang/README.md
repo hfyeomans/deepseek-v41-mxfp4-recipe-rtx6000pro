@@ -1,12 +1,12 @@
 # SGLang overlay as a patch series (T3.24c)
 
-Everything this recipe changes in SGLang, as 53 `git format-patch` files on top of one upstream commit. With this directory, the public `dev-dsv41` image and the model snapshot, the exact serving stack can be rebuilt without access to the local overlay clone. The kt-kernel side of the hybrid is a separate, much smaller series in [`config/kt-kernel-patches/`](../../config/kt-kernel-patches/) (three patches applied by `config/Dockerfile.dsv41-kt`).
+Everything this recipe changes in SGLang, as 54 `git format-patch` files on top of one upstream commit. With this directory, the public `dev-dsv41` image and the model snapshot, the exact serving stack can be rebuilt without access to the local overlay clone. The kt-kernel side of the hybrid is a separate, much smaller series in [`config/kt-kernel-patches/`](../../config/kt-kernel-patches/) (three patches applied by `config/Dockerfile.dsv41-kt`).
 
 | | |
 |---|---|
 | Upstream base | `sgl-project/sglang` commit `da64c5cbb8cf6bfd39be19da43573fdfd484c43a` — "[DSV4.1] Support raw-index output in TopK v2 (port of #33672) (#39098)", the commit the `lmsysorg/sglang:dev-dsv41` image was built from (`ai.sglang.build.commit` label; see `PROVENANCE.md`) |
 | Overlay branch | `dsv41-kt-hybrid` in the local clone `~/dev/src/sglang-dsv41-overlay` (no fork, no push) |
-| Exported head | commit `e07379c61e4a4bd3bd85ff5dc927b41f15fcfc51`, tree `aa84d90a8c12bf6d9131b6b79289da3984eb8187`, 53 patches (the `recipe-2026-10` tag stays at `682fc6a0`, patch 0050; 0051 is T3.35's request-admission clamp, 0052 T3.43c's API-key file read, 0053 T3.15b's opt-in sorted decode top-k) (`SERIES.env` is the machine-readable copy) |
+| Exported head | commit `743f8fa99ab616e9727406d0440499b09ae7c4a3`, tree `0b0bcb71dbd3b5c100f921cf1563f61a58f0b5e7`, 54 patches (the `recipe-2026-10` tag stays at `682fc6a0`, patch 0050; 0051 is T3.35's request-admission clamp, 0052 T3.43c's API-key file read, 0053 T3.15b's opt-in sorted decode top-k, 0054 T3.15c's logical-position sort) (`SERIES.env` is the machine-readable copy) |
 | Commits as written | no history rewrite: author, dates and messages are the overlay's. A themed rebase into ≈ 8 reviewable units is **T3.24c-ii**, an owner decision |
 
 ## Apply
@@ -15,7 +15,7 @@ Everything this recipe changes in SGLang, as 53 `git format-patch` files on top 
 git clone https://github.com/sgl-project/sglang && cd sglang
 git checkout --detach da64c5cbb8cf6bfd39be19da43573fdfd484c43a
 git am /path/to/recipe/patches/sglang/*.patch
-git rev-parse 'HEAD^{tree}'        # must print aa84d90a8c12bf6d9131b6b79289da3984eb8187 (OVERLAY_TREE in SERIES.env)
+git rev-parse 'HEAD^{tree}'        # must print 0b0bcb71dbd3b5c100f921cf1563f61a58f0b5e7 (OVERLAY_TREE in SERIES.env)
 ```
 
 Only `python/sglang/` changes. The runtime image never contains these patches: [`scripts/serve-hybrid.sh`](../../scripts/serve-hybrid.sh) bind-mounts `$OVERLAY_DIR/python/sglang` read-only over `/sgl-workspace/sglang/python/sglang` inside `dsv41-kt:recipe`, so a checkout produced by the commands above can serve by setting `OVERLAY_DIR` to it. `config/Dockerfile.dsv41-kt` builds the image (base image digest + pruned kt-kernel wheel + the kt patches); the overlay is applied at run time, not build time.
@@ -84,4 +84,5 @@ Recipe tasks and experiments are in `plan/TASKS.md` and `plan/ROADMAP.md`; the u
 | 0050 | `682fc6a0` | Sampler/scheduler: a NaN/Inf logits row aborts that request, not the server | T3.13 / C10 | — |
 | 0051 | `90ae890e` | `tokenizer_manager`: clamp `max_new_tokens` to the remaining context instead of HTTP 400 (`SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS`) | T3.35 | upstream candidate |
 | 0052 | `05f9e88b` | `server_args`: read the bearer token from the file named by `SGLANG_API_KEY_FILE` when `--api-key` is absent, so the key is on neither the argv (`ps`) nor the env (`docker inspect`) | T3.43c / R23 | upstream candidate |
-| 0053 | `e07379c6` | `deepseek_v4_backend.py` `_low_ratio_index_topk_decode` + `environ.py`: `SGLANG_DSV41_SORT_DECODE_TOPK=1` (default 0) sorts each decode row's sparse top-k slots descending (padding stays last) before attention, because `topk_v2` emits the same set in a run-dependent order past 512 entries and the SM120 sparse decode kernel is order-sensitive; with `SGLANG_FLASHINFER_MOE_FUSED_FINALIZE=0` greedy decode becomes bit-reproducible at any length | T3.15b / E38 | upstream candidate (the top-k kernel could emit sorted output instead) |
+| 0053 | `e07379c6` | `deepseek_v4_backend.py` `_low_ratio_index_topk_decode` + `environ.py`: `SGLANG_DSV41_SORT_DECODE_TOPK=1` (default 0) sorts each decode row's sparse top-k slots descending (padding stays last) before attention, because `topk_v2` emits the same set in a run-dependent order past 512 entries and the SM120 sparse decode kernel is order-sensitive; with `SGLANG_FLASHINFER_MOE_FUSED_FINALIZE=0` greedy decode becomes bit-reproducible (E39 later found a kernel-side tie residual past ~14K tokens, T3.15d) | T3.15b / E38 | upstream candidate (the top-k kernel could emit sorted output instead) |
+| 0054 | `743f8fa9` | `deepseek_v4_backend.py` `_low_ratio_index_topk_decode`: with the 0053 lever on, select *logical positions* first (`page_table=None`), sort those, then map to KV slots through `filter_topk_pages` (the route the candidate-consuming layers already take), so the attention order depends on the request's tokens and not on the KV allocator's slot numbering. Residual run-to-run jitter past ~14K tokens is the kernel's arrival-order tie-break (T3.15d, upstream #35257), not this sort | T3.15c / E39 | upstream candidate |

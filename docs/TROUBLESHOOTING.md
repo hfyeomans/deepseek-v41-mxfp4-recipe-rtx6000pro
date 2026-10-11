@@ -247,14 +247,14 @@ Fix: `kernels/e20/tune_w8a8_block32.py` (run inside the container, see its docst
 
 ## The same prompt at temperature 0 gives a different answer on the next run
 
-Expected on the default serve: greedy output diverges after a few dozen tokens (the first 16–52 tokens on a short prompt, `evidence/t315b/a-baseline/`). It is not the CPU tier, the deferral or NCCL; it is two run-dependent GPU reduction orders (T3.15b / E38): the FlashInfer fused-MoE finalize, and the indexer top-k order once the request is longer than 512 tokens. To get bit-identical repeats, launch with both levers (developer profile until T3.15c makes them the default):
+Expected on the default serve: greedy output diverges after a few dozen tokens (the first 16–52 tokens on a short prompt, `evidence/t315b/a-baseline/`). It is not the CPU tier, the deferral or NCCL; it is two run-dependent GPU reduction orders (T3.15b / E38): the FlashInfer fused-MoE finalize, and the indexer top-k order once the request is longer than 512 tokens. To get bit-identical repeats, launch with both levers (developer profile until the owner flips them to the default; qualified twice in T3.15c, `evidence/t315c/`):
 
 ```bash
 PROFILE=developer EXTRA_DOCKER_ENV="SGLANG_FLASHINFER_MOE_FUSED_FINALIZE=0 SGLANG_DSV41_SORT_DECODE_TOPK=1" bash scripts/serve-hybrid.sh
 python3 scripts/greedy-drift.py --output /tmp/drift.json   # every prompt should print identical=True
 ```
 
-Measured cost 0 (C1 61.0, C4 123.5, prefill in band); the corpus NLL moves by −0.0003 nats/token because the unfused finalize is a different reduction, not a worse one. Both levers are overlay patch 0053 and an upstream FlashInfer env; neither is a registry knob yet.
+Measured cost 0 (C1 61.0 / 58.1 / 57.5, C4 123.5 / 121.9 / 121.1 over three serves, prefill in band); the corpus NLL moves by −0.0003 nats/token because the unfused finalize is a different reduction, not a worse one, and it is bit-stable across serves. Both levers are overlay patches 0053 / 0054 and an upstream FlashInfer env; neither is a registry knob yet. One residual stays (T3.15d): past roughly 14K prompt tokens `greedy-drift.py` can print `identical=True … bitwise=False` on a minority of repeats — same tokens, logprobs differ from one decode step on. That is the DSV4 top-k kernel breaking an exact tie at its 512th slot by `atomicAdd` arrival order (`evidence/t315c/offline/`, upstream sgl-project/sglang #35257); it is not the levers failing. Host runtime since 2026-10-11: docker 29.9.0 / containerd v2.4.1 (an `apt upgrade` mid-serve restarts the container runtime and kills a running serve — the symptom is a clean `docker kill` in the launch log with no server error).
 
 ## Thinking mode surprises
 

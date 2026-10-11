@@ -1,7 +1,7 @@
 From 838490a6fd7f0a026f3c03b2586d0e9f4288a968 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 23 Sep 2026 00:03:42 -0400
-Subject: [PATCH 15/53] sm120 page-split: never free buffers captured by CUDA
+Subject: [PATCH 15/54] sm120 page-split: never free buffers captured by CUDA
  graphs; pre-size from pool geometry
 
 E23 R1 bug B (DSpark K=2 graph mode: cudaErrorIllegalAddress / Xid 31 in the

@@ -1,0 +1,8 @@
+short     prompt_tokens=23  identical=True  first_div=None  max|dlogp| prefix=0  bitwise=True
+short     prompt_tokens=28  identical=True  first_div=None  max|dlogp| prefix=0  bitwise=True
+short     prompt_tokens=24  identical=True  first_div=None  max|dlogp| prefix=0  bitwise=True
+short     prompt_tokens=23  identical=True  first_div=None  max|dlogp| prefix=0  bitwise=True
+long3000  prompt_tokens=3715  identical=True  first_div=None  max|dlogp| prefix=0  bitwise=True
+long12000 prompt_tokens=14775  identical=True  first_div=None  max|dlogp| prefix=0.0118  bitwise=False
+vs evidence/t315c/serve-2/drift-fresh.json {"short_prompts_all_identical": true, "short_first_divergence_min": null, "short_max_abs_dlogprob": 0.0, "long": {"long3000": {"prompt_tokens": 3715, "all_identical": true, "first_divergence_token": null, "max_abs_dlogprob_shared_prefix": 0.0}, "long12000": {"prompt_tokens": 14775, "all_identical": true, "first_divergence_token": null, "max_abs_dlogprob_shared_prefix": 0.05067187547683716}}}
+summary {"short_prompts_all_identical": true, "short_first_divergence_min": null, "short_max_abs_dlogprob": 0.0, "long": {"long3000": {"prompt_tokens": 3715, "all_identical": true, "first_divergence_token": null, "max_abs_dlogprob_shared_prefix": 0.0}, "long12000": {"prompt_tokens": 14775, "all_identical": true, "first_divergence_token": null, "max_abs_dlogprob_shared_prefix": 0.011773396283388138}}}
