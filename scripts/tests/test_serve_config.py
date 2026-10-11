@@ -80,6 +80,60 @@ def test_unknown_knob_refused() -> None:
     assert p.returncode == 2 and "FAIL config: unknown knob(s) KT_FOO" in p.stderr, (p.returncode, p.stderr)
     p = launcher([], DRY_RUN="1", KT_FOO="1", ALLOW_UNKNOWN_KNOBS="1", PROFILE="developer")  # T3.24b: developer-only
     assert p.returncode == 0 and p.stdout.startswith("resolved:"), (p.returncode, p.stderr)
+    # T3.43a / R13: every owned family, not just KT_/DSPARK/NGRAM (these six launched the default silently).
+    for typo in ("ENGRAM_FILE_PREFECTH", "SGLANG_DSV41_EXPANDABLE_SEGMENT", "MEM_FRACTION_STATC",
+                 "CUDA_GRAPH_MAX_BS_DECODE", "EXTRA_SERVER_ARG", "CONTEXT_LENGTHH"):
+        p = launcher([], DRY_RUN="1", **{typo: "1"})
+        assert p.returncode == 2 and f"unknown knob(s) {typo}" in p.stderr, (typo, p.returncode, p.stderr)
+    # ...while host variables outside the families pass through untouched.
+    p = launcher([], DRY_RUN="1", CUDA_VISIBLE_DEVICES="0,1", HF_TOKEN="x", SGLANG_UNRELATED="1")
+    assert p.returncode == 0 and p.stdout.startswith("resolved:"), (p.returncode, p.stderr)
+
+
+def test_context_ceiling_refused() -> None:
+    """T3.43a / R24: the ladder stops at 1M x 1; 2M at the 1M fraction used to resolve (rc 0)."""
+    p = launcher([], DRY_RUN="1", CONTEXT_LENGTH="2097152", MAX_RUNNING_REQUESTS="1", MEM_FRACTION_STATIC="0.962")
+    assert p.returncode == 2 and "CONTEXT_LENGTH=2097152: the ladder stops at 1M" in p.stderr, (p.returncode, p.stderr)
+    p = launcher([], DRY_RUN="1", CONTEXT_LENGTH="1048576", MAX_RUNNING_REQUESTS="1", MEM_FRACTION_STATIC="0.962")
+    assert p.returncode == 0, (p.returncode, p.stderr)
+
+
+def test_bind_and_key() -> None:
+    """T3.43a / R4 / R5: empty BIND_ADDRESS is loopback, a non-loopback bind needs a key (or the developer
+    profile), and API_KEY_FILE must be a regular one-line file - a directory or a two-line file used to
+    launch a healthy server that 401-ed every client."""
+    assert sc.resolve({"BIND_ADDRESS": ""})["BIND_ADDRESS"] == "127.0.0.1"
+    p = launcher(["--print"], BIND_ADDRESS="")
+    assert p.returncode == 0 and "-p 127.0.0.1:8000:30000" in p.stdout, (p.returncode, p.stdout, p.stderr)
+    p = launcher([], DRY_RUN="1", BIND_ADDRESS="0.0.0.0")
+    assert p.returncode == 2 and "BIND_ADDRESS=0.0.0.0 without API_KEY_FILE" in p.stderr, (p.returncode, p.stderr)
+    p = launcher([], DRY_RUN="1", BIND_ADDRESS="0.0.0.0", PROFILE="developer")
+    assert p.returncode == 0, (p.returncode, p.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        one = Path(tmp, "one"); one.write_text("sk-test-token\n")
+        two = Path(tmp, "two"); two.write_text("sk-a\nsk-b\n")
+        for path, msg in ((tmp, "not a regular file"), (str(two), "expected exactly one non-empty line, found 2"),
+                          (str(Path(tmp, "missing")), "not a regular file")):
+            p = launcher([], DRY_RUN="1", API_KEY_FILE=path)
+            assert p.returncode == 2 and f"API_KEY_FILE={path}: {msg}" in p.stderr, (path, p.returncode, p.stderr)
+        p = launcher(["--print"], BIND_ADDRESS="0.0.0.0", API_KEY_FILE=str(one))
+        assert p.returncode == 0 and "--api-key <redacted>" in p.stdout and "sk-test-token" not in p.stdout, (p.stdout, p.stderr)
+        # the client reads the same file to the same key
+        import openai_client
+        assert openai_client.read_api_key(str(one)) == "sk-test-token"
+
+
+def test_endpoint_defaults() -> None:
+    """T3.43a / R3: one source of the client defaults; wait-ready / release-smoke / stop.sh read it."""
+    assert sc.endpoint_lines(sc.resolve({})) == ["URL=http://127.0.0.1:8000", "MODEL=dsv41-flash-hybrid", "CONTAINER=dsv41-kt"]
+    assert sc.endpoint_lines(sc.resolve({"BIND_ADDRESS": "0.0.0.0", "PORT": "8011", "CONTAINER_NAME": "x"}))[0::2] == \
+        ["URL=http://127.0.0.1:8011", "CONTAINER=x"]
+    p = subprocess.run([sys.executable, str(ROOT / "scripts/serve_config.py"), "endpoint"], env=BASE_ENV,
+                       capture_output=True, text=True, check=False)
+    assert p.returncode == 0 and p.stdout.splitlines()[0] == "URL=http://127.0.0.1:8000", (p.stdout, p.stderr)
+    p = subprocess.run([sys.executable, str(ROOT / "scripts/wait-ready.py"), "--help"], env=BASE_ENV,
+                       capture_output=True, text=True, check=False)
+    assert "8010" not in p.stdout, p.stdout
 
 
 def test_removed_knob_refused() -> None:

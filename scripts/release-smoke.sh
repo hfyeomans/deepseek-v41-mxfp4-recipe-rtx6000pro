@@ -7,6 +7,7 @@
 #       Refuses to run while the dsv41-kt container exists (it owns both GPUs).
 #
 #   scripts/release-smoke.sh serve --output-dir evidence/<dir> [--context 65536] [--slots 4] [--full]
+#                            [--url URL] [--model NAME] [--container NAME]   (defaults: serve_config.py endpoint)
 #       Against a server already launched by scripts/serve-hybrid.sh: waits for ready, then the
 #       qualification gates in the order every ladder rung used (evidence/t329/, t38b/, e34-*):
 #         same-prompt C<slots>   verify-batch-consistency.py --same-prompt (rows share >= 40 chars)
@@ -20,9 +21,11 @@
 # Exit 0 = every gate passed; 1 = a gate failed (the summary names it); 2 = usage / not ready.
 set -uo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-URL="${URL:-http://127.0.0.1:8000}"
-MODEL="${MODEL:-dsv41-flash-hybrid}"
-CONTAINER="${CONTAINER_NAME:-dsv41-kt}"
+# URL / model / container default from the registry (serve_config.py endpoint: the serve this
+# environment names), overridable with --url / --model / --container. Before 2026-10-11 an ambient
+# legacy CONTAINER_NAME (exported by load-env.sh) made `units` miss the running hybrid and `serve`
+# scan docker's "no such container" text as a clean log (T3.43a / R3).
+eval "$(python3 "$ROOT/scripts/serve_config.py" endpoint)" || { echo "serve_config.py endpoint failed; pass --url/--model/--container" >&2; exit 2; }
 BASELINE_CORPUS="${BASELINE_CORPUS:-$ROOT/evidence/t328/default-219-8192/corpus}"
 NLL_Z_MAX="${NLL_Z_MAX:-2.0}"
 CONTEXT=65536; SLOTS=4; FULL=0; OUT=""
@@ -37,6 +40,7 @@ while [[ $# -gt 0 ]]; do
     --slots) SLOTS="$2"; shift 2 ;;
     --url) URL="$2"; shift 2 ;;
     --model) MODEL="$2"; shift 2 ;;
+    --container) CONTAINER="$2"; shift 2 ;;
     --baseline-corpus) BASELINE_CORPUS="$2"; shift 2 ;;
     --full) FULL=1; shift ;;
     *) echo "unknown argument $1" >&2; usage ;;
@@ -102,7 +106,10 @@ PY
       --output "$OUT/prefill-32k.json" > "$OUT/prefill-32k.txt" 2>&1
     python3 "$ROOT/scripts/summarize-power.py" --smoke "$OUT" > "$OUT/power.txt" 2>&1 || true
   fi
-  docker logs "$CONTAINER" > "$OUT/launch-container.txt" 2>&1 || true
+  # The health gate reads the real container log or fails: a missing container is a failed gate, not a
+  # clean one (R3).
+  # shellcheck disable=SC2016  # $1/$2 are the inner bash's positionals
+  gate "container log readable ($CONTAINER)" bash -c 'docker logs "$1" > "$2" 2>&1' _ "$CONTAINER" "$OUT/launch-container.txt"
   health="$(grep -iE -e ' nan' -e 'probability tensor' -e 'Xid' -e 'Traceback' -e 'KTContract' -e 'Sealed.*Error' -e 'OutOfMemory' -e 'NonFiniteLogits' \
              "$OUT/launch-container.txt" | grep -vc 'any later grow raises')"
   echo "health=$health" > "$OUT/health.txt"

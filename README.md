@@ -84,11 +84,11 @@ Need a GPU window (stop the GLM container first):
 | `bench-dram-read.py` (inside a torch container, GPU-free) | E1b: read-only host DRAM bandwidth (fp32/int64 sum) at 8/16/32 threads |
 | `bench-dram-contention.py` (inside a torch container, `--gpus all`) | E4b: CPU DRAM reads and both-GPU H2D DMA alone and together; additivity |
 | `kernels/e13/build.sh`, `kernels/e13/run.py` | E13: build the SM120 MXFP4×MXFP4 grouped GEMM (GPU-free, `dsv4-sm120:cuda-devel-https`) and run it at V4.1 expert shapes |
-| `download-model.sh` → `preflight.sh` → `serve.sh` → `wait-ready.py` → `verify.py` | the recipe chain; `preflight.sh` **fails closed** on 2 GPUs |
+| `download-model.sh` → `preflight.sh` → `serve.sh` → `wait-ready.py` → `verify.py` | the legacy all-GPU chain; `preflight.sh` **fails closed** on 2 GPUs. `stop.sh` removes whichever serve is up (hybrid `dsv41-kt` or legacy); `systemd/dsv41-flash.service.in` runs the qualified hybrid |
 | `bench-decode.py`, `bench-prefill.py` | the shared benchmark harness (also for the V4-Flash baseline) |
 | `bench-humaneval.py`, `bench-reasoning.py` | E32 / T3.8b soak: HumanEval pass@1 greedy (`--thinking` optional; programs run in a no-network container) and long-reasoning traffic (hard prompts, thinking on, up to 16K tokens, known answers spot-checked) — real coding / reasoning decode for the recorder and the map |
 | `stress-kv-full.py` | E28 fit gate for any VRAM spend: fills every running slot with a ≈ 30K prompt, decodes them together and reports the peak `nvidia-smi` memory per GPU — a single 32K prefill at C1 is not the worst case a config admits |
-| `serve-hybrid.sh`, `serve_config.py` | E19–E21: the 2-GPU + CPU-expert (kt-kernel) hybrid; every knob (`KT_*`, `DSPARK*`, `MEM_FRACTION_STATIC`, `CUDA_GRAPH_BS`, `EXTRA_*`, …) is declared once in the typed registry `serve_config.py` (T3.19e) — table in [docs/CONFIG.md](docs/CONFIG.md); unknown or removed knobs are refused before docker starts; `DRY_RUN=1` / `--print` probe without launching; `PROFILE=<name>` loads `config/profiles/<name>.env` under the environment (`qualified` by default, `developer` for the guard bypasses; T3.24a) and the resolved line names the profile plus every env override |
+| `serve-hybrid.sh`, `serve_config.py` | E19–E21: the 2-GPU + CPU-expert (kt-kernel) hybrid; every knob (`KT_*`, `DSPARK*`, `MEM_FRACTION_STATIC`, `CUDA_GRAPH_BS`, `EXTRA_*`, …) is declared once in the typed registry `serve_config.py` (T3.19e) — table in [docs/CONFIG.md](docs/CONFIG.md); a removed knob, or an undeclared variable in any owned name family (`KT_*` … `CONTEXT_LENGTH*`, the `OWNED_PREFIXES` list), is refused before docker starts; the hybrid reads the environment and `config/profiles/*.env`, never the legacy `.env`; `DRY_RUN=1` / `--print` probe without launching; `PROFILE=<name>` loads `config/profiles/<name>.env` under the environment (`qualified` by default, `developer` for the guard bypasses; T3.24a) and the resolved line names the profile plus every env override |
 | `step-profile.py`, `gap-context.py` | E20/E21: per-step kernel timeline from a torch-profiler trace (`/start_profile`), and what surrounds each GPU idle gap |
 | `kt-cpu-per-step.sh`, `sched-wait-per-step.py` | E21: kt CPU-seconds per decode step, and per-thread run-queue wait / context switches (`/proc/<tid>/schedstat`) around one bench run |
 | `nll-score.py` | quality metric for approximations (expert deferral, kernels): teacher-forced mean NLL of `scripts/fixtures/nll-corpus.txt`, `--compare` a baseline JSON |
@@ -118,7 +118,8 @@ sudo sysctl -w vm.nr_hugepages=97280            # ~190 GiB for the Engram host t
 docker pull lmsysorg/sglang:dev-dsv41           # then pin the digest in .env and PROVENANCE.md
 scripts/download-model.sh                       # 475.24 GiB
 scripts/serve.sh                                # runs preflight.sh first
-scripts/wait-ready.py && scripts/verify.py --context 262144 --output results/verify.json
+scripts/wait-ready.py --url http://127.0.0.1:8010 --container dsv41-flash-rtxpro6000   # legacy port / name; the defaults are the hybrid's
+scripts/verify.py --url http://127.0.0.1:8010 --context 262144 --output results/verify.json
 scripts/bench-decode.py --output results/decode.json
 scripts/bench-prefill.py --output results/prefill.json
 ```

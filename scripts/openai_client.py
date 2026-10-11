@@ -22,8 +22,25 @@ def auth_headers() -> dict[str, str]:
     key = os.environ.get("API_KEY", "")
     path = os.environ.get("API_KEY_FILE", "")
     if not key and path:
-        key = Path(os.path.expanduser(path)).read_text().strip()
+        key = read_api_key(path)
     return {"Authorization": f"Bearer {key}"} if key else {}
+
+
+def read_api_key(path: str) -> str:
+    """The one reader of API_KEY_FILE, shared by the launcher (serve_config.guards) and the clients
+    (auth_headers), so both sides agree on what the key is: a regular file holding exactly one
+    non-empty line (surrounding whitespace / trailing newline ignored). Anything else raises -
+    before 2026-10-11 the launcher `tr -d`-joined a multi-line file into a key no client ever sent
+    and the healthy server 401-ed every evidence script (T3.43a / R4)."""
+    p = Path(os.path.expanduser(path))
+    if not p.is_file():
+        raise ValueError("not a regular file")
+    lines = [ln.strip() for ln in p.read_text().splitlines() if ln.strip()]
+    if len(lines) != 1:
+        raise ValueError(f"expected exactly one non-empty line, found {len(lines)}")
+    if any(ch.isspace() for ch in lines[0]):
+        raise ValueError("the key line contains whitespace")
+    return lines[0]
 
 
 @dataclass

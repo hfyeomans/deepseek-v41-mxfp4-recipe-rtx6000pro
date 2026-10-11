@@ -4,7 +4,12 @@
 Weight load for the 475 GiB checkpoint takes many minutes; default timeout is
 one hour. Exit 0 when ready, 1 on timeout.
 
-After ready, scans the container log (``--container``, default dsv41-kt; "" to skip)
+``--url`` / ``--container`` default to the serve this environment names (``serve_config.py endpoint``:
+port 8000 / dsv41-kt for the hybrid; before 2026-10-11 the defaults mixed the legacy port 8010
+with the hybrid container and matched no deployment, T3.43a / R3). The legacy serve.sh chain
+passes both explicitly (README).
+
+After ready, scans the container log (``--container``; "" to skip)
 for the KV-pool sizer's silent cap: when MAX_TOTAL_TOKENS exceeds what the static
 budget holds, SGLang logs "max_total_tokens=N is larger than the profiled value M"
 once at startup and then returns HTTP 400 for inputs over M. Found on the 512K
@@ -13,6 +18,7 @@ ladder rung (2026-10-08); printed as a WARNING, exit code unchanged.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -20,6 +26,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import serve_config  # noqa: E402
 from openai_client import chat_stream, get_json, is_http_error  # noqa: E402
 
 
@@ -43,12 +50,21 @@ def warn_pool_cap(container: str) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--url", default="http://127.0.0.1:8010")
+    ap.add_argument("--url", default=None, help="default: the port serve_config.py resolves from this environment")
     ap.add_argument("--model", default=None, help="served model name; default: first from /v1/models")
     ap.add_argument("--timeout", type=float, default=3600)
     ap.add_argument("--interval", type=float, default=10)
-    ap.add_argument("--container", default="dsv41-kt", help="docker container whose log is scanned for the KV-pool cap; \"\" to skip")
+    ap.add_argument("--container", default=None, help="docker container whose log is scanned for the KV-pool cap "
+                    "(default: serve_config.py CONTAINER_NAME); \"\" to skip")
     args = ap.parse_args()
+    if args.url is None or args.container is None:
+        try:
+            ep = dict(line.split("=", 1) for line in serve_config.endpoint_lines(serve_config.resolve(dict(os.environ))))
+        except serve_config.ConfigError as exc:
+            print(f"FAIL config: {exc} (pass --url and --container explicitly)", file=sys.stderr)
+            return 2
+        args.url = ep["URL"] if args.url is None else args.url
+        args.container = ep["CONTAINER"] if args.container is None else args.container
 
     deadline = time.monotonic() + args.timeout
     last = ""

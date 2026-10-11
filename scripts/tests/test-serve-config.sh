@@ -11,14 +11,19 @@ pass=0; fail=0
 # expect_refuse NAME PATTERN ENV... -> rc 2 and "FAIL config:" mentioning PATTERN
 run_case() {
   local want="$1" name="$2" pattern="$3"; shift 3
-  local out rc
-  out="$(env "$@" DRY_RUN=1 bash "$SERVE" 2>&1)"; rc=$?
+  # stdout and stderr are asserted separately: `resolved:` goes to stdout, `FAIL config:` to stderr,
+  # and host-dependent advisories (e.g. KT_CPUINFER above the host's core count on a 4-CPU CI runner)
+  # are stderr lines that must not shift the asserted stream (T3.43a / R1).
+  local out err rc errfile
+  errfile="$(mktemp)"
+  out="$(env "$@" DRY_RUN=1 bash "$SERVE" 2>"$errfile")"; rc=$?
+  err="$(cat "$errfile")"; rm -f "$errfile"
   if [[ "$want" == ok && $rc -eq 0 && "$out" == resolved:* ]]; then
     echo "ok   $name"; pass=$((pass + 1))
-  elif [[ "$want" == refuse && $rc -eq 2 && "$out" == "FAIL config:"* && "$out" == *"$pattern"* ]]; then
+  elif [[ "$want" == refuse && $rc -eq 2 && "$err" == *"FAIL config:"* && "$err" == *"$pattern"* ]]; then
     echo "ok   $name"; pass=$((pass + 1))
   else
-    echo "FAIL $name (rc=$rc): ${out%%$'\n'*}"; fail=$((fail + 1))
+    echo "FAIL $name (rc=$rc): ${out%%$'\n'*} ${err%%$'\n'*}"; fail=$((fail + 1))
   fi
 }
 

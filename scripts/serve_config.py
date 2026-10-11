@@ -13,9 +13,11 @@ plus `scripts/tests/test_serve_config.py` pin their messages and the `resolved:`
     python3 scripts/serve_config.py markdown       # knob table for the docs
     python3 scripts/serve_config.py check-overlay DIR   # every env the overlay reads is declared
     python3 scripts/serve_config.py check-profiles      # every config/profiles/*.env loads and equals the defaults
+    python3 scripts/serve_config.py endpoint       # URL= MODEL= CONTAINER= of the serve this environment names
 
-Rules: an unknown `KT_*` / `DSPARK*` / `NGRAM*` variable in the environment is refused (rc 2) unless
-`ALLOW_UNKNOWN_KNOBS=1`; a removed knob is refused with the experiment that removed it;
+Rules: an environment variable in an owned name family (OWNED_PREFIXES: KT_*, DSPARK*, NGRAM*, ENGRAM_*,
+SGLANG_DSV41_*, CUDA_GRAPH_*, EXTRA_*, MEM_FRACTION*, CONTEXT_LENGTH*, ...) that is not a declared knob is
+refused (rc 2) unless `ALLOW_UNKNOWN_KNOBS=1`; a removed knob is refused with the experiment that removed it;
 a value that does not parse as its type is refused. No docker, no GPU, no side effects.
 
 Profiles (T3.24a): `PROFILE=<name>` (default `qualified`) loads `config/profiles/<name>.env`, a
@@ -38,8 +40,24 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from openai_client import read_api_key  # noqa: E402
+
 EXPERTS_PER_LAYER = 384
-OWNED_PREFIXES = ("KT_", "DSPARK", "NGRAM")
+# Name families this registry owns: an environment variable that starts with one of these and is not a
+# declared knob is a typo (refused, rc 2), so a mistyped override cannot launch the default while its
+# log claims otherwise. Explicit families, not "every prefix a knob has", so host variables the launcher
+# must pass through untouched (CUDA_VISIBLE_DEVICES, HF_TOKEN, HOME, PATH, ...) are never caught
+# (T3.43a / R13: before 2026-10-11 only KT_ / DSPARK / NGRAM were guarded and ENGRAM_, SGLANG_DSV41_,
+# MEM_FRACTION, CUDA_GRAPH_, EXTRA_ and CONTEXT_LENGTHH typos launched silently).
+OWNED_PREFIXES = (
+    "KT_", "DSPARK", "NGRAM", "ENGRAM_", "SGLANG_DSV41_", "SGLANG_BCG_", "SGLANG_LOGPROB_",
+    "CUDA_GRAPH_", "EXTRA_", "ALLOW_", "MEM_FRACTION", "CONTEXT_LENGTH", "CHUNKED_PREFILL",
+    "MAX_RUNNING", "MAX_TOTAL", "CONTAINER_NAME", "SERVED_MODEL", "BIND_ADDRESS", "API_KEY_FILE",
+    "HF_MODEL_DIR", "OVERLAY_DIR", "MANIFEST_DIR", "BIOS_SLOT",
+)
+MAX_CONTEXT_LENGTH = 1_048_576   # the top of the single-slot ladder (E34d-v (ii)); nothing larger was ever run
+LOOPBACK_BINDS = ("127.0.0.1", "localhost", "::1")
 
 # sinks: where the resolved value is consumed
 SERVER_ARG = "server-arg"      # becomes an sglang.launch_server flag
@@ -106,12 +124,17 @@ REGISTRY: tuple[Knob, ...] = (
     Knob("IMAGE", "str", "dsv41-kt:recipe", "Image built by config/Dockerfile.dsv41-kt (dev-dsv41 + pruned kt-kernel)."),
     Knob("CONTAINER_NAME", "str", "dsv41-kt", "docker container name; `docker rm -f` it to stop."),
     Knob("SERVED_MODEL_NAME", "str", "dsv41-flash-hybrid", "Name the OpenAI-compatible API serves.", sink=SERVER_ARG),
-    Knob("BIND_ADDRESS", "str", "127.0.0.1", "Host interface the port is published on."),
+    Knob("BIND_ADDRESS", "str", "127.0.0.1",
+         "Host interface the port is published on. Empty = loopback (T3.43a / R5: before 2026-10-11 an empty value "
+         "published on every interface). A non-loopback bind is refused without API_KEY_FILE unless PROFILE=developer."),
     Knob("API_KEY_FILE", "str", "",
          "Path to a file holding one bearer token; non-empty passes its content as --api-key, after which every "
          "endpoint but /health* and /metrics needs `Authorization: Bearer`. A path, not the key, so the manifest "
          "and the resolved line never carry the secret. The evidence scripts read the same variable "
-         "(openai_client.auth_headers). Set it whenever the port is exposed beyond this host (T3.35: tailscale funnel)."),
+         "(openai_client.auth_headers). Set it whenever the port is exposed beyond this host (T3.35: tailscale funnel). "
+         "Checked at resolve time: a regular file holding exactly one non-empty line (openai_client.read_api_key, "
+         "the reader the clients use), so a directory or a multi-line key fails the launch instead of 401-ing every "
+         "evidence script against a healthy server (T3.43a / R4)."),
     Knob("PORT", "int", "8000", "Host port mapped to the container's 30000."),
     Knob("HF_MODEL_DIR", "str", lambda r: _home(".cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash"),
          "HF hub model dir (bind-mounted read-only at /hfm)."),
@@ -196,7 +219,7 @@ REGISTRY: tuple[Knob, ...] = (
          "Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K/1M x 1 are qualified rungs "
          "(T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962, guarded) and 262K x 4 is qualified "
          "with the expandable lever (T3.31 idea 8, re-qualified 2026-10-10 at a 110-180 MiB VRAM trough: a per-rung "
-         "override, not a default).",
+         "override, not a default). Values above 1,048,576 are refused: the ladder stops there (T3.43a / R24).",
          sink=SERVER_ARG, evidence="evidence/e34-indexer-memory/, evidence/t329/README.md"),
     Knob("CHUNKED_PREFILL_SIZE", "int", "8192",
          "Prefill chunk. 4096 -> 8192 on 2026-10-08 together with 226 -> 219 experts (E34d-ii, T3.28): first-turn "
@@ -243,7 +266,7 @@ REGISTRY: tuple[Knob, ...] = (
     Knob("ALLOW_UNTESTED_FIT", "flag", "0", "Bypass the VRAM-fit refusals below to run an experiment on purpose.",
          sink=GUARD, unsafe=True),
     Knob("KT_ALLOW_UNSAFE_DEFERRAL", "flag", "0", "Bypass the D>=5 refusal (fails the NLL gate, T3.15).", sink=GUARD, unsafe=True),
-    Knob("ALLOW_UNKNOWN_KNOBS", "flag", "0", "Accept KT_* / DSPARK* variables this registry does not declare.", sink=GUARD, unsafe=True),
+    Knob("ALLOW_UNKNOWN_KNOBS", "flag", "0", "Accept variables in an owned name family (OWNED_PREFIXES) this registry does not declare.", sink=GUARD, unsafe=True),
     # ---- overlay allocator lever (always forwarded; default-on since 2026-10-09) ---------
     Knob("SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE", "flag", "1",
          "T3.31 idea 8: after CUDA-graph capture, empty the cache and switch the allocator to expandable segments "
@@ -447,6 +470,8 @@ def resolve(env: dict[str, str]) -> dict[str, str]:
             out[k.name] = k.default(out) if callable(k.default) else k.default
     out["PROFILE"] = profile_name
     out["PROFILE_OVERRIDES"] = " ".join(overrides)
+    if not out["BIND_ADDRESS"]:
+        out["BIND_ADDRESS"] = "127.0.0.1"   # R5: empty must never mean `-p :PORT:30000` (all interfaces)
     return out
 
 
@@ -473,6 +498,21 @@ def guards(r: dict[str, str]) -> None:
         raise ConfigError(
             f"KT_MAX_DEFERRED={d}: D>=5 fails the NLL gate (+0.00287, T3.15) and the greedy "
             "consistency gate; D=6 loses 0.23 nats/token (E21). Set KT_ALLOW_UNSAFE_DEFERRAL=1 to run it anyway.")
+    if ctx > MAX_CONTEXT_LENGTH:
+        raise ConfigError(
+            f"CONTEXT_LENGTH={ctx}: the ladder stops at 1M x 1 (E34d-v (ii)); larger pools were never run and "
+            "either cap silently or OOM minutes into the load (T3.43a / R24). No override: a 1M+ rung is a new experiment.")
+    bind = r["BIND_ADDRESS"]
+    if bind not in LOOPBACK_BINDS and not r["API_KEY_FILE"] and r["PROFILE"] != DEVELOPER_PROFILE:
+        raise ConfigError(
+            f"BIND_ADDRESS={bind} without API_KEY_FILE: a non-loopback bind publishes the model to the network unkeyed "
+            "(T3.43a / R5). Set API_KEY_FILE=<file with one bearer token>, bind to 127.0.0.1, or PROFILE=developer "
+            "for a deliberately open experiment.")
+    if r["API_KEY_FILE"]:
+        try:
+            read_api_key(r["API_KEY_FILE"])
+        except (OSError, ValueError) as e:
+            raise ConfigError(f"API_KEY_FILE={r['API_KEY_FILE']}: {e} (T3.43a / R4)") from None
     if r["ALLOW_UNTESTED_FIT"] != "1":
         if experts > 226 and chunk >= 4096:
             raise ConfigError(
@@ -563,6 +603,13 @@ def shell_fragment(env: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def endpoint_lines(r: dict[str, str]) -> list[str]:
+    """`URL=... MODEL=... CONTAINER=...` for the clients: the published port on loopback (a 0.0.0.0 bind is
+    reached at 127.0.0.1 from this host), the served model name and the container whose log is scanned."""
+    host = r["BIND_ADDRESS"] if r["BIND_ADDRESS"] not in ("0.0.0.0", "::", "") else "127.0.0.1"
+    return [f"URL=http://{host}:{r['PORT']}", f"MODEL={r['SERVED_MODEL_NAME']}", f"CONTAINER={r['CONTAINER_NAME']}"]
+
+
 def profile_drift(name: str) -> list[str]:
     """Knobs a shipped profile sets to something other than the registry default (single source of truth:
     the registry carries type / doc / evidence / default; a shipped profile restates the serve shape and
@@ -613,6 +660,13 @@ def main(argv: list[str]) -> int:
             sys.stdout.write(shell_fragment(env))
         elif cmd == "resolved":
             r = resolve(env); guards(r); print(resolved_line(r))
+        elif cmd == "endpoint":
+            # One source of the client-side defaults (T3.43a / R3): wait-ready.py, release-smoke.sh and stop.sh
+            # read the port / model / container from here instead of carrying their own literals, so the
+            # hybrid never answers on one port while its probe waits on another. No guards: the serve may
+            # already be up, and a probe must find it even when the shell's env would fail a fit guard.
+            for line in endpoint_lines(resolve(env)):
+                print(line)
         elif cmd == "markdown":
             sys.stdout.write(markdown_table())
         elif cmd == "check-overlay":

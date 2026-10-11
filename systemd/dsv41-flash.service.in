@@ -1,12 +1,22 @@
-# Template. Install with:
-#   sed "s|@REPO@|/absolute/path/to/this/repo|" systemd/dsv41-flash.service.in \
+# Template for the qualified 2-GPU hybrid (scripts/serve-hybrid.sh: 219 GPU / 165 CPU experts,
+# 64K x 4 by default). Install with:
+#   sed "s|@REPO@|/absolute/path/to/this/repo|; s|@USER@|$USER|" systemd/dsv41-flash.service.in \
 #     | sudo tee /etc/systemd/system/dsv41-flash.service
+# @USER@ is the account that owns the checkpoint and overlay checkouts (HF_MODEL_DIR, OVERLAY_DIR,
+# MANIFEST_DIR default to its home) and is in the docker group.
 #   sudo systemctl daemon-reload && sudo systemctl enable --now dsv41-flash
 #
-# The unit runs preflight.sh through serve.sh; it will refuse to start until
-# the memory gate passes (4 GPUs on this host). That is intentional.
+# Knobs: the hybrid reads the environment and config/profiles/<PROFILE>.env only (never the repo
+# .env, which belongs to the legacy serve.sh chain). Set a qualified rung with a drop-in:
+#   sudo systemctl edit dsv41-flash
+#     [Service]
+#     Environment=CONTEXT_LENGTH=262144 MAX_RUNNING_REQUESTS=4
+#     Environment=API_KEY_FILE=/etc/dsv41/api-key BIND_ADDRESS=0.0.0.0
+# wait-ready.py and stop.sh resolve the same environment (serve_config.py endpoint), so the probe
+# and the stop always address the container this unit started. Before 2026-10-11 this unit drove
+# the unqualified legacy serve.sh with a hard-coded probe URL (T3.43a / R2 / R3).
 [Unit]
-Description=DeepSeek-V4.1-Flash (SGLang dev-dsv41) - UNQUALIFIED profile, see README
+Description=DeepSeek-V4.1-Flash 2-GPU hybrid (SGLang overlay + kt-kernel), see README
 After=docker.service nvidia-persistenced.service
 Requires=docker.service
 
@@ -14,10 +24,10 @@ Requires=docker.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=@REPO@
-Environment=ENV_FILE=@REPO@/.env
+User=@USER@
 ExecStartPre=-@REPO@/scripts/stop.sh
-ExecStart=@REPO@/scripts/serve.sh
-ExecStartPost=@REPO@/scripts/wait-ready.py --url http://127.0.0.1:8010 --timeout 3600
+ExecStart=@REPO@/scripts/serve-hybrid.sh
+ExecStartPost=@REPO@/scripts/wait-ready.py --timeout 3600
 ExecStop=@REPO@/scripts/stop.sh
 TimeoutStartSec=4000
 

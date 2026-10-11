@@ -66,6 +66,26 @@ so every evidence file names the profile it was measured on and what was changed
 - Not the legacy `scripts/serve.sh` / `load-env.sh` `PROFILE` (`4gpu-sglang` / `2gpu-attempt`,
   the 4-GPU path); those names are refused here as unknown profiles.
 
+## Where the hybrid reads its knobs (and where it does not)
+
+The hybrid launcher reads **the environment and `config/profiles/<PROFILE>.env` only**. It never
+reads the repo `.env` file: that file (`config/example.env` → `.env`, port 8010, container
+`dsv41-flash-rtxpro6000`, `GPU_DEVICES`) belongs to the legacy all-GPU `scripts/serve.sh` chain,
+whose knob names collide with this registry's (`PROFILE`, `PORT`, `CONTAINER_NAME`), so one file
+cannot serve both. Set hybrid knobs as `KNOB=value scripts/serve-hybrid.sh`, `export` them, or in
+a systemd drop-in (`systemd/dsv41-flash.service.in` shows the `Environment=` form). An
+`API_KEY_FILE=` line in `.env` therefore does **not** key the hybrid (T3.43a / R36).
+
+`stop.sh`, `wait-ready.py` and `release-smoke.sh` resolve the same environment through
+`python3 scripts/serve_config.py endpoint` (`URL= MODEL= CONTAINER=`), so the probe and the stop
+address the container the launcher started; the legacy chain passes `--url` / `--container`
+explicitly. An environment variable in an owned name family (`KT_*`, `DSPARK*`, `NGRAM*`,
+`ENGRAM_*`, `SGLANG_DSV41_*`, `CUDA_GRAPH_*`, `EXTRA_*`, `ALLOW_*`, `MEM_FRACTION*`,
+`CONTEXT_LENGTH*`, `CHUNKED_PREFILL*`, `MAX_RUNNING*`, `MAX_TOTAL*`, …; the full list is
+`OWNED_PREFIXES` in `serve_config.py`) that is not a declared knob is refused, so a typo cannot
+launch the default while the log claims the override; variables outside those families
+(`CUDA_VISIBLE_DEVICES`, `HF_TOKEN`) pass through untouched.
+
 <!-- generated: python3 scripts/serve_config.py markdown -->
 | knob | type | default | sink | doc | evidence |
 |---|---|---|---|---|---|
@@ -74,8 +94,8 @@ so every evidence file names the profile it was measured on and what was changed
 | `IMAGE` | str | `dsv41-kt:recipe` | launcher | Image built by config/Dockerfile.dsv41-kt (dev-dsv41 + pruned kt-kernel). |  |
 | `CONTAINER_NAME` | str | `dsv41-kt` | launcher | docker container name; `docker rm -f` it to stop. |  |
 | `SERVED_MODEL_NAME` | str | `dsv41-flash-hybrid` | server-arg | Name the OpenAI-compatible API serves. |  |
-| `BIND_ADDRESS` | str | `127.0.0.1` | launcher | Host interface the port is published on. |  |
-| `API_KEY_FILE` | str | `""` | launcher | Path to a file holding one bearer token; non-empty passes its content as --api-key, after which every endpoint but /health* and /metrics needs `Authorization: Bearer`. A path, not the key, so the manifest and the resolved line never carry the secret. The evidence scripts read the same variable (openai_client.auth_headers). Set it whenever the port is exposed beyond this host (T3.35: tailscale funnel). |  |
+| `BIND_ADDRESS` | str | `127.0.0.1` | launcher | Host interface the port is published on. Empty = loopback (T3.43a / R5: before 2026-10-11 an empty value published on every interface). A non-loopback bind is refused without API_KEY_FILE unless PROFILE=developer. |  |
+| `API_KEY_FILE` | str | `""` | launcher | Path to a file holding one bearer token; non-empty passes its content as --api-key, after which every endpoint but /health* and /metrics needs `Authorization: Bearer`. A path, not the key, so the manifest and the resolved line never carry the secret. The evidence scripts read the same variable (openai_client.auth_headers). Set it whenever the port is exposed beyond this host (T3.35: tailscale funnel). Checked at resolve time: a regular file holding exactly one non-empty line (openai_client.read_api_key, the reader the clients use), so a directory or a multi-line key fails the launch instead of 401-ing every evidence script against a healthy server (T3.43a / R4). |  |
 | `PORT` | int | `8000` | launcher | Host port mapped to the container's 30000. |  |
 | `HF_MODEL_DIR` | str | `derived` | launcher | HF hub model dir (bind-mounted read-only at /hfm). |  |
 | `SNAPSHOT` | str | `dba1be0a40aa45a94ad051997016db3960a90277` | launcher | Checkpoint snapshot under HF_MODEL_DIR/snapshots. | PROVENANCE.md |
@@ -95,7 +115,7 @@ so every evidence file names the profile it was measured on and what was changed
 | `NGRAM_DRAFT_TOKENS` | int | `5` | server-arg | --speculative-num-draft-tokens for NGRAM (verify window incl. the root; SGLang's default is 12, which would route 12 rows of CPU experts per step; 5 matches DSpark's K=4 window). | evidence/e23-spec-decode/r6-ngram/ |
 | `NGRAM_BREADTH` | int | `1` | server-arg | --speculative-ngram-max-bfs-breadth for NGRAM (1 = one chain per step; SGLang's default 10 builds a tree, more verify rows). | evidence/e23-spec-decode/r6-ngram/ |
 | `MEM_FRACTION_STATIC` | float | `0.96` | server-arg | SGLang static fraction. 0.92 -> 0.96 at T3.6g (the pool is capped by MAX_TOTAL_TOKENS, so the fraction only has to leave room for prefill transients and capture). 0.962 is the qualified value for the 512K x 1 rung, where 0.96 silently caps the pool at 505,856 tokens and 400s longer inputs. | evidence/e34-indexer-memory/b-ii/512k/, evidence/t329/ |
-| `CONTEXT_LENGTH` | int | `65536` | server-arg | Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K/1M x 1 are qualified rungs (T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962, guarded) and 262K x 4 is qualified with the expandable lever (T3.31 idea 8, re-qualified 2026-10-10 at a 110-180 MiB VRAM trough: a per-rung override, not a default). | evidence/e34-indexer-memory/, evidence/t329/README.md |
+| `CONTEXT_LENGTH` | int | `65536` | server-arg | Served context. 32K -> 64K on 2026-10-07 (E34a + soak). 128K/262K/512K/1M x 1 are qualified rungs (T3.29 on the 219/8192 default; 512K and 1M need MEM_FRACTION_STATIC=0.962, guarded) and 262K x 4 is qualified with the expandable lever (T3.31 idea 8, re-qualified 2026-10-10 at a 110-180 MiB VRAM trough: a per-rung override, not a default). Values above 1,048,576 are refused: the ladder stops there (T3.43a / R24). | evidence/e34-indexer-memory/, evidence/t329/README.md |
 | `CHUNKED_PREFILL_SIZE` | int | `8192` | server-arg | Prefill chunk. 4096 -> 8192 on 2026-10-08 together with 226 -> 219 experts (E34d-ii, T3.28): first-turn TTFT is what chunk buys for long coding sessions. 16384 is +22 % prefill but costs 14 experts (E34d-iv); 2048 frees ~1.5 GB per rank but costs 40 % of prefill (E29). The fused-MoE prefill workspace scales with the chunk (E34d), so 8192 only fits beside <= 219 experts. | evidence/e34-indexer-memory/d-ii/, evidence/t328/README.md |
 | `MAX_RUNNING_REQUESTS` | int | `4` | server-arg | Decode slots. Above 64K context: 1 at any qualified rung (T3.29), up to 4 at 262K with the expandable lever (T3.31 idea 8); 512K / 1M x >1 never run. | evidence/t329/README.md |
 | `SGLANG_LOGPROB_CHUNK_SIZE` | int | `512` | container-env | A return_logprob request materialises chunk x 129,280-vocab fp32 logits (1.06 GB at SGLang's 2048) and a CUDA OOM there kills the server, not the request (E29). 512 is bit-identical and no slower. | evidence/t36g2-placement-r2/ |
@@ -111,7 +131,7 @@ so every evidence file names the profile it was measured on and what was changed
 | `DRY_RUN` | flag | `0` | guard | Stop after the resolved line, before any docker call (guard probes, config tests). |  |
 | `ALLOW_UNTESTED_FIT` **(unsafe)** | flag | `0` | guard | Bypass the VRAM-fit refusals below to run an experiment on purpose. |  |
 | `KT_ALLOW_UNSAFE_DEFERRAL` **(unsafe)** | flag | `0` | guard | Bypass the D>=5 refusal (fails the NLL gate, T3.15). |  |
-| `ALLOW_UNKNOWN_KNOBS` **(unsafe)** | flag | `0` | guard | Accept KT_* / DSPARK* variables this registry does not declare. |  |
+| `ALLOW_UNKNOWN_KNOBS` **(unsafe)** | flag | `0` | guard | Accept variables in an owned name family (OWNED_PREFIXES) this registry does not declare. |  |
 | `SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE` | flag | `1` | container-env | T3.31 idea 8: after CUDA-graph capture, empty the cache and switch the allocator to expandable segments so chunk-sized prefill temporaries stop fragmenting (262K x 4 at chunk 8192 OOMed on a 320 MiB request with 1.05 GiB reserved-but-unallocated). Graph pools, weights and the KV pool stay ordinary segments. Default since 2026-10-09 on the T3.31 64K x 4 soak (NLL 0 moved, C1/C4/prefill within noise, +390 MiB min free under stress); set 0 for the pre-flip allocator. | evidence/t331/64k4-lever-soak/, evidence/e34-indexer-memory/d-v-a/262k-4slot-idea8/ |
 | `KT_REJECT_NAN_ROWS` | flag | `1` | container-env | T3.13 / C10: a batch row whose next-token logits hold NaN/+Inf fails that request alone (HTTP 500, err_type NonFiniteLogits, streamed as an error chunk) while the other rows keep decoding and the server stays up. Well-formed rows are bit-identical (-Inf masks are kept). 0 = stock SGLang: sample from sanitized logits / finish silently on an out-of-vocab id. | evidence/e24-nan/c10/ |
 | `SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS` | flag | `1` | container-env | T3.35: a request whose prompt fits the context but whose max_tokens would overrun it gets max_new_tokens clamped to the remaining budget (one logger.info line) instead of the stock HTTP 400. Coding agents send a fixed ceiling (Amp: max_completion_tokens 128000), which otherwise turns a 262K server into a 134K one. The scheduler already clamps the same way, so accepted requests are unchanged; over-length prompts are still rejected. 0 = stock 400. | evidence/t335/ |

@@ -10,7 +10,10 @@
 #
 #   scripts/serve-hybrid.sh            # launch
 #   scripts/serve-hybrid.sh --print    # show the docker command only
-#   docker rm -f dsv41-kt              # stop
+#   scripts/stop.sh                    # stop (removes the hybrid or the legacy container, whichever is up)
+#
+# Configuration comes from the environment and config/profiles/<PROFILE>.env only; the repo
+# `.env` file belongs to the legacy serve.sh chain and is never read here (docs/CONFIG.md).
 set -euo pipefail
 
 print_only=0
@@ -68,11 +71,11 @@ server_args=(
   --tool-call-parser deepseekv41
 )
 # API key (T3.35): the file's content, never the path, reaches the server; `--print` shows it
-# redacted so a pasted launch line cannot leak it.
+# redacted so a pasted launch line cannot leak it. The registry already validated the file
+# (one non-empty line); this reads it through the same function the clients use (R4).
 if [[ -n "$API_KEY_FILE" ]]; then
-  [[ -r "$API_KEY_FILE" ]] || { echo "FAIL API_KEY_FILE=$API_KEY_FILE is not readable"; exit 1; }
-  api_key="$(tr -d '[:space:]' < "$API_KEY_FILE")"
-  [[ -n "$api_key" ]] || { echo "FAIL API_KEY_FILE=$API_KEY_FILE is empty"; exit 1; }
+  api_key="$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from openai_client import read_api_key; print(read_api_key(sys.argv[2]))' \
+             "$(dirname -- "${BASH_SOURCE[0]}")" "$API_KEY_FILE")" || { echo "FAIL API_KEY_FILE=$API_KEY_FILE unreadable"; exit 1; }
   server_args+=(--api-key "$api_key")
 fi
 # Expert placement map (T3.8b): mounted read-only, named to the overlay's kt_remap.py.
@@ -122,8 +125,10 @@ done
 # shellcheck disable=SC2206  # intentional word splitting of the override string
 extra_docker_args=($EXTRA_DOCKER_ARGS)
 
+# --init: a PID-1 reaper, so a killed server never leaves a zombie that makes the first
+# `docker rm -f` fail ("PID ... is zombie and can not be killed", seen twice 2026-10-11; R22).
 docker_cmd=(
-  docker run -d --name "$CONTAINER_NAME"
+  docker run -d --init --name "$CONTAINER_NAME"
   --gpus all
   --ipc=host --shm-size 32g
   --ulimit memlock=-1 --ulimit stack=67108864
@@ -151,10 +156,35 @@ done
 if [[ -n "$KT_EXPERT_MAP" && ! -f "$KT_EXPERT_MAP" ]]; then
   echo "FAIL KT_EXPERT_MAP=$KT_EXPERT_MAP is not a file"; exit 1
 fi
-if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
-  echo "FAIL container $CONTAINER_NAME already exists; docker rm -f $CONTAINER_NAME first"; exit 1
+# A same-name container that is still running is a conflict; one that has exited (reboot, OOM,
+# a killed serve) is debris and is removed here so a relaunch does not need a manual `docker rm`
+# (R22: blocked a relaunch twice on 2026-10-11).
+state="$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || true)"
+case "$state" in
+  "") ;;
+  running|restarting|paused)
+    echo "FAIL container $CONTAINER_NAME is $state; scripts/stop.sh first"; exit 1 ;;
+  *)
+    echo "removing exited container $CONTAINER_NAME ($state)"
+    docker rm -f "$CONTAINER_NAME" >/dev/null || docker rm -f "$CONTAINER_NAME" >/dev/null ;;
+esac
+# Both cards must be free: TP2 takes all of them, and a legacy serve or a stale process holding
+# VRAM would OOM minutes into the weight load instead of failing here (R2 / R22).
+busy="$(nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits 2>/dev/null \
+        | awk -F', *' '$2 > 1024 { printf "GPU%s=%sMiB ", $1, $2 }')"
+if [[ -n "$busy" ]]; then
+  echo "FAIL GPU memory in use: ${busy}(another serve up? scripts/stop.sh, then nvidia-smi)"; exit 1
 fi
-if ss -ltn "( sport = :${PORT} )" | grep -q LISTEN; then
+# Port preflight: ss when present, else a bind probe (R22: a missing ss used to skip the check).
+if command -v ss >/dev/null 2>&1; then
+  port_busy=$(ss -ltn "( sport = :${PORT} )" | grep -c LISTEN || true)
+else
+  port_busy=$(python3 -c 'import socket, sys
+s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+try: s.bind((sys.argv[1], int(sys.argv[2]))); print(0)
+except OSError: print(1)' "$BIND_ADDRESS" "$PORT")
+fi
+if [[ "$port_busy" != 0 ]]; then
   echo "FAIL port ${PORT} is in use (GLM or V4-Flash still up?)"; exit 1
 fi
 
@@ -167,4 +197,5 @@ if ! manifest="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/evidence_manifest.py
 fi
 echo "manifest $manifest"
 echo "started $CONTAINER_NAME (about 4 min to ready); follow with: docker logs -f $CONTAINER_NAME"
-echo "then: scripts/wait-ready.py --url http://${BIND_ADDRESS}:${PORT} && scripts/verify.py --url http://${BIND_ADDRESS}:${PORT} --model ${SERVED_MODEL_NAME}"
+probe_host="$BIND_ADDRESS"; [[ "$probe_host" == "0.0.0.0" || "$probe_host" == "::" ]] && probe_host=127.0.0.1
+echo "then: scripts/wait-ready.py --url http://${probe_host}:${PORT} --container ${CONTAINER_NAME} && scripts/verify.py --url http://${probe_host}:${PORT} --model ${SERVED_MODEL_NAME}"

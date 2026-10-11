@@ -90,4 +90,4 @@ fi
 echo "profile $PROFILE is UNQUALIFIED on this host (see README verdict); launching for experiment purposes"
 "${docker_cmd[@]}"
 echo "started $CONTAINER_NAME; follow with: docker logs -f $CONTAINER_NAME"
-echo "then: scripts/wait-ready.py --url http://${BIND_ADDRESS}:${PORT} && scripts/verify.py --url http://${BIND_ADDRESS}:${PORT}"
+echo "then: scripts/wait-ready.py --url http://${BIND_ADDRESS}:${PORT} --container ${CONTAINER_NAME} && scripts/verify.py --url http://${BIND_ADDRESS}:${PORT}"
