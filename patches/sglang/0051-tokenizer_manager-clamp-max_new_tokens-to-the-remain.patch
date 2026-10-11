@@ -1,7 +1,7 @@
 From 90ae890e33f33cce57dee98ba4cec27516318d15 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sat, 10 Oct 2026 19:23:01 -0400
-Subject: [PATCH 51/52] tokenizer_manager: clamp max_new_tokens to the
+Subject: [PATCH 51/53] tokenizer_manager: clamp max_new_tokens to the
  remaining context instead of HTTP 400 (recipe T3.35)
 
 - SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS (EnvBool, default off; the recipe launcher sets 1): when

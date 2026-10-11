@@ -1,7 +1,7 @@
 From a8537fe78d7fd55958cb9364b5435cc10c00676f Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Sat, 10 Oct 2026 11:55:39 -0400
-Subject: [PATCH 48/52] kt_prefill: shared weight arenas replace the kt export
+Subject: [PATCH 48/53] kt_prefill: shared weight arenas replace the kt export
  (recipe T3.39 window 2 K2)
 
 Rank 0 creates one sealed memfd per MoE layer sized by kt's weight_arena_bytes

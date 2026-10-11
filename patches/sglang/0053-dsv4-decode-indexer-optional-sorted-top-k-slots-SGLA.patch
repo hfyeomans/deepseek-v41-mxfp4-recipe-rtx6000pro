@@ -1,0 +1,47 @@
+From e07379c61e4a4bd3bd85ff5dc927b41f15fcfc51 Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sun, 11 Oct 2026 12:23:44 -0400
+Subject: [PATCH 53/53] dsv4 decode indexer: optional sorted top-k slots
+ (SGLANG_DSV41_SORT_DECODE_TOPK, default off) for bit-reproducible decode past
+ top-k (recipe T3.15b)
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/environ.py                              | 6 ++++++
+ python/sglang/srt/layers/attention/deepseek_v4_backend.py | 5 +++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index c0bd474a..fa4dc216 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1414,6 +1414,12 @@ class Envs:
+     # Run the DeepSeek-V4.1 ratio-1/2 prefill indexer on the torch path instead
+     # of the DeepGEMM dense fp4 logits kernel (test oracle / fallback).
+     SGLANG_DSV41_TORCH_PREFILL_INDEXER = EnvBool(False)
++    # Sort each decode request's sparse top-k slots before attention. The indexer
++    # top-k kernel emits a run-dependent ORDER of the same set once the request
++    # is longer than top-k, and the SM120 sparse decode kernel's reduction is
++    # order-sensitive, so greedy decode past 512 tokens is not bit-reproducible
++    # without this (recipe T3.15b). Costs one sort per layer per decode step.
++    SGLANG_DSV41_SORT_DECODE_TOPK = EnvBool(False)
+     # Keep the DeepSeek-V4.1 engram tables in host memory (layout below) and gather
+     # rows from the GPU instead of sharding them over HBM.
+     SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE = EnvBool(False)
+diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+index 7c827cbd..7ef85983 100644
+--- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
++++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
+@@ -3591,6 +3591,11 @@ class DeepseekV4AttnBackend(
+                 page_indices.copy_(torch.where(selected >= 0, slots, -1))
+                 if raw_indices is not None:
+                     raw_indices.copy_(selected)
++        if envs.SGLANG_DSV41_SORT_DECODE_TOPK.get():
++            # Same set, fixed order: the top-k kernel's order is run-dependent past
++            # top-k entries and the sparse decode kernel is order-sensitive.
++            # Descending keeps the -1 padding after the valid slots.
++            page_indices.copy_(page_indices.sort(dim=-1, descending=True).values)
+ 
+     def _low_ratio_index_topk_sm90_decode(self, layer, x, q_lora, req, pos) -> None:
+         """Hopper decode indexer: one token per request, every request scored at

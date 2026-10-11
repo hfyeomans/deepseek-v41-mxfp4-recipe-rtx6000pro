@@ -245,6 +245,17 @@ Not a crash — one WARNING line per dense shape at startup, easy to miss, and w
 
 Fix: `kernels/e20/tune_w8a8_block32.py` (run inside the container, see its docstring) writes the seven JSONs; copy them into the overlay's `python/sglang/kernels/ops/quantization/configs/` (bind-mounted, so no image rebuild) and make sure the overlay carries the `is_sm120` gate lift in `fp8_kernel.py::w8a8_block_fp8_matmul_triton` — the tuned configs use `SPLIT_K`/`SWAP_AB`, which stock SGLang only honours on SM90. Check the fix took: the warning disappears and `Using configuration from … for W8A8 Block FP8 kernel.` appears for each shape. If you change `--tp`, the shapes change (N is sharded) and the files must be re-tuned; the warning tells you the exact missing shape.
 
+## The same prompt at temperature 0 gives a different answer on the next run
+
+Expected on the default serve: greedy output diverges after a few dozen tokens (the first 16–52 tokens on a short prompt, `evidence/t315b/a-baseline/`). It is not the CPU tier, the deferral or NCCL; it is two run-dependent GPU reduction orders (T3.15b / E38): the FlashInfer fused-MoE finalize, and the indexer top-k order once the request is longer than 512 tokens. To get bit-identical repeats, launch with both levers (developer profile until T3.15c makes them the default):
+
+```bash
+PROFILE=developer EXTRA_DOCKER_ENV="SGLANG_FLASHINFER_MOE_FUSED_FINALIZE=0 SGLANG_DSV41_SORT_DECODE_TOPK=1" bash scripts/serve-hybrid.sh
+python3 scripts/greedy-drift.py --output /tmp/drift.json   # every prompt should print identical=True
+```
+
+Measured cost 0 (C1 61.0, C4 123.5, prefill in band); the corpus NLL moves by −0.0003 nats/token because the unfused finalize is a different reduction, not a worse one. Both levers are overlay patch 0053 and an upstream FlashInfer env; neither is a registry knob yet.
+
 ## Thinking mode surprises
 
 DeepSeek-V4.1 reasoning is on by default at effort 50 in both engines. Every client in this repo sends `chat_template_kwargs: {"thinking": false}` unless asked otherwise. If your own client sees long, slow answers, that is why. The recipe's smoke test is `17*19` → `323`.
