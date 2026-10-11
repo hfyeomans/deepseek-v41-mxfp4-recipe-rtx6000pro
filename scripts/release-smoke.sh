@@ -14,9 +14,12 @@
 #       --context (R12: an evidence directory claims the shape it was gated at), then the
 #       qualification gates in the order every ladder rung used (evidence/t329/, t38b/, e34-*):
 #         same-prompt C<slots>   verify-batch-consistency.py --same-prompt --flush-cache (rows share >= 40 chars)
-#         NLL corpus run         nll-score.py --corpus vs --baseline-corpus exits 0 (a fresh corpus/ dir)
+#         NLL corpus run         nll-score.py --corpus vs --baseline-corpus (quality anchor) and --identity-dir
+#                                (same-map baseline) exits 0 (a fresh corpus/ dir)
 #         NLL corpus gate        pooled dNLL <= NLL_DELTA_MAX, |cluster-robust z| <= NLL_Z_MAX, >= 2 texts, written
-#                                by this run; NLL_REQUIRE_IDENTICAL=1 adds tokens_changed == 0
+#                                by this run; and (NLL_REQUIRE_IDENTICAL=1, the default) 0 tokens moved vs
+#                                IDENTITY_CORPUS - set 0 for a serve on another expert map / experts / chunk,
+#                                or point IDENTITY_CORPUS at a corpus scored on that shape
 #         needles                verify.py --context <context> (6/6 at >= 95 % of context + arithmetic / thinking / tool call)
 #         health                 container log free of NaN / Xid / Traceback / OOM / contract errors
 #       --full adds the stress (slots x (context - 2048) tokens), decode C1 / C<slots> and prefill
@@ -32,10 +35,11 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 # legacy CONTAINER_NAME (exported by load-env.sh) made `units` miss the running hybrid and `serve`
 # scan docker's "no such container" text as a clean log (T3.43a / R3).
 eval "$(python3 "$ROOT/scripts/serve_config.py" endpoint)" || { echo "serve_config.py endpoint failed; pass --url/--model/--container" >&2; exit 2; }
-BASELINE_CORPUS="${BASELINE_CORPUS:-$ROOT/evidence/t328/default-219-8192/corpus}"
+BASELINE_CORPUS="${BASELINE_CORPUS:-$ROOT/evidence/t328/default-219-8192/corpus}"   # quality anchor: 219/8192 before any expert map
+IDENTITY_CORPUS="${IDENTITY_CORPUS:-$ROOT/evidence/t343b/64k4/corpus}"              # bit-identity baseline: the launcher default (el8-mix map, 219/8192)
 NLL_Z_MAX="${NLL_Z_MAX:-2.0}"
 NLL_DELTA_MAX="${NLL_DELTA_MAX:-0.002}"
-NLL_REQUIRE_IDENTICAL="${NLL_REQUIRE_IDENTICAL:-0}"
+NLL_REQUIRE_IDENTICAL="${NLL_REQUIRE_IDENTICAL:-1}"   # 0 for a serve whose expert map / experts / chunk differ from IDENTITY_CORPUS
 CONTEXT=65536; SLOTS=4; FULL=0; OUT=""
 
 usage() { awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"; exit 2; }
@@ -76,6 +80,11 @@ if [[ "$mode" == units ]]; then
 else
   [[ -n "$OUT" ]] || { echo "serve mode needs --output-dir" >&2; usage; }
   [[ -d "$BASELINE_CORPUS" ]] || { echo "baseline corpus $BASELINE_CORPUS not found" >&2; exit 2; }
+  identity_args=()
+  if [[ "$NLL_REQUIRE_IDENTICAL" == 1 ]]; then
+    [[ -d "$IDENTITY_CORPUS" ]] || { echo "identity corpus $IDENTITY_CORPUS not found (NLL_REQUIRE_IDENTICAL=0 to skip)" >&2; exit 2; }
+    identity_args=(--identity-dir "$IDENTITY_CORPUS")
+  fi
   mkdir -p "$OUT"
   python3 "$ROOT/scripts/wait-ready.py" --url "$URL" --container "$CONTAINER" --timeout "${WAIT_TIMEOUT:-1800}" > "$OUT/wait.txt" 2>&1 \
     || { echo "server at $URL not ready (see $OUT/wait.txt)" >&2; docker logs "$CONTAINER" > "$OUT/launch-container.txt" 2>&1; exit 2; }
@@ -114,7 +123,7 @@ print(m.get("max_model_len", ""))' "$URL" "$MODEL" "$ROOT/scripts" 2>/dev/null |
   # leave an earlier pooled.json for the gate below to read.
   rm -rf "$OUT/corpus"
   gate "NLL corpus run" python3 "$ROOT/scripts/nll-score.py" --url "$URL" --corpus "$ROOT/scripts/fixtures/nll-corpus" \
-    --output-dir "$OUT/corpus" --compare-dir "$BASELINE_CORPUS" > "$OUT/corpus.txt" 2>&1
+    --output-dir "$OUT/corpus" --compare-dir "$BASELINE_CORPUS" "${identity_args[@]}" > "$OUT/corpus.txt" 2>&1
   gate "NLL corpus dNLL <= $NLL_DELTA_MAX, |z| <= $NLL_Z_MAX$([[ "$NLL_REQUIRE_IDENTICAL" == 1 ]] && echo ', identical')" \
     python3 - "$OUT/corpus/pooled.json" "$NLL_Z_MAX" "$NLL_DELTA_MAX" "$NLL_REQUIRE_IDENTICAL" "$started_utc" <<'PY'
 import json, sys
@@ -132,7 +141,13 @@ if doc.get("evidence", {}).get("recorded_utc", "") < started: bad.append("pooled
 if c.get("texts", 0) < 2: bad.append("fewer than 2 texts (cluster-robust z needs >= 2)")
 if not abs(z) <= z_max: bad.append(f"|z| {abs(z):.2f} > {z_max}")
 if not c["delta_mean_nll"] <= d_max: bad.append(f"dNLL {c['delta_mean_nll']:+.5f} > +{d_max}")
-if identical and c["tokens_changed"] != 0: bad.append(f"{c['tokens_changed']} tokens moved but NLL_REQUIRE_IDENTICAL=1")
+if identical:
+    i = doc.get("identity")
+    if not i: bad.append("no identity block (NLL_REQUIRE_IDENTICAL=1 but the run had no --identity-dir)")
+    elif i["tokens_changed"] != 0:
+        bad.append(f"{i['tokens_changed']} of {i['n']} tokens moved vs identity baseline {i['baseline_dir']} "
+                   f"(max |logp| {i['max_abs_delta_logp']:.3f}); same map / experts / chunk must reproduce bit for bit")
+    else: print(f"  identity: 0 of {i['n']} tokens moved vs {i['baseline_dir']}")
 for b in bad: print(f"  FAIL {b}")
 sys.exit(1 if bad else 0)
 PY

@@ -36,12 +36,16 @@ per-token Δlogp over all texts (paired, common token-id prefix only):
       --output-dir evidence/t328/cand-219-8192 --compare-dir evidence/t328/baseline-226-4096
 
 Gate (release-smoke.sh, T3.43b): pooled delta_mean_nll <= +0.002 nats/token AND
-|cluster-robust z| <= 2 over >= 2 texts. tokens_changed is reported, and enforced only
-with NLL_REQUIRE_IDENTICAL=1: bit-identity needs the whole serve shape to match the
-baseline, not just experts/chunk - the same 219/8192 at 262K x 4 moved 65,226 tokens
-by -0.0003 nats (evidence/t329/262k-4slot-682fc6a0/), as did the el8-mix expert map
-(evidence/t38b/qual-el8-mix/), while 64K x 4 on the baseline map reproduces the
-baseline bit for bit (evidence/t339/qual-99128a7e/).
+|cluster-robust z| <= 2 over >= 2 texts against --compare-dir (the quality anchor,
+evidence/t328/default-219-8192/: the default 219/8192 before any expert map). Bit-identity
+is a separate question answered against --identity-dir, a baseline scored on the SAME
+expert map / experts / chunk: which experts run on the CPU tier changes the arithmetic
+everywhere (the el8-mix map moves 65,226 of 65,653 tokens by -0.0003 nats vs t328 -
+evidence/t38b/qual-el8-mix/, t329/262k-4slot-682fc6a0/, t335/smoke-262k/, t343b/64k4/,
+all the same 65,226), while runs on one map reproduce each other bit for bit across
+64K x 4 and 262K x 4. The smoke enforces identity.tokens_changed == 0 by default
+(NLL_REQUIRE_IDENTICAL=1, IDENTITY_CORPUS=evidence/t343b/64k4/corpus); a run that
+deliberately changes the arithmetic re-baselines by pointing IDENTITY_CORPUS at itself.
 
 A zero standard error no longer hides a shift: z is 0 only when the mean delta is 0,
 otherwise +/-inf (a one-text corpus has se_cluster == 0 for ANY delta; R7).
@@ -207,10 +211,13 @@ def main() -> int:
     ap.add_argument("--corpus", type=pathlib.Path, help="directory of *.txt to score (T3.28 pooled gate)")
     ap.add_argument("--output-dir", type=pathlib.Path, help="corpus mode: write <stem>.json per text + pooled.json")
     ap.add_argument("--compare-dir", type=pathlib.Path, help="corpus mode: baseline directory from an earlier --corpus run")
+    ap.add_argument("--identity-dir", type=pathlib.Path,
+                    help="corpus mode: a second baseline scored on the same expert map / experts / chunk; pooled.json gets an "
+                         "'identity' block whose tokens_changed must be 0 for a run that changed no arithmetic (T3.43b re-baseline)")
     args = ap.parse_args()
     if args.corpus and not args.output_dir:
         ap.error("--corpus requires --output-dir")
-    if (args.output_dir or args.compare_dir) and not args.corpus:
+    if (args.output_dir or args.compare_dir or args.identity_dir) and not args.corpus:
         ap.error("--output-dir/--compare-dir only apply with --corpus")
 
     if args.corpus:
@@ -239,6 +246,7 @@ def run_corpus(args) -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     per_text = []
     pairs = []
+    ident_pairs = []
     for tf in texts:
         res, summ, out = score_text(args.url, tf, 0, args.segment, args.timeout, args.label)
         row = {"text": tf.name, "tokens_scored": summ["tokens_scored"], "mean_nll": summ["mean_nll"]}
@@ -251,6 +259,16 @@ def run_corpus(args) -> int:
             print_compare(out["compare"])
             row["compare"] = out["compare"]
             pairs.append((res["logprobs"], base["logprobs"], out["compare"]["n"]))
+        if args.identity_dir:
+            ip = args.identity_dir / f"{tf.stem}.json"
+            if not ip.exists():
+                raise SystemExit(f"identity baseline {ip} missing; score it on the same corpus first")
+            ident = json.loads(ip.read_text())
+            out["identity"] = compare_to(res, summ, ident, portable(ip))
+            print("  identity " + ("match" if out["identity"]["tokens_changed"] == 0 else f"MOVED {out['identity']['tokens_changed']}")
+                  + f" vs {ip.parent.name}/{ip.name}")
+            row["identity"] = out["identity"]
+            ident_pairs.append((res["logprobs"], ident["logprobs"], out["identity"]["n"]))
         stamp_or_exit(out, args.output_dir / f"{tf.stem}.json", "nll-score.py")
         (args.output_dir / f"{tf.stem}.json").write_text(json.dumps(out, indent=1))
         per_text.append(row)
@@ -269,6 +287,11 @@ def run_corpus(args) -> int:
     else:
         print(f"corpus: {len(per_text)} texts, {pooled['tokens_scored_total']} tokens, "
               f"token-weighted mean NLL {pooled['mean_nll_token_weighted']:.5f}")
+    if args.identity_dir:
+        pooled["identity"] = {"baseline_dir": portable(args.identity_dir), **pooled_stats(ident_pairs)}
+        i = pooled["identity"]
+        print(f"IDENTITY vs {args.identity_dir}: changed {i['tokens_changed']} of {i['n']} tokens, "
+              f"max|logp| {i['max_abs_delta_logp']:.3f}, dNLL {i['delta_mean_nll']:+.5f}")
     stamp_or_exit(pooled, args.output_dir / "pooled.json", "nll-score.py")
     (args.output_dir / "pooled.json").write_text(json.dumps(pooled, indent=1))
     print(f"wrote {args.output_dir}/*.json")
