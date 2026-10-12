@@ -57,7 +57,9 @@ OWNED_PREFIXES = (
     "MAX_RUNNING", "MAX_TOTAL", "CONTAINER_NAME", "SERVED_MODEL", "BIND_ADDRESS", "API_KEY_FILE",
     "HF_MODEL_DIR", "OVERLAY_DIR", "KERNEL_CACHE_DIR", "MANIFEST_DIR", "BIOS_SLOT", "HOST_THREAD_CPUS",
 )
-SYSFS_CPU = "/sys/devices/system/cpu"   # host CPU topology (HOST_THREAD_CPUS=auto); tests point it at a fake tree
+# Host CPU topology (HOST_THREAD_CPUS=auto). DSV41_SYSFS_CPU points it at a fake tree so the goldens
+# (captured on the 9955WX: core i = {i, i+16}) stay byte-identical on a CI runner with another topology.
+SYSFS_CPU = os.environ.get("DSV41_SYSFS_CPU", "/sys/devices/system/cpu")
 CPULIST_RE = re.compile(r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
 MAX_CONTEXT_LENGTH = 1_048_576   # the top of the single-slot ladder (E34d-v (ii)); nothing larger was ever run
 LOOPBACK_BINDS = ("127.0.0.1", "localhost", "::1")
@@ -186,7 +188,7 @@ REGISTRY: tuple[Knob, ...] = (
          "overlay 99128a7e the soak reads 14 at -11 to -25 % prefill (the core-bound kt export is now exposed), decode "
          "within noise. 16 stays.",
          sink=SERVER_ARG, evidence="evidence/e26-single-user/, evidence/t339/"),
-    Knob("HOST_THREAD_CPUS", "str", "",
+    Knob("HOST_THREAD_CPUS", "str", "auto",
          "T3.52 / E44: cpulist (taskset syntax, e.g. `16-31`) the server process tree starts on (`docker run "
          "--entrypoint taskset -c <list> python3 ...`). kt-kernel pins its KT_CPUINFER workers to the first "
          "logical CPU of each physical core regardless of the inherited mask, while every other thread (the TP0 "
@@ -194,7 +196,7 @@ REGISTRY: tuple[Knob, ...] = (
          "CPU-tier fork-join whenever it lands on a worker's core: C4 reads 106 or 123 on the same serve. `auto` = "
          "the SMT siblings of the workers' cores from the host's sysfs topology (16-31 on the 9955WX; no-op "
          "with a warning on a host without SMT). A list that overlaps a worker CPU is refused (the forced "
-         "collision read C4 33.8). Empty = floating threads, the pre-T3.52 behaviour. Qualified 2026-10-12 with `auto` (`evidence/t352/`): every release gate green, C4 126.7 / 123.0 with no 106 mode, C1 60.7 / 60.3, NLL bit-identical, decode numerics unchanged; paired A/B/A/B on the same serve puts prefill at -0.7…-1.9 % pinned (the Engram gather, scheduler and tokenizer share 16 logical CPUs instead of 32).",
+         "collision read C4 33.8). Empty = floating threads, the pre-T3.52 behaviour. Qualified 2026-10-12 with `auto` (`evidence/t352/`) and flipped to the default the same day on owner approval: every release gate green, C4 126.7 / 123.0 with no 106 mode, C1 60.7 / 60.3, NLL bit-identical, decode numerics unchanged; paired A/B/A/B on the same serve puts prefill at -0.7…-1.9 % pinned (the Engram gather, scheduler and tokenizer share 16 logical CPUs instead of 32).",
          evidence="evidence/t341/serve-stock/, evidence/t352/"),
     Knob("KT_MAX_DEFERRED", "int", "4",
          "Expert deferral D (E21): each token's D lowest-scored routed experts are computed during the next layer "
@@ -595,6 +597,7 @@ def resolve(env: dict[str, str]) -> dict[str, str]:
         out["BIND_ADDRESS"] = "127.0.0.1"   # R5: empty must never mean `-p :PORT:30000` (all interfaces)
     if out["HOST_THREAD_CPUS"] == "auto":   # T3.52: record the list the host resolves to, not the word
         out["HOST_THREAD_CPUS"] = smt_siblings(int(out["KT_CPUINFER"]))
+        out["HOST_THREAD_CPUS_AUTO"] = "1"   # for warnings(): the list came from `auto` (default, profile or env)
     elif out["HOST_THREAD_CPUS"]:
         _cpulist(out["HOST_THREAD_CPUS"])
     return out
@@ -613,7 +616,7 @@ def warnings(r: dict[str, str], env: dict[str, str] | None = None) -> list[str]:
     if phys and int(r["KT_CPUINFER"]) > phys:
         msgs.append(f"WARNING: KT_CPUINFER={r['KT_CPUINFER']} exceeds the {phys} physical cores; "
                     "E26 A1 measured -12 % at 24 and a 7x collapse at 30 threads")
-    if env is not None and env.get("HOST_THREAD_CPUS") == "auto" and not r["HOST_THREAD_CPUS"]:
+    if r.get("HOST_THREAD_CPUS_AUTO") and not r["HOST_THREAD_CPUS"]:
         msgs.append("WARNING: HOST_THREAD_CPUS=auto found no SMT siblings for the kt worker cores (no SMT, or "
                     "no sysfs topology); the server's host threads float as before (T3.52)")
     return msgs

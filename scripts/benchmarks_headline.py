@@ -179,7 +179,8 @@ def _serve(manifest: dict) -> str:
     return (
         f"{manifest['written_utc'][:10]}, overlay `{manifest['overlay']['short']}`, image `{manifest['image']['id'][7:19]}`, "
         f"{gpu_experts} / {cpu_experts} experts ({expert_map}), chunk {c.get('CHUNKED_PREFILL_SIZE', '?')}, "
-        f"D={c.get('KT_MAX_DEFERRED', '?')}, fraction {c.get('MEM_FRACTION_STATIC', '?')}, lever {lever}, cap {cap}"
+        f"D={c.get('KT_MAX_DEFERRED', '?')}, fraction {c.get('MEM_FRACTION_STATIC', '?')}, lever {lever}, "
+        f"host threads {c.get('HOST_THREAD_CPUS') or 'floating'}, cap {cap}"
     )
 
 

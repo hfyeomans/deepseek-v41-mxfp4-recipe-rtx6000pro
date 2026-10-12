@@ -3,8 +3,8 @@
  "rows": [
   {
    "rung": "262K × 4 (launcher default)",
-   "dir": "evidence/t315d/serve-a",
-   "note": "T3.15d qualification of overlay a8804318 (exact top-k) on the plain launcher with the kernel cache and prime; every number at or above evidence/t310/default-wait-ready, the previous row (Engram residency at smoke start 32.8 % vs 42.5 %, see E40)"
+   "dir": "evidence/t352/default-flip",
+   "note": "T3.52 default-flip qualification (HOST_THREAD_CPUS=auto: the server's host threads on CPUs 16-31, kt's workers on 0-15); replaces evidence/t315d/serve-a (floating threads: C1 60.1, C4 124.8, prefill 4,361 / 4,513), whose C4 could read 106 on a bad run (E44)"
   },
   {
    "rung": "64K × 4 (per-rung override)",

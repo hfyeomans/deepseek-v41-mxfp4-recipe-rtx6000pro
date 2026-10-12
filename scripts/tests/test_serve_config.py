@@ -52,6 +52,14 @@ def portable(text: str) -> str:
     return text.replace(str(ROOT), "<repo>").replace(BASE_ENV["HOME"], "~")
 
 
+def fake_sysfs_9955wx(tmp: str) -> None:
+    """The topology the goldens were captured on: 16 cores, core i = {i, i+16} (HOST_THREAD_CPUS=auto -> 16-31)."""
+    for cpu in range(32):
+        d = Path(tmp) / f"cpu{cpu}/topology"
+        d.mkdir(parents=True)
+        (d / "thread_siblings_list").write_text(f"{cpu % 16},{cpu % 16 + 16}\n")
+
+
 def test_goldens() -> None:
     cases = {
         "resolved-default.txt": ([], {"DRY_RUN": "1"}),
@@ -67,12 +75,14 @@ def test_goldens() -> None:
                                                    "EXTRA_DOCKER_ENV": "CUDA_LAUNCH_BLOCKING=1 KT_TIMELINE=1",
                                                    "EXTRA_SERVER_ARGS": "--log-level debug"}),
     }
-    for name, (args, env) in cases.items():
-        p = launcher(args, **env)
-        assert p.returncode == 0, (name, p.returncode, p.stderr)
-        want = (GOLDEN / name).read_text()
-        got = portable(p.stdout)
-        assert got == want, f"{name} drifted:\n--- want\n{want}\n--- got\n{got}"
+    with tempfile.TemporaryDirectory() as tmp:   # HOST_THREAD_CPUS=auto (the default) must resolve the same on any CI host
+        fake_sysfs_9955wx(tmp)
+        for name, (args, env) in cases.items():
+            p = launcher(args, DSV41_SYSFS_CPU=tmp, **env)
+            assert p.returncode == 0, (name, p.returncode, p.stderr)
+            want = (GOLDEN / name).read_text()
+            got = portable(p.stdout)
+            assert got == want, f"{name} drifted:\n--- want\n{want}\n--- got\n{got}"
 
 
 def test_unknown_knob_refused() -> None:
@@ -181,10 +191,11 @@ def test_expert_map_knob() -> None:
 
 
 def test_host_thread_cpus() -> None:
-    # T3.52: the server tree starts under `taskset -c <list>`; the default keeps `--entrypoint python3`
-    # byte-identical (test_goldens). `auto` resolves on the host's sysfs to the SMT siblings of the
-    # first KT_CPUINFER cores -- by sibling sets, not by assuming cores are 0..N-1 and siblings N..2N-1
-    # -- and a list that lands on a worker CPU is refused (E44: forced collision C4 33.8).
+    # T3.52: the server tree starts under `taskset -c <list>`; the default `auto` (flipped 2026-10-12, E46)
+    # resolves on the host's sysfs to the SMT siblings of the first KT_CPUINFER cores -- by sibling sets,
+    # not by assuming cores are 0..N-1 and siblings N..2N-1 -- so the goldens carry `16-31` and
+    # `--entrypoint taskset`; empty restores the floating threads and `--entrypoint python3`; a list that
+    # lands on a worker CPU is refused (E44: forced collision C4 33.8).
     p = launcher(["--print"], HOST_THREAD_CPUS="100-103")   # no host has a worker there
     assert p.returncode == 0, p.stderr
     line, cmd = p.stdout.splitlines()[:2]
@@ -192,7 +203,13 @@ def test_host_thread_cpus() -> None:
     assert "--entrypoint taskset " in cmd and "--entrypoint python3" not in cmd, cmd
     assert " dsv41-kt:recipe -c 100-103 python3 -m sglang.launch_server " in cmd, cmd
     default = (GOLDEN / "print-default.txt").read_text().splitlines()
-    assert " host_thread_cpus=floating " in default[0] and "--entrypoint python3 " in default[1]
+    assert " host_thread_cpus=16-31 " in default[0] and " overrides=[]" in default[0], default[0]
+    assert " dsv41-kt:recipe -c 16-31 python3 -m sglang.launch_server " in default[1], default[1]
+    p = launcher(["--print"], HOST_THREAD_CPUS="")
+    assert p.returncode == 0, p.stderr
+    line, cmd = p.stdout.splitlines()[:2]
+    assert " host_thread_cpus=floating " in line and " overrides=[HOST_THREAD_CPUS]" in line, line
+    assert "--entrypoint python3 " in cmd and "taskset" not in cmd, cmd
     for bad in ("sixteen", "16-31,", "20-18", "16 31"):
         p = launcher([], DRY_RUN="1", HOST_THREAD_CPUS=bad)
         assert p.returncode == 2 and "FAIL config: HOST_THREAD_CPUS=" in p.stderr, (bad, p.returncode, p.stderr)
@@ -220,10 +237,11 @@ def test_host_thread_cpus() -> None:
             # no SMT at all: auto is a documented no-op with a warning, never a refusal
             for cpu in range(12):
                 (Path(tmp) / f"cpu{cpu}/topology/thread_siblings_list").write_text(f"{cpu}\n")
-            env = {"HOST_THREAD_CPUS": "auto"}
-            r = sc.resolve(env)
-            assert r["HOST_THREAD_CPUS"] == "" and any("no SMT siblings" in w for w in sc.warnings(r, env))
-            assert not any("no SMT" in w for w in sc.warnings(sc.resolve({}), {}))
+            for env in ({"HOST_THREAD_CPUS": "auto"}, {}):   # explicit and the registry default
+                r = sc.resolve(env)
+                assert r["HOST_THREAD_CPUS"] == "" and any("no SMT siblings" in w for w in sc.warnings(r, env)), env
+            r = sc.resolve({"HOST_THREAD_CPUS": ""})
+            assert not any("no SMT" in w for w in sc.warnings(r, {"HOST_THREAD_CPUS": ""}))
         finally:
             sc.SYSFS_CPU = saved
 

@@ -84,7 +84,7 @@ def test_numbers_come_from_the_stamped_files():
         assert "C4 × 61,764 tokens, wall 80 s, TTFT max 73 s, all finished" in md, md
         assert "z +0.26, 65,226 of 65,653 moved" in md, md
         assert "| — |" in md  # c4.json absent -> dash, never a guessed number
-        assert "overlay `bbbbbbbb`, image `cccccccccccc`, 219 / 165 experts (map.json), chunk 8192, D=4, fraction 0.96, lever on, cap 325 W" in md, md
+        assert "overlay `bbbbbbbb`, image `cccccccccccc`, 219 / 165 experts (map.json), chunk 8192, D=4, fraction 0.96, lever on, host threads floating, cap 325 W" in md, md
         # a changed stamped number changes the table (no cached or typed value survives)
         cfg2 = {"rows": [write_rung(root, "r2", c1_median=41.3)]}
         assert "| 41.3 / 55.5 |" in bh.markdown(cfg2, root)

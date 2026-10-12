@@ -56,6 +56,7 @@ run_case refuse "diagnostic under the qualified profile refused (T3.24b)" "KT_NA
 run_case ok "PROFILE=developer ALLOW_UNTESTED_FIT=1 lets 512K x 2 through" "" PROFILE=developer CONTEXT_LENGTH=524288 MAX_RUNNING_REQUESTS=2 MEM_FRACTION_STATIC=0.962 ALLOW_UNTESTED_FIT=1
 run_case ok "unsafe flag at its default is not an experiment (T3.24b)" "" ALLOW_UNTESTED_FIT=0 KT_TIMELINE=0
 run_case ok "host threads pinned off the kt workers (T3.52)" "" HOST_THREAD_CPUS=100-103
+run_case ok "floating host threads, the pre-T3.52 behaviour (E46 flip)" "" HOST_THREAD_CPUS=
 run_case refuse "HOST_THREAD_CPUS must be a cpulist (T3.52)" "not a cpulist" HOST_THREAD_CPUS=sixteen
 
 echo "$pass/$((pass + fail)) passed"
