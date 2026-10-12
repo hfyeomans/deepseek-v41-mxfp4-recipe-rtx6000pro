@@ -1,0 +1,417 @@
+FFsFFFFFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+________________ test_topk_v2_exact_under_ties[1-700-zero_tie] _________________
+
+kind = 'zero_tie', batch = 1, seq = 700
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: zero_tie b=0 L=700: set is not the exact top-512
+E           assert [1, 2, 3, 5, 6, 7, ...] == [0, 1, 2, 3, 4, 5, ...]
+E             
+E             At index 0 diff: 1 != 0
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+______________ test_topk_v2_exact_under_ties[1-700-shared_value] _______________
+
+kind = 'shared_value', batch = 1, seq = 700
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: shared_value b=0 L=700: set is not the exact top-512
+E           assert [0, 2, 3, 4, 6, 7, ...] == [0, 1, 2, 3, 4, 5, ...]
+E             
+E             At index 1 diff: 2 != 1
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_______________ test_topk_v2_exact_under_ties[4-14884-zero_tie] ________________
+
+kind = 'zero_tie', batch = 4, seq = 14884
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: zero_tie b=0 L=14884: set is not the exact top-512
+E           assert [0, 4, 8, 12, 16, 20, ...] == [0, 1, 2, 3, 4, 5, ...]
+E             
+E             At index 1 diff: 4 != 1
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_____________ test_topk_v2_exact_under_ties[4-14884-shared_value] ______________
+
+kind = 'shared_value', batch = 4, seq = 14884
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: shared_value b=0 L=14884: set is not the exact top-512
+E           assert [21, 31, 51, 63, 67, 81, ...] == [16, 20, 21, 22, 31, 51, ...]
+E             
+E             At index 0 diff: 21 != 16
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_______________ test_topk_v2_exact_under_ties[4-14884-dense_bin] _______________
+
+kind = 'dense_bin', batch = 4, seq = 14884
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: dense_bin b=0 L=14884: set is not the exact top-512
+E           assert [0, 4, 9, 29, 40, 68, ...] == [38, 55, 92, ...163, 167, ...]
+E             
+E             At index 0 diff: 0 != 38
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_______________ test_topk_v2_exact_under_ties[2-20000-zero_tie] ________________
+
+kind = 'zero_tie', batch = 2, seq = 20000
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: zero_tie b=0 L=20000: set is not the exact top-512
+E           assert [0, 4, 8, 12, 16, 20, ...] == [0, 1, 2, 3, 4, 5, ...]
+E             
+E             At index 1 diff: 4 != 1
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_____________ test_topk_v2_exact_under_ties[2-20000-shared_value] ______________
+
+kind = 'shared_value', batch = 2, seq = 20000
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: shared_value b=0 L=20000: set is not the exact top-512
+E           assert [31, 75, 115,...187, 519, ...] == [4, 28, 31, 45, 46, 60, ...]
+E             
+E             At index 0 diff: 31 != 4
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_______________ test_topk_v2_exact_under_ties[2-20000-dense_bin] _______________
+
+kind = 'dense_bin', batch = 2, seq = 20000
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: dense_bin b=0 L=20000: set is not the exact top-512
+E           assert [1, 4, 20, 45, 49, 61, ...] == [3, 202, 203,...291, 322, ...]
+E             
+E             At index 0 diff: 1 != 3
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_______________ test_topk_v2_exact_under_ties[1-65537-zero_tie] ________________
+
+kind = 'zero_tie', batch = 1, seq = 65537
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: zero_tie b=0 L=65537: set is not the exact top-512
+E           assert [128, 132, 13...144, 148, ...] == [0, 1, 2, 3, 4, 5, ...]
+E             
+E             At index 0 diff: 128 != 0
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_____________ test_topk_v2_exact_under_ties[1-65537-shared_value] ______________
+
+kind = 'shared_value', batch = 1, seq = 65537
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: shared_value b=0 L=65537: set is not the exact top-512
+E           assert [5267, 5275, ...46, 8374, ...] == [96, 120, 123...183, 203, ...]
+E             
+E             At index 0 diff: 5267 != 96
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_______________ test_topk_v2_exact_under_ties[1-65537-dense_bin] _______________
+
+kind = 'dense_bin', batch = 1, seq = 65537
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: dense_bin b=0 L=65537: set is not the exact top-512
+E           assert [8, 24, 28, 40, 92, 108, ...] == [78, 81, 150,...401, 523, ...]
+E             
+E             At index 0 diff: 8 != 78
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_______________ test_topk_v2_exact_under_ties[3-262147-zero_tie] _______________
+
+kind = 'zero_tie', batch = 3, seq = 262147
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: zero_tie b=0 L=262147: set is not the exact top-512
+E           assert [0, 4, 8, 12, 16, 20, ...] == [0, 1, 2, 3, 4, 5, ...]
+E             
+E             At index 1 diff: 4 != 1
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+_____________ test_topk_v2_exact_under_ties[3-262147-shared_value] _____________
+
+kind = 'shared_value', batch = 3, seq = 262147
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: shared_value b=0 L=262147: set is not the exact top-512
+E           assert [57514, 57515...5, 65689, ...] == [31, 103, 166...642, 746, ...]
+E             
+E             At index 0 diff: 57514 != 31
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+______________ test_topk_v2_exact_under_ties[3-262147-dense_bin] _______________
+
+kind = 'dense_bin', batch = 3, seq = 262147
+
+    @pytest.mark.parametrize("kind", ["zero_tie", "shared_value", "dense_bin"])
+    @pytest.mark.parametrize("batch,seq", TIE_CONFIGS)
+    @torch.inference_mode()
+    def test_topk_v2_exact_under_ties(kind: str, batch: int, seq: int) -> None:
+        """Tied k-th scores and overfull coarse bins must give the exact
+        (value desc, index asc) set, identical on every call."""
+        k = 512
+        torch.manual_seed(35257 + seq)
+        device = "cuda"
+        if kind == "dense_bin" and seq <= 2048:
+            pytest.skip("needs more than kMaxNumTie members in one bin")
+        scores = _tie_rows(kind, batch, seq, k, device)
+        seq_lens = torch.full((batch,), seq, dtype=torch.int32, device=device)
+        ref = _reference_exact(scores, seq_lens, k)
+        first = [sorted(r) for r in _run_raw(scores, seq_lens, k)]
+        for i in range(batch):
+>           assert first[i] == ref[i], f"{kind} b={i} L={seq}: set is not the exact top-{k}"
+E           AssertionError: dense_bin b=0 L=262147: set is not the exact top-512
+E           assert [24, 28, 56, 64, 68, 76, ...] == [644, 1498, 1...80, 3913, ...]
+E             
+E             At index 0 diff: 24 != 644
+E             Use -v to get more diff
+
+/tmp/test/registered/kernels/ops/attention/test_topk_v2.py:703: AssertionError
+=============================== warnings summary ===============================
+../../opt/sglang/lib/python3.12/site-packages/_pytest/config/__init__.py:1464
+  /opt/sglang/lib/python3.12/site-packages/_pytest/config/__init__.py:1464: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[1-700-zero_tie]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[1-700-shared_value]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[4-14884-zero_tie]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[4-14884-shared_value]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[4-14884-dense_bin]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[2-20000-zero_tie]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[2-20000-shared_value]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[2-20000-dense_bin]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[1-65537-zero_tie]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[1-65537-shared_value]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[1-65537-dense_bin]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[3-262147-zero_tie]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[3-262147-shared_value]
+FAILED ../../tmp/test/registered/kernels/ops/attention/test_topk_v2.py::test_topk_v2_exact_under_ties[3-262147-dense_bin]
+14 failed, 1 skipped, 306 deselected, 1 warning in 18.88s

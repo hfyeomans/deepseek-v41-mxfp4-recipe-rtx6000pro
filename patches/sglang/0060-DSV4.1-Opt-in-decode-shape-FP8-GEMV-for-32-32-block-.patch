@@ -1,7 +1,7 @@
 From d00e8e30c163daecec4a839995535b3d2ddc929e Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 21:08:50 -0400
-Subject: [PATCH 60/60] [DSV4.1] Opt-in decode-shape FP8 GEMV for [32, 32]
+Subject: [PATCH 60/61] [DSV4.1] Opt-in decode-shape FP8 GEMV for [32, 32]
  block scales on SM120 (recipe T3.41)
 
 At decode M (<= 4) the tuned tensor-core tiles in w8a8_block_fp8_matmul_triton

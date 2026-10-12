@@ -1,0 +1,190 @@
+diff --git a/python/sglang/kernels/jit/csrc/deepseek_v4/topk_v2.cuh b/python/sglang/kernels/jit/csrc/deepseek_v4/topk_v2.cuh
+index fae0ece4c..5fc336f5c 100644
+--- a/python/sglang/kernels/jit/csrc/deepseek_v4/topk_v2.cuh
++++ b/python/sglang/kernels/jit/csrc/deepseek_v4/topk_v2.cuh
+@@ -457,6 +457,10 @@ CLUSTER_TOPK_KERNEL void topk_persistent_cluster_kernel(const __grid_constant__
+     idx -= kNumPersistentClusters;
+     if (idx >= 0) __syncthreads();
+   }
++  // Keep rank 0 resident until the peers have left their last forward (they
++  // read its final counts after the last in-forward barrier; see
++  // TopKCluster::cluster_refine).
++  cooperative_groups::this_cluster().sync();
+ }
+ 
+ template <bool kPDL, TopKMode kMode, uint32_t kClusterSize, uint32_t kOccupancy>
+@@ -493,14 +497,18 @@ CLUSTER_TOPK_KERNEL void topk_small_batch_cluster_kernel(const __grid_constant__
+       problem.out = cluster.map_shared_rank(s_topk_indices, 0);
+     }
+     ClusterN::forward<kPDL>(problem, &smem);
++    device::PDLTriggerSecondary<kPDL>();
++    // Rank 0's smem must stay mapped until every peer has left forward: the
++    // peers read its final counts after the last in-forward barrier
++    // (TopKCluster::cluster_refine), and a CTA's shared memory is gone once
++    // it exits.
++    cluster.sync();
+     if constexpr (kNeedStaging) {
+-      device::PDLTriggerSecondary<kPDL>();
+-      cluster.sync();
+       if (by != 0) return;
+       problem.out = s_topk_indices;
+       return paged_transform<kMode>(problem, params.get_output_ptr(bx), params.get_transform(bx));
+     } else {
+-      return device::PDLTriggerSecondary<kPDL>();
++      return;
+     }
+   }
+ 
+diff --git a/python/sglang/kernels/jit/include/sgl_kernel/deepseek_v4/topk_impl.cuh b/python/sglang/kernels/jit/include/sgl_kernel/deepseek_v4/topk_impl.cuh
+index 778aa3573..0a6c1a625 100644
+--- a/python/sglang/kernels/jit/include/sgl_kernel/deepseek_v4/topk_impl.cuh
++++ b/python/sglang/kernels/jit/include/sgl_kernel/deepseek_v4/topk_impl.cuh
+@@ -219,8 +219,8 @@ struct TopKConfig {
+     // the same in both is constant over every candidate and needs no round
+     unsigned long long key_and;
+     unsigned long long key_or;
+-    // cluster path: rank 0's copy of the round's key_and / key_or for the
+-    // peers to read while the live pair is already reset for the next round
++    // cluster path: the cluster-wide AND / OR rank 0 publishes each round
++    // (reduced from the per-rank slots in TopKCluster::Smem)
+     unsigned long long key_and_pub;
+     unsigned long long key_or_pub;
+     uint32_t histogram[2][kRadixSize];
+@@ -994,6 +994,13 @@ struct TopKCluster : TopKRadixBase<10> {
+       int32_t stage_out_idxs[kMaxTopK];
+     };
+     TieValue tie_values[kMaxNumTie];
++    // cluster_refine: each rank's block-folded key AND / OR for the round,
++    // written into rank 0's copy with one plain store per rank and reduced
++    // there. (Many warps folding straight into one DSMEM word with 64-bit
++    // atomicAnd / atomicOr lost updates on sm_120: the AND came back with
++    // bits no candidate shared, and the round could not narrow.)
++    unsigned long long rank_key_and[N];
++    unsigned long long rank_key_or[N];
+   };
+ 
+   SGL_DEVICE static void barrier_cluster_arrive_relaxed() {
+@@ -1016,10 +1023,6 @@ struct TopKCluster : TopKRadixBase<10> {
+     const auto this_rank = blockIdx.y;
+ 
+     init_histogram(smem->histogram, tx);
+-    if (tx == 0) {
+-      smem->count_eq = 0;
+-      smem->count_gt = 0;
+-    }
+     __syncthreads();
+     // Rank 0's shared memory is read by its peers: the zeroed histogram they fold
+     // into after bar-0, v_hi / v_lo after bar-2. Those arrives release so the
+@@ -1040,6 +1043,15 @@ struct TopKCluster : TopKRadixBase<10> {
+     });
+ 
+     barrier_cluster_wait();  // bar-0 wait
++    // The counts are first used in phase 4 and zeroed only here: after bar-3
++    // the peers read rank 0's final count_gt / count_eq to decide whether the
++    // threshold bin needs refining (cluster_refine), and rank 0 may already be
++    // in handle_tie or, in the persistent kernel, in its next item. Every rank
++    // has finished that read once it arrives at the next bar-0.
++    if (tx == 0) {
++      smem->count_eq = 0;
++      smem->count_gt = 0;
++    }
+     __syncthreads();
+     if (this_rank != 0) {
+       const auto smem_0 = cluster.map_shared_rank(smem, 0);
+@@ -1140,10 +1152,6 @@ struct TopKCluster : TopKRadixBase<10> {
+       // `histogram` (find_threshold) is dead; its union slot becomes the
+       // cluster-wide refinement histogram the peers fold into after bar-3.
+       if (tx < kRadixSize) smem->tie_handle.histogram[0][tx] = 0;
+-      if (tx == 0) {
+-        smem->tie_handle.key_and = ~0ull;
+-        smem->tie_handle.key_or = 0ull;
+-      }
+ 
+       cluster.sync();  // bar-3
+ 
+@@ -1163,11 +1171,15 @@ struct TopKCluster : TopKRadixBase<10> {
+   /// rank right after bar-3 with rank 0's `count_gt` / `count_eq` final (the
+   /// latter untruncated). Returns without any barrier when the threshold bin
+   /// fits; otherwise all ranks run the same number of rounds, each with two
+-  /// cluster barriers (Q: peers publish their histogram slice; S: rank 0
+-  /// publishes the match), then one more (C) after the survivors are
+-  /// re-collected into rank 0's `tie_values`. Rank 0's `count_gt` / `count_eq`
+-  /// are final on return for rank 0; peers must not touch rank 0's smem after
+-  /// returning.
++  /// cluster barriers (Q: peers publish their histogram slice and key bits;
++  /// S: rank 0 publishes the match and the reduced key bits), then one more
++  /// (C) after the survivors are re-collected into rank 0's `tie_values`.
++  /// Rank 0's `count_gt` / `count_eq` are final on return for rank 0; peers
++  /// must not touch rank 0's smem after returning. The decision read at entry
++  /// is the one access to rank 0's smem outside a barrier pair: rank 0 keeps
++  /// the counts intact until the next bar-0 (forward) and the kernels keep
++  /// rank 0 resident until the peers have left forward (a trailing cluster
++  /// barrier where rank 0 would otherwise exit first).
+   SGL_DEVICE static void cluster_refine(  //
+       const TopKProblem& problem,
+       Smem* smem,
+@@ -1186,6 +1198,10 @@ struct TopKCluster : TopKRadixBase<10> {
+     for (uint32_t round = 0; round < kRefineRounds; ++round) {
+       const auto shift = state.shift;
+       if (tx < kRadixSize) local_hist[tx] = 0;
++      if (tx == 0) {
++        smem->tie_handle.key_and = ~0ull;
++        smem->tie_handle.key_or = 0ull;
++      }
+       __syncthreads();
+       uint64_t t_and = ~0ull, t_or = 0ull;
+       for_each_input<N>(problem.in, problem.seq_len, [&](float val, uint32_t idx) {
+@@ -1196,12 +1212,17 @@ struct TopKCluster : TopKRadixBase<10> {
+           hist_add_aggregated(local_hist, (key >> shift) & 0xFFu);
+         }
+       });
+-      fold_key_bits(t_and, t_or, &smem_0->tie_handle);  // remote 64-bit atomics for peers
++      fold_key_bits(t_and, t_or, &smem->tie_handle);  // this rank's block, local atomics
+       __syncthreads();
++      if (tx == 0) {
++        smem_0->rank_key_and[this_rank] = smem->tie_handle.key_and;
++        smem_0->rank_key_or[this_rank] = smem->tie_handle.key_or;
++      }
+       if (tx < kRadixSize) {
+         if (const auto count = local_hist[tx]; count != 0) atomicAdd(&merged_hist[tx], count);
+       }
+-      // barrier Q: the merged histogram and key bits are complete on rank 0
++      // barrier Q: the merged histogram and the per-rank key bits are
++      // complete on rank 0
+       if (this_rank != 0) {
+         barrier_cluster_arrive_release();
+       } else {
+@@ -1211,21 +1232,26 @@ struct TopKCluster : TopKRadixBase<10> {
+       if (this_rank == 0) {
+         scan_threshold(merged_hist, state.count_eq, topk - smem->count_gt, &smem->tie_handle);
+         // scan_threshold ended on __syncthreads: match is published, the
+-        // histogram and key bits are consumed and can be reset for the next
+-        // round (the peers' next remote adds follow barrier S).
++        // histogram is consumed and can be reset for the next round (the
++        // peers' next remote adds follow barrier S).
+         if (tx < kRadixSize) merged_hist[tx] = 0;
+         if (tx == 0) {
+-          smem->tie_handle.key_and_pub = smem->tie_handle.key_and;
+-          smem->tie_handle.key_or_pub = smem->tie_handle.key_or;
+-          smem->tie_handle.key_and = ~0ull;
+-          smem->tie_handle.key_or = 0ull;
++          uint64_t key_and = ~0ull, key_or = 0ull;
++#pragma unroll
++          for (uint32_t r = 0; r < N; ++r) {
++            key_and &= smem->rank_key_and[r];
++            key_or |= smem->rank_key_or[r];
++          }
++          smem->tie_handle.key_and_pub = key_and;
++          smem->tie_handle.key_or_pub = key_or;
+           const auto equal_count = smem->tie_handle.match.equal_count;
+           const bool last = equal_count <= kMaxNumTie || round + 1 == kRefineRounds;
+           if (last) smem->count_eq = 0;  // the collect below restarts from 0
+         }
+         __syncthreads();
+       }
+-      // barrier S: rank 0 publishes match + key bits (+ reset histogram / count_eq)
++      // barrier S: rank 0 publishes match + reduced key bits (+ reset
++      // histogram / count_eq)
+       if (this_rank == 0) {
+         barrier_cluster_arrive_release();
+       } else {
