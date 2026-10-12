@@ -267,11 +267,13 @@ Measured cost 0 (C1 61.0 / 58.1 / 57.5, C4 123.5 / 121.9 / 121.1 over three serv
 
 ## Thinking mode surprises
 
-DeepSeek-V4.1 reasoning is on by default at effort 50 in both engines. Every client in this repo sends `chat_template_kwargs: {"thinking": false}` unless asked otherwise. If your own client sees long, slow answers, that is why. The recipe's smoke test is `17*19` → `323`.
+Thinking is **off** by default on this overlay (`SGLANG_DEFAULT_THINKING=False`) and on until a request asks: any top-level `reasoning_effort` other than `none`, or `chat_template_kwargs: {"thinking": true}`. The recipe's own clients send `thinking: false` explicitly anyway. If your client sees long, slow answers with `reasoning_content` in the stream, it is sending an effort.
+
+The effort is a number 1–100 that the server renders into the prompt ("reasoning effort: N"); named tiers are translated server-side, and the two tables disagree. SGLang's (`encoding_dsv41.py`, upstream, untouched by the patch series): `low` 25, `high` 50, `xhigh` 75, `max` 100. DeepSeek's reference `encoding.py` in the checkpoint: `low` 50, `high` 75, `max` 100, and DeepSeek's published numbers are at 100. So SGLang's `high` is DeepSeek's `low`. A tier SGLang does not know (OpenAI's `minimal`, `medium`) logs one warning and takes the server default, which is the `REASONING_EFFORT` knob (`high` = 50; a tier or an int 1–100, `REASONING_EFFORT=xhigh bash scripts/serve-hybrid.sh`). A known tier or an int budget in the request (`chat_template_kwargs: {"reasoning_effort": 75}`) always wins over the knob. Thinking is only ever a prompt prefix: nothing in the kernels, memory or qualification changes with it (T3.53).
 
 ## Using the server from a coding agent (OMP, Amp, any OpenAI-compatible client)
 
-The server is a plain OpenAI-compatible endpoint: `http://127.0.0.1:8000/v1`, model `dsv41-flash-hybrid`, no key unless the serve was launched with `API_KEY_FILE` (then `Authorization: Bearer <file content>`). Context is whatever rung you launched (262K × 4 default since 2026-10-11; `CONTEXT_LENGTH=65536` for 64K × 4), so tell the client the same number or it will pack prompts the server refuses. Reasoning is on by default (previous entry): a coding-agent client should either send `chat_template_kwargs: {"thinking": false}` or expect `reasoning_content` in the stream.
+The server is a plain OpenAI-compatible endpoint: `http://127.0.0.1:8000/v1`, model `dsv41-flash-hybrid`, no key unless the serve was launched with `API_KEY_FILE` (then `Authorization: Bearer <file content>`). Context is whatever rung you launched (262K × 4 default since 2026-10-11; `CONTEXT_LENGTH=65536` for 64K × 4), so tell the client the same number or it will pack prompts the server refuses. Thinking is off until the client sends an effort (previous entry); a client that does should expect `reasoning_content` in the stream.
 
 OMP (`omp`, oh-my-pi) — add to `~/.omp/agent/models.yml` under `providers:` (explicit entries win over `/v1/models` discovery, which is how the context window and the DeepSeek reasoning field get set):
 
@@ -292,7 +294,16 @@ OMP (`omp`, oh-my-pi) — add to `~/.omp/agent/models.yml` under `providers:` (e
           maxTokensField: max_tokens
           stripDeepseekSpecialTokens: true
           supportsUsageInStreaming: true
+          reasoningDisableMode: none-effort
+          reasoningEffortMap:
+            minimal: low      # 25
+            low: low          # 25
+            medium: high      # 50
+            high: xhigh       # 75  = DeepSeek's reference default
+            xhigh: max        # 100 = DeepSeek's benchmark setting
 ```
+
+The last two `compat` keys are what make OMP's `--thinking` levels mean something on this server (captured on the wire, 2026-10-12). Without them `thinkingFormat: openai` sends OpenAI's tier names as-is: `off` sends `minimal`, which is not `none`, so thinking turns **on** at the server default; `minimal` and `medium` are not in SGLang's table and also fall back to it — four of the six levels land on 50 and only `low` / `high` / `xhigh` (25 / 50 / 75) differ. `reasoningDisableMode: none-effort` makes `off` send `none` (thinking off); `reasoningEffortMap` renames the levels onto SGLang's tiers so each step is a distinct budget and OMP's `high` is DeepSeek's reference default. Map values are tier names (strings); the server's int budget is reachable only through `chat_template_kwargs`, which OMP does not send.
 
 `auth: none` is for an unkeyed serve. When the serve was launched with `API_KEY_FILE` (any serve exposed through a tunnel), replace that line with `apiKey: "<contents of the key file>"` — OMP's validator accepts either — or every call, including the `/v1/models` discovery, comes back 401 "not authorized". OMP sends `maxTokens` (32,768 above) as `max_tokens`, so the 0051 clamp never triggers for it and the prompt room is the full context minus 32K. Do not also add a `modelOverrides:` entry for the same id: that map patches models *discovered* from `/v1/models`, and with an explicit `models:` entry it is redundant. Measured 2026-10-11 with four OMP agents on the 262K × 4 serve: 183 requests, aggregate decode 121 tok/s at 4 running (56.8 at 1).
 

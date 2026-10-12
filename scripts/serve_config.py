@@ -63,6 +63,8 @@ SYSFS_CPU = os.environ.get("DSV41_SYSFS_CPU", "/sys/devices/system/cpu")
 CPULIST_RE = re.compile(r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
 MAX_CONTEXT_LENGTH = 1_048_576   # the top of the single-slot ladder (E34d-v (ii)); nothing larger was ever run
 LOOPBACK_BINDS = ("127.0.0.1", "localhost", "::1")
+# The overlay's V4.1 tier table (encoding_dsv41.REASONING_EFFORT_MAPPINGS: 25 / 50 / 75 / 100), upstream SGLang's.
+REASONING_EFFORT_TIERS = ("low", "high", "xhigh", "max")
 
 # sinks: where the resolved value is consumed
 SERVER_ARG = "server-arg"      # becomes an sglang.launch_server flag
@@ -341,6 +343,16 @@ REGISTRY: tuple[Knob, ...] = (
          "spec-off baseline, NLL cannot see it (prefill-only). Stays 0 until a pinned paired A/B shows >= +2 % C1. "
          "Prefill and M > 4 are untouched. 0 = E20 Triton path.",
          sink=CONTAINER_ENV, evidence="evidence/t341/"),
+    # ---- reasoning effort default (T3.53) ----------------------------------------------
+    Knob("REASONING_EFFORT", "str", "high",
+         "The V4.1 reasoning budget the server renders when a thinking-mode request names no tier it knows: "
+         "SGLang's tiers are low=25, high=50, xhigh=75, max=100 (a lower scale than DeepSeek's reference "
+         "encoding.py, low=50 / high=75 / max=100, benchmarks at 100), or an int 1..100. Thinking itself is off "
+         "unless the request asks (a `reasoning_effort` other than `none`, or `chat_template_kwargs.thinking`). "
+         "A request that names a known tier or an int budget wins over this default; an unknown tier "
+         "(OpenAI's minimal / medium) logs one warning and takes it. Only the prompt prefix changes; no kernel "
+         "or memory effect.",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_REASONING_EFFORT"),
     # ---- overlay diagnostics (forwarded into the container only when set) ---------------
     Knob("KT_NAN_INJECT", "str", "",
          "T3.13 / C10 test hook: row=<r>,bs=<b>,step=<n>,layer=<l> adds NaN to row r's hidden state after MoE "
@@ -408,6 +420,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_FLASHINFER_MOE_FUSED_FINALIZE={r['SGLANG_FLASHINFER_MOE_FUSED_FINALIZE']}",
         f"SGLANG_DSV41_SORT_DECODE_TOPK={r['SGLANG_DSV41_SORT_DECODE_TOPK']}",
         f"SGLANG_DSV41_FP8_GEMV={r['SGLANG_DSV41_FP8_GEMV']}",
+        f"SGLANG_DSV41_REASONING_EFFORT={r['REASONING_EFFORT']}",
     ] + ([f"SGLANG_API_KEY_FILE={API_KEY_MOUNT}"] if r["API_KEY_FILE"] else [])
 
 
@@ -706,6 +719,11 @@ def guards(r: dict[str, str]) -> None:
                           "every row above 1 is CPU-expert bytes per step).")
     if r["NGRAM"] == "1" and not 1 <= int(r["NGRAM_BREADTH"]) <= 10:
         raise ConfigError(f"NGRAM_BREADTH={r['NGRAM_BREADTH']} outside 1..10 (SGLang's default is 10).")
+    effort = r["REASONING_EFFORT"]
+    if effort not in REASONING_EFFORT_TIERS and not (effort.isdigit() and 1 <= int(effort) <= 100):
+        raise ConfigError(
+            f"REASONING_EFFORT={effort!r}: the V4.1 encoder accepts {', '.join(REASONING_EFFORT_TIERS)} or an int 1..100 "
+            "(the overlay would refuse it at server boot, after the weights load).")
 
 
 def resolved_line(r: dict[str, str]) -> str:

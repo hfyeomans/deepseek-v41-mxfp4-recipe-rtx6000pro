@@ -161,6 +161,17 @@ def test_mistyped_value() -> None:
         assert p.returncode == 2 and f"FAIL config: {name}=" in p.stderr, (name, p.returncode, p.stderr)
 
 
+def test_reasoning_effort() -> None:
+    """T3.53: an unknown tier (OpenAI's medium) or an out-of-range budget is refused at launch, not at server
+    boot; a known tier or an int budget is forwarded as SGLANG_DSV41_REASONING_EFFORT."""
+    for bad in ("medium", "0", "101", "High"):
+        p = launcher([], DRY_RUN="1", REASONING_EFFORT=bad)
+        assert p.returncode == 2 and f"REASONING_EFFORT={bad!r}" in p.stderr, (bad, p.returncode, p.stderr)
+    for good in ("xhigh", "75"):
+        p = launcher(["--print"], REASONING_EFFORT=good)
+        assert p.returncode == 0 and f"SGLANG_DSV41_REASONING_EFFORT={good}" in p.stdout, (good, p.returncode, p.stderr)
+
+
 def test_empty_disables() -> None:
     r = sc.resolve({"CUDA_GRAPH_BS": "", "MAX_TOTAL_TOKENS": ""})
     assert r["CUDA_GRAPH_BS"] == "" and r["MAX_TOTAL_TOKENS"] == ""
