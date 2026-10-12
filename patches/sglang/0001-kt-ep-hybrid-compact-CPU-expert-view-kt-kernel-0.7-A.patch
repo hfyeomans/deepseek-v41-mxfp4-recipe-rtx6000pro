@@ -1,7 +1,7 @@
 From 3805730e0b065fba9ec5f615fe4c7dde16d847a5 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Mon, 21 Sep 2026 17:32:25 -0400
-Subject: [PATCH 01/59] kt-ep hybrid: compact CPU-expert view, kt-kernel 0.7
+Subject: [PATCH 01/60] kt-ep hybrid: compact CPU-expert view, kt-kernel 0.7
  API, fixes for V4.1-Flash MXFP4
 
 - KTEPWrapperMethod.fuse_routed_scaling_factor_in_topk = False: stops the
@@ -28,7 +28,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  3 files changed, 190 insertions(+), 7 deletions(-)
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index 36c15cf1..b3650580 100644
+index 36c15cf13..b36505805 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -37,6 +37,101 @@ except ImportError:
@@ -285,7 +285,7 @@ index 36c15cf1..b3650580 100644
  
      def sync(self, x: torch.Tensor) -> torch.Tensor:
 diff --git a/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py b/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py
-index 62c9aa9e..f51f9c2d 100644
+index 62c9aa9e0..f51f9c2d5 100644
 --- a/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py
 +++ b/python/sglang/srt/layers/quantization/mxfp4_flashinfer_cutlass_moe.py
 @@ -88,7 +88,11 @@ class Mxfp4FlashinferCutlassMoEMethod:
@@ -302,7 +302,7 @@ index 62c9aa9e..f51f9c2d 100644
          if self._use_mxfp8_act_scaling:
              # FlashInfer's MXFP4 ABI requires a neutral per-expert global scale.
 diff --git a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
-index 1a9ebbde..c8c780d8 100644
+index 1a9ebbde3..c8c780d8d 100644
 --- a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 +++ b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 @@ -366,7 +366,14 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):

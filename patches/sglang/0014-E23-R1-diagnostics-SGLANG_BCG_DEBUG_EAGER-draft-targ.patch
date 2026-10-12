@@ -1,7 +1,7 @@
 From 4685955e4c69605683868e300691497eb6bb33bc Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Tue, 22 Sep 2026 22:42:04 -0400
-Subject: [PATCH 14/59] E23 R1 diagnostics:
+Subject: [PATCH 14/60] E23 R1 diagnostics:
  SGLANG_BCG_DEBUG_EAGER=draft|target, verify skips mm-embedding path, DSPARK
  verify POST_REPLAY under breakable backend
 
@@ -14,7 +14,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  3 files changed, 44 insertions(+), 4 deletions(-)
 
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index f4c00d9f..f2d6d84f 100644
+index f4c00d9f7..f2d6d84f7 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -99,6 +99,11 @@ from sglang.srt.layers.dp_attention import (
@@ -53,7 +53,7 @@ index f4c00d9f..f2d6d84f 100644
              return SharedReadEnds.POST_REPLAY
          metadata = self.forward_metadata
 diff --git a/python/sglang/srt/model_executor/runner_backend/utils.py b/python/sglang/srt/model_executor/runner_backend/utils.py
-index 63c98b45..c3ec8e76 100644
+index 63c98b45c..c3ec8e767 100644
 --- a/python/sglang/srt/model_executor/runner_backend/utils.py
 +++ b/python/sglang/srt/model_executor/runner_backend/utils.py
 @@ -22,6 +22,7 @@ live in :mod:`.cuda_graph_config`.
@@ -93,7 +93,7 @@ index 63c98b45..c3ec8e76 100644
      if backend_name == Backend.TC_PIECEWISE:
          global _TC_PIECEWISE_DECODE_FALLBACK_LOGGED
 diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
-index 80756c4a..c754fe72 100644
+index 80756c4a4..c754fe729 100644
 --- a/python/sglang/srt/models/deepseek_v4.py
 +++ b/python/sglang/srt/models/deepseek_v4.py
 @@ -4360,9 +4360,16 @@ class DeepseekV4ForCausalLM(nn.Module):

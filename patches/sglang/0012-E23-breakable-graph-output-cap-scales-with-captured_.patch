@@ -1,7 +1,7 @@
 From 95f2fe3ddfeca0450ee9cccc26e255c5ed237509 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Tue, 22 Sep 2026 14:37:24 -0400
-Subject: [PATCH 12/59] E23: breakable-graph output cap scales with
+Subject: [PATCH 12/60] E23: breakable-graph output cap scales with
  captured_req_width (speculative TARGET_VERIFY returns bs*width rows, key size
  is bs)
 
@@ -12,7 +12,7 @@ Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf2
  1 file changed, 17 insertions(+), 1 deletion(-)
 
 diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
-index 1d9586d2..f0371a59 100644
+index 1d9586d2b..f0371a59b 100644
 --- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 +++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 @@ -81,6 +81,7 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):

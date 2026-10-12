@@ -1,0 +1,16 @@
+NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 188 SMs; 94 GEMV configs; median of 20 graph replays, per launch
+     N     K  M candidate       us         p10-p90    GB/s   maxdiff  ok config
+  4096  1280  1 triton        6.76   6.72-6.79         778         -   y e20 rot=52
+  4096  1280  1 gemv          4.79   4.77-4.83        1100  0.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  4096  1280  1 gemv          4.87   4.81-4.91        1081  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  4096  1280  1 gemv          4.89   4.84-4.91        1076  0.00e+00   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  4096  1280  1 gemv          4.97   4.93-4.99        1059  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+  4096  1280  1 gemv          4.97   4.97-5.01        1058  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+                 best gemv 4.79 us vs triton 6.76 us: +29.2 % spread 0.06 -> ACCEPT
+ 16384  1280  1 triton       27.03  26.79-27.33        779         -   y e20 rot=13
+ 16384  1280  1 gemv         14.44  14.41-14.57       1458  1.25e-01   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+ 16384  1280  1 gemv         14.47  14.38-14.78       1455  1.25e-01   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 1, 'num_stages': 2}
+ 16384  1280  1 gemv         14.53  14.43-14.59       1449  1.25e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+ 16384  1280  1 gemv         14.47  14.37-14.62       1455  1.56e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+ 16384  1280  1 gemv         14.53  14.46-14.95       1449  1.25e-01   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+                 best gemv 14.44 us vs triton 27.03 us: +46.6 % spread 0.54 -> ACCEPT

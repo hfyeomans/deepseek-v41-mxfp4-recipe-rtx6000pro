@@ -1,7 +1,7 @@
 From 9d481b0b2f80532835975b47c5e77d8307fc88a6 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Sat, 10 Oct 2026 09:45:16 -0400
-Subject: [PATCH 47/59] dsv41 engram file layout: hash and fetch the chunked
+Subject: [PATCH 47/60] dsv41 engram file layout: hash and fetch the chunked
  request's next prefill chunk from the post-hasher break (recipe T3.20 (c))
 
 SGLANG_DSV41_ENGRAM_CHUNK_AHEAD (default on): the scheduler hands each extend
@@ -25,7 +25,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  6 files changed, 177 insertions(+), 18 deletions(-)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index 50d1bc96..067812a7 100644
+index 50d1bc960..067812a73 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1443,6 +1443,11 @@ class Envs:
@@ -41,7 +41,7 @@ index 50d1bc96..067812a7 100644
      SGLANG_DSV41_ENGRAM_FILE_THREADS = EnvInt(16)
      # With the host table on, drop the checkpoint's page cache (posix_fadvise
 diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
-index f74cbe73..fe610cfe 100644
+index f74cbe730..fe610cfe1 100644
 --- a/python/sglang/srt/layers/engram.py
 +++ b/python/sglang/srt/layers/engram.py
 @@ -49,7 +49,7 @@ from sglang.srt.layers.dp_attention import (
@@ -242,7 +242,7 @@ index f74cbe73..fe610cfe 100644
  
  def _engram_file_rows(embed: "EngramEmbedding", indices: torch.Tensor) -> torch.Tensor:
 diff --git a/python/sglang/srt/managers/schedule_batch.py b/python/sglang/srt/managers/schedule_batch.py
-index 5894208e..9ef3c172 100755
+index 5894208eb..9ef3c1722 100755
 --- a/python/sglang/srt/managers/schedule_batch.py
 +++ b/python/sglang/srt/managers/schedule_batch.py
 @@ -123,6 +123,7 @@ from sglang.srt.mem_cache.memory_pool import HybridReqToTokenPool, ReqToTokenPoo
@@ -264,7 +264,7 @@ index 5894208e..9ef3c172 100755
  
      req_pool_indices: torch.Tensor = None  # shape: [b], int64
 diff --git a/python/sglang/srt/model_executor/forward_batch_info.py b/python/sglang/srt/model_executor/forward_batch_info.py
-index 7e0fc7db..e4e9dc16 100644
+index 7e0fc7dba..e4e9dc161 100644
 --- a/python/sglang/srt/model_executor/forward_batch_info.py
 +++ b/python/sglang/srt/model_executor/forward_batch_info.py
 @@ -390,6 +390,20 @@ class NgramEmbeddingInfo:
@@ -307,7 +307,7 @@ index 7e0fc7db..e4e9dc16 100644
              mamba_track_mask=batch.mamba_track_mask,
              mamba_track_seqlens=batch.mamba_track_seqlens,
 diff --git a/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py b/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py
-index 97fbfb15..f275f890 100644
+index 97fbfb15b..f275f8902 100644
 --- a/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py
 +++ b/python/sglang/srt/model_executor/model_runner_components/ngram_embedding_manager.py
 @@ -9,7 +9,9 @@ import torch
@@ -383,7 +383,7 @@ index 97fbfb15..f275f890 100644
  
  def update_ngram_token_table_after_sampling(
 diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
-index bef1955b..c10c82e2 100644
+index bef1955b5..c10c82e27 100644
 --- a/python/sglang/srt/models/deepseek_v4.py
 +++ b/python/sglang/srt/models/deepseek_v4.py
 @@ -3838,8 +3838,15 @@ class DeepseekV4Model(nn.Module):

@@ -1,7 +1,7 @@
 From e07379c61e4a4bd3bd85ff5dc927b41f15fcfc51 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 12:23:44 -0400
-Subject: [PATCH 53/59] dsv4 decode indexer: optional sorted top-k slots
+Subject: [PATCH 53/60] dsv4 decode indexer: optional sorted top-k slots
  (SGLANG_DSV41_SORT_DECODE_TOPK, default off) for bit-reproducible decode past
  top-k (recipe T3.15b)
 
@@ -13,7 +13,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  2 files changed, 11 insertions(+)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index c0bd474a..fa4dc216 100644
+index c0bd474a5..fa4dc2163 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1414,6 +1414,12 @@ class Envs:
@@ -30,7 +30,7 @@ index c0bd474a..fa4dc216 100644
      # rows from the GPU instead of sharding them over HBM.
      SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE = EnvBool(False)
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index 7c827cbd..7ef85983 100644
+index 7c827cbd3..7ef85983e 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -3591,6 +3591,11 @@ class DeepseekV4AttnBackend(

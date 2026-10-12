@@ -1,0 +1,249 @@
+{
+ "label": "t341-gemv",
+ "url": "http://127.0.0.1:8000",
+ "max_tokens": 384,
+ "margin_nats": 0.5,
+ "flush_cache": true,
+ "prompts": {
+  "copy-code": {
+   "tokens": 384,
+   "argmax_agree": 384,
+   "argmax_agree_rate": 1.0,
+   "flips": 0,
+   "flips_over_margin": 0,
+   "max_flip_gap_nats": 0.0,
+   "max_abs_dlogprob_decode_vs_forced": 0.0006737373769283295,
+   "flip_detail": [],
+   "prompt_tokens": 1204,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "```python\nimport json\nimport os\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\n\n\n@dataclass\nclass Record:\n    key: str\n    value: float\n    tags: list[str] = field(default_factory=l"
+  },
+  "copy-table": {
+   "tokens": 384,
+   "argmax_agree": 384,
+   "argmax_agree_rate": 1.0,
+   "flips": 0,
+   "flips_over_margin": 0,
+   "max_flip_gap_nats": 0.0,
+   "max_abs_dlogprob_decode_vs_forced": 0.00013707834114029538,
+   "flip_detail": [],
+   "prompt_tokens": 1025,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "| id | host | region | cpu_pct | mem_gib | status |\n|---|---|---|---|---|---|\n| 040 | node-760.internal | us-east-1 | 80.0 | 8 | degraded |\n| 039 | node-841.internal | ap-south-1 | 43.9 | 251 | ok |\n|"
+  },
+  "review": {
+   "tokens": 384,
+   "argmax_agree": 370,
+   "argmax_agree_rate": 0.9635416666666666,
+   "flips": 14,
+   "flips_over_margin": 1,
+   "max_flip_gap_nats": 0.875,
+   "max_abs_dlogprob_decode_vs_forced": 0.5566965341567993,
+   "flip_detail": [
+    {
+     "pos": 53,
+     "emitted": 94508,
+     "argmax": 2526,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 69,
+     "emitted": 2329,
+     "argmax": 50494,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 142,
+     "emitted": 23439,
+     "argmax": 5354,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 190,
+     "emitted": 759,
+     "argmax": 17162,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 199,
+     "emitted": 29182,
+     "argmax": 11493,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 201,
+     "emitted": 688,
+     "argmax": 2408,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 212,
+     "emitted": 18222,
+     "argmax": 10340,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 245,
+     "emitted": 54861,
+     "argmax": 38717,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 297,
+     "emitted": 418,
+     "argmax": 2136,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 308,
+     "emitted": 554,
+     "argmax": 790,
+     "gap_nats": 0.875
+    },
+    {
+     "pos": 333,
+     "emitted": 63171,
+     "argmax": 4990,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 370,
+     "emitted": 2292,
+     "argmax": 1698,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 378,
+     "emitted": 28010,
+     "argmax": 16768,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 383,
+     "emitted": 2167,
+     "argmax": 66,
+     "gap_nats": 0.25
+    }
+   ],
+   "prompt_tokens": 166,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "# Review\n\n## Correctness issues\n\n1. **File handles leak.** `json.load(open(...))` never closes the file. On CPython it usually gets GC'd, but on PyPy or under load you'll exhaust FDs. Use `with`.\n2. *"
+  },
+  "long12000": {
+   "tokens": 384,
+   "argmax_agree": 374,
+   "argmax_agree_rate": 0.9739583333333334,
+   "flips": 10,
+   "flips_over_margin": 2,
+   "max_flip_gap_nats": 0.75,
+   "max_abs_dlogprob_decode_vs_forced": 0.44387465715408325,
+   "flip_detail": [
+    {
+     "pos": 5,
+     "emitted": 14,
+     "argmax": 271,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 16,
+     "emitted": 343,
+     "argmax": 1492,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 19,
+     "emitted": 270,
+     "argmax": 4940,
+     "gap_nats": 0.625
+    },
+    {
+     "pos": 66,
+     "emitted": 16,
+     "argmax": 14,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 70,
+     "emitted": 366,
+     "argmax": 2413,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 110,
+     "emitted": 42050,
+     "argmax": 396,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 114,
+     "emitted": 28975,
+     "argmax": 107370,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 116,
+     "emitted": 14,
+     "argmax": 2605,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 137,
+     "emitted": 4792,
+     "argmax": 2863,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 329,
+     "emitted": 940,
+     "argmax": 17,
+     "gap_nats": 0.25
+    }
+   ],
+   "prompt_tokens": 14773,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "# Summary of the Document, Section by Section\n\n## 1. Verdict (top of the main document)\n\n**Two RTX PRO 6000 Blackwell 96 GB GPUs cannot hold DeepSeek-V4.1-Flash in VRAM.** The shortfall is **112 GiB**"
+  }
+ },
+ "compare": {
+  "copy-code": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "copy-table": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "review": {
+   "agree_rate_delta": 0.01041666666666663,
+   "flips_over_margin_delta": 0
+  },
+  "long12000": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 1
+  }
+ },
+ "evidence": {
+  "tool": "spec-consistency.py",
+  "recorded_utc": "2026-10-12T01:23:37Z",
+  "manifest_hash": "9aa7ec65f70e33ea8a41e1a03ac4b0833d575e04ce36c487129411978ceae79e",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "53c317e0fcc8c5d5b1c8e00d9573327780677e9d26b7becfc3a8ec1498836736"
+ }
+}

@@ -1,7 +1,7 @@
 From 30e8c41220e775144900410e4f8d5f1eb85a4da1 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 15:17:13 -0400
-Subject: [PATCH 39/59] post-capture allocator: optional expandable_segments
+Subject: [PATCH 39/60] post-capture allocator: optional expandable_segments
  after CUDA-graph capture (recipe T3.31 idea 8,
  SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE)
 
@@ -15,7 +15,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  create mode 100644 python/sglang/srt/model_executor/post_capture_allocator.py
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index 309cf5b7..2c7547e7 100644
+index 309cf5b74..2c7547e7f 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1438,6 +1438,11 @@ class Envs:
@@ -31,7 +31,7 @@ index 309cf5b7..2c7547e7 100644
      SGLANG_OPT_FLASHMLA_SPARSE_PREFILL = EnvBool(True)
  
 diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
-index a81aaa10..cc81fbe1 100644
+index a81aaa108..cc81fbe12 100644
 --- a/python/sglang/srt/managers/scheduler.py
 +++ b/python/sglang/srt/managers/scheduler.py
 @@ -284,6 +284,9 @@ from sglang.srt.mem_cache.common import (
@@ -57,7 +57,7 @@ index a81aaa10..cc81fbe1 100644
              self.tp_worker.finalize_startup_weight_load()
 diff --git a/python/sglang/srt/model_executor/post_capture_allocator.py b/python/sglang/srt/model_executor/post_capture_allocator.py
 new file mode 100644
-index 00000000..2dd0e346
+index 000000000..2dd0e346f
 --- /dev/null
 +++ b/python/sglang/srt/model_executor/post_capture_allocator.py
 @@ -0,0 +1,57 @@

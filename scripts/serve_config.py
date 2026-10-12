@@ -317,6 +317,15 @@ REGISTRY: tuple[Knob, ...] = (
          "bit-reproducible greedy decode. 0 = the unsorted stock order. Residual past ~14K tokens: the top-k "
          "kernel's own tie-break (T3.15d), logprobs only.",
          sink=CONTAINER_ENV, evidence="evidence/t315b/, evidence/t315c/"),
+    # ---- decode-shape FP8 GEMV (T3.41 / E44; opt-in, serve-level gain is inside the noise) ----
+    Knob("SGLANG_DSV41_FP8_GEMV", "flag", "0",
+         "T3.41, overlay patch 0060: at decode M <= 4 the seven dense W8A8 [32, 32] block-scaled projections "
+         "take an FMA row-dot GEMV (kernels/t341/) instead of the E20 tensor-core tiles; the per-(N, K, M) table "
+         "in the overlay's configs/gemv,*.json holds only sweep winners (L2-cold, in-graph: 1.1-1.45 TB/s vs "
+         "~780 GB/s, +3 to +51 % per call (+12 to +51 % at M=1)). Served (E44): C1 +1-2 %, C4 flat, decode numerics within the "
+         "spec-off baseline, NLL cannot see it (prefill-only). Stays 0 until a pinned paired A/B shows >= +2 % C1. "
+         "Prefill and M > 4 are untouched. 0 = E20 Triton path.",
+         sink=CONTAINER_ENV, evidence="evidence/t341/"),
     # ---- overlay diagnostics (forwarded into the container only when set) ---------------
     Knob("KT_NAN_INJECT", "str", "",
          "T3.13 / C10 test hook: row=<r>,bs=<b>,step=<n>,layer=<l> adds NaN to row r's hidden state after MoE "
@@ -383,6 +392,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS={r['SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS']}",
         f"SGLANG_FLASHINFER_MOE_FUSED_FINALIZE={r['SGLANG_FLASHINFER_MOE_FUSED_FINALIZE']}",
         f"SGLANG_DSV41_SORT_DECODE_TOPK={r['SGLANG_DSV41_SORT_DECODE_TOPK']}",
+        f"SGLANG_DSV41_FP8_GEMV={r['SGLANG_DSV41_FP8_GEMV']}",
     ] + ([f"SGLANG_API_KEY_FILE={API_KEY_MOUNT}"] if r["API_KEY_FILE"] else [])
 
 
@@ -632,6 +642,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"reject_nan_rows={r['KT_REJECT_NAN_ROWS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
             f"fused_finalize={r['SGLANG_FLASHINFER_MOE_FUSED_FINALIZE']} sort_decode_topk={r['SGLANG_DSV41_SORT_DECODE_TOPK']} "
+            f"fp8_gemv={r['SGLANG_DSV41_FP8_GEMV']} "
             f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} engram_chunk_ahead={r['ENGRAM_CHUNK_AHEAD']} "
             f"expert_map={emap} image={r['IMAGE']} profile={r['PROFILE']} overrides=[{r['PROFILE_OVERRIDES']}]")
 

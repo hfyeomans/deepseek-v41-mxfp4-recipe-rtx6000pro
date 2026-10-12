@@ -1,0 +1,99 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 512,
+  "runs": 3,
+  "warmup": 1,
+  "distinct_prompts": true,
+  "fixture_offset": 6,
+  "fixture_set": "distinct",
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 2,
+      "median_tps": 86.79101279686034,
+      "min_tps": 76.24786788546531,
+      "max_tps": 87.7074876661774,
+      "median_wall_tps": 83.79028541389518,
+      "median_ttft_s": 0.44484585692407563,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 76.24786788546531,
+          "wall_tps": 72.59806196956956,
+          "wall_s": 14.105059724999592,
+          "per_seq_tps": [
+            38.124252783918585,
+            38.123615101546726
+          ],
+          "ttft_s": [
+            0.7009509470080957,
+            0.7001980869099498
+          ],
+          "completion_tokens": [
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 87.7074876661774,
+          "wall_tps": 84.64387987768714,
+          "wall_s": 12.097744119004346,
+          "per_seq_tps": [
+            43.853675818945135,
+            43.85381184723227
+          ],
+          "ttft_s": [
+            0.4448611999396235,
+            0.4446791859809309
+          ],
+          "completion_tokens": [
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 86.79101279686034,
+          "wall_tps": 83.79028541389518,
+          "wall_s": 12.22098713403102,
+          "per_seq_tps": [
+            43.39484613178362,
+            43.39616666507671
+          ],
+          "ttft_s": [
+            0.4448305139085278,
+            0.4446968729607761
+          ],
+          "completion_tokens": [
+            512,
+            512
+          ],
+          "finish_reasons": [
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-11T21:16:45-0400",
+  "evidence": {
+    "tool": "bench-decode.py",
+    "recorded_utc": "2026-10-12T01:16:45Z",
+    "manifest_hash": "9aa7ec65f70e33ea8a41e1a03ac4b0833d575e04ce36c487129411978ceae79e",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "53c317e0fcc8c5d5b1c8e00d9573327780677e9d26b7becfc3a8ec1498836736"
+  }
+}

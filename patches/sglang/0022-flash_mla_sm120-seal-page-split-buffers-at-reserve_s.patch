@@ -1,7 +1,7 @@
 From 9ecd54a67da895148a1d11e2b3dbd2b893d5cf3e Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Thu, 24 Sep 2026 13:33:38 -0400
-Subject: [PATCH 22/59] flash_mla_sm120: seal page-split buffers at
+Subject: [PATCH 22/60] flash_mla_sm120: seal page-split buffers at
  reserve_split_buffers(); a later grow raises SM120SplitBufferSealedError
  instead of retiring (recipe review C5)
 
@@ -12,7 +12,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 39 insertions(+), 1 deletion(-)
 
 diff --git a/python/sglang/kernels/ops/attention/flash_mla_sm120.py b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
-index 76b46c0f..6c258db4 100644
+index 76b46c0f7..6c258db45 100644
 --- a/python/sglang/kernels/ops/attention/flash_mla_sm120.py
 +++ b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
 @@ -518,6 +518,19 @@ def _guard_indices(idx: torch.Tensor, bound: int) -> torch.Tensor:

@@ -1,7 +1,7 @@
 From b6dc51733439d7f63b2da3c3a6305a6a95b319c6 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Thu, 8 Oct 2026 22:55:28 -0400
-Subject: [PATCH 31/59] dsv4 indexer: publish prefill candidates as block-ID
+Subject: [PATCH 31/60] dsv4 indexer: publish prefill candidates as block-ID
  lists (recipe E34e e-i)
 
 select_candidate_block_ids / expand_candidate_ids replace the block keep mask on
@@ -21,7 +21,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  2 files changed, 65 insertions(+), 19 deletions(-)
 
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index 52bbe242..7c827cbd 100644
+index 52bbe242e..7c827cbd3 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -68,8 +68,8 @@ from sglang.srt.layers.attention.dsv4.dsv41_sparse import (
@@ -123,7 +123,7 @@ index 52bbe242..7c827cbd 100644
                      )
                      s = s.masked_fill(~keep, -torch.inf)
 diff --git a/python/sglang/srt/layers/attention/dsv4/indexer.py b/python/sglang/srt/layers/attention/dsv4/indexer.py
-index 57786c30..b556fcab 100644
+index 57786c303..b556fcab4 100644
 --- a/python/sglang/srt/layers/attention/dsv4/indexer.py
 +++ b/python/sglang/srt/layers/attention/dsv4/indexer.py
 @@ -1166,6 +1166,48 @@ def expand_candidate_blocks(

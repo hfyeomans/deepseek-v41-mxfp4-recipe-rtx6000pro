@@ -1,7 +1,7 @@
 From 0138c6adbcdbce84d4e740ff5b336f888de10558 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Tue, 22 Sep 2026 13:18:29 -0400
-Subject: [PATCH 07/59] E22b: layerwise streamed GPU prefill coordinator for
+Subject: [PATCH 07/60] E22b: layerwise streamed GPU prefill coordinator for
  CPU experts (KT_GPU_PREFILL_MIN_TOKENS); known NaN on 1024-token multi-seq
  batch (E22d bisect)
 
@@ -12,7 +12,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 354 insertions(+), 6 deletions(-)
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index 09a49083..0abe1c86 100644
+index 09a490833..0abe1c86f 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -7,10 +7,15 @@ for any MoE quantization method. It coordinates parallel execution of GPU expert

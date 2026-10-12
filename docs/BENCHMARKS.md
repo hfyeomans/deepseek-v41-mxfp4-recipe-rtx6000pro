@@ -623,6 +623,23 @@ Method for the quality rows (the corpus gate cannot run under the flag): paired 
 
 Reading: the win and the loss are one mechanism. Layers 21–39 run over the last 128 rows of each extend with the SWA window floored at the tail start (the late layers never write window KV for earlier rows), so ~19 of 40 layers cost 128 rows instead of 8,192 — and the row that produces the next token inherits 19 layers of truncated-window states. Code and 1–8-token extends suffer most: the owner's shape. E35-ii (tail = 2,560-row receptive field, exact for everything decode can reach) is registered as a candidate; expected to keep roughly half the speed-up on first turns and none on chat turns.
 
+## T3.41 — decode-shape FP8 GEMV: +3…+51 % per call (+12…+51 % at M = 1), +1–2 % C1 served, opt-in; and the C4 slow mode (2026-10-12)
+
+Two developer serves on the launcher default (219 / 165 hot map, chunk 8192, 262K × 4), overlay `d00e8e30` (patch 0060), `evidence/t341/` (`README.md` has the per-shape table). The seven dense W8A8 block-32 projections at decode M ≤ 4 take an FMA row-dot GEMV instead of the E20 tensor-core tiles when `SGLANG_DSV41_FP8_GEMV=1`; the sweep (L2-cold, in-graph, GPU 1) picked the winners.
+
+| | sweep (per call, M=1) | serve A, GEMV on | serve B, GEMV off (control) | serve B, host threads pinned to CPUs 16–31 |
+|---|---|---|---|---|
+| 16384×1280 / 25600×6144 / 4096×1280 µs | 26.9 → 14.5 / 201 → 99 / 6.7 → 4.8 | | | |
+| C1 median tok/s | | 60.70, 58.54 | 59.48 | **60.38** (60.19–60.54) |
+| C2 / C3 | | 86.79 / 100.56, 99.06 | — | — |
+| C4 wall tok/s | | 108.24, 107.77 (one run 123.6) | **106.04**, 123.55, 123.63, 122.54 | **125.05, 125.29** |
+| forced collision (TP0 main on cpu5, TP1 main on cpu2) | | | 33.80 | |
+| prefill 16K, fresh seed per pass | | | 3,789 / 3,859 (floating) | 3,711 / 3,812 (pinned), −1…−2 % inside the drift |
+| decode numerics (`spec-consistency.py`, agree / flips > 0.5 nats) | | 1.000 / 1.000 / 0.964 / 0.974, 0 / 0 / 1 / 2 | baseline 1.000 / 1.000 / 0.953 / 0.974, 0 / 0 / 1 / 1 | |
+| corpus NLL vs anchor | | 0 of 65,653 moved (prefill-only; cannot see a decode kernel) | | |
+
+Reading: the kernel is real (23/28 cells accepted, 1.1–1.45 TB/s effective against ~780 GB/s) but the dense GEMMs are ≈ 20 % of a 17 ms step and the step is bound elsewhere, so the served gain is +1–2 % C1 and 0 at C4 — inside the band; the knob stays `0`. The control serve's C4 reads 106 or 123 on the same prompts: kt-kernel pins its 16 workers to logical CPUs 0–15 and every other container thread floats, so a scheduler, tokenizer or spinning TP1 thread that lands on a worker's CPU stalls the CPU tier. Pinning the rest of the container to the SMT siblings gives the stable 125 — T3.52 (launcher knob, qualification, owner flip).
+
 ## Erratum (2026-09-23): every V4.1-hybrid C3 and C4 decode figure from E19 to E23 R0 is an artifact of kt-kernel bug C
 
 **What was wrong.** The unpatched kt-kernel bs=4 decode CUDA graph was baked to a pinned host buffer that the first prefill freed ([TROUBLESHOOTING, bug C and the entry after it](TROUBLESHOOTING.md#c4-decode-drops-from--148-to--50-toks-after-the-bug-c-patch--and-four-identical-greedy-prompts-in-one-batch-return-four-different-answers-on-the-old-build)). It never crashed; it computed CPU experts for effectively one row of the batch and copied stale bytes for rows 1–3. Two consequences: (1) the bs=4 step took as long as a bs=1 step, so C4 looked like 4 × C1 ("near-linear batching") and C3 (padded into the bs=4 graph) like 3 × C1; (2) rows 1–3 of every C3/C4 request since E19 were **wrong** — four identical greedy prompts in one batch returned four different answers on the old build, one of them having lost the prompt. bs=1 and bs=2 were always correct, so every C1 and C2 figure stands, as do prefill, TTFT, NLL (bs=1) and needle results.

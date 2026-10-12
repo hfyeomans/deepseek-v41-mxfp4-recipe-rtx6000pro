@@ -1,7 +1,7 @@
 From 838490a6fd7f0a026f3c03b2586d0e9f4288a968 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 23 Sep 2026 00:03:42 -0400
-Subject: [PATCH 15/59] sm120 page-split: never free buffers captured by CUDA
+Subject: [PATCH 15/60] sm120 page-split: never free buffers captured by CUDA
  graphs; pre-size from pool geometry
 
 E23 R1 bug B (DSpark K=2 graph mode: cudaErrorIllegalAddress / Xid 31 in the
@@ -49,7 +49,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  3 files changed, 397 insertions(+), 35 deletions(-)
 
 diff --git a/python/sglang/kernels/ops/attention/flash_mla_sm120.py b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
-index c5c5c7be..76b46c0f 100644
+index c5c5c7bea..76b46c0f7 100644
 --- a/python/sglang/kernels/ops/attention/flash_mla_sm120.py
 +++ b/python/sglang/kernels/ops/attention/flash_mla_sm120.py
 @@ -231,6 +231,7 @@ def _flash_mla_sm120_prefill(
@@ -352,7 +352,7 @@ index c5c5c7be..76b46c0f 100644
      output = torch.empty(B, H, head_dim_v, dtype=torch.bfloat16, device=dev)
      out_lse = torch.empty(B, H, dtype=torch.float32, device=dev)
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index f2d6d84f..24a9ee46 100644
+index f2d6d84f7..24a9ee46a 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -1150,6 +1150,8 @@ class DeepseekV4AttnBackend(
@@ -408,7 +408,7 @@ index f2d6d84f..24a9ee46 100644
          pin_tensor = torch.tensor(x, dtype=torch.int32, pin_memory=True)
          return pin_tensor.to(self.device, non_blocking=True)
 diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
-index c754fe72..c8f3585e 100644
+index c754fe729..c8f3585e5 100644
 --- a/python/sglang/srt/models/deepseek_v4.py
 +++ b/python/sglang/srt/models/deepseek_v4.py
 @@ -3,6 +3,7 @@ from __future__ import annotations

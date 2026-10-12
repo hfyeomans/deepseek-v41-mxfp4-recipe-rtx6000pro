@@ -1,0 +1,510 @@
+From d00e8e30c163daecec4a839995535b3d2ddc929e Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sun, 11 Oct 2026 21:08:50 -0400
+Subject: [PATCH 60/60] [DSV4.1] Opt-in decode-shape FP8 GEMV for [32, 32]
+ block scales on SM120 (recipe T3.41)
+
+At decode M (<= 4) the tuned tensor-core tiles in w8a8_block_fp8_matmul_triton
+(SWAP_AB / SPLIT_K, E20) stream the dense projection weights at ~780 GB/s on
+the RTX PRO 6000 against a ~1,470 GB/s GDDR7 roof. fp8_gemv_dsv41 adds a plain
+FP32-FMA row-dot: one CTA per BLOCK_N (<= 32, one block-scale row) output
+columns, K in BLOCK_K contiguous slices, both scales folded into the activation,
+M as a constexpr loop over the same weight slice, optional SPLIT_K through the
+existing _reduce_block_fp8_split_k. Deterministic; not bit-identical to the
+tensor-core path (FMA vs MMA accumulation order, <= 1 bf16 ulp observed).
+
+Gated by SGLANG_DSV41_FP8_GEMV (default off) and used only for (N, K, M)
+entries in configs/gemv,device_name=<dev>,dtype=fp8_w8a8,block_shape=[32, 32].json.
+The shipped RTX PRO 6000 table holds the 23/28 (shape, M) winners of a
+423-config sweep (M=1: 4096x1280 6.7 -> 4.8 us, 16384x1280 26.9 -> 14.5 us,
+25600x6144 201 -> 99 us); the five losers keep the Triton GEMM.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ ...n,dtype=fp8_w8a8,block_shape=[32, 32].json | 231 ++++++++++++++++++
+ .../ops/quantization/fp8_gemv_dsv41.py        | 182 ++++++++++++++
+ .../kernels/ops/quantization/fp8_kernel.py    |  17 ++
+ python/sglang/srt/environ.py                  |   5 +
+ 4 files changed, 435 insertions(+)
+ create mode 100644 python/sglang/kernels/ops/quantization/configs/gemv,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+ create mode 100644 python/sglang/kernels/ops/quantization/fp8_gemv_dsv41.py
+
+diff --git a/python/sglang/kernels/ops/quantization/configs/gemv,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/gemv,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
+new file mode 100644
+index 000000000..63989bc48
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/configs/gemv,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
+@@ -0,0 +1,231 @@
++{
++ "device": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
++ "block_shape": [
++  32,
++  32
++ ],
++ "max_m": 4,
++ "shapes": {
++  "N=16384,K=1280": {
++   "1": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 128,
++    "SPLIT_K": 1,
++    "num_warps": 1,
++    "num_stages": 2,
++    "us": 14.488615095615387,
++    "triton_us": 26.865231303068306
++   },
++   "2": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 128,
++    "SPLIT_K": 1,
++    "num_warps": 2,
++    "num_stages": 2,
++    "us": 14.841845975472378,
++    "triton_us": 25.868308085661667
++   },
++   "3": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 256,
++    "SPLIT_K": 1,
++    "num_warps": 1,
++    "num_stages": 3,
++    "us": 15.316923077289875,
++    "triton_us": 26.27815420810993
++   },
++   "4": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 256,
++    "SPLIT_K": 1,
++    "num_warps": 2,
++    "num_stages": 1,
++    "us": 16.28800023060579,
++    "triton_us": 24.801230201354393
++   }
++  },
++  "N=1792,K=5120": {
++   "1": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 256,
++    "SPLIT_K": 4,
++    "num_warps": 4,
++    "num_stages": 3,
++    "us": 8.139733473459879,
++    "triton_us": 9.306133290131886
++   },
++   "2": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 512,
++    "SPLIT_K": 4,
++    "num_warps": 2,
++    "num_stages": 3,
++    "us": 8.479467034339905,
++    "triton_us": 9.364800155162811
++   },
++   "3": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 512,
++    "SPLIT_K": 4,
++    "num_warps": 8,
++    "num_stages": 2,
++    "us": 9.098133444786072,
++    "triton_us": 9.403733412424723
++   }
++  },
++  "N=2304,K=5120": {
++   "1": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 256,
++    "SPLIT_K": 4,
++    "num_warps": 2,
++    "num_stages": 3,
++    "us": 9.812173960001573,
++    "triton_us": 11.6173910058063
++   },
++   "2": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 512,
++    "SPLIT_K": 4,
++    "num_warps": 2,
++    "num_stages": 3,
++    "us": 10.177391378775887,
++    "triton_us": 11.42121786656587
++   },
++   "3": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 512,
++    "SPLIT_K": 4,
++    "num_warps": 2,
++    "num_stages": 2,
++    "us": 10.791652228521265,
++    "triton_us": 11.723826112954512
++   }
++  },
++  "N=25600,K=6144": {
++   "1": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 512,
++    "SPLIT_K": 1,
++    "num_warps": 8,
++    "num_stages": 1,
++    "us": 99.46399927139282,
++    "triton_us": 201.48799568414688
++   },
++   "2": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 512,
++    "SPLIT_K": 1,
++    "num_warps": 8,
++    "num_stages": 1,
++    "us": 101.29600018262863,
++    "triton_us": 194.32800263166428
++   },
++   "3": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 512,
++    "SPLIT_K": 1,
++    "num_warps": 2,
++    "num_stages": 2,
++    "us": 104.0400005877018,
++    "triton_us": 195.23999840021133
++   },
++   "4": {
++    "BLOCK_N": 32,
++    "BLOCK_K": 256,
++    "SPLIT_K": 2,
++    "num_warps": 4,
++    "num_stages": 1,
++    "us": 109.14399847388268,
++    "triton_us": 199.36800003051758
++   }
++  },
++  "N=4096,K=1280": {
++   "1": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 256,
++    "SPLIT_K": 1,
++    "num_warps": 8,
++    "num_stages": 1,
++    "us": 4.785538436128543,
++    "triton_us": 6.723692210821005
++   },
++   "2": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 256,
++    "SPLIT_K": 1,
++    "num_warps": 4,
++    "num_stages": 2,
++    "us": 5.482461590033311,
++    "triton_us": 6.636615269459211
++   },
++   "3": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 512,
++    "SPLIT_K": 1,
++    "num_warps": 2,
++    "num_stages": 3,
++    "us": 6.309538506544554,
++    "triton_us": 6.786769399276146
++   }
++  },
++  "N=5120,K=1152": {
++   "1": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 256,
++    "SPLIT_K": 1,
++    "num_warps": 8,
++    "num_stages": 2,
++    "us": 5.2674782017002935,
++    "triton_us": 7.103304500165193
++   },
++   "2": {
++    "BLOCK_N": 8,
++    "BLOCK_K": 256,
++    "SPLIT_K": 1,
++    "num_warps": 4,
++    "num_stages": 1,
++    "us": 5.84486969139265,
++    "triton_us": 6.907130713048189
++   }
++  },
++  "N=5120,K=4096": {
++   "1": {
++    "BLOCK_N": 32,
++    "BLOCK_K": 256,
++    "SPLIT_K": 1,
++    "num_warps": 8,
++    "num_stages": 3,
++    "us": 14.691692132216232,
++    "triton_us": 20.465230712523827
++   },
++   "2": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 512,
++    "SPLIT_K": 1,
++    "num_warps": 8,
++    "num_stages": 1,
++    "us": 15.228307591034817,
++    "triton_us": 20.743384957313538
++   },
++   "3": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 256,
++    "SPLIT_K": 4,
++    "num_warps": 1,
++    "num_stages": 1,
++    "us": 16.16369245144037,
++    "triton_us": 20.86892265539903
++   },
++   "4": {
++    "BLOCK_N": 16,
++    "BLOCK_K": 512,
++    "SPLIT_K": 4,
++    "num_warps": 1,
++    "num_stages": 3,
++    "us": 17.197538453799027,
++    "triton_us": 20.7606152846263
++   }
++  }
++ }
++}
+\ No newline at end of file
+diff --git a/python/sglang/kernels/ops/quantization/fp8_gemv_dsv41.py b/python/sglang/kernels/ops/quantization/fp8_gemv_dsv41.py
+new file mode 100644
+index 000000000..91f9843f7
+--- /dev/null
++++ b/python/sglang/kernels/ops/quantization/fp8_gemv_dsv41.py
+@@ -0,0 +1,182 @@
++# SPDX-License-Identifier: Apache-2.0
++"""Decode-shape (M <= 4) block-[32, 32] W8A8 FP8 GEMV for SM120 (recipe T3.41).
++
++DeepSeek-V4.1-Flash's dense projections are FP8 weights with FP32 [32, 32] block scales. At
++decode M the tuned tensor-core tiles (`_w8a8_block_fp8_matmul_hopper`, SPLIT_K + reduce) move
++the weights at ~780 GB/s on the RTX PRO 6000 against a ~1,470 GB/s GDDR7 roof. This kernel is
++a plain FP32-FMA row-dot: one CTA per BLOCK_N (<= 32, so the tile shares one block-scale row)
++output columns, K streamed in BLOCK_K-wide contiguous slices, both scales folded into the
++activation slice, M a constexpr loop over the same weight slice. Deterministic (no atomics).
++
++It is enabled by ``SGLANG_DSV41_FP8_GEMV`` and used only for (N, K, M) entries present in the
++per-device table ``configs/gemv,device_name=<dev>,dtype=fp8_w8a8,block_shape=[32, 32].json``
++(written by the recipe's ``kernels/t341/fp8_gemv_block32.py`` sweep); every other call keeps
++the tuned Triton GEMM path.
++"""
++
++from __future__ import annotations
++
++import json
++import logging
++import os
++from functools import lru_cache
++from typing import Any, Dict, Optional
++
++import torch
++import triton
++import triton.language as tl
++
++from sglang.srt.utils import get_device_name
++
++logger = logging.getLogger(__name__)
++
++GEMV_MAX_M = 4
++
++
++@triton.jit
++def _fp8_gemv_block32(
++    a_ptr, b_ptr, c_ptr, as_ptr, bs_ptr,
++    N, K,
++    stride_am, stride_ak,
++    stride_bn, stride_bk,
++    stride_cm, stride_cn,
++    stride_asm, stride_ask,
++    stride_bsn, stride_bsk,
++    M: tl.constexpr,
++    BLOCK_N: tl.constexpr,
++    BLOCK_K: tl.constexpr,
++    SPLIT_K: tl.constexpr,
++    OUT_FP32: tl.constexpr,
++):
++    """C[m, n] = sum_k (A[m, k] * As[m, k//32]) * (B[n, k] * Bs[n//32, k//32]), M <= 4 rows.
++
++    grid = (cdiv(N, BLOCK_N), SPLIT_K). BLOCK_N must divide 32 so every row of the CTA's
++    weight tile shares the same block-scale row. With SPLIT_K > 1 the CTA writes FP32 partials
++    at c_ptr + pid_k * M * N (reduced by ``_reduce_block_fp8_split_k``).
++    """
++    pid_n = tl.program_id(0)
++    pid_k = tl.program_id(1)
++    n0 = pid_n * BLOCK_N
++    offs_n = n0 + tl.arange(0, BLOCK_N)
++    mask_n = offs_n < N
++    nb = n0 // 32
++
++    k_per_split = tl.cdiv(tl.cdiv(K, BLOCK_K), SPLIT_K) * BLOCK_K
++    k_begin = pid_k * k_per_split
++    k_end = tl.minimum(k_begin + k_per_split, K)
++
++    acc0 = tl.zeros((BLOCK_N,), dtype=tl.float32)
++    acc1 = tl.zeros((BLOCK_N,), dtype=tl.float32)
++    acc2 = tl.zeros((BLOCK_N,), dtype=tl.float32)
++    acc3 = tl.zeros((BLOCK_N,), dtype=tl.float32)
++
++    for k0 in range(k_begin, k_end, BLOCK_K):
++        offs_k = k0 + tl.arange(0, BLOCK_K)
++        mask_k = offs_k < k_end
++        kb = offs_k // 32
++        w = tl.load(
++            b_ptr + offs_n[:, None] * stride_bn + offs_k[None, :] * stride_bk,
++            mask=mask_n[:, None] & mask_k[None, :], other=0.0,
++        ).to(tl.float32)
++        bs = tl.load(bs_ptr + nb * stride_bsn + kb * stride_bsk, mask=mask_k, other=0.0)
++        a = tl.load(a_ptr + 0 * stride_am + offs_k * stride_ak, mask=mask_k, other=0.0).to(tl.float32)
++        s = tl.load(as_ptr + 0 * stride_asm + kb * stride_ask, mask=mask_k, other=0.0)
++        acc0 += tl.sum(w * (a * s * bs)[None, :], axis=1)
++        if M > 1:
++            a = tl.load(a_ptr + 1 * stride_am + offs_k * stride_ak, mask=mask_k, other=0.0).to(tl.float32)
++            s = tl.load(as_ptr + 1 * stride_asm + kb * stride_ask, mask=mask_k, other=0.0)
++            acc1 += tl.sum(w * (a * s * bs)[None, :], axis=1)
++        if M > 2:
++            a = tl.load(a_ptr + 2 * stride_am + offs_k * stride_ak, mask=mask_k, other=0.0).to(tl.float32)
++            s = tl.load(as_ptr + 2 * stride_asm + kb * stride_ask, mask=mask_k, other=0.0)
++            acc2 += tl.sum(w * (a * s * bs)[None, :], axis=1)
++        if M > 3:
++            a = tl.load(a_ptr + 3 * stride_am + offs_k * stride_ak, mask=mask_k, other=0.0).to(tl.float32)
++            s = tl.load(as_ptr + 3 * stride_asm + kb * stride_ask, mask=mask_k, other=0.0)
++            acc3 += tl.sum(w * (a * s * bs)[None, :], axis=1)
++
++    if SPLIT_K > 1:
++        base = c_ptr + pid_k * M * N
++        tl.store(base + 0 * N + offs_n, acc0, mask=mask_n)
++        if M > 1:
++            tl.store(base + 1 * N + offs_n, acc1, mask=mask_n)
++        if M > 2:
++            tl.store(base + 2 * N + offs_n, acc2, mask=mask_n)
++        if M > 3:
++            tl.store(base + 3 * N + offs_n, acc3, mask=mask_n)
++    else:
++        if OUT_FP32:
++            tl.store(c_ptr + 0 * stride_cm + offs_n * stride_cn, acc0, mask=mask_n)
++            if M > 1:
++                tl.store(c_ptr + 1 * stride_cm + offs_n * stride_cn, acc1, mask=mask_n)
++            if M > 2:
++                tl.store(c_ptr + 2 * stride_cm + offs_n * stride_cn, acc2, mask=mask_n)
++            if M > 3:
++                tl.store(c_ptr + 3 * stride_cm + offs_n * stride_cn, acc3, mask=mask_n)
++        else:
++            tl.store(c_ptr + 0 * stride_cm + offs_n * stride_cn, acc0.to(c_ptr.dtype.element_ty), mask=mask_n)
++            if M > 1:
++                tl.store(c_ptr + 1 * stride_cm + offs_n * stride_cn, acc1.to(c_ptr.dtype.element_ty), mask=mask_n)
++            if M > 2:
++                tl.store(c_ptr + 2 * stride_cm + offs_n * stride_cn, acc2.to(c_ptr.dtype.element_ty), mask=mask_n)
++            if M > 3:
++                tl.store(c_ptr + 3 * stride_cm + offs_n * stride_cn, acc3.to(c_ptr.dtype.element_ty), mask=mask_n)
++
++
++@lru_cache(maxsize=None)
++def get_fp8_gemv_configs(block_n: int, block_k: int) -> Dict[str, Dict[int, Dict[str, Any]]]:
++    """``{"N=..,K=..": {M: config}}`` for this device, or ``{}`` when no table is shipped."""
++    device_name = get_device_name().replace(" ", "_")
++    name = f"gemv,device_name={device_name},dtype=fp8_w8a8,block_shape=[{block_n}, {block_k}].json"
++    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs", name)
++    if not os.path.exists(path):
++        logger.warning("SGLANG_DSV41_FP8_GEMV=1 but no GEMV table at %s; Triton GEMM path kept", path)
++        return {}
++    with open(path) as f:
++        table = json.load(f)
++    shapes = table.get("shapes", {})
++    out = {k: {int(m): cfg for m, cfg in v.items()} for k, v in shapes.items()}
++    logger.info("Using FP8 GEMV table %s (%d shapes)", path, len(out))
++    return out
++
++
++def fp8_gemv_config(N: int, K: int, M: int, block_n: int, block_k: int) -> Optional[Dict[str, Any]]:
++    if M > GEMV_MAX_M:
++        return None
++    return get_fp8_gemv_configs(block_n, block_k).get(f"N={N},K={K}", {}).get(M)
++
++
++def fp8_gemv_block32(
++    A: torch.Tensor, B: torch.Tensor, As: torch.Tensor, Bs: torch.Tensor, C: torch.Tensor,
++    config: Dict[str, Any],
++) -> torch.Tensor:
++    """A [..., K] fp8, B [N, K] fp8, As [..., K/32] fp32, Bs [N/32, K/32] fp32 -> C [..., N].
++
++    ``C`` is the tensor allocated by ``prepare_block_fp8_matmul_inputs`` (returned filled);
++    the leading dims of A/C are flattened to M <= GEMV_MAX_M rows.
++    """
++    K = A.shape[-1]
++    N = B.shape[0]
++    A = A.reshape(-1, K)
++    As = As.reshape(A.shape[0], -1)
++    out_full = C
++    C = C.view(-1, N)
++    M = A.shape[0]
++    bn, bk, split_k = config["BLOCK_N"], config["BLOCK_K"], config.get("SPLIT_K", 1)
++    if split_k > 1:
++        out = torch.empty((split_k, M, N), device=A.device, dtype=torch.float32)
++    else:
++        out = C
++    grid = (triton.cdiv(N, bn), split_k)
++    _fp8_gemv_block32[grid](
++        A, B, out, As, Bs, N, K,
++        A.stride(0), A.stride(1), B.stride(0), B.stride(1), C.stride(0), C.stride(1),
++        As.stride(0), As.stride(1), Bs.stride(0), Bs.stride(1),
++        M=M, BLOCK_N=bn, BLOCK_K=bk, SPLIT_K=split_k, OUT_FP32=(C.dtype == torch.float32),
++        num_warps=config["num_warps"], num_stages=config["num_stages"],
++    )
++    if split_k > 1:
++        from sglang.kernels.ops.quantization.fp8_kernel import _reduce_block_fp8_split_k
++
++        _reduce_block_fp8_split_k[(triton.cdiv(M * N, 256),)](out, C, M * N, split_k, 256)
++    return out_full
+diff --git a/python/sglang/kernels/ops/quantization/fp8_kernel.py b/python/sglang/kernels/ops/quantization/fp8_kernel.py
+index 1319c86ec..e49c8efdc 100644
+--- a/python/sglang/kernels/ops/quantization/fp8_kernel.py
++++ b/python/sglang/kernels/ops/quantization/fp8_kernel.py
+@@ -25,7 +25,9 @@ import triton.language as tl
+ 
+ from sglang.kernels.jit.utils import is_arch_support_pdl
+ from sglang.kernels.ops.quantization.fp8_utils import fp8_dtype_to_triton
++from sglang.kernels.ops.quantization import fp8_gemv_dsv41
+ from sglang.srt.layers import deep_gemm_wrapper
++from sglang.srt.environ import envs
+ from sglang.srt.runtime_context import get_platform
+ from sglang.srt.utils import (
+     ceil_align,
+@@ -1690,6 +1692,21 @@ def w8a8_block_fp8_matmul_triton(
+ 
+     block_n, block_k = block_size
+ 
++    # Decode-shape GEMV (recipe T3.41): at M <= 4 with [32, 32] block scales the tuned
++    # tensor-core tiles below run the weights at ~780 GB/s on SM120; the FMA row-dot in
++    # fp8_gemv_dsv41 streams them at 1.1-1.45 TB/s. Opt-in, per-(N, K, M) table.
++    if (
++        block_n == 32
++        and block_k == 32
++        and M <= fp8_gemv_dsv41.GEMV_MAX_M
++        and As.dtype == torch.float32
++        and Bs.dtype == torch.float32
++        and envs.SGLANG_DSV41_FP8_GEMV.get()
++    ):
++        gemv_config = fp8_gemv_dsv41.fp8_gemv_config(N, K, M, block_n, block_k)
++        if gemv_config is not None:
++            return fp8_gemv_dsv41.fp8_gemv_block32(A, B, As, Bs, C, gemv_config)
++
+     configs = get_w8a8_block_fp8_configs(N, K, block_size[0], block_size[1])
+     if configs:
+         # If an optimal configuration map has been found, look up the
+diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
+index 549e0a39a..bcca51703 100644
+--- a/python/sglang/srt/environ.py
++++ b/python/sglang/srt/environ.py
+@@ -1420,6 +1420,11 @@ class Envs:
+     # order-sensitive, so greedy decode past 512 tokens is not bit-reproducible
+     # without this (recipe T3.15b). Costs one sort per layer per decode step.
+     SGLANG_DSV41_SORT_DECODE_TOPK = EnvBool(False)
++    # Decode-shape (M <= 4) FP8 GEMV for the [32, 32] block-scaled dense projections on
++    # SM120 (recipe T3.41): an FMA row-dot that streams the weights at ~1.1-1.45 TB/s where
++    # the tuned tensor-core tiles reach ~780 GB/s. Used only for (N, K, M) entries in the
++    # per-device table kernels/ops/quantization/configs/gemv,device_name=... .json.
++    SGLANG_DSV41_FP8_GEMV = EnvBool(False)
+     # Diagnostic (recipe T3.15e): record per-step, per-layer decode fingerprints to
+     # <dir>/rank<r>.pt so run-to-run drift can be localised to a (step, layer, stage).
+     SGLANG_DSV41_STEP_FINGERPRINT_DIR = EnvStr(None)

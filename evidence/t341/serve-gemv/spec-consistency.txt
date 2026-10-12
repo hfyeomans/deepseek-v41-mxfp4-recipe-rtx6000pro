@@ -1,0 +1,9 @@
+copy-code    prompt=  1204 out= 384 argmax-agree=384/384 (1.000) flips>0.5nats=0 max-gap=0.000 max|dlogp| decode-vs-forced=0.000674 accept=None
+copy-table   prompt=  1025 out= 384 argmax-agree=384/384 (1.000) flips>0.5nats=0 max-gap=0.000 max|dlogp| decode-vs-forced=0.000137 accept=None
+review       prompt=   166 out= 384 argmax-agree=370/384 (0.964) flips>0.5nats=1 max-gap=0.875 max|dlogp| decode-vs-forced=0.557 accept=None
+long12000    prompt= 14773 out= 384 argmax-agree=374/384 (0.974) flips>0.5nats=2 max-gap=0.750 max|dlogp| decode-vs-forced=0.444 accept=None
+compare copy-code    agree-rate 1.000 -> 1.000  flips>margin 0 -> 0
+compare copy-table   agree-rate 1.000 -> 1.000  flips>margin 0 -> 0
+compare review       agree-rate 0.953 -> 0.964  flips>margin 1 -> 1
+compare long12000    agree-rate 0.974 -> 0.974  flips>margin 1 -> 2
+wrote evidence/t341/serve-gemv/spec-consistency.json

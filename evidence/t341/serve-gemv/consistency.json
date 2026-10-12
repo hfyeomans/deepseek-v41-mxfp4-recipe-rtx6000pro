@@ -1,0 +1,110 @@
+{
+  "label": "t341-gemv",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": true,
+  "same_prompt": true,
+  "flush_cache": false,
+  "rows_identical": true,
+  "min_pairwise_row_prefix": 505,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths\u2014like blue and violet\u2014are scattered far more strongly than longer ones like red and orange. Although violet light scatters even more than blue, our eyes are less sensitive to violet, and some of it is absorbed in the upper atmosphere, so the scattered light we see across the sky appears",
+      "completion_tokens": 96,
+      "ttft_s": 0.9601555239642039,
+      "total_s": 2.327214165008627,
+      "wall_s": 2.327384170028381,
+      "finish_reason": "length",
+      "gibberish": 0.024390243902439025
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 224,
+      "ref_chars": 511,
+      "conc_chars": 505,
+      "gibberish": 0.024096385542168676,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths (blue and violet) are scattered far more strongly than longer wavelengths (red and orange). The scattered blue light bounces in all directions across the sky, so when you look away from the sun, you see blue coming at you from every part of the sky. Violet light is scattered even",
+        "completion_tokens": 96,
+        "ttft_s": 1.665779490955174,
+        "total_s": 4.015613739960827,
+        "wall_s": 4.01576511701569,
+        "finish_reason": "length",
+        "gibberish": 0.024096385542168676
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 224,
+      "ref_chars": 511,
+      "conc_chars": 505,
+      "gibberish": 0.024096385542168676,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths (blue and violet) are scattered far more strongly than longer wavelengths (red and orange). The scattered blue light bounces in all directions across the sky, so when you look away from the sun, you see blue coming at you from every part of the sky. Violet light is scattered even",
+        "completion_tokens": 96,
+        "ttft_s": 1.6656196399126202,
+        "total_s": 4.015763413975947,
+        "wall_s": 4.015863524051383,
+        "finish_reason": "length",
+        "gibberish": 0.024096385542168676
+      }
+    },
+    {
+      "slot": 2,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 224,
+      "ref_chars": 511,
+      "conc_chars": 505,
+      "gibberish": 0.024096385542168676,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths (blue and violet) are scattered far more strongly than longer wavelengths (red and orange). The scattered blue light bounces in all directions across the sky, so when you look away from the sun, you see blue coming at you from every part of the sky. Violet light is scattered even",
+        "completion_tokens": 96,
+        "ttft_s": 1.6658664899878204,
+        "total_s": 4.015516333049163,
+        "wall_s": 4.015594561002217,
+        "finish_reason": "length",
+        "gibberish": 0.024096385542168676
+      }
+    },
+    {
+      "slot": 3,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 224,
+      "ref_chars": 511,
+      "conc_chars": 505,
+      "gibberish": 0.024096385542168676,
+      "ok": true,
+      "concurrent": {
+        "text": "During the day, sunlight enters Earth's atmosphere and collides with gas molecules that are much smaller than the wavelength of visible light. This causes a phenomenon called Rayleigh scattering, in which shorter wavelengths (blue and violet) are scattered far more strongly than longer wavelengths (red and orange). The scattered blue light bounces in all directions across the sky, so when you look away from the sun, you see blue coming at you from every part of the sky. Violet light is scattered even",
+        "completion_tokens": 96,
+        "ttft_s": 1.6654352939222008,
+        "total_s": 4.015068811015226,
+        "wall_s": 4.015148340957239,
+        "finish_reason": "length",
+        "gibberish": 0.024096385542168676
+      }
+    }
+  ],
+  "evidence": {
+    "tool": "verify-batch-consistency.py",
+    "recorded_utc": "2026-10-12T01:18:44Z",
+    "manifest_hash": "9aa7ec65f70e33ea8a41e1a03ac4b0833d575e04ce36c487129411978ceae79e",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "53c317e0fcc8c5d5b1c8e00d9573327780677e9d26b7becfc3a8ec1498836736"
+  }
+}

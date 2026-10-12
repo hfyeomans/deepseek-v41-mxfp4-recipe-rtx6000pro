@@ -1,7 +1,7 @@
 From e66d44fbf641a96664a19fbbad1c873a603dfa67 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Thu, 24 Sep 2026 14:13:28 -0400
-Subject: [PATCH 23/59] kt_timeline: opt-in per-layer decode timeline +
+Subject: [PATCH 23/60] kt_timeline: opt-in per-layer decode timeline +
  recorded-tensor dump (recipe T3.19a)
 
 KT_TIMELINE=1 bakes external timing events (torch.cuda.Event(external=True))
@@ -43,7 +43,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  create mode 100644 python/sglang/srt/layers/moe/kt_timeline.py
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index 92d0d342..3b3b15a8 100644
+index 92d0d3424..3b3b15a82 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -20,6 +20,7 @@ import torch
@@ -167,7 +167,7 @@ index 92d0d342..3b3b15a8 100644
              self._nan_probe(layer, "out", output, None, streamed)
 diff --git a/python/sglang/srt/layers/moe/kt_timeline.py b/python/sglang/srt/layers/moe/kt_timeline.py
 new file mode 100644
-index 00000000..d27f6025
+index 000000000..d27f6025c
 --- /dev/null
 +++ b/python/sglang/srt/layers/moe/kt_timeline.py
 @@ -0,0 +1,402 @@
@@ -574,7 +574,7 @@ index 00000000..d27f6025
 +        _TIMELINE_RANK = rank
 +    return _TIMELINE
 diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
-index f0371a59..95093c07 100644
+index f0371a59b..95093c07e 100644
 --- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 +++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 @@ -144,19 +144,34 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):
@@ -648,7 +648,7 @@ index f0371a59..95093c07 100644
          """Output rows per unit of ``ShapeKey.size``.
  
 diff --git a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
-index 42d6077b..d51be4c5 100644
+index 42d6077b5..d51be4c5b 100644
 --- a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
 +++ b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
 @@ -296,11 +296,23 @@ class BreakableCUDAGraph:

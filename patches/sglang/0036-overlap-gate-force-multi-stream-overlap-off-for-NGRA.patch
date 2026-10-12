@@ -1,7 +1,7 @@
 From 16260ad3ef97b5ab626682e64b8702a4c8be3fe7 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 14:02:58 -0400
-Subject: [PATCH 36/59] overlap gate: force multi-stream overlap off for NGRAM
+Subject: [PATCH 36/60] overlap gate: force multi-stream overlap off for NGRAM
  speculation too on SM120 (Bug A is verify-graph replay; T3.9h)
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 36/59] overlap gate: force multi-stream overlap off for NGRAM
  1 file changed, 19 insertions(+), 10 deletions(-)
 
 diff --git a/python/sglang/srt/arg_groups/dspark_overlap_gate.py b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
-index 517efa59..35e403ee 100644
+index 517efa595..35e403ee3 100644
 --- a/python/sglang/srt/arg_groups/dspark_overlap_gate.py
 +++ b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
 @@ -1,9 +1,12 @@

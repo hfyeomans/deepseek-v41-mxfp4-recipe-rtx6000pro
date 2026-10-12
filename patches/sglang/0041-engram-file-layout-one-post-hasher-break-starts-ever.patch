@@ -1,7 +1,7 @@
 From 5371477603fb017668e53caf103cd7f717ef32b1 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 19:04:24 -0400
-Subject: [PATCH 41/59] engram file layout: one post-hasher break starts every
+Subject: [PATCH 41/60] engram file layout: one post-hasher break starts every
  Engram layer's row fetch; the layer breaks only join (recipe T3.20 round 2)
 
 The ahead-of-use fetch moved from the first Engram layer's break to a break
@@ -22,7 +22,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  3 files changed, 127 insertions(+), 104 deletions(-)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index eba9a2b8..14e66433 100644
+index eba9a2b88..14e664338 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1432,10 +1432,11 @@ class Envs:
@@ -42,7 +42,7 @@ index eba9a2b8..14e66433 100644
      # Threads of the "pool" issue path only.
      SGLANG_DSV41_ENGRAM_FILE_THREADS = EnvInt(16)
 diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
-index 79908d85..a22ae7f7 100644
+index 79908d850..a22ae7f7e 100644
 --- a/python/sglang/srt/layers/engram.py
 +++ b/python/sglang/srt/layers/engram.py
 @@ -690,14 +690,16 @@ class _FileTable:
@@ -326,7 +326,7 @@ index 79908d85..a22ae7f7 100644
              # Nothing to gate, and the MXFP8 quantize behind wkv rejects an
              # empty M.
 diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
-index 5a66504d..9564ad1b 100644
+index 5a66504d4..9564ad1bc 100644
 --- a/python/sglang/srt/models/deepseek_v4.py
 +++ b/python/sglang/srt/models/deepseek_v4.py
 @@ -103,6 +103,7 @@ from sglang.srt.layers.engram import (

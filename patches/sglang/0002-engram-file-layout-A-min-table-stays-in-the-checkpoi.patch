@@ -1,7 +1,7 @@
 From a1ca246af56bc866c1126cc619aaa053ec041e1d Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Mon, 21 Sep 2026 19:29:24 -0400
-Subject: [PATCH 02/59] engram: file layout (A-min) -- table stays in the
+Subject: [PATCH 02/60] engram: file layout (A-min) -- table stays in the
  checkpoint shard
 
 SGLANG_DSV41_ENGRAM_HOST_TABLE_LAYOUT=file maps the shard read-only and views
@@ -18,7 +18,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  2 files changed, 172 insertions(+)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index d5dd9339..a52c6864 100644
+index d5dd93396..a52c6864b 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1416,7 +1416,17 @@ class Envs:
@@ -40,7 +40,7 @@ index d5dd9339..a52c6864 100644
      # DONTNEED on the safetensors) before pre-faulting the table and again after
      # loading: cached checkpoint pages fragment host memory and starve the 512 MiB
 diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
-index 8f4340f1..44bd3b0c 100644
+index 8f4340f13..44bd3b0cb 100644
 --- a/python/sglang/srt/layers/engram.py
 +++ b/python/sglang/srt/layers/engram.py
 @@ -9,11 +9,14 @@ from __future__ import annotations

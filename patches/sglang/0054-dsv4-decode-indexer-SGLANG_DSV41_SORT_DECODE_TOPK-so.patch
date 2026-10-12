@@ -1,7 +1,7 @@
 From 743f8fa99ab616e9727406d0440499b09ae7c4a3 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 13:15:59 -0400
-Subject: [PATCH 54/59] dsv4 decode indexer: SGLANG_DSV41_SORT_DECODE_TOPK
+Subject: [PATCH 54/60] dsv4 decode indexer: SGLANG_DSV41_SORT_DECODE_TOPK
  sorts logical positions before the slot map (order independent of the KV
  allocator; recipe T3.15c)
 
@@ -12,7 +12,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 13 insertions(+), 9 deletions(-)
 
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index 7ef85983..09d32c93 100644
+index 7ef85983e..09d32c93d 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -3550,13 +3550,20 @@ class DeepseekV4AttnBackend(

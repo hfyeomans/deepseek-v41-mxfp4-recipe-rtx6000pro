@@ -1,0 +1,87 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 512,
+  "runs": 3,
+  "warmup": 1,
+  "distinct_prompts": true,
+  "fixture_offset": 6,
+  "fixture_set": "distinct",
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 59.48253247894272,
+      "min_tps": 58.51271307244071,
+      "max_tps": 59.75062232386468,
+      "median_wall_tps": 57.582911854384356,
+      "median_ttft_s": 0.30185729695949703,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 59.48253247894272,
+          "wall_tps": 57.582911854384356,
+          "wall_s": 8.89152673096396,
+          "per_seq_tps": [
+            59.48253247894272
+          ],
+          "ttft_s": [
+            0.30022312398068607
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 59.75062232386468,
+          "wall_tps": 57.82341172327761,
+          "wall_s": 8.854544979985803,
+          "per_seq_tps": [
+            59.75062232386468
+          ],
+          "ttft_s": [
+            0.30185729695949703
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 58.51271307244071,
+          "wall_tps": 56.66157608755122,
+          "wall_s": 9.036105864914134,
+          "per_seq_tps": [
+            58.51271307244071
+          ],
+          "ttft_s": [
+            0.30243290099315345
+          ],
+          "completion_tokens": [
+            512
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-11T21:30:58-0400",
+  "evidence": {
+    "tool": "bench-decode.py",
+    "recorded_utc": "2026-10-12T01:30:58Z",
+    "manifest_hash": "6e15a9b604432fd285dc82553fe4877bbb19fc7c0c8a7e1862ca6433b6907edc",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "7a2969d934bdb9b4476e84a59cc4d6bf8e66ccab14f5696680d82c77d1a323f2"
+  }
+}

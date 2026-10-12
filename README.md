@@ -73,7 +73,7 @@ Runnable now, no model download, no GPU contention:
 | `evidence_manifest.py write\|show\|verify\|check-evidence` | T3.19f: the per-serve provenance manifest (recipe/overlay SHA, image + container id, resolved knobs, BIOS slot + HSMP clocks, GPU caps, pre-serve memory and Engram page-cache state, content hash). The launcher writes one; the evidence scripts stamp their JSON with its hash and copy it beside the output as `manifest.json`; `ci.sh` checks `evidence/` |
 | `hsmp-clocks.py [--watch 1 --n 30]` | live FCLK / MCLK / DDR-controller GB/s / socket W from the kernel `hsmp_acpi` driver, unprivileged — the BIOS Tier 3 clock check (E27) |
 | `spec-consistency.py [--flush-cache] [--compare <json>]` | T3.9h-b: decode-vs-teacher-forced agreement of a serve's own greedy output (argmax flips > 0.5 nats, max \|Δlogp\|, accept length); the gate for any speculative path, since NLL cannot reject a draft |
-| `export-sglang-series.sh` | T3.24c: re-exports the SGLang overlay branch as `patches/sglang/*.patch` + `SERIES.env` (59 patches on upstream `da64c5cb`; the README there has the apply recipe and a patch → task index); `ci.sh` re-applies the series and checks the tree hash |
+| `export-sglang-series.sh` | T3.24c: re-exports the SGLang overlay branch as `patches/sglang/*.patch` + `SERIES.env` (60 patches on upstream `da64c5cb`; the README there has the apply recipe and a patch → task index); `ci.sh` re-applies the series and checks the tree hash |
 
 Need a GPU window (stop the GLM container first):
 
@@ -85,6 +85,7 @@ Need a GPU window (stop the GLM container first):
 | `bench-dram-read.py` (inside a torch container, GPU-free) | E1b: read-only host DRAM bandwidth (fp32/int64 sum) at 8/16/32 threads |
 | `bench-dram-contention.py` (inside a torch container, `--gpus all`) | E4b: CPU DRAM reads and both-GPU H2D DMA alone and together; additivity |
 | `kernels/e13/build.sh`, `kernels/e13/run.py` | E13: build the SM120 MXFP4×MXFP4 grouped GEMM (GPU-free, `dsv4-sm120:cuda-devel-https`) and run it at V4.1 expert shapes |
+| `kernels/t341/fp8_gemv_block32.py` (inside the recipe container, overlay mounted, GPU 1) | T3.41: L2-cold sweep of the decode-shape block-32 FP8 GEMV against the E20 Triton winner at M = 1–4; writes the per-(N, K, M) table the overlay reads under `SGLANG_DSV41_FP8_GEMV=1` (opt-in: +1–2 % C1 served, E44) |
 | `download-model.sh` → `preflight.sh` → `serve.sh` → `wait-ready.py` → `verify.py` | the legacy all-GPU chain; `preflight.sh` **fails closed** on 2 GPUs. `stop.sh` removes whichever serve is up (hybrid `dsv41-kt` or legacy); `systemd/dsv41-flash.service.in` runs the qualified hybrid |
 | `bench-decode.py`, `bench-prefill.py` | the shared benchmark harness (also for the V4-Flash baseline) |
 | `bench-humaneval.py`, `bench-reasoning.py` | E32 / T3.8b soak: HumanEval pass@1 greedy (`--thinking` optional; programs run in a no-network container) and long-reasoning traffic (hard prompts, thinking on, up to 16K tokens, known answers spot-checked) — real coding / reasoning decode for the recorder and the map |

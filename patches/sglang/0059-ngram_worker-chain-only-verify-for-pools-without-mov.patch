@@ -1,7 +1,7 @@
 From 0887a3429cbf4029abfb8fd6b48a772725345b5b Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 19:10:15 -0400
-Subject: [PATCH 59/59] ngram_worker: chain-only verify for pools without
+Subject: [PATCH 59/60] ngram_worker: chain-only verify for pools without
  move_kv_cache (DeepSeek-V4; recipe T3.9h-b)
 
 DeepSeekV4TokenToKVPool cannot compact a branched accept path and the DSV4
@@ -20,7 +20,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 96 insertions(+), 9 deletions(-)
 
 diff --git a/python/sglang/srt/speculative/ngram_worker.py b/python/sglang/srt/speculative/ngram_worker.py
-index 826895b2..60cbffcf 100644
+index 826895b28..60cbffcf2 100644
 --- a/python/sglang/srt/speculative/ngram_worker.py
 +++ b/python/sglang/srt/speculative/ngram_worker.py
 @@ -9,6 +9,7 @@ from sglang.kernels.ops.speculative.cache_locs import (

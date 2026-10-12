@@ -1,0 +1,14 @@
+== benches 21:13:34
+  1         60.70     58.58     61.55       58.46       0.339     n/a
+  4        108.24    106.07    123.63      103.74       0.816     n/a
+  2         86.79     76.25     87.71       83.79       0.445     n/a
+  3        100.56     97.87    101.68       95.84       0.781     n/a
+== nll 21:17:49
+POOLED over 8 texts: ΔNLL -0.00033 ± 0.00101 nats/tok (z +0.33, n 65653; cluster-robust se 0.00130, z +0.26)  changed 65226  worse/better >0.5: 1921/1944
+wrote evidence/t341/serve-gemv/corpus/*.json
+POOLED over 8 texts: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 65653; cluster-robust se 0.00000, z +0.00)  changed 0  worse/better >0.5: 0/0
+wrote evidence/t341/serve-gemv/corpus-vs-anchor/*.json
+PASS
+wrote evidence/t341/serve-gemv/consistency.json
+health=0
+== done 21:18:44

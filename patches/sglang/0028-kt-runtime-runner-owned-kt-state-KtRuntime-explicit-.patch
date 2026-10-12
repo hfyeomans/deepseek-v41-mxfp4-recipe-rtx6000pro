@@ -1,7 +1,7 @@
 From 095789db0be8b7f1b32299bfda4c96171caa7053 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Thu, 8 Oct 2026 13:25:32 -0400
-Subject: [PATCH 28/59] kt runtime: runner-owned kt state (KtRuntime), explicit
+Subject: [PATCH 28/60] kt runtime: runner-owned kt state (KtRuntime), explicit
  CompactMXFP4Loader, no module registry (recipe T3.19c)
 
 - new layers/moe/kt_runtime.py: KtRuntime per ModelRunner owns providers,
@@ -40,7 +40,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  create mode 100644 python/sglang/srt/layers/moe/kt_runtime.py
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index f2867393..f623e54b 100644
+index f2867393b..f623e54bb 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -25,7 +25,7 @@ from sglang.srt.layers.moe.kt_provider import (
@@ -298,7 +298,7 @@ index f2867393..f623e54b 100644
                  and self.kt_config.num_layers is not None
 diff --git a/python/sglang/srt/layers/moe/kt_loader.py b/python/sglang/srt/layers/moe/kt_loader.py
 new file mode 100644
-index 00000000..8f53d3d8
+index 000000000..8f53d3d87
 --- /dev/null
 +++ b/python/sglang/srt/layers/moe/kt_loader.py
 @@ -0,0 +1,67 @@
@@ -370,7 +370,7 @@ index 00000000..8f53d3d8
 +        )
 +        return out
 diff --git a/python/sglang/srt/layers/moe/kt_provider.py b/python/sglang/srt/layers/moe/kt_provider.py
-index 982af347..c785a461 100644
+index 982af3477..c785a4614 100644
 --- a/python/sglang/srt/layers/moe/kt_provider.py
 +++ b/python/sglang/srt/layers/moe/kt_provider.py
 @@ -199,42 +199,11 @@ def _capturing() -> bool:
@@ -455,7 +455,7 @@ index 982af347..c785a461 100644
  
 diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
 new file mode 100644
-index 00000000..81573374
+index 000000000..81573374a
 --- /dev/null
 +++ b/python/sglang/srt/layers/moe/kt_runtime.py
 @@ -0,0 +1,199 @@
@@ -659,7 +659,7 @@ index 00000000..81573374
 +    finally:
 +        _ACTIVE = None
 diff --git a/python/sglang/srt/layers/moe/kt_timeline.py b/python/sglang/srt/layers/moe/kt_timeline.py
-index d27f6025..8cd37465 100644
+index d27f6025c..8cd374657 100644
 --- a/python/sglang/srt/layers/moe/kt_timeline.py
 +++ b/python/sglang/srt/layers/moe/kt_timeline.py
 @@ -384,19 +384,6 @@ class StepTimeline:
@@ -686,7 +686,7 @@ index d27f6025..8cd37465 100644
 +# ``KtRuntime.for_runner`` builds one StepTimeline(tp_rank) when KT_TIMELINE
 +# is on; layers and the graph backend read ``runtime.timeline``.
 diff --git a/python/sglang/srt/model_executor/model_runner.py b/python/sglang/srt/model_executor/model_runner.py
-index cd539390..7a36a27d 100644
+index cd539390b..7a36a27d2 100644
 --- a/python/sglang/srt/model_executor/model_runner.py
 +++ b/python/sglang/srt/model_executor/model_runner.py
 @@ -345,6 +345,7 @@ class ModelRunner:
@@ -713,7 +713,7 @@ index cd539390..7a36a27d 100644
              model=self.model,
              model_config=self.model_config,
 diff --git a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
-index 347236c9..506e365a 100644
+index 347236c9f..506e365a0 100644
 --- a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
 +++ b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
 @@ -545,12 +545,10 @@ def register_kt_capture_sizes(model_runner: ModelRunner) -> None:
@@ -732,7 +732,7 @@ index 347236c9..506e365a 100644
  
  def capture_decode_graph(*, model_runner: ModelRunner) -> GraphCapture:
 diff --git a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
-index c1ef4b66..1cdf8258 100644
+index c1ef4b663..1cdf82582 100644
 --- a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 +++ b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 @@ -365,16 +365,14 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):
@@ -755,7 +755,7 @@ index c1ef4b66..1cdf8258 100644
              )
  
 diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
-index 95093c07..cf02027c 100644
+index 95093c07e..cf02027c9 100644
 --- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 +++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 @@ -147,10 +147,8 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):

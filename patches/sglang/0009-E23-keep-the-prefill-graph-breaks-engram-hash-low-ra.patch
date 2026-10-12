@@ -1,7 +1,7 @@
 From 6032dd44374a1f24cc70465d34efea78bd0ee66d Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Tue, 22 Sep 2026 14:12:09 -0400
-Subject: [PATCH 09/59] E23: keep the prefill-graph breaks (engram hash,
+Subject: [PATCH 09/60] E23: keep the prefill-graph breaks (engram hash,
  low-ratio sources, attention) out of the speculative TARGET_VERIFY step
  captured by the decode graph
 
@@ -12,7 +12,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 13 insertions(+), 3 deletions(-)
 
 diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
-index 4c16f8ab..80756c4a 100644
+index 4c16f8ab3..80756c4a4 100644
 --- a/python/sglang/srt/models/deepseek_v4.py
 +++ b/python/sglang/srt/models/deepseek_v4.py
 @@ -1826,8 +1826,11 @@ class MQALayer(MqaAttentionBase):

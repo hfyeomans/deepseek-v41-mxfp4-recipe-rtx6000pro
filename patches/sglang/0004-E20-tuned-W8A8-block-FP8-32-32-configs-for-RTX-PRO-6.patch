@@ -1,7 +1,7 @@
 From 32a25f379015b09ee25eb5c9ae97c2cd41d5ab2b Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Mon, 21 Sep 2026 22:03:16 -0400
-Subject: [PATCH 04/59] E20: tuned W8A8 block-FP8 [32,32] configs for RTX PRO
+Subject: [PATCH 04/60] E20: tuned W8A8 block-FP8 [32,32] configs for RTX PRO
  6000 Max-Q (7 V4.1-Flash TP2 dense shapes) and let SM120 use the
  SPLIT_K/SWAP_AB kernel
 
@@ -32,7 +32,7 @@ Co-authored-by: Amp <amp@ampcode.com>
 
 diff --git a/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
 new file mode 100644
-index 00000000..eb66611a
+index 000000000..eb66611a7
 --- /dev/null
 +++ b/python/sglang/kernels/ops/quantization/configs/N=16384,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
 @@ -0,0 +1,115 @@
@@ -153,7 +153,7 @@ index 00000000..eb66611a
 +}
 diff --git a/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
 new file mode 100644
-index 00000000..0a6a4262
+index 000000000..0a6a42624
 --- /dev/null
 +++ b/python/sglang/kernels/ops/quantization/configs/N=1792,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
 @@ -0,0 +1,131 @@
@@ -290,7 +290,7 @@ index 00000000..0a6a4262
 +}
 diff --git a/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
 new file mode 100644
-index 00000000..145231be
+index 000000000..145231bed
 --- /dev/null
 +++ b/python/sglang/kernels/ops/quantization/configs/N=2304,K=5120,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
 @@ -0,0 +1,127 @@
@@ -423,7 +423,7 @@ index 00000000..145231be
 +}
 diff --git a/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
 new file mode 100644
-index 00000000..00b8f66b
+index 000000000..00b8f66be
 --- /dev/null
 +++ b/python/sglang/kernels/ops/quantization/configs/N=25600,K=6144,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
 @@ -0,0 +1,117 @@
@@ -546,7 +546,7 @@ index 00000000..00b8f66b
 +}
 diff --git a/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
 new file mode 100644
-index 00000000..77272096
+index 000000000..772720966
 --- /dev/null
 +++ b/python/sglang/kernels/ops/quantization/configs/N=4096,K=1280,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
 @@ -0,0 +1,125 @@
@@ -677,7 +677,7 @@ index 00000000..77272096
 +}
 diff --git a/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
 new file mode 100644
-index 00000000..d967e53b
+index 000000000..d967e53ba
 --- /dev/null
 +++ b/python/sglang/kernels/ops/quantization/configs/N=5120,K=1152,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
 @@ -0,0 +1,124 @@
@@ -807,7 +807,7 @@ index 00000000..d967e53b
 +}
 diff --git a/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json b/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json
 new file mode 100644
-index 00000000..a6edc8b6
+index 000000000..a6edc8b63
 --- /dev/null
 +++ b/python/sglang/kernels/ops/quantization/configs/N=5120,K=4096,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json	
 @@ -0,0 +1,124 @@
@@ -936,7 +936,7 @@ index 00000000..a6edc8b6
 +    }
 +}
 diff --git a/python/sglang/kernels/ops/quantization/fp8_kernel.py b/python/sglang/kernels/ops/quantization/fp8_kernel.py
-index da92c781..1319c86e 100644
+index da92c781b..1319c86ec 100644
 --- a/python/sglang/kernels/ops/quantization/fp8_kernel.py
 +++ b/python/sglang/kernels/ops/quantization/fp8_kernel.py
 @@ -1713,7 +1713,11 @@ def w8a8_block_fp8_matmul_triton(

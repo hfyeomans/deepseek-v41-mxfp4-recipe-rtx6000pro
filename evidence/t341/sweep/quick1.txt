@@ -1,0 +1,9 @@
+NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 188 SMs; 94 GEMV configs; median of 20 L2-cold launches
+     N     K  M candidate       us         p10-p90    GB/s   maxdiff  ok config
+  4096  1280  1 triton        12.3   12.3-14.3         428         -   y e20
+  4096  1280  1 gemv          12.3   12.3-14.1         428  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 1, 'num_stages': 2}
+  4096  1280  1 gemv          12.3   12.3-14.3         428  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 2}
+  4096  1280  1 gemv          12.3   12.3-14.3         428  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+  4096  1280  1 gemv          12.3   10.2-12.3         428  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  4096  1280  1 gemv          12.3   12.3-12.3         428  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 2, 'num_warps': 1, 'num_stages': 2}
+                 best gemv 12.3 us vs triton 12.3 us: +0.0 % spread 2.0 -> reject

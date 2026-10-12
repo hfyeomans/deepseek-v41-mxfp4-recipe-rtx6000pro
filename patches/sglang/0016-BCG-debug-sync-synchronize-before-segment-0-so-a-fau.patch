@@ -1,7 +1,7 @@
 From 07f4aef069cc298cfad3bc0fcabffa53faf16fc6 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 23 Sep 2026 01:44:40 -0400
-Subject: [PATCH 16/59] BCG debug sync: synchronize before segment 0 so a fault
+Subject: [PATCH 16/60] BCG debug sync: synchronize before segment 0 so a fault
  inherited from the preceding eager step is attributed correctly (E23 R3
  discriminator)
 
@@ -12,7 +12,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 15 insertions(+)
 
 diff --git a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
-index 4dc83362..42d6077b 100644
+index 4dc833624..42d6077b5 100644
 --- a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
 +++ b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
 @@ -302,6 +302,21 @@ class BreakableCUDAGraph:

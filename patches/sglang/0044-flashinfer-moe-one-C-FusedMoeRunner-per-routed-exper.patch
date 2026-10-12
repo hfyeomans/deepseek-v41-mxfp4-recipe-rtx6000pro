@@ -1,7 +1,7 @@
 From 99128a7e4cbdd625461c418c2ffd368881726853 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 23:34:13 -0400
-Subject: [PATCH 44/59] flashinfer moe: one C++ FusedMoeRunner per
+Subject: [PATCH 44/60] flashinfer moe: one C++ FusedMoeRunner per
  routed-expert count
 
 The hybrid prefill alternates the streamed (165) and resident (219) expert
@@ -23,7 +23,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  2 files changed, 101 insertions(+)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index 14e66433..50d1bc96 100644
+index 14e664338..50d1bc960 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -984,6 +984,11 @@ class Envs:
@@ -39,7 +39,7 @@ index 14e66433..50d1bc96 100644
      # fine-grained opt switch reads False, keeping non-experimental paths byte-identical.
      SGLANG_EXPERIMENTAL_LORA_OPTI = EnvBool(False)
 diff --git a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
-index 3d2d4351..38c77644 100644
+index 3d2d43512..38c77644c 100644
 --- a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
 +++ b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
 @@ -151,6 +151,91 @@ class _MoeWorkspace:

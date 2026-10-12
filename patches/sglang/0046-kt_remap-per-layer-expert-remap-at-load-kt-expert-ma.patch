@@ -1,7 +1,7 @@
 From c777da2d411f225764b924c20a8796bde3a7aac2 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Sat, 10 Oct 2026 02:09:14 -0400
-Subject: [PATCH 46/59] kt_remap: per-layer expert remap at load
+Subject: [PATCH 46/60] kt_remap: per-layer expert remap at load
  (--kt-expert-map), compact loader explicit order (recipe T3.8b)
 
 Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
@@ -17,7 +17,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  create mode 100644 python/sglang/srt/layers/moe/kt_remap.py
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index beced563..c9873c8d 100644
+index beced563b..c9873c8d7 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -23,7 +23,7 @@ from sglang.srt.layers.moe.kt_provider import (
@@ -62,7 +62,7 @@ index beced563..c9873c8d 100644
  
          # 3. Layerwise GPU prefill: every rank joins (shared host buffer,
 diff --git a/python/sglang/srt/layers/moe/kt_loader.py b/python/sglang/srt/layers/moe/kt_loader.py
-index 8f53d3d8..bbb4ff64 100644
+index 8f53d3d87..bbb4ff648 100644
 --- a/python/sglang/srt/layers/moe/kt_loader.py
 +++ b/python/sglang/srt/layers/moe/kt_loader.py
 @@ -6,24 +6,45 @@ expert of the layer (GPU ones included, ~2x the host RAM and load time), so
@@ -137,7 +137,7 @@ index 8f53d3d8..bbb4ff64 100644
          return out
 diff --git a/python/sglang/srt/layers/moe/kt_remap.py b/python/sglang/srt/layers/moe/kt_remap.py
 new file mode 100644
-index 00000000..640e382d
+index 000000000..640e382dc
 --- /dev/null
 +++ b/python/sglang/srt/layers/moe/kt_remap.py
 @@ -0,0 +1,199 @@
@@ -341,7 +341,7 @@ index 00000000..640e382d
 +        raise KTContractError("--kt-expert-map needs --kt-weight-path and --kt-num-gpu-experts")
 +    return load_cached(path, num_experts, int(moe.kt_num_gpu_experts))
 diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
-index 23b21b29..5b3e4dba 100644
+index 23b21b296..5b3e4dba1 100644
 --- a/python/sglang/srt/layers/moe/kt_runtime.py
 +++ b/python/sglang/srt/layers/moe/kt_runtime.py
 @@ -112,10 +112,18 @@ class KtRuntime:
@@ -374,7 +374,7 @@ index 23b21b29..5b3e4dba 100644
          try:
              wrapper.load_weights(cpu_ids)
 diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
-index 9564ad1b..bef1955b 100644
+index 9564ad1bc..bef1955b5 100644
 --- a/python/sglang/srt/models/deepseek_v4.py
 +++ b/python/sglang/srt/models/deepseek_v4.py
 @@ -110,6 +110,7 @@ from sglang.srt.layers.layernorm import RMSNorm
@@ -419,7 +419,7 @@ index 9564ad1b..bef1955b 100644
                      # V4.1 checkpoint tensors with no module in the text model yet;
                      # the per-group count is logged after loading.
 diff --git a/python/sglang/srt/server_args.py b/python/sglang/srt/server_args.py
-index 4c658889..74ee4ebc 100644
+index 4c6588895..74ee4ebcd 100644
 --- a/python/sglang/srt/server_args.py
 +++ b/python/sglang/srt/server_args.py
 @@ -3187,6 +3187,13 @@ class ServerArgs:

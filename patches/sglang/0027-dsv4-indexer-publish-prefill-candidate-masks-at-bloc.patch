@@ -1,7 +1,7 @@
 From d681172827499f10ca05769e9776933431fe9f84 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 7 Oct 2026 23:26:37 -0400
-Subject: [PATCH 27/59] dsv4 indexer: publish prefill candidate masks at block
+Subject: [PATCH 27/60] dsv4 indexer: publish prefill candidate masks at block
  granularity (E34b-ii)
 
 select_candidate_block_keep returns the [rows, ceil(width/block_size)] keep mask;
@@ -21,7 +21,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  2 files changed, 64 insertions(+), 15 deletions(-)
 
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index eea0b341..52bbe242 100644
+index eea0b3411..52bbe242e 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -68,6 +68,8 @@ from sglang.srt.layers.attention.dsv4.dsv41_sparse import (
@@ -126,7 +126,7 @@ index eea0b341..52bbe242 100644
                  if consume is not None and masks is None:
                      idx = _mask_topk_scores(s, idx)
 diff --git a/python/sglang/srt/layers/attention/dsv4/indexer.py b/python/sglang/srt/layers/attention/dsv4/indexer.py
-index d817ee71..57786c30 100644
+index d817ee713..57786c303 100644
 --- a/python/sglang/srt/layers/attention/dsv4/indexer.py
 +++ b/python/sglang/srt/layers/attention/dsv4/indexer.py
 @@ -1129,16 +1129,19 @@ class C4Indexer(nn.Module):

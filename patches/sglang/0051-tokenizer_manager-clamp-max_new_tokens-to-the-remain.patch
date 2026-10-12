@@ -1,7 +1,7 @@
 From 90ae890e33f33cce57dee98ba4cec27516318d15 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sat, 10 Oct 2026 19:23:01 -0400
-Subject: [PATCH 51/59] tokenizer_manager: clamp max_new_tokens to the
+Subject: [PATCH 51/60] tokenizer_manager: clamp max_new_tokens to the
  remaining context instead of HTTP 400 (recipe T3.35)
 
 - SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS (EnvBool, default off; the recipe launcher sets 1): when
@@ -24,7 +24,7 @@ Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf2
  2 files changed, 18 insertions(+)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index 890c214d..c0bd474a 100644
+index 890c214d2..c0bd474a5 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1466,6 +1466,13 @@ class Envs:
@@ -42,7 +42,7 @@ index 890c214d..c0bd474a 100644
      SGLANG_OPT_FLASHMLA_SPARSE_PREFILL = EnvBool(True)
  
 diff --git a/python/sglang/srt/managers/tokenizer_manager.py b/python/sglang/srt/managers/tokenizer_manager.py
-index 00024281..404a679c 100644
+index 00024281f..404a679c5 100644
 --- a/python/sglang/srt/managers/tokenizer_manager.py
 +++ b/python/sglang/srt/managers/tokenizer_manager.py
 @@ -1228,6 +1228,17 @@ class TokenizerManager(TokenizerControlMixin, TokenizerManagerScoreMixin):

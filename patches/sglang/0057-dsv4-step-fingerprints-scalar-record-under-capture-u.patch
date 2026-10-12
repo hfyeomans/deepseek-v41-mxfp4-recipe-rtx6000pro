@@ -1,7 +1,7 @@
 From 833dc9545231e0e7213ed128d3fc6d2fab1d6df6 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 18:02:21 -0400
-Subject: [PATCH 57/59] dsv4 step fingerprints: scalar record under capture
+Subject: [PATCH 57/60] dsv4 step fingerprints: scalar record under capture
  uses a device fill (no H2D copy)
 
 Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
@@ -11,7 +11,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
-index aa3f3902..7eb2b928 100644
+index aa3f3902f..7eb2b928f 100644
 --- a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
 +++ b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
 @@ -106,7 +106,10 @@ class StepFingerprints:

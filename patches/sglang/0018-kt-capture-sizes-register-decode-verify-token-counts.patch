@@ -1,7 +1,7 @@
 From 8ad514edb98679a1834e3a348bf3a6c09ff42c76 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 23 Sep 2026 22:05:40 -0400
-Subject: [PATCH 18/59] =?UTF-8?q?kt=20capture=20sizes:=20register=20decode?=
+Subject: [PATCH 18/60] =?UTF-8?q?kt=20capture=20sizes:=20register=20decode?=
  =?UTF-8?q?/verify=20token=20counts=20before=20the=20eager=20autotune=20fo?=
  =?UTF-8?q?rward;=20assert=20captured=20=E2=8A=86=20registered=20=E2=8A=86?=
  =?UTF-8?q?=20cached=20after=20decode=20capture=20(recipe=20T3.16c)?=
@@ -24,7 +24,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  2 files changed, 103 insertions(+), 18 deletions(-)
 
 diff --git a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
-index 56d51d7d..b94c351b 100644
+index 56d51d7d1..b94c351b5 100644
 --- a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
 +++ b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
 @@ -168,6 +168,16 @@ def capture_cuda_graphs(
@@ -134,7 +134,7 @@ index 56d51d7d..b94c351b 100644
  
      tic = time.perf_counter()
 diff --git a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
-index c8c780d8..506c1a57 100644
+index c8c780d8d..506c1a578 100644
 --- a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 +++ b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 @@ -1206,6 +1206,42 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):

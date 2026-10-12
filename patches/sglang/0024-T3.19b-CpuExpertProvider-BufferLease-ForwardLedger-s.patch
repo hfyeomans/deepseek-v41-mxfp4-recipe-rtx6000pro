@@ -1,7 +1,7 @@
 From 9fc1481765ed6e53f63be9776fb9ae129143fa12 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Wed, 7 Oct 2026 17:42:13 -0400
-Subject: [PATCH 24/59] T3.19b: CpuExpertProvider / BufferLease / ForwardLedger
+Subject: [PATCH 24/60] T3.19b: CpuExpertProvider / BufferLease / ForwardLedger
  seam around KTMoEWrapper (kt_provider.py); C3 remainder asserts
  (check_deferral_adjacency, check_forward_boundary) in kt_contract.py;
  kt_ep_wrapper submit/sync/apply route through the provider; graph runners
@@ -20,7 +20,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  create mode 100644 python/sglang/srt/layers/moe/kt_provider.py
 
 diff --git a/python/sglang/srt/layers/moe/kt_contract.py b/python/sglang/srt/layers/moe/kt_contract.py
-index 632c0c46..313bd1eb 100644
+index 632c0c46d..313bd1eb9 100644
 --- a/python/sglang/srt/layers/moe/kt_contract.py
 +++ b/python/sglang/srt/layers/moe/kt_contract.py
 @@ -8,6 +8,12 @@ to run under CUDA-graph capture and cheap enough to run on every MoE layer:
@@ -93,7 +93,7 @@ index 632c0c46..313bd1eb 100644
 +            f"{last_layer_idx}; the last layer must run with max_deferred_experts_per_token=0."
 +        )
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index 3b3b15a8..f2867393 100644
+index 3b3b15a82..f2867393b 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -20,6 +20,11 @@ import torch
@@ -235,7 +235,7 @@ index 3b3b15a8..f2867393 100644
              )
 diff --git a/python/sglang/srt/layers/moe/kt_provider.py b/python/sglang/srt/layers/moe/kt_provider.py
 new file mode 100644
-index 00000000..982af347
+index 000000000..982af3477
 --- /dev/null
 +++ b/python/sglang/srt/layers/moe/kt_provider.py
 @@ -0,0 +1,410 @@
@@ -650,7 +650,7 @@ index 00000000..982af347
 +            return
 +        held.check_same(lease, where=f"layer {self.layer_idx}: ")
 diff --git a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
-index b94c351b..347236c9 100644
+index b94c351b5..347236c9f 100644
 --- a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
 +++ b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
 @@ -542,12 +542,15 @@ def register_kt_capture_sizes(model_runner: ModelRunner) -> None:
@@ -672,7 +672,7 @@ index b94c351b..347236c9 100644
  
  def capture_decode_graph(*, model_runner: ModelRunner) -> GraphCapture:
 diff --git a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
-index 506c1a57..c1ef4b66 100644
+index 506c1a578..c1ef4b663 100644
 --- a/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 +++ b/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py
 @@ -371,7 +371,10 @@ class DecodeCudaGraphRunner(BaseCudaGraphRunner):

@@ -1,7 +1,7 @@
 From 2323052b02e23cd26673776f69ff900d12caca68 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 00:04:04 -0400
-Subject: [PATCH 32/59] moe: persistent FlashInfer CUTLASS MXFP4 workspace per
+Subject: [PATCH 32/60] moe: persistent FlashInfer CUTLASS MXFP4 workspace per
  device (E34d-v (i))
 
 FlashInfer's cutlass_fused_moe allocated and freed a ~980 MiB scratch on every
@@ -23,7 +23,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  2 files changed, 213 insertions(+), 7 deletions(-)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index a52c6864..309cf5b7 100644
+index a52c6864b..309cf5b74 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -978,6 +978,12 @@ class Envs:
@@ -40,7 +40,7 @@ index a52c6864..309cf5b7 100644
      # fine-grained opt switch reads False, keeping non-experimental paths byte-identical.
      SGLANG_EXPERIMENTAL_LORA_OPTI = EnvBool(False)
 diff --git a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
-index 950591ca..3d2d4351 100644
+index 950591ca1..3d2d43512 100644
 --- a/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
 +++ b/python/sglang/srt/layers/moe/moe_runner/flashinfer_cutlass.py
 @@ -8,7 +8,8 @@ Quantization methods prepare a small quant_info payload and route through

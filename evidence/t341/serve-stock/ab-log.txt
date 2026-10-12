@@ -1,0 +1,10 @@
+model=dsv41-flash-hybrid  runs=3 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  4        106.04    105.82    108.49      101.67       0.861     n/a
+model=dsv41-flash-hybrid  runs=3 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         59.48     58.51     59.75       57.58       0.302     n/a
+model=dsv41-flash-hybrid  runs=3 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  4        123.55    122.72    124.50      118.46       0.739     n/a
+ab-done

@@ -1,7 +1,7 @@
 From 8b86a84f8df72d3882b4b6e7e2b7e856a3f83d8d Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 17:56:01 -0400
-Subject: [PATCH 56/59] dsv4 step fingerprints: opt-in per-step per-layer
+Subject: [PATCH 56/60] dsv4 step fingerprints: opt-in per-step per-layer
  decode fingerprint recorder (recipe T3.15e)
 
 Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
@@ -14,7 +14,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  create mode 100644 python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index fa4dc216..2c8d0065 100644
+index fa4dc2163..2c8d0065c 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1420,6 +1420,9 @@ class Envs:
@@ -28,7 +28,7 @@ index fa4dc216..2c8d0065 100644
      # rows from the GPU instead of sharding them over HBM.
      SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE = EnvBool(False)
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index 09d32c93..29c81b65 100644
+index 09d32c93d..29c81b651 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -51,6 +51,7 @@ from sglang.kernels.ops.speculative.dspark.dspark_attn_metadata import (
@@ -110,7 +110,7 @@ index 09d32c93..29c81b65 100644
                      from sgl_kernel import flash_mla_with_kvcache
 diff --git a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
 new file mode 100644
-index 00000000..aa3f3902
+index 000000000..aa3f3902f
 --- /dev/null
 +++ b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
 @@ -0,0 +1,148 @@

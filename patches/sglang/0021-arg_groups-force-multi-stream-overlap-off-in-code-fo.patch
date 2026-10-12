@@ -1,7 +1,7 @@
 From 5b53173262156b7f3a087c6dfa3e7694e3ab2a31 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Thu, 24 Sep 2026 13:20:44 -0400
-Subject: [PATCH 21/59] arg_groups: force multi-stream overlap off in code for
+Subject: [PATCH 21/60] arg_groups: force multi-stream overlap off in code for
  DSpark on SM120, refuse an explicit =1 (Bug A; recipe review C4)
 
 Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
@@ -14,7 +14,7 @@ Co-authored-by: Amp <amp@ampcode.com>
 
 diff --git a/python/sglang/srt/arg_groups/dspark_overlap_gate.py b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
 new file mode 100644
-index 00000000..517efa59
+index 000000000..517efa595
 --- /dev/null
 +++ b/python/sglang/srt/arg_groups/dspark_overlap_gate.py
 @@ -0,0 +1,60 @@
@@ -79,7 +79,7 @@ index 00000000..517efa59
 +        "no longer required",
 +    )
 diff --git a/python/sglang/srt/arg_groups/model_hook.py b/python/sglang/srt/arg_groups/model_hook.py
-index cbb896b6..563c374c 100644
+index cbb896b63..563c374cb 100644
 --- a/python/sglang/srt/arg_groups/model_hook.py
 +++ b/python/sglang/srt/arg_groups/model_hook.py
 @@ -361,6 +361,22 @@ def handle_model_specific_adjustments(server_args: Any):

@@ -1,7 +1,7 @@
 From 682fc6a02b3e3585738e870dcbbee7460adeceb9 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Sat, 10 Oct 2026 14:36:47 -0400
-Subject: [PATCH 50/59] sampler/scheduler: a NaN/Inf logits row aborts that
+Subject: [PATCH 50/60] sampler/scheduler: a NaN/Inf logits row aborts that
  request, not the server (recipe T3.13 / C10)
 
 - Sampler.forward (outside the decode graph): under SGLANG_DSV41_REJECT_NAN_ROWS (default on)
@@ -36,7 +36,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  create mode 100644 python/sglang/srt/layers/moe/kt_nan_inject.py
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index 067812a7..890c214d 100644
+index 067812a73..890c214d2 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1460,6 +1460,12 @@ class Envs:
@@ -53,7 +53,7 @@ index 067812a7..890c214d 100644
      SGLANG_OPT_FLASHMLA_SPARSE_PREFILL = EnvBool(True)
  
 diff --git a/python/sglang/srt/layers/logits_processor.py b/python/sglang/srt/layers/logits_processor.py
-index ba7c5ff1..4f16fb57 100644
+index ba7c5ff18..4f16fb574 100644
 --- a/python/sglang/srt/layers/logits_processor.py
 +++ b/python/sglang/srt/layers/logits_processor.py
 @@ -188,6 +188,9 @@ class LogitsProcessorOutput:
@@ -67,7 +67,7 @@ index ba7c5ff1..4f16fb57 100644
      next_token_logprobs: Optional[torch.Tensor] = None
      # The logprobs and ids of the top-k tokens in output positions. shape: [#seq, k]
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index d61916dd..4273c9b8 100644
+index d61916dd5..4273c9b85 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -728,6 +728,11 @@ class KTEPWrapperMethod(FusedMoEMethodBase):
@@ -84,7 +84,7 @@ index d61916dd..4273c9b8 100644
                  and self.kt_config.num_layers is not None
 diff --git a/python/sglang/srt/layers/moe/kt_nan_inject.py b/python/sglang/srt/layers/moe/kt_nan_inject.py
 new file mode 100644
-index 00000000..5fbb302b
+index 000000000..5fbb302bc
 --- /dev/null
 +++ b/python/sglang/srt/layers/moe/kt_nan_inject.py
 @@ -0,0 +1,91 @@
@@ -180,7 +180,7 @@ index 00000000..5fbb302b
 +                self.row, self.bs, self.replays_at_bs, self.layer,
 +            )
 diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
-index d275449f..eef6a41f 100644
+index d275449fd..eef6a41f1 100644
 --- a/python/sglang/srt/layers/moe/kt_runtime.py
 +++ b/python/sglang/srt/layers/moe/kt_runtime.py
 @@ -43,6 +43,7 @@ from sglang.srt.layers.moe.kt_provider import (
@@ -216,7 +216,7 @@ index d275449f..eef6a41f 100644
      # -- providers -----------------------------------------------------------------
  
 diff --git a/python/sglang/srt/layers/sampler.py b/python/sglang/srt/layers/sampler.py
-index dd9d6c5a..48c18803 100644
+index dd9d6c5ae..48c18803b 100644
 --- a/python/sglang/srt/layers/sampler.py
 +++ b/python/sglang/srt/layers/sampler.py
 @@ -153,6 +153,20 @@ class Sampler(nn.Module):
@@ -241,7 +241,7 @@ index dd9d6c5a..48c18803 100644
          _trace_e2e_sampler("preprocess_enter")
          logits = self._preprocess_logits(logits, sampling_info)
 diff --git a/python/sglang/srt/managers/scheduler_components/batch_result_processor.py b/python/sglang/srt/managers/scheduler_components/batch_result_processor.py
-index eb6cf4a8..0a329030 100644
+index eb6cf4a8f..0a3290301 100644
 --- a/python/sglang/srt/managers/scheduler_components/batch_result_processor.py
 +++ b/python/sglang/srt/managers/scheduler_components/batch_result_processor.py
 @@ -2,6 +2,7 @@ from __future__ import annotations
@@ -335,7 +335,7 @@ index eb6cf4a8..0a329030 100644
  
              self._handle_finish_state_updated_req(req, batch, result, i, logits_output)
 diff --git a/python/sglang/srt/managers/utils.py b/python/sglang/srt/managers/utils.py
-index 2695df7d..e320b7d3 100644
+index 2695df7d7..e320b7d3a 100644
 --- a/python/sglang/srt/managers/utils.py
 +++ b/python/sglang/srt/managers/utils.py
 @@ -161,6 +161,9 @@ class GenerationBatchResult:
@@ -349,7 +349,7 @@ index 2695df7d..e320b7d3 100644
          if self.accept_lens is not None:
              self.accept_lens = _async_d2h(self.accept_lens)
 diff --git a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
-index cf02027c..0252c71b 100644
+index cf02027c9..0252c71b4 100644
 --- a/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 +++ b/python/sglang/srt/model_executor/runner_backend/breakable_cuda_graph_backend.py
 @@ -356,6 +356,13 @@ class BreakableCudaGraphBackend(DedupedCudaGraphMixin, BaseCudaGraphBackend):

@@ -1,7 +1,7 @@
 From 11e7f74505ebf1ba6230972c3cc622bf8cb94483 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Mon, 21 Sep 2026 23:56:18 -0400
-Subject: [PATCH 06/59] E21: make kt expert deferral work with the compact CPU
+Subject: [PATCH 06/60] E21: make kt expert deferral work with the compact CPU
  view
 
 kt-kernel's select_deferred_experts scatters protected expert ids into a
@@ -18,7 +18,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 45 insertions(+), 1 deletion(-)
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index b3650580..09a49083 100644
+index b36505805..09a490833 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -7,8 +7,9 @@ for any MoE quantization method. It coordinates parallel execution of GPU expert

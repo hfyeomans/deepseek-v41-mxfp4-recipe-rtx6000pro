@@ -1,7 +1,7 @@
 From 670994ac04cadab56ae1913c823190a442017ad2 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Tue, 22 Sep 2026 13:50:01 -0400
-Subject: [PATCH 08/59] E22d: KT_NAN_PROBE_MIN_TOKENS per-layer non-finite
+Subject: [PATCH 08/60] E22d: KT_NAN_PROBE_MIN_TOKENS per-layer non-finite
  probe and per-forward token/streamed log
 
 Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
@@ -11,7 +11,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 37 insertions(+)
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index 0abe1c86..e779d9b9 100644
+index 0abe1c86f..e779d9b9a 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -69,6 +69,11 @@ logger = logging.getLogger(__name__)

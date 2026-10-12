@@ -1,7 +1,7 @@
 From b6c767387b22cf1c3b01c256f32ca4b4e55ecb61 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Thu, 8 Oct 2026 13:48:31 -0400
-Subject: [PATCH 29/59] T3.16j: remove the B2 direct-UVA residue (ledger G2)
+Subject: [PATCH 29/60] T3.16j: remove the B2 direct-UVA residue (ledger G2)
 
 Delete KT_B2_UVA_EXPERTS / KT_B2_MAX_TOKENS, remap_topk_ids_for_b2, _uva_view,
 _B2HostPool, _B2UvaExperts (run/fork/join), the use_b2 branch and b2_out join
@@ -23,7 +23,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  5 files changed, 14 insertions(+), 314 deletions(-)
 
 diff --git a/python/sglang/srt/layers/moe/kt_contract.py b/python/sglang/srt/layers/moe/kt_contract.py
-index 313bd1eb..846ebfc4 100644
+index 313bd1eb9..846ebfc41 100644
 --- a/python/sglang/srt/layers/moe/kt_contract.py
 +++ b/python/sglang/srt/layers/moe/kt_contract.py
 @@ -49,8 +49,6 @@ def check_moe_topology(
@@ -54,7 +54,7 @@ index 313bd1eb..846ebfc4 100644
  
  def check_moe_boundary(
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index f623e54b..39806a60 100644
+index f623e54bb..39806a604 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -81,33 +81,10 @@ KT_GPU_PREFILL_LOG = os.environ.get("KT_GPU_PREFILL_LOG", "0") == "1"
@@ -464,7 +464,7 @@ index f623e54b..39806a60 100644
                  self.provider is not None
                  and self.kt_config.num_layers is not None
 diff --git a/python/sglang/srt/layers/moe/kt_provider.py b/python/sglang/srt/layers/moe/kt_provider.py
-index c785a461..77beb805 100644
+index c785a4614..77beb805a 100644
 --- a/python/sglang/srt/layers/moe/kt_provider.py
 +++ b/python/sglang/srt/layers/moe/kt_provider.py
 @@ -28,8 +28,7 @@ calls, so this module names them:
@@ -478,7 +478,7 @@ index c785a461..77beb805 100644
  is consulted.
  """
 diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
-index 81573374..68f5e6af 100644
+index 81573374a..68f5e6af3 100644
 --- a/python/sglang/srt/layers/moe/kt_runtime.py
 +++ b/python/sglang/srt/layers/moe/kt_runtime.py
 @@ -7,8 +7,6 @@ Everything the hybrid used to keep in module or class globals lives on one
@@ -516,7 +516,7 @@ index 81573374..68f5e6af 100644
  
      def load_cpu_experts(
 diff --git a/python/sglang/srt/layers/moe/kt_timeline.py b/python/sglang/srt/layers/moe/kt_timeline.py
-index 8cd37465..6d9b10ab 100644
+index 8cd374657..6d9b10abe 100644
 --- a/python/sglang/srt/layers/moe/kt_timeline.py
 +++ b/python/sglang/srt/layers/moe/kt_timeline.py
 @@ -29,7 +29,7 @@ the all-reduce it waits for in ``combine``), the marks are

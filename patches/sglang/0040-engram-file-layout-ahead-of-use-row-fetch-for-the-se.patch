@@ -1,7 +1,7 @@
 From ff516964238ab2c3d7aef49205194f9a028eb3db Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 18:29:22 -0400
-Subject: [PATCH 40/59] engram file layout: ahead-of-use row fetch for the
+Subject: [PATCH 40/60] engram file layout: ahead-of-use row fetch for the
  second Engram layer (recipe T3.20 / E36, SGLANG_DSV41_ENGRAM_FILE_PREFETCH)
 
 The two Engram layers' hash ids are a pure function of the input ids and
@@ -38,7 +38,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  3 files changed, 205 insertions(+), 46 deletions(-)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index 2c7547e7..eba9a2b8 100644
+index 2c7547e7f..eba9a2b88 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1431,7 +1431,13 @@ class Envs:
@@ -57,7 +57,7 @@ index 2c7547e7..eba9a2b8 100644
      # With the host table on, drop the checkpoint's page cache (posix_fadvise
      # DONTNEED on the safetensors) before pre-faulting the table and again after
 diff --git a/python/sglang/srt/layers/engram.py b/python/sglang/srt/layers/engram.py
-index 44bd3b0c..79908d85 100644
+index 44bd3b0cb..79908d850 100644
 --- a/python/sglang/srt/layers/engram.py
 +++ b/python/sglang/srt/layers/engram.py
 @@ -681,13 +681,23 @@ class _FileTable:
@@ -372,7 +372,7 @@ index 44bd3b0c..79908d85 100644
              # Nothing to gate, and the MXFP8 quantize behind wkv rejects an
              # empty M.
 diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
-index 0855918b..5a66504d 100644
+index 0855918ba..5a66504d4 100644
 --- a/python/sglang/srt/models/deepseek_v4.py
 +++ b/python/sglang/srt/models/deepseek_v4.py
 @@ -3671,6 +3671,17 @@ class DeepseekV4Model(nn.Module):

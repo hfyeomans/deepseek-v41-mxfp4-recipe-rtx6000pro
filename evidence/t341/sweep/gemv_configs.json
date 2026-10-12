@@ -1,0 +1,231 @@
+{
+ "device": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+ "block_shape": [
+  32,
+  32
+ ],
+ "max_m": 4,
+ "shapes": {
+  "N=16384,K=1280": {
+   "1": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 128,
+    "SPLIT_K": 1,
+    "num_warps": 1,
+    "num_stages": 2,
+    "us": 14.488615095615387,
+    "triton_us": 26.865231303068306
+   },
+   "2": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 128,
+    "SPLIT_K": 1,
+    "num_warps": 2,
+    "num_stages": 2,
+    "us": 14.841845975472378,
+    "triton_us": 25.868308085661667
+   },
+   "3": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 256,
+    "SPLIT_K": 1,
+    "num_warps": 1,
+    "num_stages": 3,
+    "us": 15.316923077289875,
+    "triton_us": 26.27815420810993
+   },
+   "4": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 256,
+    "SPLIT_K": 1,
+    "num_warps": 2,
+    "num_stages": 1,
+    "us": 16.28800023060579,
+    "triton_us": 24.801230201354393
+   }
+  },
+  "N=1792,K=5120": {
+   "1": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 256,
+    "SPLIT_K": 4,
+    "num_warps": 4,
+    "num_stages": 3,
+    "us": 8.139733473459879,
+    "triton_us": 9.306133290131886
+   },
+   "2": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 512,
+    "SPLIT_K": 4,
+    "num_warps": 2,
+    "num_stages": 3,
+    "us": 8.479467034339905,
+    "triton_us": 9.364800155162811
+   },
+   "3": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 512,
+    "SPLIT_K": 4,
+    "num_warps": 8,
+    "num_stages": 2,
+    "us": 9.098133444786072,
+    "triton_us": 9.403733412424723
+   }
+  },
+  "N=2304,K=5120": {
+   "1": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 256,
+    "SPLIT_K": 4,
+    "num_warps": 2,
+    "num_stages": 3,
+    "us": 9.812173960001573,
+    "triton_us": 11.6173910058063
+   },
+   "2": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 512,
+    "SPLIT_K": 4,
+    "num_warps": 2,
+    "num_stages": 3,
+    "us": 10.177391378775887,
+    "triton_us": 11.42121786656587
+   },
+   "3": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 512,
+    "SPLIT_K": 4,
+    "num_warps": 2,
+    "num_stages": 2,
+    "us": 10.791652228521265,
+    "triton_us": 11.723826112954512
+   }
+  },
+  "N=25600,K=6144": {
+   "1": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 512,
+    "SPLIT_K": 1,
+    "num_warps": 8,
+    "num_stages": 1,
+    "us": 99.46399927139282,
+    "triton_us": 201.48799568414688
+   },
+   "2": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 512,
+    "SPLIT_K": 1,
+    "num_warps": 8,
+    "num_stages": 1,
+    "us": 101.29600018262863,
+    "triton_us": 194.32800263166428
+   },
+   "3": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 512,
+    "SPLIT_K": 1,
+    "num_warps": 2,
+    "num_stages": 2,
+    "us": 104.0400005877018,
+    "triton_us": 195.23999840021133
+   },
+   "4": {
+    "BLOCK_N": 32,
+    "BLOCK_K": 256,
+    "SPLIT_K": 2,
+    "num_warps": 4,
+    "num_stages": 1,
+    "us": 109.14399847388268,
+    "triton_us": 199.36800003051758
+   }
+  },
+  "N=4096,K=1280": {
+   "1": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 256,
+    "SPLIT_K": 1,
+    "num_warps": 8,
+    "num_stages": 1,
+    "us": 4.785538436128543,
+    "triton_us": 6.723692210821005
+   },
+   "2": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 256,
+    "SPLIT_K": 1,
+    "num_warps": 4,
+    "num_stages": 2,
+    "us": 5.482461590033311,
+    "triton_us": 6.636615269459211
+   },
+   "3": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 512,
+    "SPLIT_K": 1,
+    "num_warps": 2,
+    "num_stages": 3,
+    "us": 6.309538506544554,
+    "triton_us": 6.786769399276146
+   }
+  },
+  "N=5120,K=1152": {
+   "1": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 256,
+    "SPLIT_K": 1,
+    "num_warps": 8,
+    "num_stages": 2,
+    "us": 5.2674782017002935,
+    "triton_us": 7.103304500165193
+   },
+   "2": {
+    "BLOCK_N": 8,
+    "BLOCK_K": 256,
+    "SPLIT_K": 1,
+    "num_warps": 4,
+    "num_stages": 1,
+    "us": 5.84486969139265,
+    "triton_us": 6.907130713048189
+   }
+  },
+  "N=5120,K=4096": {
+   "1": {
+    "BLOCK_N": 32,
+    "BLOCK_K": 256,
+    "SPLIT_K": 1,
+    "num_warps": 8,
+    "num_stages": 3,
+    "us": 14.691692132216232,
+    "triton_us": 20.465230712523827
+   },
+   "2": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 512,
+    "SPLIT_K": 1,
+    "num_warps": 8,
+    "num_stages": 1,
+    "us": 15.228307591034817,
+    "triton_us": 20.743384957313538
+   },
+   "3": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 256,
+    "SPLIT_K": 4,
+    "num_warps": 1,
+    "num_stages": 1,
+    "us": 16.16369245144037,
+    "triton_us": 20.86892265539903
+   },
+   "4": {
+    "BLOCK_N": 16,
+    "BLOCK_K": 512,
+    "SPLIT_K": 4,
+    "num_warps": 1,
+    "num_stages": 3,
+    "us": 17.197538453799027,
+    "triton_us": 20.7606152846263
+   }
+  }
+ }
+}

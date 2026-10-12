@@ -1,7 +1,7 @@
 From 3caa0182247445fc727e1d73ac85f2f4f93cf46a Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
 Date: Sun, 11 Oct 2026 18:20:31 -0400
-Subject: [PATCH 58/59] dsv4 step fingerprints: trigger dump of the full top-k
+Subject: [PATCH 58/60] dsv4 step fingerprints: trigger dump of the full top-k
  input/output row at one compressed seq_len (recipe T3.15e)
 
 Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
@@ -13,7 +13,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  3 files changed, 62 insertions(+), 3 deletions(-)
 
 diff --git a/python/sglang/srt/environ.py b/python/sglang/srt/environ.py
-index 2c8d0065..549e0a39 100644
+index 2c8d0065c..549e0a39a 100644
 --- a/python/sglang/srt/environ.py
 +++ b/python/sglang/srt/environ.py
 @@ -1423,6 +1423,10 @@ class Envs:
@@ -28,7 +28,7 @@ index 2c8d0065..549e0a39 100644
      # rows from the GPU instead of sharding them over HBM.
      SGLANG_ENABLE_DSV41_ENGRAM_HOST_TABLE = EnvBool(False)
 diff --git a/python/sglang/srt/layers/attention/deepseek_v4_backend.py b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
-index 29c81b65..66f2e8a2 100644
+index 29c81b651..66f2e8a23 100644
 --- a/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 +++ b/python/sglang/srt/layers/attention/deepseek_v4_backend.py
 @@ -3599,6 +3599,7 @@ class DeepseekV4AttnBackend(
@@ -40,7 +40,7 @@ index 29c81b65..66f2e8a2 100644
              if logits.is_cuda and torch.version.cuda is not None:
                  from sglang.kernels.ops.attention.dsv4.indexer_postprocess import (
 diff --git a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
-index 7eb2b928..01344370 100644
+index 7eb2b928f..01344370e 100644
 --- a/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
 +++ b/python/sglang/srt/layers/attention/dsv4/step_fingerprint.py
 @@ -69,12 +69,14 @@ class StepFingerprints:

@@ -1,7 +1,7 @@
 From b457c4e62a19bedfa7421eba29396ccfef1c7a7a Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Tue, 22 Sep 2026 21:50:47 -0400
-Subject: [PATCH 13/59] E23 diag: breakable graph replay attributes faults to a
+Subject: [PATCH 13/60] E23 diag: breakable graph replay attributes faults to a
  segment/break (SGLANG_BCG_DEBUG_SYNC), nested breaks inside an eager break
  run eagerly (--debug-cuda-graph with Engram breaks)
 
@@ -12,7 +12,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  1 file changed, 54 insertions(+), 2 deletions(-)
 
 diff --git a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
-index 6bda4fbc..4dc83362 100644
+index 6bda4fbc2..4dc833624 100644
 --- a/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
 +++ b/python/sglang/srt/model_executor/runner_backend_utils/breakable_cuda_graph/breakable_cuda_graph.py
 @@ -22,12 +22,21 @@ tensors remain valid across replays — we don't need Python-managed bridge

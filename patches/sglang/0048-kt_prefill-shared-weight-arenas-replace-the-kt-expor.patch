@@ -1,7 +1,7 @@
 From a8537fe78d7fd55958cb9364b5435cc10c00676f Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Sat, 10 Oct 2026 11:55:39 -0400
-Subject: [PATCH 48/59] kt_prefill: shared weight arenas replace the kt export
+Subject: [PATCH 48/60] kt_prefill: shared weight arenas replace the kt export
  (recipe T3.39 window 2 K2)
 
 Rank 0 creates one sealed memfd per MoE layer sized by kt's weight_arena_bytes
@@ -27,7 +27,7 @@ Co-authored-by: Amp <amp@ampcode.com>
  3 files changed, 434 insertions(+), 317 deletions(-)
 
 diff --git a/python/sglang/srt/layers/moe/kt_ep_wrapper.py b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
-index c9873c8d..d61916dd 100644
+index c9873c8d7..d61916dd5 100644
 --- a/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 +++ b/python/sglang/srt/layers/moe/kt_ep_wrapper.py
 @@ -52,8 +52,9 @@ logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ index c9873c8d..d61916dd 100644
              # rank-0 ownership and contiguous expert split above are only
              # correct for this parallel layout; refuse anything else here,
 diff --git a/python/sglang/srt/layers/moe/kt_prefill.py b/python/sglang/srt/layers/moe/kt_prefill.py
-index 7fbbd320..23029a49 100644
+index 7fbbd3207..23029a494 100644
 --- a/python/sglang/srt/layers/moe/kt_prefill.py
 +++ b/python/sglang/srt/layers/moe/kt_prefill.py
 @@ -1,69 +1,70 @@
@@ -938,7 +938,7 @@ index 7fbbd320..23029a49 100644
              self.end_forward(num_tokens)
          return out
 diff --git a/python/sglang/srt/layers/moe/kt_runtime.py b/python/sglang/srt/layers/moe/kt_runtime.py
-index 5b3e4dba..d275449f 100644
+index 5b3e4dba1..d275449fd 100644
 --- a/python/sglang/srt/layers/moe/kt_runtime.py
 +++ b/python/sglang/srt/layers/moe/kt_runtime.py
 @@ -111,12 +111,51 @@ class KtRuntime:

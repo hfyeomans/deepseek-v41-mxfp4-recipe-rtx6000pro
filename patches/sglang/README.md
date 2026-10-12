@@ -1,12 +1,12 @@
 # SGLang overlay as a patch series (T3.24c)
 
-Everything this recipe changes in SGLang, as 59 `git format-patch` files on top of one upstream commit. With this directory, the public `dev-dsv41` image and the model snapshot, the exact serving stack can be rebuilt without access to the local overlay clone. The kt-kernel side of the hybrid is a separate, much smaller series in [`config/kt-kernel-patches/`](../../config/kt-kernel-patches/) (three patches applied by `config/Dockerfile.dsv41-kt`).
+Everything this recipe changes in SGLang, as 60 `git format-patch` files on top of one upstream commit. With this directory, the public `dev-dsv41` image and the model snapshot, the exact serving stack can be rebuilt without access to the local overlay clone. The kt-kernel side of the hybrid is a separate, much smaller series in [`config/kt-kernel-patches/`](../../config/kt-kernel-patches/) (three patches applied by `config/Dockerfile.dsv41-kt`).
 
 | | |
 |---|---|
 | Upstream base | `sgl-project/sglang` commit `da64c5cbb8cf6bfd39be19da43573fdfd484c43a` — "[DSV4.1] Support raw-index output in TopK v2 (port of #33672) (#39098)", the commit the `lmsysorg/sglang:dev-dsv41` image was built from (`ai.sglang.build.commit` label; see `PROVENANCE.md`) |
 | Overlay branch | `dsv41-kt-hybrid` in the local clone `~/dev/src/sglang-dsv41-overlay` (no fork, no push) |
-| Exported head | commit `0887a3429cbf4029abfb8fd6b48a772725345b5b`, tree `a888e8039905ee12fe650afe6361c2768b217bb7`, 59 patches (the `recipe-2026-10` tag stays at `682fc6a0`, patch 0050; 0051 is T3.35's request-admission clamp, 0052 T3.43c's API-key file read, 0053 T3.15b's opt-in sorted decode top-k, 0054 T3.15c's logical-position sort, 0055 T3.15d's exact top-k, 0056–0058 T3.15e's opt-in step-fingerprint recorder, 0059 T3.9h-b's NGRAM chain-only verify — inert unless `NGRAM=1`, which E43 found unsafe) (`SERIES.env` is the machine-readable copy) |
+| Exported head | commit `d00e8e30c163daecec4a839995535b3d2ddc929e`, tree `2810e3b4e2a9c027521101e88eb9ecf2b3ba7637`, 60 patches (the `recipe-2026-10` tag stays at `682fc6a0`, patch 0050; 0051 is T3.35's request-admission clamp, 0052 T3.43c's API-key file read, 0053 T3.15b's opt-in sorted decode top-k, 0054 T3.15c's logical-position sort, 0055 T3.15d's exact top-k, 0056–0058 T3.15e's opt-in step-fingerprint recorder, 0059 T3.9h-b's NGRAM chain-only verify — inert unless `NGRAM=1`, which E43 found unsafe, 0060 T3.41's opt-in decode-shape FP8 GEMV — inert unless `SGLANG_DSV41_FP8_GEMV=1`) (`SERIES.env` is the machine-readable copy) |
 | Commits as written | no history rewrite: author, dates and messages are the overlay's. A themed rebase into ≈ 8 reviewable units is **T3.24c-ii**, an owner decision |
 
 ## Apply
@@ -15,7 +15,7 @@ Everything this recipe changes in SGLang, as 59 `git format-patch` files on top 
 git clone https://github.com/sgl-project/sglang && cd sglang
 git checkout --detach da64c5cbb8cf6bfd39be19da43573fdfd484c43a
 git am /path/to/recipe/patches/sglang/*.patch
-git rev-parse 'HEAD^{tree}'        # must print a888e8039905ee12fe650afe6361c2768b217bb7 (OVERLAY_TREE in SERIES.env)
+git rev-parse 'HEAD^{tree}'        # must print 2810e3b4e2a9c027521101e88eb9ecf2b3ba7637 (OVERLAY_TREE in SERIES.env)
 ```
 
 Only `python/sglang/` changes. The runtime image never contains these patches: [`scripts/serve-hybrid.sh`](../../scripts/serve-hybrid.sh) bind-mounts `$OVERLAY_DIR/python/sglang` read-only over `/sgl-workspace/sglang/python/sglang` inside `dsv41-kt:recipe`, so a checkout produced by the commands above can serve by setting `OVERLAY_DIR` to it. `config/Dockerfile.dsv41-kt` builds the image (base image digest + pruned kt-kernel wheel + the kt patches); the overlay is applied at run time, not build time.
@@ -91,3 +91,4 @@ Recipe tasks and experiments are in `plan/TASKS.md` and `plan/ROADMAP.md`; the u
 | 0057 | `833dc954` | `step_fingerprint.py`: the scalar record under CUDA-graph capture uses a device fill instead of an H2D copy (capture-safe) | T3.15e / E42 | diagnostic, local |
 | 0058 | `3caa0182` | `step_fingerprint.py` + `environ.py`: `SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN` — when row 0's compressed indexer length equals the value, also dump that step's full top-k input row and selected set for every indexer source layer (ring of 128) | T3.15e / E42 | diagnostic, local |
 | 0059 | `0887a342` | `ngram_worker.py`: chain-only verify when the KV pool has no `move_kv_cache` (DeepSeek-V4): `chainify_drafts()` refuses breadth ≠ 1, skips the KV move, clears the rejected rows' offline C128 slots. Fixes the T3.9h crash; E43 found a residual verify-path state defect under rejected rows (the `NGRAM` knob stays off and is not recommended) | T3.9h-b / E43 | diagnostic, local |
+| 0060 | `d00e8e30` | `fp8_kernel.py` + `fp8_utils.py` + `environ.py` + `configs/gemv,device_name=NVIDIA_RTX_PRO_6000_Blackwell_Max-Q_Workstation_Edition,dtype=fp8_w8a8,block_shape=[32, 32].json` (new): `SGLANG_DSV41_FP8_GEMV` (default off) — at decode M ≤ 4 a plain FP32-FMA row-dot GEMV (`fp8_gemv_dsv41`, both block scales folded into the activation, optional SPLIT_K) replaces the E20 tensor-core tiles for the 23/28 (shape, M) winners of a 423-config sweep (per call +3…+51 % (+12…+51 % at M = 1), e.g. 16384×1280 M=1 26.9 → 14.5 µs); the five losers keep the Triton GEMM. Serve-level: C1 +1–2 %, C4 flat (E44) | T3.41 / E44 | upstream candidate (SM120 GEMV path) |

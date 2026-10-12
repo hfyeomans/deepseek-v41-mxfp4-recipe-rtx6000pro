@@ -1,0 +1,200 @@
+NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 188 SMs; 423 GEMV configs; median of 30 graph replays, per launch
+     N     K  M candidate       us         p10-p90    GB/s   maxdiff  ok config
+ 16384  1280  1 triton       26.87  26.71-27.15        784         -   y e20 rot=13
+ 16384  1280  1 gemv         14.49  14.42-14.58       1453  1.25e-01   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 1, 'num_stages': 2}
+ 16384  1280  1 gemv         14.57  14.48-14.79       1445  1.25e-01   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+ 16384  1280  1 gemv         14.55  14.45-14.76       1447  1.25e-01   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+ 16384  1280  1 gemv         14.57  14.49-14.69       1445  1.25e-01   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 1, 'num_stages': 3}
+ 16384  1280  1 gemv         14.60  14.44-14.71       1442  1.25e-01   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+                 best gemv 14.49 us vs triton 26.87 us: +46.1 % spread 0.44 -> ACCEPT
+ 16384  1280  2 triton       25.87  25.70-26.14        814         -   y e20 rot=13
+ 16384  1280  2 gemv         14.84  14.75-14.92       1419  1.25e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 2}
+ 16384  1280  2 gemv         14.85  14.77-14.91       1418  1.25e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+ 16384  1280  2 gemv         14.85  14.78-14.91       1418  1.25e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 1}
+ 16384  1280  2 gemv         14.85  14.82-14.99       1418  1.25e-01   y {'BLOCK_N': 32, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+ 16384  1280  2 gemv         14.88  14.82-14.94       1415  1.25e-01   y {'BLOCK_N': 32, 'BLOCK_K': 128, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 3}
+                 best gemv 14.84 us vs triton 25.87 us: +42.6 % spread 0.43 -> ACCEPT
+ 16384  1280  3 triton       26.28  26.04-26.43        801         -   y e20 rot=13
+ 16384  1280  3 gemv         15.32  15.23-15.39       1375  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 1, 'num_stages': 3}
+ 16384  1280  3 gemv         15.32  15.22-15.39       1374  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 1, 'num_stages': 1}
+ 16384  1280  3 gemv         15.40  15.36-15.54       1367  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+ 16384  1280  3 gemv         15.36  15.25-15.47       1371  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 1, 'num_stages': 2}
+ 16384  1280  3 gemv         15.46  15.32-15.61       1362  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 2}
+                 best gemv 15.32 us vs triton 26.28 us: +41.7 % spread 0.39 -> ACCEPT
+ 16384  1280  4 triton       24.80  24.67-24.93        849         -   y e20 rot=13
+ 16384  1280  4 gemv         16.30  16.26-16.41       1292  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+ 16384  1280  4 gemv         16.29  16.25-16.41       1293  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 1}
+ 16384  1280  4 gemv         16.44  16.41-16.59       1281  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 2, 'num_warps': 1, 'num_stages': 2}
+ 16384  1280  4 gemv         16.45  16.41-16.59       1280  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 2, 'num_warps': 1, 'num_stages': 3}
+ 16384  1280  4 gemv         16.46  16.42-16.73       1279  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 2, 'num_warps': 1, 'num_stages': 1}
+                 best gemv 16.29 us vs triton 24.80 us: +34.3 % spread 0.27 -> ACCEPT
+  1792  5120  1 triton        9.31   9.26-9.38         990         -   y e20 rot=30
+  1792  5120  1 gemv          8.14   8.11-8.20        1132  3.12e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 3}
+  1792  5120  1 gemv          8.17   8.13-8.21        1128  3.12e-02   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 8, 'num_stages': 3}
+  1792  5120  1 gemv          8.15   8.11-8.17        1131  3.12e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 2}
+  1792  5120  1 gemv          8.14   8.13-8.21        1131  3.12e-02   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 8, 'num_stages': 2}
+  1792  5120  1 gemv          8.14   8.11-8.18        1131  3.12e-02   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 8, 'num_stages': 1}
+                 best gemv 8.14 us vs triton 9.31 us: +12.5 % spread 0.13 -> ACCEPT
+  1792  5120  2 triton        9.36   9.33-9.45         984         -   y e20 rot=30
+  1792  5120  2 gemv          8.48   8.45-8.53        1086  1.56e-02   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  1792  5120  2 gemv          8.48   8.44-8.51        1086  1.56e-02   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 2}
+  1792  5120  2 gemv          8.48   8.44-8.54        1086  1.56e-02   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  1792  5120  2 gemv          8.60   8.55-8.65        1072  1.56e-02   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  1792  5120  2 gemv          8.59   8.55-8.66        1073  1.56e-02   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 2}
+                 best gemv 8.48 us vs triton 9.36 us: +9.5 % spread 0.12 -> ACCEPT
+  1792  5120  3 triton        9.40   9.34-9.46         979         -   y e20 rot=30
+  1792  5120  3 gemv          9.10   9.08-9.16        1012  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 8, 'num_stages': 3}
+  1792  5120  3 gemv          9.10   9.06-9.23        1012  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 8, 'num_stages': 2}
+  1792  5120  3 gemv          9.12   9.09-9.17        1010  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 8, 'num_stages': 1}
+  1792  5120  3 gemv          9.20   9.17-9.26        1001  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  1792  5120  3 gemv          9.23   9.17-9.32         998  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+                 best gemv 9.10 us vs triton 9.40 us: +3.2 % spread 0.17 -> ACCEPT
+  1792  5120  4 triton        9.47   9.40-9.68         973         -   y e20 rot=30
+  1792  5120  4 gemv         10.34  10.32-10.44        891  1.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  1792  5120  4 gemv         10.32  10.29-10.35        892  1.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 2}
+  1792  5120  4 gemv         10.33  10.32-10.40        892  1.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  1792  5120  4 gemv         10.53  10.47-10.55        875  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 2}
+  1792  5120  4 gemv         10.49  10.46-10.59        878  1.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 3}
+                 best gemv 10.32 us vs triton 9.47 us: -9.0 % spread 0.28 -> reject
+  2304  5120  1 triton       11.62  11.55-11.64       1019         -   y e20 rot=23
+  2304  5120  1 gemv          9.85   9.76-9.94        1202  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+  2304  5120  1 gemv          9.81   9.73-10.02       1207  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  2304  5120  1 gemv          9.83   9.75-9.90        1205  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  2304  5120  1 gemv          9.81   9.73-9.86        1207  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 1}
+  2304  5120  1 gemv          9.82   9.75-10.07       1206  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+                 best gemv 9.81 us vs triton 11.62 us: +15.5 % spread 0.30 -> ACCEPT
+  2304  5120  2 triton       11.42  11.37-11.51       1037         -   y e20 rot=23
+  2304  5120  2 gemv         10.21  10.17-10.26       1160  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+  2304  5120  2 gemv         10.18  10.16-10.27       1164  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  2304  5120  2 gemv         10.21  10.17-10.26       1160  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 2, 'num_warps': 2, 'num_stages': 1}
+  2304  5120  2 gemv         10.22  10.17-10.28       1158  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+  2304  5120  2 gemv         10.20  10.17-10.26       1161  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+                 best gemv 10.18 us vs triton 11.42 us: +10.9 % spread 0.14 -> ACCEPT
+  2304  5120  3 triton       11.72  11.69-11.81       1010         -   y e20 rot=23
+  2304  5120  3 gemv         10.81  10.79-10.94       1096  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  2304  5120  3 gemv         10.79  10.74-10.88       1097  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 2}
+  2304  5120  3 gemv         10.80  10.75-10.83       1097  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  2304  5120  3 gemv         10.84  10.79-10.99       1093  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 2}
+  2304  5120  3 gemv         10.83  10.79-10.91       1093  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 1}
+                 best gemv 10.79 us vs triton 11.72 us: +8.0 % spread 0.15 -> ACCEPT
+  2304  5120  4 triton       11.68  11.63-11.74       1014         -   y e20 rot=23
+  2304  5120  4 gemv         11.87  11.81-11.91        998  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  2304  5120  4 gemv         11.87  11.85-11.94        998  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  2304  5120  4 gemv         11.87  11.78-11.90        998  2.50e-01   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 2}
+  2304  5120  4 gemv         12.08  12.04-12.14        980  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 2}
+  2304  5120  4 gemv         12.05  11.99-12.14        983  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 1}
+                 best gemv 11.87 us vs triton 11.68 us: -1.6 % spread 0.11 -> reject
+ 25600  6144  1 triton      201.49 200.32-202.90       784         -   y e20 rot=2
+ 25600  6144  1 gemv         99.54  99.36-100.48      1586  4.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 3}
+ 25600  6144  1 gemv         99.46  99.04-99.78       1588  4.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+ 25600  6144  1 gemv         99.55  99.40-100.49      1586  4.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+ 25600  6144  1 gemv         99.51  99.09-101.52      1587  4.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+ 25600  6144  1 gemv         99.55  99.08-100.10      1586  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 1024, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+                 best gemv 99.46 us vs triton 201.49 us: +50.6 % spread 2.57 -> ACCEPT
+ 25600  6144  2 triton      194.33 193.08-196.41       813         -   y e20 rot=2
+ 25600  6144  2 gemv        101.30 100.61-101.65      1559  4.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+ 25600  6144  2 gemv        101.58 101.03-102.04      1554  4.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+ 25600  6144  2 gemv        101.63 101.01-102.62      1554  4.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+ 25600  6144  2 gemv        102.09 101.45-102.60      1547  4.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+ 25600  6144  2 gemv        102.10 101.66-102.54      1547  4.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+                 best gemv 101.30 us vs triton 194.33 us: +47.9 % spread 3.32 -> ACCEPT
+ 25600  6144  3 triton      195.24 194.18-196.39       809         -   y e20 rot=2
+ 25600  6144  3 gemv        104.04 103.65-104.72      1518  4.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 2}
+ 25600  6144  3 gemv        104.10 103.56-105.17      1517  4.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 1}
+ 25600  6144  3 gemv        104.12 103.62-104.65      1517  4.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+ 25600  6144  3 gemv        104.17 103.67-106.13      1516  4.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+ 25600  6144  3 gemv        104.66 104.05-105.18      1509  4.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+                 best gemv 104.04 us vs triton 195.24 us: +46.7 % spread 2.21 -> ACCEPT
+ 25600  6144  4 triton      199.37 195.43-202.99       792         -   y e20 rot=2
+ 25600  6144  4 gemv        109.14 108.54-110.09      1447  2.00e+00   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 2, 'num_warps': 4, 'num_stages': 1}
+ 25600  6144  4 gemv        109.19 108.69-110.18      1446  2.00e+00   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 2, 'num_warps': 4, 'num_stages': 3}
+ 25600  6144  4 gemv        109.21 108.72-110.22      1446  2.00e+00   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 2, 'num_warps': 4, 'num_stages': 2}
+ 25600  6144  4 gemv        110.16 109.53-110.78      1433  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 2, 'num_warps': 2, 'num_stages': 1}
+ 25600  6144  4 gemv        110.14 109.53-110.76      1434  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 2, 'num_warps': 2, 'num_stages': 3}
+                 best gemv 109.14 us vs triton 199.37 us: +45.3 % spread 7.55 -> ACCEPT
+  4096  1280  1 triton        6.72   6.72-6.76         783         -   y e20 rot=52
+  4096  1280  1 gemv          4.79   4.76-4.81        1099  0.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  4096  1280  1 gemv          4.79   4.77-4.84        1099  0.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+  4096  1280  1 gemv          4.79   4.77-4.87        1099  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  4096  1280  1 gemv          4.79   4.77-4.83        1100  0.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+  4096  1280  1 gemv          4.81   4.78-4.93        1093  0.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+                 best gemv 4.79 us vs triton 6.72 us: +28.8 % spread 0.06 -> ACCEPT
+  4096  1280  2 triton        6.64   6.60-6.65         793         -   y e20 rot=52
+  4096  1280  2 gemv          5.48   5.45-5.50         960  1.95e-03   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 3}
+  4096  1280  2 gemv          5.48   5.47-5.50         960  1.95e-03   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 1}
+  4096  1280  2 gemv          5.48   5.44-5.50         960  1.95e-03   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+  4096  1280  2 gemv          5.60   5.56-5.62         940  3.12e-02   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 2}
+  4096  1280  2 gemv          5.60   5.56-5.62         940  3.12e-02   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+                 best gemv 5.48 us vs triton 6.64 us: +17.4 % spread 0.06 -> ACCEPT
+  4096  1280  3 triton        6.79   6.76-6.82         776         -   y e20 rot=52
+  4096  1280  3 gemv          6.31   6.27-6.33         834  2.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+  4096  1280  3 gemv          6.31   6.27-6.33         834  2.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 2}
+  4096  1280  3 gemv          6.31   6.28-6.35         834  2.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 1}
+  4096  1280  3 gemv          6.40   6.39-6.43         822  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 1}
+  4096  1280  3 gemv          6.39   6.39-6.43         824  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 3}
+                 best gemv 6.31 us vs triton 6.79 us: +7.0 % spread 0.06 -> ACCEPT
+  4096  1280  4 triton        6.63   6.60-6.65         794         -   y e20 rot=52
+  4096  1280  4 gemv          6.84   6.82-6.87         769  2.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+  4096  1280  4 gemv          6.84   6.82-6.88         769  2.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+  4096  1280  4 gemv          6.84   6.82-6.88         769  2.00e+00   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+  4096  1280  4 gemv          7.11   7.08-7.14         740  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+  4096  1280  4 gemv          7.10   7.06-7.14         741  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+                 best gemv 6.84 us vs triton 6.63 us: -3.3 % spread 0.06 -> reject
+  5120  1152  1 triton        7.10   7.06-7.20         834         -   y e20 rot=46
+  5120  1152  1 gemv          5.27   5.26-5.31        1124  7.81e-03   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  5120  1152  1 gemv          5.28   5.26-5.33        1121  7.81e-03   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+  5120  1152  1 gemv          5.28   5.26-5.31        1121  7.81e-03   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+  5120  1152  1 gemv          5.35   5.31-5.37        1106  7.81e-03   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+  5120  1152  1 gemv          5.35   5.31-5.36        1107  7.81e-03   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+                 best gemv 5.27 us vs triton 7.10 us: +25.8 % spread 0.13 -> ACCEPT
+  5120  1152  2 triton        6.91   6.87-6.93         857         -   y e20 rot=46
+  5120  1152  2 gemv          5.85   5.84-5.89        1012  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 2}
+  5120  1152  2 gemv          5.85   5.82-5.95        1013  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 3}
+  5120  1152  2 gemv          5.84   5.84-5.87        1013  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 1}
+  5120  1152  2 gemv          6.16   6.13-6.18         962  7.81e-03   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 2}
+  5120  1152  2 gemv          6.16   6.13-6.23         962  7.81e-03   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 4, 'num_stages': 3}
+                 best gemv 5.84 us vs triton 6.91 us: +15.4 % spread 0.06 -> ACCEPT
+  5120  1152  3 triton        6.93   6.91-6.98         855         -   y e20 rot=46
+  5120  1152  3 gemv          6.84   6.80-6.87         866  7.81e-03   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+  5120  1152  3 gemv          6.84   6.82-6.88         866  7.81e-03   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+  5120  1152  3 gemv          6.87   6.85-6.89         862  7.81e-03   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  5120  1152  3 gemv          6.83   6.80-6.85         868  7.81e-03   y {'BLOCK_N': 8, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+  5120  1152  3 gemv          6.87   6.84-6.93         862  7.81e-03   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 2}
+                 best gemv 6.83 us vs triton 6.93 us: +1.4 % spread 0.07 -> reject
+  5120  1152  4 triton        6.93   6.92-6.97         854         -   y e20 rot=46
+  5120  1152  4 gemv          7.20   7.18-7.23         822  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+  5120  1152  4 gemv          7.20   7.18-7.23         822  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+  5120  1152  4 gemv          7.22   7.18-7.24         820  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+  5120  1152  4 gemv          7.45   7.42-7.47         795  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+  5120  1152  4 gemv          7.45   7.42-7.49         795  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+                 best gemv 7.20 us vs triton 6.93 us: -3.9 % spread 0.06 -> reject
+  5120  4096  1 triton       20.47  20.27-20.75       1029         -   y e20 rot=13
+  5120  4096  1 gemv         14.69  14.60-14.77       1433  6.25e-02   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+  5120  4096  1 gemv         14.69  14.62-14.80       1433  6.25e-02   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+  5120  4096  1 gemv         14.69  14.62-14.76       1433  6.25e-02   y {'BLOCK_N': 32, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+  5120  4096  1 gemv         14.84  14.70-14.95       1418  6.25e-02   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+  5120  4096  1 gemv         14.70  14.69-14.87       1432  6.25e-02   y {'BLOCK_N': 32, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+                 best gemv 14.69 us vs triton 20.47 us: +28.2 % spread 0.48 -> ACCEPT
+  5120  4096  2 triton       20.74  20.41-20.95       1015         -   y e20 rot=13
+  5120  4096  2 gemv         15.23  15.15-15.37       1382  6.25e-02   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+  5120  4096  2 gemv         15.31  15.21-15.36       1375  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 2, 'num_stages': 3}
+  5120  4096  2 gemv         15.23  15.15-15.36       1383  6.25e-02   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+  5120  4096  2 gemv         15.38  15.24-15.54       1369  6.25e-02   y {'BLOCK_N': 8, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 1}
+  5120  4096  2 gemv         15.23  15.16-15.39       1382  6.25e-02   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 2}
+                 best gemv 15.23 us vs triton 20.74 us: +26.6 % spread 0.54 -> ACCEPT
+  5120  4096  3 triton       20.87  20.67-21.08       1009         -   y e20 rot=13
+  5120  4096  3 gemv         16.18  16.11-16.32       1302  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+  5120  4096  3 gemv         16.25  16.10-16.34       1296  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 3}
+  5120  4096  3 gemv         16.20  16.10-16.30       1300  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 2, 'num_stages': 1}
+  5120  4096  3 gemv         16.23  16.11-16.30       1297  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+  5120  4096  3 gemv         16.16  16.10-16.26       1303  2.00e+00   y {'BLOCK_N': 16, 'BLOCK_K': 256, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+                 best gemv 16.16 us vs triton 20.87 us: +22.5 % spread 0.41 -> ACCEPT
+  5120  4096  4 triton       20.76  20.43-21.15       1014         -   y e20 rot=13
+  5120  4096  4 gemv         17.20  17.10-17.27       1224  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+  5120  4096  4 gemv         17.25  17.14-17.35       1220  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+  5120  4096  4 gemv         17.24  17.20-17.36       1221  2.50e-01   y {'BLOCK_N': 16, 'BLOCK_K': 512, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 2}
+  5120  4096  4 gemv         17.43  17.36-17.57       1208  5.00e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 1}
+  5120  4096  4 gemv         17.48  17.36-17.56       1205  5.00e-01   y {'BLOCK_N': 16, 'BLOCK_K': 128, 'SPLIT_K': 4, 'num_warps': 1, 'num_stages': 3}
+                 best gemv 17.20 us vs triton 20.76 us: +17.2 % spread 0.72 -> ACCEPT
+wrote /out/results.json
+wrote /out/gemv_configs.json
