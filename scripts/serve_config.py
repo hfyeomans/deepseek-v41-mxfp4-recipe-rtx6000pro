@@ -32,6 +32,7 @@ refused in every profile except `developer`. `{repo}` in a value expands to the 
 """
 from __future__ import annotations
 
+import glob
 import os
 import re
 import shlex
@@ -54,8 +55,10 @@ OWNED_PREFIXES = (
     "KT_", "DSPARK", "NGRAM", "ENGRAM_", "SGLANG_DSV41_", "SGLANG_BCG_", "SGLANG_LOGPROB_",
     "CUDA_GRAPH_", "EXTRA_", "ALLOW_", "MEM_FRACTION", "CONTEXT_LENGTH", "CHUNKED_PREFILL",
     "MAX_RUNNING", "MAX_TOTAL", "CONTAINER_NAME", "SERVED_MODEL", "BIND_ADDRESS", "API_KEY_FILE",
-    "HF_MODEL_DIR", "OVERLAY_DIR", "KERNEL_CACHE_DIR", "MANIFEST_DIR", "BIOS_SLOT",
+    "HF_MODEL_DIR", "OVERLAY_DIR", "KERNEL_CACHE_DIR", "MANIFEST_DIR", "BIOS_SLOT", "HOST_THREAD_CPUS",
 )
+SYSFS_CPU = "/sys/devices/system/cpu"   # host CPU topology (HOST_THREAD_CPUS=auto); tests point it at a fake tree
+CPULIST_RE = re.compile(r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
 MAX_CONTEXT_LENGTH = 1_048_576   # the top of the single-slot ladder (E34d-v (ii)); nothing larger was ever run
 LOOPBACK_BINDS = ("127.0.0.1", "localhost", "::1")
 
@@ -183,6 +186,16 @@ REGISTRY: tuple[Knob, ...] = (
          "overlay 99128a7e the soak reads 14 at -11 to -25 % prefill (the core-bound kt export is now exposed), decode "
          "within noise. 16 stays.",
          sink=SERVER_ARG, evidence="evidence/e26-single-user/, evidence/t339/"),
+    Knob("HOST_THREAD_CPUS", "str", "",
+         "T3.52 / E44: cpulist (taskset syntax, e.g. `16-31`) the server process tree starts on (`docker run "
+         "--entrypoint taskset -c <list> python3 ...`). kt-kernel pins its KT_CPUINFER workers to the first "
+         "logical CPU of each physical core regardless of the inherited mask, while every other thread (the TP0 "
+         "scheduler, the busy-spinning TP1 main thread, tokenizer, HTTP) floats on every CPU and stalls the "
+         "CPU-tier fork-join whenever it lands on a worker's core: C4 reads 106 or 123 on the same serve. `auto` = "
+         "the SMT siblings of the workers' cores from the host's sysfs topology (16-31 on the 9955WX; no-op "
+         "with a warning on a host without SMT). A list that overlaps a worker CPU is refused (the forced "
+         "collision read C4 33.8). Empty = floating threads, the pre-T3.52 behaviour. Qualified 2026-10-12 with `auto` (`evidence/t352/`): every release gate green, C4 126.7 / 123.0 with no 106 mode, C1 60.7 / 60.3, NLL bit-identical, decode numerics unchanged; paired A/B/A/B on the same serve puts prefill at -0.7…-1.9 % pinned (the Engram gather, scheduler and tokenizer share 16 logical CPUs instead of 32).",
+         evidence="evidence/t341/serve-stock/, evidence/t352/"),
     Knob("KT_MAX_DEFERRED", "int", "4",
          "Expert deferral D (E21): each token's D lowest-scored routed experts are computed during the next layer "
          "and added one layer late. D=4: +22 % C1 over D=0, NLL within gate (T3.28: +0.00066 +- 0.00103 on the "
@@ -485,6 +498,54 @@ def load_profile(name: str) -> dict[str, str]:
     return out
 
 
+def _cpulist(spec: str) -> set[int]:
+    """Expand a taskset cpulist ("0-3,16") into a set; ConfigError on anything else."""
+    if not CPULIST_RE.match(spec):
+        raise ConfigError(f"HOST_THREAD_CPUS={spec}: not a cpulist (taskset syntax: `16-31` or `16,17,20-23`), `auto` or empty")
+    cpus: set[int] = set()
+    for part in spec.split(","):
+        lo, _, hi = part.partition("-")
+        a, b = int(lo), int(hi or lo)
+        if b < a:
+            raise ConfigError(f"HOST_THREAD_CPUS={spec}: range {part} is descending")
+        cpus.update(range(a, b + 1))
+    return cpus
+
+
+def _cores() -> list[set[int]]:
+    """Physical cores of the host as sets of logical CPU ids, ordered by their lowest id; [] when sysfs is absent."""
+    cores: dict[int, set[int]] = {}
+    for d in sorted(glob.glob(os.path.join(SYSFS_CPU, "cpu[0-9]*"))):
+        try:
+            sib = Path(d, "topology/thread_siblings_list").read_text().strip()
+        except OSError:
+            continue
+        if sib:
+            cpus = _cpulist(sib)
+            cores[min(cpus)] = cpus
+    return [cores[k] for k in sorted(cores)]
+
+
+def kt_worker_cpus(n_workers: int) -> set[int]:
+    """The logical CPUs kt-kernel's workers end up on: hwloc singlifies each of the first n cores to its
+    first PU (observed 0-15 for KT_CPUINFER=16 on the 9955WX)."""
+    return {min(c) for c in _cores()[:n_workers]}
+
+
+def smt_siblings(n_workers: int) -> str:
+    """cpulist of the SMT siblings of the first n cores (the CPUs that leave kt's workers alone); "" without SMT."""
+    cpus = sorted(set().union(*(c - {min(c)} for c in _cores()[:n_workers])) if _cores() else set())
+    out: list[str] = []
+    i = 0
+    while i < len(cpus):
+        j = i
+        while j + 1 < len(cpus) and cpus[j + 1] == cpus[j] + 1:
+            j += 1
+        out.append(str(cpus[i]) if i == j else f"{cpus[i]}-{cpus[j]}")
+        i = j + 1
+    return ",".join(out)
+
+
 def resolve(env: dict[str, str]) -> dict[str, str]:
     """Resolve every knob: registry default < profile file < `env`; raise ConfigError on an unknown,
     removed or mistyped knob, a profile the registry would not accept, or (T3.24b) an unsafe knob,
@@ -532,11 +593,16 @@ def resolve(env: dict[str, str]) -> dict[str, str]:
     out["PROFILE_OVERRIDES"] = " ".join(overrides)
     if not out["BIND_ADDRESS"]:
         out["BIND_ADDRESS"] = "127.0.0.1"   # R5: empty must never mean `-p :PORT:30000` (all interfaces)
+    if out["HOST_THREAD_CPUS"] == "auto":   # T3.52: record the list the host resolves to, not the word
+        out["HOST_THREAD_CPUS"] = smt_siblings(int(out["KT_CPUINFER"]))
+    elif out["HOST_THREAD_CPUS"]:
+        _cpulist(out["HOST_THREAD_CPUS"])
     return out
 
 
-def warnings(r: dict[str, str]) -> list[str]:
-    """Non-fatal advice (printed to stderr)."""
+def warnings(r: dict[str, str], env: dict[str, str] | None = None) -> list[str]:
+    """Non-fatal advice (printed to stderr). `env` is the caller's environment (for advice about how a value
+    was requested, e.g. HOST_THREAD_CPUS=auto resolving to nothing)."""
     msgs = []
     try:
         import subprocess
@@ -547,6 +613,9 @@ def warnings(r: dict[str, str]) -> list[str]:
     if phys and int(r["KT_CPUINFER"]) > phys:
         msgs.append(f"WARNING: KT_CPUINFER={r['KT_CPUINFER']} exceeds the {phys} physical cores; "
                     "E26 A1 measured -12 % at 24 and a 7x collapse at 30 threads")
+    if env is not None and env.get("HOST_THREAD_CPUS") == "auto" and not r["HOST_THREAD_CPUS"]:
+        msgs.append("WARNING: HOST_THREAD_CPUS=auto found no SMT siblings for the kt worker cores (no SMT, or "
+                    "no sysfs topology); the server's host threads float as before (T3.52)")
     return msgs
 
 
@@ -562,6 +631,14 @@ def guards(r: dict[str, str]) -> None:
         raise ConfigError(
             f"CONTEXT_LENGTH={ctx}: the ladder stops at 1M x 1 (E34d-v (ii)); larger pools were never run and "
             "either cap silently or OOM minutes into the load (T3.43a / R24). No override: a 1M+ rung is a new experiment.")
+    if r["HOST_THREAD_CPUS"]:
+        clash = sorted(_cpulist(r["HOST_THREAD_CPUS"]) & kt_worker_cpus(int(r["KT_CPUINFER"])))
+        if clash:
+            raise ConfigError(
+                f"HOST_THREAD_CPUS={r['HOST_THREAD_CPUS']} overlaps kt-kernel's worker CPUs "
+                f"{','.join(map(str, clash))} (the first logical CPU of each of the first KT_CPUINFER={r['KT_CPUINFER']} "
+                "cores): a host thread sharing a worker's core stalls the CPU-tier fork-join (forced collision C4 33.8, "
+                "E44). Use `auto` (the SMT siblings) or a list outside those CPUs.")
     bind = r["BIND_ADDRESS"]
     if bind not in LOOPBACK_BINDS and not r["API_KEY_FILE"] and r["PROFILE"] != DEVELOPER_PROFILE:
         raise ConfigError(
@@ -642,7 +719,7 @@ def resolved_line(r: dict[str, str]) -> str:
             f"reject_nan_rows={r['KT_REJECT_NAN_ROWS']} "
             f"expandable_after_capture={r['SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE']} "
             f"fused_finalize={r['SGLANG_FLASHINFER_MOE_FUSED_FINALIZE']} sort_decode_topk={r['SGLANG_DSV41_SORT_DECODE_TOPK']} "
-            f"fp8_gemv={r['SGLANG_DSV41_FP8_GEMV']} "
+            f"fp8_gemv={r['SGLANG_DSV41_FP8_GEMV']} host_thread_cpus={r['HOST_THREAD_CPUS'] or 'floating'} "
             f"engram_prefetch={r['ENGRAM_FILE_PREFETCH']} engram_chunk_ahead={r['ENGRAM_CHUNK_AHEAD']} "
             f"expert_map={emap} image={r['IMAGE']} profile={r['PROFILE']} overrides=[{r['PROFILE_OVERRIDES']}]")
 
@@ -719,7 +796,7 @@ def main(argv: list[str]) -> int:
     env = dict(os.environ)
     try:
         if cmd == "shell":
-            for w in warnings(resolve(env)):
+            for w in warnings(resolve(env), env):
                 print(w, file=sys.stderr)
             sys.stdout.write(shell_fragment(env))
         elif cmd == "resolved":

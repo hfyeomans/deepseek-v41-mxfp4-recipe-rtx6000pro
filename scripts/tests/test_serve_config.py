@@ -180,6 +180,54 @@ def test_expert_map_knob() -> None:
     assert r["KT_EXPERT_MAP"] == "" and "expert_map=positional" in sc.resolved_line(r)
 
 
+def test_host_thread_cpus() -> None:
+    # T3.52: the server tree starts under `taskset -c <list>`; the default keeps `--entrypoint python3`
+    # byte-identical (test_goldens). `auto` resolves on the host's sysfs to the SMT siblings of the
+    # first KT_CPUINFER cores -- by sibling sets, not by assuming cores are 0..N-1 and siblings N..2N-1
+    # -- and a list that lands on a worker CPU is refused (E44: forced collision C4 33.8).
+    p = launcher(["--print"], HOST_THREAD_CPUS="100-103")   # no host has a worker there
+    assert p.returncode == 0, p.stderr
+    line, cmd = p.stdout.splitlines()[:2]
+    assert " host_thread_cpus=100-103 " in line and " overrides=[HOST_THREAD_CPUS]" in line, line
+    assert "--entrypoint taskset " in cmd and "--entrypoint python3" not in cmd, cmd
+    assert " dsv41-kt:recipe -c 100-103 python3 -m sglang.launch_server " in cmd, cmd
+    default = (GOLDEN / "print-default.txt").read_text().splitlines()
+    assert " host_thread_cpus=floating " in default[0] and "--entrypoint python3 " in default[1]
+    for bad in ("sixteen", "16-31,", "20-18", "16 31"):
+        p = launcher([], DRY_RUN="1", HOST_THREAD_CPUS=bad)
+        assert p.returncode == 2 and "FAIL config: HOST_THREAD_CPUS=" in p.stderr, (bad, p.returncode, p.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        # an interleaved topology: core i = {2i, 2i+1}, 6 cores
+        for cpu in range(12):
+            d = Path(tmp) / f"cpu{cpu}/topology"
+            d.mkdir(parents=True)
+            (d / "thread_siblings_list").write_text(f"{cpu - cpu % 2},{cpu - cpu % 2 + 1}\n")
+        saved = sc.SYSFS_CPU
+        sc.SYSFS_CPU = tmp
+        try:
+            assert sc.kt_worker_cpus(4) == {0, 2, 4, 6}
+            assert sc.smt_siblings(4) == "1,3,5,7" and sc.smt_siblings(6) == "1,3,5,7,9,11"
+            r = sc.resolve({"HOST_THREAD_CPUS": "auto", "KT_CPUINFER": "4"})
+            assert r["HOST_THREAD_CPUS"] == "1,3,5,7", r["HOST_THREAD_CPUS"]
+            sc.guards(r)
+            try:
+                sc.guards(sc.resolve({"HOST_THREAD_CPUS": "4-11", "KT_CPUINFER": "4"}))
+            except sc.ConfigError as e:
+                assert "overlaps kt-kernel's worker CPUs 4,6 " in str(e), e
+            else:
+                raise AssertionError("4-11 overlaps workers 4 and 6 and was not refused")
+            sc.guards(sc.resolve({"HOST_THREAD_CPUS": "8-11", "KT_CPUINFER": "4"}))   # cores 4 and 5 are free
+            # no SMT at all: auto is a documented no-op with a warning, never a refusal
+            for cpu in range(12):
+                (Path(tmp) / f"cpu{cpu}/topology/thread_siblings_list").write_text(f"{cpu}\n")
+            env = {"HOST_THREAD_CPUS": "auto"}
+            r = sc.resolve(env)
+            assert r["HOST_THREAD_CPUS"] == "" and any("no SMT siblings" in w for w in sc.warnings(r, env))
+            assert not any("no SMT" in w for w in sc.warnings(sc.resolve({}), {}))
+        finally:
+            sc.SYSFS_CPU = saved
+
+
 def test_diagnostic_forwarded() -> None:
     p = launcher(["--print"], PROFILE="developer", KT_TIMELINE="1", KT_TIMELINE_DIR="/tmp/tl",
                  SGLANG_BCG_DEBUG_SYNC="1", KT_NAN_PROBE_MIN_TOKENS="1")

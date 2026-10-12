@@ -40,8 +40,19 @@ cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || ex
 declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_EXPERT_MAP KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K NGRAM NGRAM_DRAFT_TOKENS NGRAM_BREADTH \
   MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS \
   CUDA_GRAPH_BS MAX_TOTAL_TOKENS EXTRA_SERVER_ARGS EXTRA_DOCKER_ENV EXTRA_DOCKER_ARGS DRY_RUN \
-  CONTAINER_NAME BIND_ADDRESS API_KEY_FILE PORT HF_MODEL_DIR OVERLAY_DIR KERNEL_CACHE_DIR IMAGE MANIFEST_DIR RESOLVED_LINE CONTAINER_ENV DIAG_ENV
+  CONTAINER_NAME BIND_ADDRESS API_KEY_FILE PORT HF_MODEL_DIR OVERLAY_DIR KERNEL_CACHE_DIR IMAGE MANIFEST_DIR HOST_THREAD_CPUS \
+  RESOLVED_LINE CONTAINER_ENV DIAG_ENV
 eval "$cfg"
+
+# T3.52: with HOST_THREAD_CPUS set the whole server process tree (both TP ranks, tokenizer, HTTP)
+# starts under `taskset -c <list>`; kt-kernel re-pins its workers to the physical cores itself, so
+# only the floating host threads move off them (E44: C4 106 / 123 -> 125, no slow mode).
+entrypoint=python3
+entrypoint_args=()
+if [[ -n "$HOST_THREAD_CPUS" ]]; then
+  entrypoint=taskset
+  entrypoint_args=(-c "$HOST_THREAD_CPUS" python3)
+fi
 
 snapshot_dir="/hfm/snapshots/${SNAPSHOT}"
 
@@ -141,7 +152,7 @@ docker_cmd=(
   --ipc=host --shm-size 32g
   --ulimit memlock=-1 --ulimit stack=67108864
   --security-opt label=disable
-  --entrypoint python3
+  --entrypoint "$entrypoint"
   -p "${BIND_ADDRESS}:${PORT}:30000"
   -v "${HF_MODEL_DIR}:/hfm:ro"
   -v "${OVERLAY_DIR}/python/sglang:/sgl-workspace/sglang/python/sglang:ro"
@@ -152,6 +163,7 @@ docker_cmd=(
   "${extra_env_flags[@]}"
   "${extra_docker_args[@]}"
   "$IMAGE"
+  "${entrypoint_args[@]}"
   "${server_args[@]}"
 )
 
