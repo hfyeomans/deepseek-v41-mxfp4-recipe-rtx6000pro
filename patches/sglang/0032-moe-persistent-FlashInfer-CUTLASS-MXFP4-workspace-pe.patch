@@ -1,7 +1,7 @@
 From 2323052b02e23cd26673776f69ff900d12caca68 Mon Sep 17 00:00:00 2001
 From: Hank Yeomans <hank@quorra.ah.local>
 Date: Fri, 9 Oct 2026 00:04:04 -0400
-Subject: [PATCH 32/58] moe: persistent FlashInfer CUTLASS MXFP4 workspace per
+Subject: [PATCH 32/59] moe: persistent FlashInfer CUTLASS MXFP4 workspace per
  device (E34d-v (i))
 
 FlashInfer's cutlass_fused_moe allocated and freed a ~980 MiB scratch on every

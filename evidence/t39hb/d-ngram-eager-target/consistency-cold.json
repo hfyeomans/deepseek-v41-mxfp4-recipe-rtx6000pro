@@ -1,0 +1,328 @@
+{
+ "label": "ngram-chain-eager-target-cold",
+ "url": "http://127.0.0.1:8000",
+ "max_tokens": 384,
+ "margin_nats": 0.5,
+ "flush_cache": true,
+ "prompts": {
+  "copy-code": {
+   "tokens": 384,
+   "argmax_agree": 384,
+   "argmax_agree_rate": 1.0,
+   "flips": 0,
+   "flips_over_margin": 0,
+   "max_flip_gap_nats": 0.0,
+   "max_abs_dlogprob_decode_vs_forced": 0.011052573099789242,
+   "flip_detail": [],
+   "prompt_tokens": 1204,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.8461538461538463,
+   "text_head": "```python\nimport json\nimport os\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\n\n\n@dataclass\nclass Record:\n    key: str\n    value: float\n    tags: list[str] = field(default_factory=l"
+  },
+  "copy-table": {
+   "tokens": 384,
+   "argmax_agree": 383,
+   "argmax_agree_rate": 0.9973958333333334,
+   "flips": 1,
+   "flips_over_margin": 1,
+   "max_flip_gap_nats": 20.5,
+   "max_abs_dlogprob_decode_vs_forced": 20.499951006182528,
+   "flip_detail": [
+    {
+     "pos": 20,
+     "emitted": 8061,
+     "argmax": 22301,
+     "gap_nats": 20.5
+    }
+   ],
+   "prompt_tokens": 1025,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.6768558951965065,
+   "text_head": "| id | host | region | cpu_pct | mem_gib | status |\n|---|---|---|---|---|---|---|\n| 040 | node-760.internal | us-east-1 | 80.0 | 8 | degraded |\n| 039 | node-841.internal | ap-south-1 | 43.9 | 251 | ok"
+  },
+  "review": {
+   "tokens": 384,
+   "argmax_agree": 354,
+   "argmax_agree_rate": 0.921875,
+   "flips": 30,
+   "flips_over_margin": 8,
+   "max_flip_gap_nats": 3.125,
+   "max_abs_dlogprob_decode_vs_forced": 3.150734066963196,
+   "flip_detail": [
+    {
+     "pos": 32,
+     "emitted": 734,
+     "argmax": 5292,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 44,
+     "emitted": 436,
+     "argmax": 440,
+     "gap_nats": 1.625
+    },
+    {
+     "pos": 45,
+     "emitted": 759,
+     "argmax": 588,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 53,
+     "emitted": 66,
+     "argmax": 94508,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 59,
+     "emitted": 94508,
+     "argmax": 79434,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 73,
+     "emitted": 9709,
+     "argmax": 982,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 89,
+     "emitted": 1082,
+     "argmax": 3608,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 112,
+     "emitted": 5720,
+     "argmax": 78157,
+     "gap_nats": 1.25
+    },
+    {
+     "pos": 124,
+     "emitted": 78157,
+     "argmax": 23439,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 153,
+     "emitted": 15932,
+     "argmax": 42564,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 213,
+     "emitted": 5300,
+     "argmax": 270,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 228,
+     "emitted": 1353,
+     "argmax": 11,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 237,
+     "emitted": 28793,
+     "argmax": 15281,
+     "gap_nats": 1.0
+    },
+    {
+     "pos": 245,
+     "emitted": 3077,
+     "argmax": 10340,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 258,
+     "emitted": 1234,
+     "argmax": 440,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 259,
+     "emitted": 15983,
+     "argmax": 71007,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 264,
+     "emitted": 1975,
+     "argmax": 18222,
+     "gap_nats": 0.875
+    },
+    {
+     "pos": 265,
+     "emitted": 2274,
+     "argmax": 39102,
+     "gap_nats": 2.5
+    },
+    {
+     "pos": 271,
+     "emitted": 54861,
+     "argmax": 9085,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 272,
+     "emitted": 11353,
+     "argmax": 8209,
+     "gap_nats": 0.375
+    }
+   ],
+   "prompt_tokens": 166,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.2190476190476192,
+   "text_head": "# Review\n\n## Correctness issues\n\n1. **File handles leak.** `json.load(open(...))` never closes the file. On CPython it's usually GC'd, but on PyPy or under load it will exhaust FDs. Use `with` or `Pat"
+  },
+  "long12000": {
+   "tokens": 384,
+   "argmax_agree": 368,
+   "argmax_agree_rate": 0.9583333333333334,
+   "flips": 16,
+   "flips_over_margin": 6,
+   "max_flip_gap_nats": 1.625,
+   "max_abs_dlogprob_decode_vs_forced": 1.3993359804153442,
+   "flip_detail": [
+    {
+     "pos": 34,
+     "emitted": 6883,
+     "argmax": 223,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 38,
+     "emitted": 21857,
+     "argmax": 10192,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 62,
+     "emitted": 32578,
+     "argmax": 39157,
+     "gap_nats": 1.0
+    },
+    {
+     "pos": 111,
+     "emitted": 4800,
+     "argmax": 21845,
+     "gap_nats": 0.875
+    },
+    {
+     "pos": 127,
+     "emitted": 13510,
+     "argmax": 666,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 130,
+     "emitted": 8224,
+     "argmax": 13055,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 131,
+     "emitted": 24831,
+     "argmax": 14364,
+     "gap_nats": 1.625
+    },
+    {
+     "pos": 137,
+     "emitted": 2619,
+     "argmax": 982,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 166,
+     "emitted": 16,
+     "argmax": 26559,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 190,
+     "emitted": 295,
+     "argmax": 29,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 218,
+     "emitted": 126664,
+     "argmax": 20186,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 233,
+     "emitted": 5772,
+     "argmax": 11,
+     "gap_nats": 1.0
+    },
+    {
+     "pos": 257,
+     "emitted": 5300,
+     "argmax": 982,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 298,
+     "emitted": 103024,
+     "argmax": 13523,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 315,
+     "emitted": 940,
+     "argmax": 17,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 344,
+     "emitted": 85622,
+     "argmax": 26073,
+     "gap_nats": 0.0
+    }
+   ],
+   "prompt_tokens": 14773,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.103448275862069,
+   "text_head": "# Summary of the Document\n\n## Overview\nThe document is a technical feasibility study and learning guide for running **DeepSeek-V4.1-Flash** (a ~475 GiB Mixture-of-Experts model) on **two RTX PRO 6000 "
+  }
+ },
+ "compare": {
+  "copy-code": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "copy-table": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "review": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "long12000": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  }
+ },
+ "evidence": {
+  "tool": "spec-consistency.py",
+  "recorded_utc": "2026-10-12T00:16:54Z",
+  "manifest_hash": "a2b00169f80827c2ba0ce5555ff387560555cc7c8cf9b44553cb4003be5c2d12",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "966579ec607a56fb5e021d8f4211ec12cd1190224d099126f9d0ce3ea845a7f4"
+ }
+}

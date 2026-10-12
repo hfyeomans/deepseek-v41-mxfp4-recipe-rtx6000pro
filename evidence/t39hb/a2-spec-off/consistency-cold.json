@@ -1,0 +1,273 @@
+{
+ "label": "spec-off-cold",
+ "url": "http://127.0.0.1:8000",
+ "max_tokens": 384,
+ "margin_nats": 0.5,
+ "flush_cache": true,
+ "prompts": {
+  "copy-code": {
+   "tokens": 384,
+   "argmax_agree": 384,
+   "argmax_agree_rate": 1.0,
+   "flips": 0,
+   "flips_over_margin": 0,
+   "max_flip_gap_nats": 0.0,
+   "max_abs_dlogprob_decode_vs_forced": 0.0010314052924513817,
+   "flip_detail": [],
+   "prompt_tokens": 1204,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "```python\nimport json\nimport os\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\n\n\n@dataclass\nclass Record:\n    key: str\n    value: float\n    tags: list[str] = field(default_factory=l"
+  },
+  "copy-table": {
+   "tokens": 384,
+   "argmax_agree": 384,
+   "argmax_agree_rate": 1.0,
+   "flips": 0,
+   "flips_over_margin": 0,
+   "max_flip_gap_nats": 0.0,
+   "max_abs_dlogprob_decode_vs_forced": 0.00014709175593452528,
+   "flip_detail": [],
+   "prompt_tokens": 1025,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "| id | host | region | cpu_pct | mem_gib | status |\n|---|---|---|---|---|---|\n| 040 | node-760.internal | us-east-1 | 80.0 | 8 | degraded |\n| 039 | node-841.internal | ap-south-1 | 43.9 | 251 | ok |\n|"
+  },
+  "review": {
+   "tokens": 384,
+   "argmax_agree": 366,
+   "argmax_agree_rate": 0.953125,
+   "flips": 18,
+   "flips_over_margin": 1,
+   "max_flip_gap_nats": 0.625,
+   "max_abs_dlogprob_decode_vs_forced": 0.5955455303192139,
+   "flip_detail": [
+    {
+     "pos": 45,
+     "emitted": 588,
+     "argmax": 5922,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 47,
+     "emitted": 4245,
+     "argmax": 447,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 51,
+     "emitted": 3608,
+     "argmax": 260,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 65,
+     "emitted": 1009,
+     "argmax": 3608,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 80,
+     "emitted": 305,
+     "argmax": 295,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 94,
+     "emitted": 2136,
+     "argmax": 305,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 143,
+     "emitted": 3785,
+     "argmax": 3608,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 190,
+     "emitted": 2136,
+     "argmax": 1479,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 240,
+     "emitted": 66,
+     "argmax": 4484,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 258,
+     "emitted": 5354,
+     "argmax": 78801,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 260,
+     "emitted": 9495,
+     "argmax": 5803,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 265,
+     "emitted": 7332,
+     "argmax": 5803,
+     "gap_nats": 0.625
+    },
+    {
+     "pos": 313,
+     "emitted": 851,
+     "argmax": 440,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 315,
+     "emitted": 3608,
+     "argmax": 270,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 343,
+     "emitted": 71087,
+     "argmax": 3077,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 344,
+     "emitted": 769,
+     "argmax": 295,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 356,
+     "emitted": 38656,
+     "argmax": 769,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 363,
+     "emitted": 305,
+     "argmax": 17363,
+     "gap_nats": 0.5
+    }
+   ],
+   "prompt_tokens": 166,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "# Review\n\n## Correctness issues\n\n1. **File handles leak.** `json.load(open(...))` never closes the file. On CPython it usually gets GC'd, but on PyPy or under load you can exhaust file descriptors. Us"
+  },
+  "long12000": {
+   "tokens": 384,
+   "argmax_agree": 374,
+   "argmax_agree_rate": 0.9739583333333334,
+   "flips": 10,
+   "flips_over_margin": 1,
+   "max_flip_gap_nats": 0.75,
+   "max_abs_dlogprob_decode_vs_forced": 0.5602729320526123,
+   "flip_detail": [
+    {
+     "pos": 9,
+     "emitted": 671,
+     "argmax": 2337,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 44,
+     "emitted": 20,
+     "argmax": 23315,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 79,
+     "emitted": 223,
+     "argmax": 10531,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 90,
+     "emitted": 294,
+     "argmax": 82958,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 140,
+     "emitted": 797,
+     "argmax": 2008,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 153,
+     "emitted": 2645,
+     "argmax": 15890,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 238,
+     "emitted": 35977,
+     "argmax": 5148,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 366,
+     "emitted": 23332,
+     "argmax": 223,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 373,
+     "emitted": 91012,
+     "argmax": 30988,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 383,
+     "emitted": 304,
+     "argmax": 469,
+     "gap_nats": 0.5
+    }
+   ],
+   "prompt_tokens": 14773,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": null,
+   "text_head": "# Summary of the Document\n\n## Overview\nThe document is a technical feasibility study and learning guide for running **DeepSeek-V4.1-Flash** (a 475 GiB MoE model) on **2\u00d7 RTX PRO 6000 Blackwell 96 GB G"
+  }
+ },
+ "compare": {
+  "copy-code": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "copy-table": {
+   "agree_rate_delta": 0.0026041666666666297,
+   "flips_over_margin_delta": -1
+  },
+  "review": {
+   "agree_rate_delta": 0.03125,
+   "flips_over_margin_delta": -7
+  },
+  "long12000": {
+   "agree_rate_delta": 0.015625,
+   "flips_over_margin_delta": -5
+  }
+ },
+ "evidence": {
+  "tool": "spec-consistency.py",
+  "recorded_utc": "2026-10-12T00:22:40Z",
+  "manifest_hash": "acf917b09f1e40943f67121735d7b25307b8a049d813a750053cfdf25a4fb632",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "5b7e6429ac07b40a674a7a6b14220bdfc237a6548c16f2070fc11952fb0c0c0e"
+ }
+}

@@ -1,0 +1,9 @@
+copy-code    prompt=  1204 out= 384 argmax-agree=384/384 (1.000) flips>0.5nats=0 max-gap=0.000 max|dlogp| decode-vs-forced=0.0111 accept=1.8461538461538463
+copy-table   prompt=  1025 out= 384 argmax-agree=383/384 (0.997) flips>0.5nats=1 max-gap=20.500 max|dlogp| decode-vs-forced=20.5 accept=1.6768558951965065
+review       prompt=   166 out= 384 argmax-agree=354/384 (0.922) flips>0.5nats=8 max-gap=3.125 max|dlogp| decode-vs-forced=3.15 accept=1.2190476190476192
+long12000    prompt= 14773 out= 384 argmax-agree=368/384 (0.958) flips>0.5nats=6 max-gap=1.625 max|dlogp| decode-vs-forced=1.4 accept=1.103448275862069
+compare copy-code    agree-rate 1.000 -> 1.000  flips>margin 0 -> 0
+compare copy-table   agree-rate 0.997 -> 0.997  flips>margin 1 -> 1
+compare review       agree-rate 0.922 -> 0.922  flips>margin 8 -> 8
+compare long12000    agree-rate 0.958 -> 0.958  flips>margin 6 -> 6
+wrote evidence/t39hb/d-ngram-eager-target/consistency-cold.json

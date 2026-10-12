@@ -1,0 +1,16 @@
+ready: model=dsv41-flash-hybrid ttft=2.25s reply='READY'
+dropped the page cache of 46 non-Engram shards (60.3 GiB was resident); the Engram tables get the rest of host memory
+primed: 9,205-token prefill (chunk 8,192 + tail) ttft=7.6s; the first user request will not pay the serving-time kernel compiles
+model=dsv41-flash-hybrid  runs=6 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         53.71     52.13     55.04       50.35       0.654     n/a
+model=dsv41-flash-hybrid  runs=6 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         51.76     51.55     52.65       51.27       0.115     n/a
+model=dsv41-flash-hybrid  runs=6 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  1         62.84     61.69     63.41       59.57       0.462     n/a
+model=dsv41-flash-hybrid  runs=3 warmup=1 max_tokens=512  distinct-prompts
+  C  median tok/s       min       max  wall tok/s  med TTFT s  accept
+  4        122.60    120.31    123.21      117.63       0.735     n/a
+BENCH-DONE

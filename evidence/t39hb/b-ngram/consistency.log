@@ -1,0 +1,14 @@
+copy-code    prompt=  1204 out= 384 argmax-agree=384/384 (1.000) flips>0.5nats=0 max-gap=0.000 max|dlogp| decode-vs-forced=0.0111 accept=1.8461538461538463
+copy-table   prompt=  1025 out= 384 argmax-agree=383/384 (0.997) flips>0.5nats=1 max-gap=20.500 max|dlogp| decode-vs-forced=20.5 accept=1.6768558951965065
+review       prompt=   166 out= 384 argmax-agree=354/384 (0.922) flips>0.5nats=8 max-gap=3.125 max|dlogp| decode-vs-forced=3.15 accept=1.2190476190476192
+long12000    prompt= 14773 out= 384 argmax-agree=368/384 (0.958) flips>0.5nats=6 max-gap=1.625 max|dlogp| decode-vs-forced=1.4 accept=1.103448275862069
+wrote evidence/t39hb/b-ngram/consistency-cold.json
+copy-code    prompt=  1204 out= 384 argmax-agree=384/384 (1.000) flips>0.5nats=0 max-gap=0.000 max|dlogp| decode-vs-forced=0.00536 accept=1.8640776699029127
+copy-table   prompt=  1025 out= 384 argmax-agree=383/384 (0.997) flips>0.5nats=1 max-gap=20.500 max|dlogp| decode-vs-forced=20.5 accept=1.6623376623376624
+review       prompt=   166 out= 384 argmax-agree=351/384 (0.914) flips>0.5nats=11 max-gap=1.875 max|dlogp| decode-vs-forced=1.59 accept=1.1601208459214503
+long12000    prompt= 14773 out= 384 argmax-agree=370/384 (0.964) flips>0.5nats=3 max-gap=1.250 max|dlogp| decode-vs-forced=1.01 accept=2.341463414634146
+compare copy-code    agree-rate 1.000 -> 1.000  flips>margin 0 -> 0
+compare copy-table   agree-rate 0.997 -> 0.997  flips>margin 1 -> 1
+compare review       agree-rate 0.922 -> 0.914  flips>margin 8 -> 11
+compare long12000    agree-rate 0.958 -> 0.964  flips>margin 6 -> 3
+wrote evidence/t39hb/b-ngram/consistency-warm.json

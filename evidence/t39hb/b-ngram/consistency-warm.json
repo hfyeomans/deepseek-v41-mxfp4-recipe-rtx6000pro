@@ -1,0 +1,316 @@
+{
+ "label": "ngram-chain-warm",
+ "url": "http://127.0.0.1:8000",
+ "max_tokens": 384,
+ "margin_nats": 0.5,
+ "flush_cache": false,
+ "prompts": {
+  "copy-code": {
+   "tokens": 384,
+   "argmax_agree": 384,
+   "argmax_agree_rate": 1.0,
+   "flips": 0,
+   "flips_over_margin": 0,
+   "max_flip_gap_nats": 0.0,
+   "max_abs_dlogprob_decode_vs_forced": 0.005362530704587698,
+   "flip_detail": [],
+   "prompt_tokens": 1204,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.8640776699029127,
+   "text_head": "```python\nimport json\nimport os\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\n\n\n@dataclass\nclass Record:\n    key: str\n    value: float\n    tags: list[str] = field(default_factory=l"
+  },
+  "copy-table": {
+   "tokens": 384,
+   "argmax_agree": 383,
+   "argmax_agree_rate": 0.9973958333333334,
+   "flips": 1,
+   "flips_over_margin": 1,
+   "max_flip_gap_nats": 20.5,
+   "max_abs_dlogprob_decode_vs_forced": 20.499930264995783,
+   "flip_detail": [
+    {
+     "pos": 20,
+     "emitted": 8061,
+     "argmax": 22301,
+     "gap_nats": 20.5
+    }
+   ],
+   "prompt_tokens": 1025,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.6623376623376624,
+   "text_head": "| id | host | region | cpu_pct | mem_gib | status |\n|---|---|---|---|---|---|---|\n| 040 | node-760.internal | us-east-1 | 80.0 | 8 | degraded |\n| 039 | node-841.internal | ap-south-1 | 43.9 | 251 | ok"
+  },
+  "review": {
+   "tokens": 384,
+   "argmax_agree": 351,
+   "argmax_agree_rate": 0.9140625,
+   "flips": 33,
+   "flips_over_margin": 11,
+   "max_flip_gap_nats": 1.875,
+   "max_abs_dlogprob_decode_vs_forced": 1.5922681093215942,
+   "flip_detail": [
+    {
+     "pos": 32,
+     "emitted": 734,
+     "argmax": 5292,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 34,
+     "emitted": 30189,
+     "argmax": 11735,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 36,
+     "emitted": 14,
+     "argmax": 6889,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 38,
+     "emitted": 377,
+     "argmax": 436,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 44,
+     "emitted": 436,
+     "argmax": 440,
+     "gap_nats": 1.75
+    },
+    {
+     "pos": 45,
+     "emitted": 734,
+     "argmax": 588,
+     "gap_nats": 1.125
+    },
+    {
+     "pos": 48,
+     "emitted": 27946,
+     "argmax": 15398,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 51,
+     "emitted": 3608,
+     "argmax": 260,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 53,
+     "emitted": 66,
+     "argmax": 94508,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 59,
+     "emitted": 94508,
+     "argmax": 79434,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 79,
+     "emitted": 3841,
+     "argmax": 14983,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 87,
+     "emitted": 1142,
+     "argmax": 995,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 90,
+     "emitted": 3608,
+     "argmax": 786,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 91,
+     "emitted": 67,
+     "argmax": 3932,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 97,
+     "emitted": 9085,
+     "argmax": 125912,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 122,
+     "emitted": 5720,
+     "argmax": 78157,
+     "gap_nats": 1.125
+    },
+    {
+     "pos": 127,
+     "emitted": 603,
+     "argmax": 2136,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 154,
+     "emitted": 790,
+     "argmax": 436,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 201,
+     "emitted": 260,
+     "argmax": 270,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 218,
+     "emitted": 2613,
+     "argmax": 40710,
+     "gap_nats": 0.375
+    }
+   ],
+   "prompt_tokens": 166,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.1601208459214503,
+   "text_head": "# Review\n\n## Correctness issues\n\n1. **File handles leak.** `json.load(open(...))` never closes the file. On CPython it's usually GC'd, but on PyPy or under load it's a real leak. Use `with` or `Path.r"
+  },
+  "long12000": {
+   "tokens": 384,
+   "argmax_agree": 370,
+   "argmax_agree_rate": 0.9635416666666666,
+   "flips": 14,
+   "flips_over_margin": 3,
+   "max_flip_gap_nats": 1.25,
+   "max_abs_dlogprob_decode_vs_forced": 1.0144131779670715,
+   "flip_detail": [
+    {
+     "pos": 2,
+     "emitted": 294,
+     "argmax": 28,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 8,
+     "emitted": 201,
+     "argmax": 271,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 34,
+     "emitted": 6883,
+     "argmax": 223,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 56,
+     "emitted": 666,
+     "argmax": 21845,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 79,
+     "emitted": 2619,
+     "argmax": 588,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 122,
+     "emitted": 201,
+     "argmax": 343,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 159,
+     "emitted": 3721,
+     "argmax": 11047,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 190,
+     "emitted": 23997,
+     "argmax": 2231,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 208,
+     "emitted": 5420,
+     "argmax": 2619,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 243,
+     "emitted": 223,
+     "argmax": 982,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 289,
+     "emitted": 54,
+     "argmax": 27025,
+     "gap_nats": 1.25
+    },
+    {
+     "pos": 296,
+     "emitted": 11,
+     "argmax": 2605,
+     "gap_nats": 0.875
+    },
+    {
+     "pos": 308,
+     "emitted": 412,
+     "argmax": 223,
+     "gap_nats": 0.875
+    },
+    {
+     "pos": 335,
+     "emitted": 11499,
+     "argmax": 223,
+     "gap_nats": 0.375
+    }
+   ],
+   "prompt_tokens": 14773,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 2.341463414634146,
+   "text_head": "# Summary of the Document\n\n## Overview\nThe document is a technical feasibility study and learning guide for running **DeepSeek-V4.1-Flash** (a ~475 GiB MoE model) on **2\u00d7 RTX PRO 6000 Blackwell 96 GB*"
+  }
+ },
+ "compare": {
+  "copy-code": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "copy-table": {
+   "agree_rate_delta": 0.0,
+   "flips_over_margin_delta": 0
+  },
+  "review": {
+   "agree_rate_delta": -0.0078125,
+   "flips_over_margin_delta": 3
+  },
+  "long12000": {
+   "agree_rate_delta": 0.005208333333333259,
+   "flips_over_margin_delta": -3
+  }
+ },
+ "evidence": {
+  "tool": "spec-consistency.py",
+  "recorded_utc": "2026-10-12T00:02:02Z",
+  "manifest_hash": "35e5a687fb93447f20b30aad65cd8b923da7dc1cfd1980f3e0111bf5d2e82e30",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "e5b9256dbc88948c26a5f2926c570dd82071b21d8a2b461435be2f1465969410"
+ }
+}

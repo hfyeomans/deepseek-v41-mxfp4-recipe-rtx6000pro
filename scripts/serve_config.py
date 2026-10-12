@@ -209,7 +209,12 @@ REGISTRY: tuple[Knob, ...] = (
          "NGRAM=1 turns on SGLang n-gram speculation (--speculative-algorithm NGRAM: drafts come from a suffix "
          "cache of the request's own tokens, no draft model, no extra weights). E23 R6: pays only where the "
          "output copies spans of the prompt; a verify of N rows routes N rows' worth of CPU experts. Exclusive "
-         "with DSPARK.", sink=SERVER_ARG, evidence="evidence/e23-spec-decode/r6-ngram/"),
+         "with DSPARK. NOT RECOMMENDED (T3.9h-b / E43): on DSV4 it runs the chain-only verify (patch 0059) and "
+         "wins +60-76 % C1 on copy workloads but loses 26 % on review and 63 % at C4, and under rejected draft "
+         "rows the decode state is wrong (teacher-forced probe: one emitted token at -20.5 nats, 8 flips > 0.5 "
+         "nats on review; spec-off reads 0 / 1). Reproduces with the target runner eager, so it is a verify-path "
+         "state defect, not a CUDA-graph one; open as T3.9h-c.",
+         sink=SERVER_ARG, evidence="evidence/e23-spec-decode/r6-ngram/, evidence/t39hb/"),
     Knob("NGRAM_DRAFT_TOKENS", "int", "5",
          "--speculative-num-draft-tokens for NGRAM (verify window incl. the root; SGLang's default is 12, which "
          "would route 12 rows of CPU experts per step; 5 matches DSpark's K=4 window).", sink=SERVER_ARG,
@@ -327,7 +332,10 @@ REGISTRY: tuple[Knob, ...] = (
     Knob("KT_TIMELINE_DUMP_LAYERS", "str", "", "Comma-separated layer ids to dump.", sink=DIAGNOSTIC_ENV),
     Knob("KT_FORCE_SYNC_SUBMIT", "flag", "0", "kt_provider: submit CPU expert work synchronously (parity debugging).", sink=DIAGNOSTIC_ENV),
     Knob("SGLANG_BCG_DEBUG_SYNC", "flag", "0", "Breakable CUDA graph: synchronise after every segment.", sink=DIAGNOSTIC_ENV),
-    Knob("SGLANG_BCG_DEBUG_EAGER", "flag", "0", "Breakable CUDA graph: run segments eagerly.", sink=DIAGNOSTIC_ENV),
+    Knob("SGLANG_BCG_DEBUG_EAGER", "str", "",
+         "Breakable CUDA graph: `draft` or `target` runs that runner's graph segments eagerly on the static "
+         "buffers (the other runner keeps captured graphs); localizes a graph-only miscompute. Any other value "
+         "(including `1`) is ignored by the overlay.", sink=DIAGNOSTIC_ENV),
     Knob("SGLANG_BCG_DEBUG_INPUTS", "flag", "0", "Breakable CUDA graph: log segment inputs.", sink=DIAGNOSTIC_ENV),
     Knob("SGLANG_BCG_DEBUG_LAYER_BREAKS", "flag", "0", "Breakable CUDA graph: log where the graph breaks.", sink=DIAGNOSTIC_ENV),
     Knob("SGLANG_DSV41_STEP_FINGERPRINT_DIR", "str", "",

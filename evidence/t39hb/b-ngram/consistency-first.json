@@ -1,0 +1,279 @@
+{
+ "label": "ngram-chain",
+ "url": "http://127.0.0.1:8000",
+ "max_tokens": 384,
+ "margin_nats": 0.5,
+ "prompts": {
+  "copy-code": {
+   "tokens": 384,
+   "argmax_agree": 384,
+   "argmax_agree_rate": 1.0,
+   "flips": 0,
+   "flips_over_margin": 0,
+   "max_flip_gap_nats": 0.0,
+   "max_abs_dlogprob_decode_vs_forced": 0.006062214262790633,
+   "flip_detail": [],
+   "prompt_tokens": 1204,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.855072463768116,
+   "text_head": "```python\nimport json\nimport os\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\n\n\n@dataclass\nclass Record:\n    key: str\n    value: float\n    tags: list[str] = field(default_factory=l"
+  },
+  "copy-table": {
+   "tokens": 384,
+   "argmax_agree": 383,
+   "argmax_agree_rate": 0.9973958333333334,
+   "flips": 1,
+   "flips_over_margin": 1,
+   "max_flip_gap_nats": 20.5,
+   "max_abs_dlogprob_decode_vs_forced": 20.499960900117003,
+   "flip_detail": [
+    {
+     "pos": 20,
+     "emitted": 8061,
+     "argmax": 22301,
+     "gap_nats": 20.5
+    }
+   ],
+   "prompt_tokens": 1025,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.786046511627907,
+   "text_head": "| id | host | region | cpu_pct | mem_gib | status |\n|---|---|---|---|---|---|---|\n| 040 | node-760.internal | us-east-1 | 80.0 | 8 | degraded |\n| 039 | node-841.internal | ap-south-1 | 43.9 | 251 | ok"
+  },
+  "review": {
+   "tokens": 384,
+   "argmax_agree": 345,
+   "argmax_agree_rate": 0.8984375,
+   "flips": 39,
+   "flips_over_margin": 10,
+   "max_flip_gap_nats": 3.625,
+   "max_abs_dlogprob_decode_vs_forced": 3.6631007492542267,
+   "flip_detail": [
+    {
+     "pos": 32,
+     "emitted": 734,
+     "argmax": 5292,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 34,
+     "emitted": 30189,
+     "argmax": 11735,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 38,
+     "emitted": 377,
+     "argmax": 436,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 44,
+     "emitted": 436,
+     "argmax": 440,
+     "gap_nats": 1.5
+    },
+    {
+     "pos": 45,
+     "emitted": 588,
+     "argmax": 759,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 53,
+     "emitted": 66,
+     "argmax": 94508,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 59,
+     "emitted": 94508,
+     "argmax": 79434,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 89,
+     "emitted": 1082,
+     "argmax": 3608,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 112,
+     "emitted": 5720,
+     "argmax": 78157,
+     "gap_nats": 1.625
+    },
+    {
+     "pos": 124,
+     "emitted": 78157,
+     "argmax": 23439,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 155,
+     "emitted": 270,
+     "argmax": 3608,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 159,
+     "emitted": 66,
+     "argmax": 6036,
+     "gap_nats": 1.25
+    },
+    {
+     "pos": 161,
+     "emitted": 23490,
+     "argmax": 20102,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 163,
+     "emitted": 3608,
+     "argmax": 436,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 199,
+     "emitted": 16485,
+     "argmax": 1438,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 202,
+     "emitted": 8209,
+     "argmax": 6162,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 206,
+     "emitted": 15398,
+     "argmax": 27506,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 207,
+     "emitted": 28,
+     "argmax": 344,
+     "gap_nats": 0.25
+    },
+    {
+     "pos": 231,
+     "emitted": 8209,
+     "argmax": 1894,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 234,
+     "emitted": 5300,
+     "argmax": 270,
+     "gap_nats": 0.125
+    }
+   ],
+   "prompt_tokens": 166,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.2075471698113207,
+   "text_head": "# Review\n\n## Correctness issues\n\n1. **File handles leak.** `json.load(open(...))` never closes the file. On CPython it's usually GC'd, but on PyPy or under load it can exhaust FDs. Use `with` or `Path"
+  },
+  "long12000": {
+   "tokens": 384,
+   "argmax_agree": 373,
+   "argmax_agree_rate": 0.9713541666666666,
+   "flips": 11,
+   "flips_over_margin": 3,
+   "max_flip_gap_nats": 0.75,
+   "max_abs_dlogprob_decode_vs_forced": 0.7021387815475464,
+   "flip_detail": [
+    {
+     "pos": 5,
+     "emitted": 271,
+     "argmax": 14,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 125,
+     "emitted": 2869,
+     "argmax": 3180,
+     "gap_nats": 0.5
+    },
+    {
+     "pos": 143,
+     "emitted": 2645,
+     "argmax": 1487,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 181,
+     "emitted": 2231,
+     "argmax": 25137,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 198,
+     "emitted": 5420,
+     "argmax": 2619,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 222,
+     "emitted": 20186,
+     "argmax": 58124,
+     "gap_nats": 0.375
+    },
+    {
+     "pos": 233,
+     "emitted": 343,
+     "argmax": 29,
+     "gap_nats": 0.0
+    },
+    {
+     "pos": 248,
+     "emitted": 1878,
+     "argmax": 344,
+     "gap_nats": 0.625
+    },
+    {
+     "pos": 250,
+     "emitted": 223,
+     "argmax": 982,
+     "gap_nats": 0.125
+    },
+    {
+     "pos": 278,
+     "emitted": 54,
+     "argmax": 27025,
+     "gap_nats": 0.75
+    },
+    {
+     "pos": 321,
+     "emitted": 940,
+     "argmax": 17,
+     "gap_nats": 0.75
+    }
+   ],
+   "prompt_tokens": 14773,
+   "finish_reason": {
+    "type": "length",
+    "length": 384
+   },
+   "spec_accept_length": 1.6916299559471366,
+   "text_head": "# Summary of the Document\n\n## Overview\nThe document is a technical feasibility study and learning guide for running **DeepSeek-V4.1-Flash** (a ~475 GiB MoE model) on **two RTX PRO 6000 Blackwell 96 GB"
+  }
+ },
+ "evidence": {
+  "tool": "spec-consistency.py",
+  "recorded_utc": "2026-10-11T23:51:07Z",
+  "manifest_hash": "35e5a687fb93447f20b30aad65cd8b923da7dc1cfd1980f3e0111bf5d2e82e30",
+  "manifest_file": "manifest.json",
+  "container_check": "match",
+  "container_id": "e5b9256dbc88948c26a5f2926c570dd82071b21d8a2b461435be2f1465969410"
+ }
+}

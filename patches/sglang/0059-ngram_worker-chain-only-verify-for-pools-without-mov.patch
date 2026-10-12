@@ -1,0 +1,172 @@
+From 0887a3429cbf4029abfb8fd6b48a772725345b5b Mon Sep 17 00:00:00 2001
+From: Hank Yeomans <hank@quorra.taile7bcb.ts.net>
+Date: Sun, 11 Oct 2026 19:10:15 -0400
+Subject: [PATCH 59/59] ngram_worker: chain-only verify for pools without
+ move_kv_cache (DeepSeek-V4; recipe T3.9h-b)
+
+DeepSeekV4TokenToKVPool cannot compact a branched accept path and the DSV4
+attention backend ignores custom_mask (verify rows attend causally), so on
+such pools the worker rewrites every draft into a front chain (leading run
+of parent==previous, non-zero tokens; causal mask), skips
+move_accept_tokens_to_target_kvcache, clears the offline C128 slots of the
+rejected rows like the EAGLE/DSpark path, and refuses a bfs breadth != 1.
+SGLANG_ENABLE_ASYNC_ASSERT adds an async check that the accepted rows are
+the leading rows of each window.
+
+Amp-Thread-ID: https://ampcode.com/threads/T-01a0c10b-a5f8-77fc-b238-7147d12ccf29
+Co-authored-by: Amp <amp@ampcode.com>
+---
+ python/sglang/srt/speculative/ngram_worker.py | 105 ++++++++++++++++--
+ 1 file changed, 96 insertions(+), 9 deletions(-)
+
+diff --git a/python/sglang/srt/speculative/ngram_worker.py b/python/sglang/srt/speculative/ngram_worker.py
+index 826895b2..60cbffcf 100644
+--- a/python/sglang/srt/speculative/ngram_worker.py
++++ b/python/sglang/srt/speculative/ngram_worker.py
+@@ -9,6 +9,7 @@ from sglang.kernels.ops.speculative.cache_locs import (
+     assign_extend_cache_locs_func as assign_extend_cache_locs_func,
+ )
+ from sglang.srt.distributed.parallel_state_wrapper import ParallelState
++from sglang.srt.environ import envs
+ from sglang.srt.layers.logprob_processor import compute_spec_logprobs
+ from sglang.srt.managers.schedule_batch import ScheduleBatch
+ from sglang.srt.managers.scheduler import GenerationBatchResult
+@@ -72,6 +73,35 @@ def _derive_tree_links(
+     return torch.from_numpy(next_token), torch.from_numpy(next_sibling)
+ 
+ 
++def chainify_drafts(
++    req_drafts: np.ndarray, mask: np.ndarray, bs: int, draft_token_num: int
++) -> tuple[np.ndarray, np.ndarray]:
++    """Rewrite each request's draft into a pure front chain.
++
++    The corpus emits a BFS tree (``fillResult``): node 0 is the anchor, a
++    chain node i has parent i-1, and zero padding is appended as token-0
++    siblings under the root. A pool without ``move_kv_cache`` (DeepSeek-V4)
++    cannot compact a branched accept path, and the DSV4 attention backend
++    ignores ``custom_mask`` (verify rows attend causally), so the draft must
++    be the chain the attention actually computed: keep the leading run of
++    nodes whose parent is the previous node and whose token is non-zero,
++    zero everything after it, and give every row the causal mask. Accepted
++    rows are then always the leading rows of the window, which is exactly
++    where their KV was written.
++    """
++    d = draft_token_num
++    drafts = np.array(req_drafts, copy=True).reshape(bs, d)
++    tree = np.asarray(mask).reshape(bs, d, d)
++    if d > 1:
++        idx = np.arange(1, d)
++        linked = (tree[:, idx, idx - 1] != 0) & (drafts[:, 1:] != 0)
++        chain_len = np.cumprod(linked, axis=1).sum(axis=1)
++        drafts[:, 1:] = np.where(idx[None, :] <= chain_len[:, None], drafts[:, 1:], 0)
++    causal = np.tril(np.ones((d, d), dtype=tree.dtype))
++    chain_mask = np.broadcast_to(causal, (bs, d, d)).reshape(-1).copy()
++    return drafts.reshape(-1), chain_mask
++
++
+ class NGRAMWorker(BaseSpecWorker):
+     def alloc_memory_pool(self, **kwargs):
+         # The target memory pool does not exist yet when __init__ runs.
+@@ -80,6 +110,29 @@ class NGRAMWorker(BaseSpecWorker):
+         )
+         self.max_batch_size = self.model_runner.max_running_requests
+         self._init_preallocated_tensors()
++        # Pools without move_kv_cache (DeepSeek-V4: c4 / c128 rings, SWA ring,
++        # indexer cache) cannot compact a branched accept path; run the
++        # chain-only protocol instead (see chainify_drafts) and clear the
++        # offline C128 slots of rejected rows the way the EAGLE/DSpark path does.
++        kvcache = self.token_to_kv_pool_allocator.get_kvcache()
++        self._chain_only_kv = not hasattr(kvcache, "move_kv_cache")
++        self._clear_unaccepted_c128 = getattr(
++            kvcache, "clear_unaccepted_c128_draft_states", None
++        )
++        if self._chain_only_kv:
++            breadth = get_spec().speculative_ngram_max_bfs_breadth
++            if breadth != 1:
++                raise ValueError(
++                    f"{type(kvcache).__name__} has no move_kv_cache, so NGRAM "
++                    "speculation runs chain-only on this model; set "
++                    f"--speculative-ngram-max-bfs-breadth 1 (got {breadth})."
++                )
++            logger.info(
++                "NGRAM: %s has no move_kv_cache; chain-only verify "
++                "(drafts rewritten to a front chain, no KV move, c128 clear=%s).",
++                type(kvcache).__name__,
++                self._clear_unaccepted_c128 is not None,
++            )
+ 
+     def __init__(
+         self,
+@@ -311,6 +364,20 @@ class NGRAMWorker(BaseSpecWorker):
+         )
+         return req_drafts, mask
+ 
++    def _assert_leading_accept(
++        self, accept_index: torch.Tensor, accept_lens: torch.Tensor, bs: int
++    ) -> None:
++        """Async check that every accepted path is the leading rows of its
++        window (the only layout the chain-only KV protocol can commit)."""
++        d = self.draft_token_num
++        cols = torch.arange(d, device=accept_lens.device)[None, :]
++        rows = torch.arange(bs, device=accept_lens.device)[:, None] * d
++        expected = torch.where(cols < accept_lens[:, None], rows + cols, -1)
++        torch._assert_async(
++            (accept_index == expected).all(),
++            "NGRAM chain-only verify accepted a non-leading row",
++        )
++
+     def _prepare_for_speculative_decoding(self, batch: ScheduleBatch):
+         # Decode-only: extend goes through the plain target forward, and an
+         # IDLE batch must keep its forward_mode instead of being rewritten to
+@@ -339,6 +406,10 @@ class NGRAMWorker(BaseSpecWorker):
+             ]
+ 
+         req_drafts, mask = self._prepare_draft_tokens(batch)
++        if self._chain_only_kv:
++            req_drafts, mask = chainify_drafts(
++                req_drafts, mask, bs, self.draft_token_num
++            )
+         tree_mask.copy_(torch.from_numpy(mask), non_blocking=True)
+         draft_tokens.copy_(torch.from_numpy(req_drafts), non_blocking=True)
+ 
+@@ -495,15 +566,31 @@ class NGRAMWorker(BaseSpecWorker):
+             accept_tokens = predict[accept_index].flatten()
+             next_token_ids = accept_tokens
+ 
+-            # The KV mover expects drafts-only counts. NGRAM's
+-            # accept_lens includes the bonus token, matching scheduler output.
+-            num_correct_drafts_per_req = accept_lens - 1
+-            move_accept_tokens_to_target_kvcache(
+-                batch,
+-                accept_index,
+-                num_correct_drafts_per_req,
+-                self.token_to_kv_pool_allocator,
+-            )
++            if self._chain_only_kv:
++                # Chain-only protocol: the draft is a front chain and the
++                # attention computed it causally, so the accepted rows are the
++                # leading rows of the window and their KV already sits at
++                # seq_len .. seq_len + accept_len - 1. Nothing to move; only
++                # the offline C128 slots of the rejected rows need clearing.
++                if envs.SGLANG_ENABLE_ASYNC_ASSERT.get():
++                    self._assert_leading_accept(accept_index, accept_lens, bs)
++                if self._clear_unaccepted_c128 is not None:
++                    self._clear_unaccepted_c128(
++                        batch.req_pool_indices,
++                        batch.seq_lens,
++                        accept_lens,
++                        self.draft_token_num,
++                    )
++            else:
++                # The KV mover expects drafts-only counts. NGRAM's
++                # accept_lens includes the bonus token, matching scheduler output.
++                num_correct_drafts_per_req = accept_lens - 1
++                move_accept_tokens_to_target_kvcache(
++                    batch,
++                    accept_index,
++                    num_correct_drafts_per_req,
++                    self.token_to_kv_pool_allocator,
++                )
+             if batch.return_logprob:
+                 compute_spec_logprobs(
+                     batch,
