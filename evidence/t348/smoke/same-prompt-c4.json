@@ -1,0 +1,110 @@
+{
+  "label": "",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": true,
+  "same_prompt": true,
+  "flush_cache": true,
+  "rows_identical": false,
+  "min_pairwise_row_prefix": 45,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "Sunlight contains all colors of visible light, but they don't all travel through the atmosphere the same way. Air molecules are much smaller than the wavelength of visible light, so they scatter short wavelengths (blue and violet) far more strongly than long ones (red and orange)\u2014a process called Rayleigh scattering. This scattered blue light bounces around the sky and reaches your eyes from every direction, making the sky look blue. (Violet is scattered even more, but our eyes are",
+      "completion_tokens": 96,
+      "ttft_s": 0.2243282650015317,
+      "total_s": 1.6712323449901305,
+      "wall_s": 1.6714091309695505,
+      "finish_reason": "length",
+      "gibberish": 0.05063291139240506
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 446,
+      "ref_chars": 486,
+      "conc_chars": 482,
+      "gibberish": 0.05128205128205128,
+      "ok": true,
+      "concurrent": {
+        "text": "Sunlight contains all colors of visible light, but they don't all travel through the atmosphere the same way. Air molecules are much smaller than the wavelength of visible light, so they scatter short wavelengths (blue and violet) far more strongly than long ones (red and orange)\u2014a process called Rayleigh scattering. This scattered blue light bounces around the sky and reaches your eyes from every direction, making the sky look blue. (Violet scatters even more, but our eyes are",
+        "completion_tokens": 96,
+        "ttft_s": 0.448342991003301,
+        "total_s": 2.6122471350245178,
+        "wall_s": 2.612379693018738,
+        "finish_reason": "length",
+        "gibberish": 0.05128205128205128
+      }
+    },
+    {
+      "slot": 1,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 45,
+      "ref_chars": 486,
+      "conc_chars": 503,
+      "gibberish": 0.05,
+      "ok": true,
+      "concurrent": {
+        "text": "Sunlight contains all colors of visible light mixed together. When it enters Earth's atmosphere, it collides with gas molecules that are much smaller than the wavelength of light. This causes a process called Rayleigh scattering, in which shorter wavelengths (blue and violet) scatter far more strongly than longer ones (red and orange)\u2014roughly inversely with the fourth power of wavelength. The scattered blue light reaches our eyes from all directions across the sky, so we perceive the sky as blue. (",
+        "completion_tokens": 96,
+        "ttft_s": 0.4278568999725394,
+        "total_s": 2.6117240589810535,
+        "wall_s": 2.6117665939964354,
+        "finish_reason": "length",
+        "gibberish": 0.05
+      }
+    },
+    {
+      "slot": 2,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 446,
+      "ref_chars": 486,
+      "conc_chars": 482,
+      "gibberish": 0.05128205128205128,
+      "ok": true,
+      "concurrent": {
+        "text": "Sunlight contains all colors of visible light, but they don't all travel through the atmosphere the same way. Air molecules are much smaller than the wavelength of visible light, so they scatter short wavelengths (blue and violet) far more strongly than long ones (red and orange)\u2014a process called Rayleigh scattering. This scattered blue light bounces around the sky and reaches your eyes from every direction, making the sky look blue. (Violet scatters even more, but our eyes are",
+        "completion_tokens": 96,
+        "ttft_s": 0.4476769810426049,
+        "total_s": 2.611631350009702,
+        "wall_s": 2.6116679259575903,
+        "finish_reason": "length",
+        "gibberish": 0.05128205128205128
+      }
+    },
+    {
+      "slot": 3,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": false,
+      "prefix_chars": 446,
+      "ref_chars": 486,
+      "conc_chars": 482,
+      "gibberish": 0.05128205128205128,
+      "ok": true,
+      "concurrent": {
+        "text": "Sunlight contains all colors of visible light, but they don't all travel through the atmosphere the same way. Air molecules are much smaller than the wavelength of visible light, so they scatter short wavelengths (blue and violet) far more strongly than long ones (red and orange)\u2014a process called Rayleigh scattering. This scattered blue light bounces around the sky and reaches your eyes from every direction, making the sky look blue. (Violet scatters even more, but our eyes are",
+        "completion_tokens": 96,
+        "ttft_s": 0.44765876402379945,
+        "total_s": 2.611302056000568,
+        "wall_s": 2.6113724219612777,
+        "finish_reason": "length",
+        "gibberish": 0.05128205128205128
+      }
+    }
+  ],
+  "evidence": {
+    "tool": "verify-batch-consistency.py",
+    "recorded_utc": "2026-10-23T19:07:37Z",
+    "manifest_hash": "cc64b16b6e3a77228931369f56d645782aa680115f83210fef4d528716328e69",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "1b4f2416557eb3d1257824c2ae89035593d58e3cbdb75c3c739d4a568cd575d6"
+  }
+}
