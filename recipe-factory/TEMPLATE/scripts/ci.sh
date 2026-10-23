@@ -46,7 +46,10 @@ patterns = [
     re.compile(r'\b(?:192\.168|10\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b'),
     re.compile(r'GPU-[0-9a-fA-F]{8}-[0-9a-fA-F-]{8,}'),
     re.compile(r'\b0000:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-7]\b'),
-    re.compile(r'"serial"|Serial Number: [A-Z0-9]{6,}'),
+    # The serial pattern is built with chr(34) instead of written literally: the parent recipe repo
+    # scans every tracked file with this same pattern list, and the literal double-quoted form here
+    # would match its own scanner. Keep future pattern additions self-hostile-proof the same way.
+    re.compile(chr(34) + 'serial' + chr(34) + r'|Serial Number: [A-Z0-9]{6,}'),
 ]
 if (root / '.git').exists():
     files = subprocess.check_output(['git', '-C', str(root), 'ls-files'], text=True).splitlines()
