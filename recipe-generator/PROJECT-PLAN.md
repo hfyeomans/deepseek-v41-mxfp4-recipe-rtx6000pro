@@ -56,7 +56,9 @@ schedules them (the box is busy).
 
 ## Phase 2 — UI v1 (macOS app, MobileBuildMCP loop)
 
-Entry: M2 + owner go on UI scope (decision D2 below).
+Entry: M2 + owner go on UI scope (decision D2 below). **Go given 2026-10-23; the screen-by-screen build
+plan with acceptance criteria and the M3a/M3b/M3c milestones is [UI-V1-PLAN.md](UI-V1-PLAN.md). The app
+builds in a git worktree (`ui-app` branch) so the session filesystem guard cannot roll it back.**
 
 1. Scaffold the app target (`mobilebuildmcp project-scaffolding` or an Xcode project around
    `recipe-factory/UI/RecipeFactoryUI`).

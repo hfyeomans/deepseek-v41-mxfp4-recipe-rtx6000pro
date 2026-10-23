@@ -44,6 +44,7 @@ host measurements (P1) ─────► hardware JSON ┘          │        
 | [RECIPE-EMISSION.md](RECIPE-EMISSION.md) | Emission spec: what a generated recipe contains, the deep-lever surface, the advanced patch inventory, GitHub publication, **the UI discernment boundary** |
 | [ROADMAP.md](ROADMAP.md) | The phased rollout: engine support lands one adapter per phase, each with entry/exit criteria — no doing everything at once |
 | [PROJECT-PLAN.md](PROJECT-PLAN.md) | The end-to-end plan: phases 0–4, milestones M1–M5, the new-model trial queue (T1–T4), owner decisions D1–D6 |
+| [UI-V1-PLAN.md](UI-V1-PLAN.md) | The app build plan, screen by screen (plan viewer / tuning panel / profile diff / emit+publish / evidence witness) with the M3a–M3c milestones |
 | [engines.json](engines.json) | Engine profiles (sglang-hybrid / llama-cpp / vLLM / TensorFold / DeepInfer / FLARE): placement model, lever availability, verdict + reopen trigger |
 | [registry-surface.json](registry-surface.json) | The parent recipe's complete 70-knob typed registry, machine-readable for the UI's knob panel |
 | [quantization.json](quantization.json) | Quantization options with size + quality trade-offs (measured + published reference factors, each with a declared baseline dtype) |
