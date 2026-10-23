@@ -20,7 +20,8 @@ CALC = HERE.parent / "placement_calc.py"
 
 
 def run(*args):
-    return subprocess.run([sys.executable, str(CALC), *args],
+    full = [str(HERE.parent / a) if a.startswith("examples/") else a for a in args]
+    return subprocess.run([sys.executable, str(CALC), *full],
                           capture_output=True, text=True)
 
 
@@ -117,8 +118,8 @@ def main() -> int:
         out = P(tmp) / "recipe"
         r = subprocess.run(
             [sys.executable, str(HERE.parent / "emit_recipe.py"),
-             "--budget", "examples/qwen3-30b-a3b/budget.json",
-             "--hardware", "examples/qwen3-30b-a3b/hardware-rtx3090.json",
+             "--budget", str(HERE.parent / "examples/qwen3-30b-a3b/budget.json"),
+             "--hardware", str(HERE.parent / "examples/qwen3-30b-a3b/hardware-rtx3090.json"),
              "--quant", "gguf-q4_k_m", "--context-tokens", "4096", "--sequences", "1",
              "--engine", "llama-cpp", "--out", str(out),
              "--model", "Qwen/Qwen3-30B-A3B-GGUF:Q4_K_M"],
@@ -187,8 +188,8 @@ def main() -> int:
             outdir = P(tmp) / "recipe"
             r = subprocess.run(
                 [sys.executable, str(HERE.parent / "emit_recipe.py"),
-                 "--budget", "examples/dsv41-1017/budget.json",
-                 "--hardware", "examples/dsv41-1017/hardware.json",
+                 "--budget", str(HERE.parent / "examples/dsv41-1017/budget.json"),
+                 "--hardware", str(HERE.parent / "examples/dsv41-1017/hardware.json"),
                  "--engine", "sglang-hybrid", "--out", str(outdir),
                  "--model", "deepseek-ai/DeepSeek-V4.1-Flash-1017",
                  "--expert-map", str(serving.parent.parent / "expert-map-el8-mix-219.json")],
