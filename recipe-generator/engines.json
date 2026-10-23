@@ -1,95 +1,139 @@
 {
-  "note": "Engine profiles for the engine-fit classifier (ROADMAP.md phase A). Verdict vocabulary matches the tried-options ledger: ADOPT / REJ / PARKED / CLOSED. Content verified against research/engines.md (fresh fetches 2026-10-23). The classifier never recommends an engine the ledger rejected without citing its reopen trigger; where research and the ledger disagree, both are recorded and the ledger rule wins for THIS hardware.",
+  "note": "Engine profiles v2: an engine is selected together with a MODE - 'resident' (everything in VRAM) or 'hybrid' (CPU/DRAM + NVMe tiering where the engine supports it). Hybrid is a capability dimension across engines, not a separate engine: SGLang has both entries, vLLM and llama.cpp have hybrid variants, TensorFold's hybrid is REJ with its reopen trigger, DeepInfer is resident-only, FLARE has no modes. Verdict vocabulary matches the tried-options ledger: ADOPT / REJ / PARKED / CLOSED; a mode the ledger rejected is never recommended without citing its reopen trigger. Verified against research/engines.md (fresh fetches 2026-10-23).",
   "engines": {
-    "sglang-hybrid": {
-      "label": "SGLang + kt-kernel hybrid (this project's reference engine)",
-      "what_it_is": "upstream SGLang serving deepseek_v41 with kt-kernel computing the CPU-resident experts; 61-patch overlay + 3 kt patches + Engram file layout. Upstream SGLang added Paged Experts (merged 2026-10-19): K-of-E GPU residency with auto-K sized from safetensors headers + mem-fraction + KV reserve - the engine-side budget-to-placement loop, a calibration point for our K math.",
-      "placement_model": "GPU-resident experts + CPU-computed DRAM experts + Engram on NVMe/DRAM; hot-expert map (static, 10-15% CPU-share floor; T3.8d runtime placement now measured at 1.8-2.2% held-out share); deferral D<=4; streamed prefill; HiCache KV offload tiers available upstream",
-      "quant_formats": ["mxfp4", "nvfp4", "fp8-dense"],
-      "levers_exposed": ["expert split + map", "paged experts auto-K (upstream)", "deferral", "prefill chunk", "Engram prefetch family", "CUDA graphs", "determinism", "NaN rejection", "host pinning", "expandable segments", "KV offload (HiCache)"],
-      "serves_shape": "CPU-hybrid MoE that does not fit VRAM",
-      "verdict": "ADOPT - the primary CPU-hybrid tier",
-      "chunk_workspace_model": "sglang-fused-moe",
-      "deferral_available": true,
-      "engram_support": true,
-      "runtime_placement": "upstream Paged Experts PR #42557; local T3.8d in progress (a6c5b82)",
-      "calibration_anchor": "evidence/t352 (219/165, C1 60.8, C4 124.0)",
-      "source": "https://github.com/sgl-project/sglang; https://github.com/sgl-project/sglang/pull/42557"
-    },
-    "llama-cpp": {
-      "label": "llama.cpp / llama-server",
-      "what_it_is": "the universal local-inference engine; -ot regex tensor offload, MoE offload, draft --moe-expert-cache LRU",
-      "placement_model": "GPU/CPU tensor split (-ngl, -ot, --n-cpu-moe, --fit); mmap; no NVMe tier for weights; KV is GPU-only",
-      "quant_formats": ["gguf-q4_k_m", "gguf-q5_k_m", "gguf-q6_k", "gguf-q8_0", "gguf-q3_k_m", "gguf-q2_k"],
-      "levers_exposed": ["offload split", "expert LRU cache (draft)", "context -c", "flash-attn", "sampling"],
-      "serves_shape": "small/consumer-grade models, quant-shrunk to fit",
-      "verdict": "ADOPT for the small-model tier; deepseek41/CSA2 route PARKED on upstream (ggml-org/llama.cpp#28696)",
-      "chunk_workspace_model": "none",
-      "deferral_available": false,
-      "engram_support": false,
-      "runtime_placement": "draft --moe-expert-cache LRU (PR #27861)",
-      "calibration_anchor": "published (Hardware Corner via smeltcore.com): Qwen3-30B-A3B 226.1 tok/s on 5090 / 153.6 on 3090",
-      "source": "https://github.com/ggml-org/llama.cpp; https://github.com/ggml-org/llama.cpp/pull/27861"
+    "sglang": {
+      "label": "SGLang",
+      "what_it_is": "Apache-2.0 serving framework; Paged Experts (merged 2026-10-19: K-of-E GPU residency, auto-K sized from safetensors headers + mem-fraction + KV reserve); HiCache KV offload tiers; Waterfill/LPLB dispatch; the reference recipe runs SGLang + kt-kernel.",
+      "serves_shape": "GPU-resident or CPU-hybrid MoE",
+      "verdict": "ADOPT - primary engine, both modes",
+      "source": "https://github.com/sgl-project/sglang; https://github.com/sgl-project/sglang/pull/42557",
+      "modes": {
+        "resident": {
+          "label": "resident (GPU-only, upstream SGLang)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "Paged Experts PR #42557 (auto-K)",
+          "verdict": "ADOPT",
+          "calibration_anchor": "none in this repo yet (upstream Paged Experts numbers are the seed)"
+        },
+        "hybrid": {
+          "label": "hybrid (kt-kernel CPU tier + Engram + hot map)",
+          "chunk_workspace_model": "sglang-fused-moe",
+          "deferral_available": true,
+          "engram_support": true,
+          "runtime_placement": "upstream Paged Experts; local T3.8d in progress (a6c5b82)",
+          "verdict": "ADOPT - the reference recipe's engine",
+          "calibration_anchor": "evidence/t352 (219/165, C1 60.8, C4 124.0)"
+        }
+      }
     },
     "vllm": {
       "label": "vLLM",
-      "what_it_is": "the reference GPU-resident server; v0.31 adds weight offload (--cpu-offload-gb/--cpu-offload-params, UVA backend), per-component Engram host offload, and KV tiering (CPU + persistent filesystem, TieringOffloadingSpec); owns the recipes schema rendered at recipes.vllm.ai",
-      "placement_model": "GPU-resident + optional named-parameter CPU offload (UVA) + KV tiering to CPU/filesystem; EPLB for expert packing; placement is author-planned per recipe YAML, not budget-computed",
-      "quant_formats": ["nvfp4", "fp8", "mxfp4 (SM120 Marlin fallback bug #30135 - watch)"],
-      "levers_exposed": ["cpu-offload params", "engram host offload", "kv offload tiers", "EPLB", "moe expert cache (PR #37190)", "mem fraction"],
-      "serves_shape": "GPU-resident or lightly-offloaded models; secondary CPU-hybrid tier",
-      "verdict": "ADOPT as schema/provenance source + GPU-resident tier + secondary CPU-hybrid tier; not the primary hybrid engine (no routing-aware CPU compute tier)",
-      "chunk_workspace_model": "none",
-      "deferral_available": false,
-      "engram_support": false,
-      "runtime_placement": "EPLB + --moe-expert-cache-size (PR #37190)",
-      "calibration_anchor": "none yet in this repo (V4-Flash NVFP4 baseline was vLLM: 171-239 tok/s C1, E8)",
-      "source": "https://github.com/vllm-project/vllm; https://github.com/vllm-project/recipes/blob/main/SCHEMA.md"
+      "what_it_is": "the reference GPU-resident server; v0.31 adds weight offload (--cpu-offload-gb/--cpu-offload-params, UVA backend), per-component Engram host offload, and KV tiering (CPU + persistent filesystem, TieringOffloadingSpec); owns the recipes schema rendered at recipes.vllm.ai.",
+      "serves_shape": "GPU-resident or weight-offload hybrid",
+      "verdict": "ADOPT as schema/provenance source + both modes; hybrid is author-planned offload, not a routing-aware CPU compute tier",
+      "source": "https://github.com/vllm-project/vllm; https://github.com/vllm-project/recipes/blob/main/SCHEMA.md",
+      "modes": {
+        "resident": {
+          "label": "resident (GPU-only)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "EPLB + --moe-expert-cache-size (PR #37190)",
+          "verdict": "ADOPT",
+          "calibration_anchor": "V4-Flash NVFP4 baseline was vLLM: 171-239 tok/s C1 (E8)"
+        },
+        "hybrid": {
+          "label": "hybrid (weight offload + KV tiering)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "EPLB; KV offload tiers",
+          "verdict": "ADOPT as secondary hybrid tier (named-parameter offload, no CPU compute of experts)",
+          "calibration_anchor": "none in this repo yet"
+        }
+      }
+    },
+    "llama-cpp": {
+      "label": "llama.cpp / llama-server",
+      "what_it_is": "the universal local-inference engine; -ot regex tensor offload, --n-cpu-moe MoE offload, draft --moe-expert-cache LRU.",
+      "serves_shape": "small/consumer models; quant-shrunk",
+      "verdict": "ADOPT for the small-model tier; deepseek41/CSA2 route PARKED on upstream (ggml-org/llama.cpp#28696)",
+      "source": "https://github.com/ggml-org/llama.cpp; https://github.com/ggml-org/llama.cpp/pull/27861",
+      "modes": {
+        "resident": {
+          "label": "resident (all layers on GPU, -ngl 99)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "none",
+          "verdict": "ADOPT",
+          "calibration_anchor": "published: Qwen3-30B-A3B 226.1 tok/s on 5090 / 153.6 on 3090"
+        },
+        "hybrid": {
+          "label": "hybrid (CPU offload: -ot / --n-cpu-moe / --moe-expert-cache)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "draft --moe-expert-cache LRU (PR #27861)",
+          "verdict": "ADOPT as the small-model hybrid tier",
+          "calibration_anchor": "published llama.cpp offload numbers (seed, not local)"
+        }
+      }
     },
     "tensorfold": {
-      "label": "TensorFold (EXL3 recipe engine)",
-      "what_it_is": "single Zig binary (Metal + CUDA), no Python at serve time; EXL3/TR3/EXLR8/MLX/NVFP4 recipes, revision-pinned model pulls, memory-floor reporting, portable benchmark receipts; DeepSeek checkpoints not served yet (whole-model gate #827 open)",
-      "placement_model": "quant-shrunk single/paired-machine; no CPU/NVMe weight offload; prompt-cache/learn disk tiers",
-      "quant_formats": ["exl3 2.9-3.0 bpw"],
-      "levers_exposed": ["compression recipes", "per-layer bit allocation", "pinned-revision pulls", "memory floor"],
-      "serves_shape": "models that fit only after aggressive quantization",
-      "verdict": "REJ as engine on THIS hardware (ledger T3.32: same-model TP4 builds 12-24% behind SGLang) - the ledger rule wins over research's tier-level ADOPT. Reopen trigger: DeepSeek support lands (#827) or a published SM120 EXL3 MoE kernel with a KL number. Borrow now: pin-and-floor conventions, receipt culture, per-layer bit-allocation recipe shape",
-      "chunk_workspace_model": "none",
-      "deferral_available": false,
-      "engram_support": false,
-      "runtime_placement": "none",
-      "calibration_anchor": "none",
-      "source": "https://github.com/ashhart/TensorFold; https://github.com/ashhart/TensorFold/pull/827"
+      "label": "TensorFold",
+      "what_it_is": "single Zig binary (Metal + CUDA); EXL3/TR3/EXLR8/MLX/NVFP4 recipes, revision-pinned pulls, memory-floor reporting, portable receipts; DeepSeek not served yet (gate #827).",
+      "serves_shape": "quant-shrunk single/paired machines",
+      "verdict": "resident tier: ADOPT for quant-shrunk shapes; hybrid: REJ here (no CPU/NVMe weight offload - the ledger rule wins, T3.32)",
+      "source": "https://github.com/ashhart/TensorFold; https://github.com/ashhart/TensorFold/pull/827",
+      "modes": {
+        "resident": {
+          "label": "resident (quant-shrunk)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "none",
+          "verdict": "ADOPT for quant-shrunk single/paired machines (DeepSeek gated on #827)",
+          "calibration_anchor": "none"
+        },
+        "hybrid": {
+          "label": "hybrid (UNSUPPORTED - no CPU/NVMe weight offload)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "none",
+          "verdict": "REJ - TensorFold has no CPU/NVMe offload tier (ledger T3.32). Reopen trigger: gate #827 or a published SM120 EXL3 MoE kernel with a KL number",
+          "calibration_anchor": "none"
+        }
+      }
     },
     "deepinfer": {
       "label": "DeepSeek DeepInfer",
-      "what_it_is": "DeepSeek's production inference runtime, open-sourced 2026-10-16 (NOT deprecated - the repo did not exist before); Apache-2.0, ~21k stars, built primarily on vLLM; offline inference only for DeepSeek-V4.1-Flash (default checkpoint is 1017); no KV-cache system or VE/Prefill/Decode disaggregation yet; SM100 + Ascend 950 only",
-      "placement_model": "Attention DP / balanced CP, MoE EP + EPLB (step_peak policy, being ported to ROCm/ATOM #2673); no CPU/NVMe offload; hand-authored per deployment",
-      "quant_formats": ["mxfp4", "fp8"],
-      "levers_exposed": ["EPLB policies (step_peak)", "TP/EP/DP", "DSpark verification scheduling", "SWA bounded replay"],
+      "what_it_is": "DeepSeek's production inference runtime, open-sourced 2026-10-16; offline inference for DeepSeek-V4.1-Flash; no server/KV layer yet; SM100 + Ascend 950 only.",
       "serves_shape": "multi-GPU EP at V4.x datacenter scale",
-      "verdict": "ADOPT as the multi-GPU-EP reference tier (watch) - offline-only and SM100/Ascend today, so not runnable on this SM120 box; borrow its batch-invariance + deterministic-sampling gates into our qualification suite. Reopen: a server/KV/disaggregation release promotes it to a primary tier",
-      "chunk_workspace_model": "none",
-      "deferral_available": false,
-      "engram_support": false,
-      "runtime_placement": "EPLB (production-grade)",
-      "calibration_anchor": "none",
-      "source": "https://github.com/deepseek-ai/DeepInfer; https://github.com/ROCm/ATOM/pull/2673"
+      "verdict": "ADOPT as the multi-GPU-EP reference tier (watch); not runnable on this SM120 box; borrow batch-invariance + deterministic-sampling gates",
+      "source": "https://github.com/deepseek-ai/DeepInfer; https://github.com/ROCm/ATOM/pull/2673",
+      "modes": {
+        "resident": {
+          "label": "resident (EP + EPLB)",
+          "chunk_workspace_model": "none",
+          "deferral_available": false,
+          "engram_support": false,
+          "runtime_placement": "EPLB (production-grade)",
+          "verdict": "ADOPT-as-reference (offline-only, SM100/Ascend today)",
+          "calibration_anchor": "none"
+        }
+      }
     },
     "flare": {
       "label": "NVIDIA FLARE",
-      "what_it_is": "Federated Learning Application Runtime Environment (NVIDIA/NVFlare, Apache-2.0, active): FedAvg/FedProx/FedOpt/Scaffold training orchestration, scatter-and-gather workflows, differential privacy / homomorphic encryption / PSI, simulator + dashboard + authorization",
-      "placement_model": "none - schedules training jobs across sites; no checkpoint-component, VRAM/DRAM/NVMe, or serving concepts",
-      "quant_formats": [],
-      "levers_exposed": [],
-      "serves_shape": "nothing single-box; the only imaginable use is fleet recipe governance (roll out recipe revisions, collect per-host gate results) - and its aggregation/privacy machinery would be dead weight there; plain orchestration wins",
-      "verdict": "REJ as engine, CLOSED. Reopen trigger: a real multi-host governance requirement appears - evaluate plain orchestration first",
-      "chunk_workspace_model": "none",
-      "deferral_available": false,
-      "engram_support": false,
-      "runtime_placement": "none",
-      "calibration_anchor": "none",
-      "source": "https://github.com/NVIDIA/NVFlare"
+      "what_it_is": "Federated Learning Application Runtime Environment - training/federation orchestration, not a serving engine.",
+      "serves_shape": "nothing single-box",
+      "verdict": "REJ as engine, CLOSED. Reopen: a real multi-host governance requirement - evaluate plain orchestration first",
+      "source": "https://github.com/NVIDIA/NVFlare",
+      "modes": {}
     }
   }
 }

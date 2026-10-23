@@ -132,20 +132,20 @@ def load_engines() -> dict:
     return json.loads((Path(__file__).resolve().parent / "engines.json").read_text())["engines"]
 
 
-def apply_engine(hw: dict, engine: dict, engine_name: str) -> tuple:
-    """Engine profile feeds the plan: workspace model + lever availability.
+def apply_engine(hw: dict, mode_profile: dict, engine_name: str, mode_name: str) -> tuple:
+    """Engine MODE profile feeds the plan: workspace model + lever availability.
     Returns (hw, engine_notes). Never overrides an explicit hardware field."""
     notes = []
     hw = dict(hw)
     if hw.get("chunk_workspace_model") is None:
-        hw["chunk_workspace_model"] = engine.get("chunk_workspace_model", "none")
+        hw["chunk_workspace_model"] = mode_profile.get("chunk_workspace_model", "none")
         notes.append(f"chunk_workspace_model={hw['chunk_workspace_model']} (engine profile)")
-    if not engine.get("deferral_available"):
-        notes.append("deferral unavailable on this engine (D will stay 0)")
-    if not engine.get("engram_support"):
-        notes.append("Engram/file-tier support unavailable on this engine")
-    if engine.get("verdict", "").startswith(("REJ", "PARKED", "CLOSED")):
-        notes.append(f"engine verdict: {engine['verdict']} - cite the reopen trigger before trusting this plan")
+    if not mode_profile.get("deferral_available"):
+        notes.append("deferral unavailable in this mode (D will stay 0)")
+    if not mode_profile.get("engram_support"):
+        notes.append("Engram/file-tier support unavailable in this mode")
+    if mode_profile.get("verdict", "").startswith(("REJ", "PARKED", "CLOSED")):
+        notes.append(f"mode verdict: {mode_profile['verdict']} - cite the reopen trigger before trusting this plan")
     return hw, "; ".join(notes)
 
 
@@ -271,6 +271,14 @@ def tier_plan(budget, hw, quant, opts):
     host_margin = host_gib - host_need
     vram_margin = expert_capacity - experts_gib * gpu_fraction
 
+    # Resident mode: nothing may spill to the CPU tier. If the experts do not
+    # fully fit, the plan is honest about it instead of silently downgrading.
+    resident_note = ""
+    if opts.get("resident_mode") and moe and cpu_experts > 0:
+        resident_note = (f"resident mode: {cpu_experts} experts ({cpu_experts_gib:.1f} GiB) do not fit "
+                         "VRAM - choose hybrid, another engine, or a smaller quant")
+
+
     rows = []
     def row(name, gib, tier, reason):
         rows.append({"component": name, "gib": round(gib, 2), "tier": tier, "reason": reason})
@@ -291,7 +299,7 @@ def tier_plan(budget, hw, quant, opts):
             "lookup: touched via row gathers, page-cache friendly")
     row("kv_cache", kv_gib, "vram", f"{ctx:,} tokens x {slots} slots @ {arch['kv_bytes_per_token']:.0f} B/token")
 
-    fits = (expert_capacity >= 0 and host_margin >= 0)
+    fits = (expert_capacity >= 0 and host_margin >= 0) and not resident_note
     return {
         "rows": rows,
         "usable_vram_gib": usable_vram,
@@ -317,6 +325,7 @@ def tier_plan(budget, hw, quant, opts):
         "deferral": d,
         "d_guard": d_guard,
         "tp_valid": arch["attention_heads"] % gpus == 0,
+        "resident_note": resident_note,
         "fits": fits,
     }
 
@@ -491,8 +500,11 @@ def render(plan, budget, hw, quant_name):
     out.append("LEVER SETTINGS (the resolved line)")
     if plan.get("engine"):
         e = plan["engine"]
-        out.append(f"  engine={e['name']} ({e['verdict']}) - serves {e['serves_shape']}"
+        out.append(f"  engine={e['name']} mode={e['mode']} ({e.get('mode_verdict') or e['verdict']}) "
+                   f"- serves {e['serves_shape']}"
                    + (f"; {e['notes']}" if e.get("notes") else ""))
+    if plan.get("resident_note"):
+        out.append(f"  GUARD: {plan['resident_note']}")
     out.append(f"  experts gpu={plan['gpu_experts']} cpu={plan['cpu_experts']} map={plan['map']} "
                f"cpu_share={plan['cpu_share']*100:.0f}% deferral D={plan['deferral']} "
                f"chunk={plan['chunk']} kv={plan['kv_gib']:.2f} GiB ({plan['kv_fraction']*100:.1f}% VRAM) "
@@ -547,7 +559,9 @@ def main() -> int:
     ap.add_argument("--deferral", type=int, default=None, help="override deferral D")
     ap.add_argument("--map", choices=sorted(MAP_QUALITY), default=None)
     ap.add_argument("--engine", default=None,
-                    help="engine profile from engines.json (feeds chunk-workspace model + lever availability)")
+                    help="engine profile from engines.json (see --mode)")
+    ap.add_argument("--mode", default=None,
+                    help="engine mode: resident (GPU-only) or hybrid (CPU/DRAM+NVMe tiering); default: hybrid if the engine has it")
     ap.add_argument("--no-dspark", action="store_true")
     ap.add_argument("--no-vision", action="store_true")
     ap.add_argument("--admission-prefetch", action="store_true",
@@ -586,6 +600,7 @@ def main() -> int:
               "size factors are relative to different dtypes", file=sys.stderr)
 
     engine = None
+    mode_name = None
     engine_notes = ""
     if args.engine:
         try:
@@ -597,7 +612,17 @@ def main() -> int:
             print(f"error: unknown --engine {args.engine!r} (have: {', '.join(sorted(engines))})", file=sys.stderr)
             return 2
         engine = engines[args.engine]
-        hw, engine_notes = apply_engine(hw, engine, args.engine)
+        modes = engine.get("modes", {})
+        if not modes:
+            print(f"error: engine {args.engine!r} has no serving modes", file=sys.stderr)
+            return 2
+        mode_name = args.mode or ("hybrid" if "hybrid" in modes else sorted(modes)[0])
+        if mode_name not in modes:
+            print(f"error: engine {args.engine!r} has no mode {mode_name!r} (have: {', '.join(sorted(modes))})",
+                  file=sys.stderr)
+            return 2
+        mode_profile = modes[mode_name]
+        hw, engine_notes = apply_engine(hw, mode_profile, args.engine, mode_name)
 
     opts = {
         "context_tokens": args.context_tokens,
@@ -608,15 +633,19 @@ def main() -> int:
         "include_dspark": not args.no_dspark,
         "include_vision": not args.no_vision,
         "admission_prefetch": args.admission_prefetch,
-        "engine_deferral_available": engine.get("deferral_available", True) if engine else True,
+        "engine_deferral_available": mode_profile.get("deferral_available", True) if engine else True,
+        "resident_mode": mode_name == "resident" if engine else False,
     }
     calib = None if args.no_calibration else hw.get("calibration")
     plan = project(budget, hw, quant, opts, calib)
     if engine:
         plan["engine"] = {
             "name": args.engine,
+            "mode": mode_name,
             "label": engine.get("label"),
+            "mode_label": mode_profile.get("label"),
             "verdict": engine.get("verdict"),
+            "mode_verdict": mode_profile.get("verdict"),
             "serves_shape": engine.get("serves_shape"),
             "notes": engine_notes,
         }

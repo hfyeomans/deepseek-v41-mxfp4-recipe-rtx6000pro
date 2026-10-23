@@ -118,8 +118,8 @@ def main() -> int:
         out = P(tmp) / "recipe"
         r = subprocess.run(
             [sys.executable, str(HERE.parent / "emit_recipe.py"),
-             "--budget", str(HERE.parent / "examples/qwen3-30b-a3b/budget.json"),
-             "--hardware", str(HERE.parent / "examples/qwen3-30b-a3b/hardware-rtx3090.json"),
+             "--budget", "examples/qwen3-30b-a3b/budget.json",
+             "--hardware", "examples/qwen3-30b-a3b/hardware-rtx3090.json",
              "--quant", "gguf-q4_k_m", "--context-tokens", "4096", "--sequences", "1",
              "--engine", "llama-cpp", "--out", str(out),
              "--model", "Qwen/Qwen3-30B-A3B-GGUF:Q4_K_M"],
@@ -138,10 +138,10 @@ def main() -> int:
                 die(f"emitted file {p.name} contains a CI-forbidden identifier")
     print("ok   emitter produces a complete runnable identifier-clean tree")
 
-    # 8. Engine selection (ROADMAP phase A): the engine profile must feed the plan.
+    # 8. Engine selection (ROADMAP phase A): engine x mode feeds the plan.
     r = run("examples/dsv41-flash/budget.json",
             "--hardware", "examples/dsv41-flash/hardware.json",
-            "--engine", "llama-cpp", "--json")
+            "--engine", "llama-cpp", "--mode", "hybrid", "--json")
     if r.returncode != 0:
         die(f"llama-cpp engine case exit {r.returncode}: {r.stderr}")
     out = json.loads(r.stdout)
@@ -155,16 +155,31 @@ def main() -> int:
         die("engine notes should say deferral is unavailable")
     r = run("examples/dsv41-flash/budget.json",
             "--hardware", "examples/dsv41-flash/hardware.json",
-            "--engine", "tensorfold")
+            "--engine", "tensorfold", "--mode", "hybrid")
     if "REJ" not in r.stdout:
-        die("tensorfold plan should carry the ledger REJ verdict + reopen trigger")
+        die("tensorfold hybrid plan should carry the ledger REJ verdict + reopen trigger")
     r = run("examples/dsv41-flash/budget.json",
             "--hardware", "examples/dsv41-flash/hardware.json",
-            "--engine", "sglang-hybrid", "--json")
+            "--engine", "sglang", "--mode", "hybrid", "--json")
     out = json.loads(r.stdout)
     if out["plan"]["gpu_experts"] != 8760 or out["plan"]["deferral"] != 4:
-        die("sglang-hybrid engine profile broke the calibrated plan (219/165, D=4)")
-    print("ok   engine profiles feed the plan (deferral guard, REJ warning, anchor intact)")
+        die("sglang hybrid mode broke the calibrated plan (219/165, D=4)")
+    if out.get("engine", {}).get("mode") != "hybrid":
+        die("engine block should name the mode")
+    # resident mode must refuse a model that cannot fully fit VRAM
+    r = run("examples/dsv41-flash/budget.json",
+            "--hardware", "examples/dsv41-flash/hardware.json",
+            "--engine", "vllm", "--mode", "resident", "--json")
+    if r.returncode != 3:
+        die(f"vllm resident on 475 GiB exit {r.returncode}, want 3 (does not fit resident)")
+    # non-hybrid SGLang entry exists and works
+    r = run("examples/qwen3-30b-a3b/budget.json",
+            "--hardware", "examples/qwen3-30b-a3b/hardware-rtx5090.json",
+            "--quant", "gguf-q4_k_m", "--context-tokens", "32768", "--sequences", "1",
+            "--engine", "sglang", "--mode", "resident", "--json")
+    if r.returncode != 0:
+        die(f"sglang resident on qwen3 exit {r.returncode}")
+    print("ok   engine x mode feeds the plan (hybrid anchor, REJ warning, resident refusal, non-hybrid entry)")
 
     # 9. Phase 0: the second real checkpoint (1017) must reproduce its measured
     #    deployment (evidence/t1017) and the emitted profile must match the
@@ -188,9 +203,9 @@ def main() -> int:
             outdir = P(tmp) / "recipe"
             r = subprocess.run(
                 [sys.executable, str(HERE.parent / "emit_recipe.py"),
-                 "--budget", str(HERE.parent / "examples/dsv41-1017/budget.json"),
-                 "--hardware", str(HERE.parent / "examples/dsv41-1017/hardware.json"),
-                 "--engine", "sglang-hybrid", "--out", str(outdir),
+                 "--budget", "examples/dsv41-1017/budget.json",
+                 "--hardware", "examples/dsv41-1017/hardware.json",
+                 "--engine", "sglang", "--mode", "hybrid", "--out", str(outdir),
                  "--model", "deepseek-ai/DeepSeek-V4.1-Flash-1017",
                  "--expert-map", str(serving.parent.parent / "expert-map-el8-mix-219.json")],
                 capture_output=True, text=True)
