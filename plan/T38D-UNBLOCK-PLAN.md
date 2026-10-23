@@ -17,15 +17,18 @@ reduction, so this is the only remaining software lever in the +5-15 % C1 class.
    load only).
 
 **Staged plan** (each stage independently committable; stages 1-2 are GPU-free):
-- **Stage 1 (done, this commit):** vendor the PR #2093 planner/tracker (`scripts/expert_placement.py`)
+- **Stage 1 (done):** vendor the PR #2093 planner/tracker (`scripts/expert_placement.py`)
   + the mask eval (`scripts/t38d-mask-eval.py`) and measure the go signal on real traffic. Result:
   decode masks hit 1.8-2.2 %; the design must be **phase-aware** (online decode mask + static
   prefill map).
-- **Stage 2:** integrate the EMA tracker into the overlay as an opt-in residency-mask source
-  (consume the T3.8 recorder's per-phase counts; emit `KT_EXPERT_MAP`-style masks live; log-only
-  first, `SGLANG_DSV41_RUNTIME_EXPERT_MASK=1`). Gate: mask quality vs el8 on held-out traffic
-  (t38d-mask-eval), no serve-path change.
-- **Stage 3:** the weight swap. GPU side: a runtime re-permutation of the resident expert tensors
+- **Stage 2 (done 2026-10-23, branch `t38d-stage2`):** the recorder-dump hook feeds the EMA tracker
+  and logs its mask's GPU share next to the static one (`SGLANG_DSV41_RUNTIME_EXPERT_MASK`,
+  knobs `RUNTIME_EXPERT_MASK`/`RUNTIME_EXPERT_MASK_DIR`, defaults off; exception-guarded). Live
+  gate passed: on a traffic shift (copy fixtures) the static mask drops to 79.1 % GPU share while
+  the tracker holds 98.1 % (evidence/t38d/README.md stage-2 table). No serve-path change.
+- **Stage 3:** the weight swap, now scoped with the E48 numbers: the decode step is 16.46 ms with the
+  kt share 3.90 ms/step (export 2.274 + cpu_wait 1.626, evidence/e48/), and the static map's CPU
+  share degrades to ~21 % on shifted traffic (stage-2 table). GPU side: a runtime re-permutation of the resident expert tensors
   (the loader tensors live per layer; a swap moves the promoted expert's weights GPU<-kt). kt side:
   arena-content swap (patch 0004) so the demoted expert's MXFP4 bytes leave the GPU tier and the
   promoted one's arrive. Reference implementations: kvcache-ai/sglang
