@@ -1084,10 +1084,12 @@ Evidence `evidence/t320-engram-prefetch/io/`. Ordering: inside T3.20 as register
 - Method: overlay `e35ii` branch (`SGLANG_DSV41_BOUNDED_REPLAY_TAIL=2560`), knobs `DECODER_SWA_BOUNDED_REPLAY` / `BOUNDED_REPLAY_TAIL`, quality gate `scripts/tf-score.py` (promoted from the E35 scratch; the flag refuses prompt logprobs so the corpus NLL gate crashes it - recorded, fix unwritten).
 - Decision fed: bounded replay closed on this architecture (no tail size gives both exactness and a prefill win); knobs + branch retained for a future engine whose per-layer DMA shrinks with rows.
 
-## E48 — Where does a decode step lose time to the rank-0/rank-1 dependency, and is there headroom to split it? (registered 2026-10-23; not run)
+## E48 — Where does a decode step lose time to the rank-0/rank-1 dependency, and is there headroom to split it? (done 2026-10-23)
 
-- Protocol: on the launcher default (1017, el8 map, D=4, 262K x 4), profile one C1 decode step with the T3.19a timeline: (a) the kt submit-to-result window on rank 0, (b) the all-reduce wait on rank 1, (c) per-rank GPU busy vs idle, (d) the HSMP DDR counter during the step. Reopen triggers from the T3.22 decision: submit + wait share > 1.5 ms/step, or a third GPU (T4.1b). Pass/fail: a split is worth designing only if the measured dependency share clears the trigger; otherwise the finding documents the ceiling.
-- Feeds: T3.57.
+- Status: **DONE 2026-10-23 - the reopen trigger is MET (`evidence/e48/`).** KT_TIMELINE on the 1017 default: rank 0 export 2.274 + cpu_wait 1.626 = 3.90 ms/step (23.7 % of 16.46) vs the 1.5 ms trigger; rank 1 kt share ~0.02 ms, its other_gpu 12.54 ms (the all-reduce/spin component, profiler collective 17 ms vs rank 0 0.66 ms). DDR 87/410 GB/s = headroom to split. The ceiling of a perfect split ~3.9 ms/step (~24 % C1 upper bound); blocked on kt-kernel rank-0-only dispatch (a kt-kernel/SGLang feature).
+- Method: PROFILE=developer + KT_TIMELINE=1 + /start_profile traces for both ranks + HSMP DDR during C1; `scripts/kt-timeline-report.py`, `scripts/step-profile.py`.
+- Decision fed: T3.57 stays a kt-kernel-upstream design (T4.1b input); no overlay split is possible today.
+
 
 ## E47 — Does DeepSeek-V4.1-Flash-1017 (snapshot `1bae0e10…`) serve on the unchanged recipe, and do the qualified numbers and the el8 map hold on the new gates? (one serve; T3.56)
 
