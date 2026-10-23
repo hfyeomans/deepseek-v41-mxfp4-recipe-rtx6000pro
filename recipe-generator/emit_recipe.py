@@ -114,7 +114,7 @@ def run_calc(args) -> dict:
         cmd += ["--engine", args.engine]
         if getattr(args, "mode", None):
             cmd += ["--mode", args.mode]
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, cwd=str(HERE))
     if r.returncode != 0:
         print(f"error: placement_calc.py failed (rc {r.returncode}): {r.stderr}", file=sys.stderr)
         sys.exit(r.returncode or 2)
