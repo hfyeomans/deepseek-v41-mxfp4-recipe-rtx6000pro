@@ -55,8 +55,10 @@ export MODEL_DIR HF_CACHE_DIR GPU_DEVICES BIND_ADDRESS PORT CONTAINER_NAME SERVE
   KV_CACHE_DTYPE ENGRAM_PLACEMENT ENGRAM_HOST_TABLE_LAYOUT GPU_RESERVE_GIB HOST_RESERVE_GIB ALLOW_UNQUALIFIED NCCL_DEBUG
 
 # Pinned identities. Change only with a PROVENANCE.md update.
-export MODEL_REPO="deepseek-ai/DeepSeek-V4.1-Flash"
-export MODEL_REVISION="dba1be0a40aa45a94ad051997016db3960a90277"
+# 2026-10-23 (E47 / T3.56): flipped to the 1017 checkpoint; the previous pin
+# was deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a40aa45a94ad051997016db3960a90277.
+export MODEL_REPO="deepseek-ai/DeepSeek-V4.1-Flash-1017"
+export MODEL_REVISION="1bae0e1088993b9b82de08f59de5be5a34e42170"
 export MODEL_PIN="${MODEL_REPO}@${MODEL_REVISION}"
 export MODEL_SHARDS=48
 export MODEL_TOTAL_BYTES=510286023000  # 475.2408927306533 GiB; index metadata and shard headers agree

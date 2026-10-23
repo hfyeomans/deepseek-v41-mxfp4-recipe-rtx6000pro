@@ -13,7 +13,7 @@ TP_SIZE=4
 ENGRAM_PLACEMENT=dram
 EOF
 out="$(ENV_FILE="$tmp/good.env" bash -c 'source "$1"; echo "$PORT $TP_SIZE $MODEL_PIN $(gpu_count)"' _ "$ROOT/scripts/load-env.sh")"
-[[ "$out" == "9999 4 deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a40aa45a94ad051997016db3960a90277 4" ]] || { echo "FAIL good env: $out"; exit 1; }
+[[ "$out" == "9999 4 deepseek-ai/DeepSeek-V4.1-Flash-1017@1bae0e1088993b9b82de08f59de5be5a34e42170 4" ]] || { echo "FAIL good env: $out"; exit 1; }
 
 # R21: trailing comments and quotes are stripped, a quoted '#' is kept, nothing expands,
 # and the legacy DSPARK_BLOCK_SIZE name maps onto DSPARK_K (no collision with the hybrid registry).

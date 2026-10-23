@@ -4,8 +4,8 @@ Every artifact this plan reasons about is identified by an immutable revision. B
 
 | Layer | Immutable identity | Bytes |
 |---|---|---:|
-| Target model (pinned in `scripts/load-env.sh`) | `deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a40aa45a94ad051997016db3960a90277` | 510,286,023,000 (475.24 GiB, 48 shards, 96,085 tensors) |
-| Updated model (first served 2026-10-23, `evidence/t1017/`; not yet the default) | `deepseek-ai/DeepSeek-V4.1-Flash-1017@1bae0e1088993b9b82de08f59de5be5a34e42170` | 510,286,023,000 (475.24 GiB, 48 shards, 96,085 tensors — identical to the row above; weights differ) |
+| Target model (pinned in `scripts/load-env.sh`; default since 2026-10-23, E47) | `deepseek-ai/DeepSeek-V4.1-Flash-1017@1bae0e1088993b9b82de08f59de5be5a34e42170` | 510,286,023,000 (475.24 GiB, 48 shards, 96,085 tensors) |
+| Previous target (E1–E46 history; one env override away) | `deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a40aa45a94ad051997016db3960a90277` | 510,286,023,000 (475.24 GiB, 48 shards, 96,085 tensors — config/index/tokenizers identical to the row above; weights differ) |
 | NVIDIA NVFP4 re-quantization (evaluated, not selected) | `nvidia/DeepSeek-V4.1-Flash-NVFP4@3431dde3247c13b5957f682b1e3c6fcae2566079` | 491.06 GiB (188,245 tensors) |
 | LibertAI FP4-Engram variant (evaluated, not selected) | `LibertAIDAI/DeepSeek-V4.1-Flash-NVFP4@dfce15b92ed1fa76e80e2a46ba847e5b5451f12c` | 399.90 GiB |
 | Baseline model (sibling recipe, fits 2 GPUs) | `nvidia/DeepSeek-V4-Flash-0731-NVFP4@f1caa71142bd0be02f728c79f75042ac1e461579` | ≈ 164 GB on disk |

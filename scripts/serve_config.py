@@ -145,10 +145,12 @@ REGISTRY: tuple[Knob, ...] = (
          "the reader the clients use), so a directory or a multi-line key fails the launch instead of 401-ing every "
          "evidence script against a healthy server (T3.43a / R4)."),
     Knob("PORT", "int", "8000", "Host port mapped to the container's 30000."),
-    Knob("HF_MODEL_DIR", "str", lambda r: _home(".cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash"),
-         "HF hub model dir (bind-mounted read-only at /hfm)."),
-    Knob("SNAPSHOT", "str", "dba1be0a40aa45a94ad051997016db3960a90277", "Checkpoint snapshot under HF_MODEL_DIR/snapshots.",
-         evidence="PROVENANCE.md"),
+    Knob("HF_MODEL_DIR", "str", "/models_engrams/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash-1017",
+         "HF hub model dir (bind-mounted read-only at /hfm). Flipped to the 1017 checkpoint 2026-10-23 "
+         "(E47 / T3.56); the previous pin ~/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash "
+         "stays one env override away."),
+    Knob("SNAPSHOT", "str", "1bae0e1088993b9b82de08f59de5be5a34e42170", "Checkpoint snapshot under HF_MODEL_DIR/snapshots.",
+         evidence="PROVENANCE.md, evidence/t1017/"),
     Knob("OVERLAY_DIR", "str", lambda r: _home("dev/src/sglang-dsv41-overlay"),
          "SGLang overlay checkout; its python/sglang is bind-mounted over the image's."),
     Knob("KERNEL_CACHE_DIR", "str", lambda r: _home(".cache/dsv41-recipe/kernel-cache"),
@@ -288,6 +290,12 @@ REGISTRY: tuple[Knob, ...] = (
          "layers run instead of 0.3-0.6 s late after the next hasher on a cold page cache (T3.20 (c)). 0 = per-chunk "
          "fetch only (A/B comparator).",
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_CHUNK_AHEAD", evidence="evidence/t320-engram-prefetch/chunk-ahead/"),
+    Knob("ENGRAM_ADMISSION_PREFETCH", "flag", "0",
+         "T3.49: when a request is admitted, hash its first prefill chunk's Engram rows and start their fetch on the "
+         "shared worker, overlapping the queue wait / the decode in flight (chunk-ahead cannot hide chunk 0, the "
+         "+1.7-3.1 s cold cost per request, E40). Advisory-only: a mismatch or a dropped fetch costs one extra worker "
+         "fetch, never correctness. Needs the overlay's t349 admission slot.",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_ADMISSION_PREFETCH", evidence="evidence/t349/"),
     # ---- escape hatches -----------------------------------------------------------------
     Knob("EXTRA_SERVER_ARGS", "str", "", "Appended verbatim (word-split) to the sglang.launch_server command."),
     Knob("EXTRA_DOCKER_ENV", "str", "", "Space-separated KEY=VALUE pairs passed as -e (e.g. CUDA_LAUNCH_BLOCKING=1)."),
@@ -409,6 +417,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_ENGRAM_FILE_PREFETCH={r['ENGRAM_FILE_PREFETCH']}",
         f"SGLANG_DSV41_ENGRAM_FILE_THREADS={r['ENGRAM_FILE_THREADS']}",
         f"SGLANG_DSV41_ENGRAM_CHUNK_AHEAD={r['ENGRAM_CHUNK_AHEAD']}",
+        f"SGLANG_DSV41_ENGRAM_ADMISSION_PREFETCH={r['ENGRAM_ADMISSION_PREFETCH']}",
         "SGLANG_OPT_USE_TILELANG_INDEXER=0",
         "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0",
         f"SGLANG_LOGPROB_CHUNK_SIZE={r['SGLANG_LOGPROB_CHUNK_SIZE']}",

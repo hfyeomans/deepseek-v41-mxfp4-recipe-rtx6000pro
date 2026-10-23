@@ -4,6 +4,8 @@ Repository: `github.com/hfyeomans/deepseek-v41-mxfp4-recipe-rtx6000pro` (private
 
 A measured answer to "can two RTX PRO 6000 Blackwell 96 GB serve DeepSeek-V4.1-Flash at 262K context, and if not, what would?" — plus a phased plan to benchmark what does run, and the scripts to do it. Modeled on the [GLM-5.3 Flash dual-RTX-PRO-6000 recipe](https://github.com/samuelcardillo/glm-5.3-flash-2x-rtx-pro-6000-blackwell): pinned revisions, fail-closed preflight, reproducible tables, no host identifiers in public evidence.
 
+**Model update 2026-10-23:** the default checkpoint is now `deepseek-ai/DeepSeek-V4.1-Flash-1017@1bae0e10...` (structurally identical to the pin below - config, index, tokenizers, license byte-identical; new weights; E47, `evidence/t1017/`). The original `dba1be0a...` pin remains one env override away (`HF_MODEL_DIR` / `SNAPSHOT`).
+
 ## Verdict
 
 **Two RTX PRO 6000 cannot hold DeepSeek-V4.1-Flash in VRAM — the shortfall is 112 GiB, not a flag. They can serve it as a three-tier model: VRAM + host DRAM/CPU + NVMe. The cost is decode speed, and building the engine is the work.**
