@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "runs": 3,
+  "seed": 777,
+  "method": "unique prompts; prompt_tokens/TTFT; TTFT includes tokenization; sizes = cold pass",
+  "sizes": [
+    {
+      "target_tokens": 32768,
+      "median_prompt_tokens": 32004,
+      "median_prefill_tps": 3009.0508829921364,
+      "median_ttft_s": 10.611984057992231,
+      "runs": [
+        {
+          "prompt_tokens": 32004,
+          "ttft_s": 12.044079759973101,
+          "prefill_tps": 2657.2391280868997
+        },
+        {
+          "prompt_tokens": 32025,
+          "ttft_s": 10.59360340499552,
+          "prefill_tps": 3023.050682159603
+        },
+        {
+          "prompt_tokens": 31932,
+          "ttft_s": 10.611984057992231,
+          "prefill_tps": 3009.0508829921364
+        }
+      ]
+    }
+  ],
+  "passes": [
+    {
+      "pass": "cold",
+      "seed": 777,
+      "engram_residency_before": [
+        {
+          "shard": "model-00047-of-00048.safetensors",
+          "resident_bytes": 5193478144,
+          "size_bytes": 101535150936,
+          "resident_pct": 5.11
+        },
+        {
+          "shard": "model-00048-of-00048.safetensors",
+          "resident_bytes": 5307420672,
+          "size_bytes": 101537926640,
+          "resident_pct": 5.23
+        }
+      ],
+      "sizes": [
+        {
+          "target_tokens": 32768,
+          "median_prompt_tokens": 32004,
+          "median_prefill_tps": 3009.0508829921364,
+          "median_ttft_s": 10.611984057992231,
+          "runs": [
+            {
+              "prompt_tokens": 32004,
+              "ttft_s": 12.044079759973101,
+              "prefill_tps": 2657.2391280868997
+            },
+            {
+              "prompt_tokens": 32025,
+              "ttft_s": 10.59360340499552,
+              "prefill_tps": 3023.050682159603
+            },
+            {
+              "prompt_tokens": 31932,
+              "ttft_s": 10.611984057992231,
+              "prefill_tps": 3009.0508829921364
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-23T12:23:45-0400",
+  "evidence": {
+    "tool": "bench-prefill.py",
+    "recorded_utc": "2026-10-23T16:23:45Z",
+    "manifest_hash": "615068a9e56cf54644e85e47817b20ce64b3a5543a134f01edccc10f5c593e14",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "bc32aed2d84a9855d02854075adcc2af9d47368fe1e505fa0435ba5503169131"
+  }
+}

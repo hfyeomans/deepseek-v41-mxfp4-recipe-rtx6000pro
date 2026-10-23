@@ -1,0 +1,92 @@
+{
+  "decode-c1": {
+    "gpus": {
+      "0": {
+        "samples": 72,
+        "busy_samples": 67,
+        "power_busy_median_w": 212.7,
+        "power_max_w": 219.8,
+        "sm_clock_busy_median_mhz": 2302,
+        "temp_max_c": 74.0,
+        "util_median_pct": 73.5,
+        "fan_max_pct": 52.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 0
+      },
+      "1": {
+        "samples": 72,
+        "busy_samples": 71,
+        "power_busy_median_w": 203.5,
+        "power_max_w": 211.1,
+        "sm_clock_busy_median_mhz": 2280,
+        "temp_max_c": 76.0,
+        "util_median_pct": 95.0,
+        "fan_max_pct": 53.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 0
+      }
+    },
+    "total_busy_w": 416.2,
+    "temp_max_c": 76.0
+  },
+  "prefill-16k": {
+    "gpus": {
+      "0": {
+        "samples": 38,
+        "busy_samples": 30,
+        "power_busy_median_w": 178.4,
+        "power_max_w": 240.5,
+        "sm_clock_busy_median_mhz": 2126,
+        "temp_max_c": 76.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 51.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 8
+      },
+      "1": {
+        "samples": 38,
+        "busy_samples": 21,
+        "power_busy_median_w": 172.3,
+        "power_max_w": 230.0,
+        "sm_clock_busy_median_mhz": 2107,
+        "temp_max_c": 77.0,
+        "util_median_pct": 93.0,
+        "fan_max_pct": 52.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 5
+      }
+    },
+    "total_busy_w": 350.7,
+    "temp_max_c": 77.0
+  },
+  "prefill-32k": {
+    "gpus": {
+      "0": {
+        "samples": 68,
+        "busy_samples": 52,
+        "power_busy_median_w": 188.5,
+        "power_max_w": 251.6,
+        "sm_clock_busy_median_mhz": 2122,
+        "temp_max_c": 75.0,
+        "util_median_pct": 100.0,
+        "fan_max_pct": 50.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 14
+      },
+      "1": {
+        "samples": 68,
+        "busy_samples": 42,
+        "power_busy_median_w": 176.7,
+        "power_max_w": 245.7,
+        "sm_clock_busy_median_mhz": 2107,
+        "temp_max_c": 77.0,
+        "util_median_pct": 98.5,
+        "fan_max_pct": 52.0,
+        "thermal_slowdown_samples": 0,
+        "power_cap_samples": 13
+      }
+    },
+    "total_busy_w": 365.2,
+    "temp_max_c": 77.0
+  }
+}

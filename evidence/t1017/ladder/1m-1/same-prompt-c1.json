@@ -1,0 +1,53 @@
+{
+  "label": "",
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 1,
+  "max_tokens": 96,
+  "seed": 0,
+  "pass": true,
+  "same_prompt": true,
+  "flush_cache": true,
+  "rows_identical": null,
+  "min_pairwise_row_prefix": null,
+  "references": {
+    "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.": {
+      "text": "Sunlight contains all colors of visible light, but they don't all travel through the atmosphere the same way. Air molecules are much smaller than the wavelength of visible light, so they scatter short wavelengths (blue and violet) far more strongly than long ones (red and orange)\u2014a process called Rayleigh scattering. This scattered blue light bounces around the sky and reaches your eyes from every direction, making the sky look blue. (Violet is scattered even more, but our eyes are",
+      "completion_tokens": 96,
+      "ttft_s": 0.19194514001719654,
+      "total_s": 1.660435823025182,
+      "wall_s": 1.6606182969990186,
+      "finish_reason": "length",
+      "gibberish": 0.05063291139240506
+    }
+  },
+  "slots": [
+    {
+      "slot": 0,
+      "prompt": "Explain, in three short paragraphs, why the sky appears blue during the day and red at sunset.",
+      "exact": true,
+      "prefix_chars": 486,
+      "ref_chars": 486,
+      "conc_chars": 486,
+      "gibberish": 0.05063291139240506,
+      "ok": true,
+      "concurrent": {
+        "text": "Sunlight contains all colors of visible light, but they don't all travel through the atmosphere the same way. Air molecules are much smaller than the wavelength of visible light, so they scatter short wavelengths (blue and violet) far more strongly than long ones (red and orange)\u2014a process called Rayleigh scattering. This scattered blue light bounces around the sky and reaches your eyes from every direction, making the sky look blue. (Violet is scattered even more, but our eyes are",
+        "completion_tokens": 96,
+        "ttft_s": 0.14998002600623295,
+        "total_s": 1.5831907599931583,
+        "wall_s": 1.583314204995986,
+        "finish_reason": "length",
+        "gibberish": 0.05063291139240506
+      }
+    }
+  ],
+  "evidence": {
+    "tool": "verify-batch-consistency.py",
+    "recorded_utc": "2026-10-23T16:13:12Z",
+    "manifest_hash": "615068a9e56cf54644e85e47817b20ce64b3a5543a134f01edccc10f5c593e14",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "bc32aed2d84a9855d02854075adcc2af9d47368fe1e505fa0435ba5503169131"
+  }
+}

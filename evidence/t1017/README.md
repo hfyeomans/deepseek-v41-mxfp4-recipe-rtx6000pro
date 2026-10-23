@@ -42,3 +42,14 @@ No serve-path code changed. Registry defaults, the `qualified` profile and every
 1. HumanEval confirmation re-run; if 158 holds, read the three new failures (32 / 83 / 103) for near-tie flips.
 2. Full release-smoke + ladder on 1017 defaults (262K x 4, 512K / 1M x 1), identity baseline vs `evidence/t1017/nll/baseline`.
 3. Owner flip (defaults + pins + docs), then the T3.49 close-out queue resumes on 1017.
+
+## Ladder qualification (2026-10-23, release-smoke.sh serve --full per rung; BASELINE/IDENTITY = evidence/t1017/nll/baseline)
+
+| rung | stress wall (peak VRAM MiB) | C1 median/wall tok/s | prefill 16K/32K tok/s (TTFT s) | NLL vs baseline | needles |
+|---|---|---|---|---|
+| 262K x 4 (recorder serve, dev profile) | 268.0 s (97333 / 97214) | 59.67 / 57.74 | 3248.2 / 3996.7 (4.92 / 8.01) | dNLL -0.0, 0 moved | 6/6 @ 255,388 tok, TTFT 60.0 s |
+| 512K x 1 (qualified, clean) | 172.7 s (95945 / 95650) | 60.15 / 58.21 | 3381.3 / 3323.2 (4.75 / 9.61) | dNLL -0.0, 0 moved | 6/6 @ 511,145 tok, TTFT 142.1 s |
+| 1M x 1 (qualified, clean) | 496.6 s (97145 / 96990) | 59.05 / 57.24 | 2666.7 / 3009.1 (6.03 / 10.61) | dNLL -0.0, 0 moved | 6/6 @ 1,022,456 tok, TTFT 447.8 s |
+
+C4 on the 262K x 4 rung: 121.37 aggregate / 114.3 wall tok/s. Every rung passed every release-smoke gate (same-prompt, NLL identity vs the new baseline, needles, health, stress; --full benches + power summary). HumanEval confirmation: 158/164 at C1 and 158/164 at C4 (stable fails 32, 103, 132, 140, 145 + one of 50/83).
+

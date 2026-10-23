@@ -1,0 +1,202 @@
+{
+ "schema": 1,
+ "written_utc": "2026-10-23T15:49:55Z",
+ "recipe": {
+  "dir": "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro",
+  "sha": "8cab355400719a6f16b059cf6329d0cee15dd9cd",
+  "short": "8cab3554",
+  "branch": "master",
+  "dirty": true
+ },
+ "overlay": {
+  "dir": "~/dev/src/sglang-dsv41-overlay",
+  "sha": "deec7a6fb4c25f96549fe685f880f47ef33255d8",
+  "short": "deec7a6f",
+  "branch": "dsv41-kt-hybrid",
+  "dirty": false
+ },
+ "image": {
+  "tag": "dsv41-kt:recipe",
+  "id": "sha256:314749b5a268817b3f2be0664845df8a584d8d7a27cfb40c750d476aec95f04a"
+ },
+ "container": {
+  "name": "dsv41-kt",
+  "id": "a24091faf0eb3a5ddf1a3391ac75e3a59f326c170da4522d27a5c6447b96d101",
+  "created": "2026-10-23T15:49:55.054315031Z",
+  "image_id": "sha256:314749b5a268817b3f2be0664845df8a584d8d7a27cfb40c750d476aec95f04a"
+ },
+ "config": {
+  "PROFILE": "qualified",
+  "PROFILE_OVERRIDES": "HF_MODEL_DIR SNAPSHOT MEM_FRACTION_STATIC CONTEXT_LENGTH MAX_RUNNING_REQUESTS",
+  "IMAGE": "dsv41-kt:recipe",
+  "CONTAINER_NAME": "dsv41-kt",
+  "SERVED_MODEL_NAME": "dsv41-flash-hybrid",
+  "BIND_ADDRESS": "127.0.0.1",
+  "API_KEY_FILE": "",
+  "PORT": "8000",
+  "HF_MODEL_DIR": "/models_engrams/huggingface/hub/models--deepseek-ai--DeepSeek-V4.1-Flash-1017",
+  "SNAPSHOT": "1bae0e1088993b9b82de08f59de5be5a34e42170",
+  "OVERLAY_DIR": "~/dev/src/sglang-dsv41-overlay",
+  "KERNEL_CACHE_DIR": "~/.cache/dsv41-recipe/kernel-cache",
+  "MANIFEST_DIR": "~/.cache/dsv41-recipe/manifests",
+  "BIOS_SLOT": "3",
+  "KT_NUM_GPU_EXPERTS": "219",
+  "KT_EXPERT_MAP": "~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/config/expert-map-el8-mix-219.json",
+  "KT_CPUINFER": "16",
+  "HOST_THREAD_CPUS": "16-31",
+  "KT_MAX_DEFERRED": "4",
+  "KT_GPU_PREFILL_MIN_TOKENS": "1024",
+  "KT_GPU_PREFILL_LOG": "0",
+  "KT_NAN_PROBE_MIN_TOKENS": "0",
+  "DSPARK": "0",
+  "DSPARK_K": "5",
+  "NGRAM": "0",
+  "NGRAM_DRAFT_TOKENS": "5",
+  "NGRAM_BREADTH": "1",
+  "MEM_FRACTION_STATIC": "0.962",
+  "CONTEXT_LENGTH": "524288",
+  "CHUNKED_PREFILL_SIZE": "8192",
+  "MAX_RUNNING_REQUESTS": "1",
+  "SGLANG_LOGPROB_CHUNK_SIZE": "512",
+  "MAX_TOTAL_TOKENS": "540672",
+  "CUDA_GRAPH_MAX_BS": "4",
+  "CUDA_GRAPH_BS": "1 2 3 4",
+  "ENGRAM_FILE_PREFETCH": "ahead",
+  "ENGRAM_FILE_THREADS": "16",
+  "ENGRAM_CHUNK_AHEAD": "1",
+  "EXTRA_SERVER_ARGS": "",
+  "EXTRA_DOCKER_ENV": "",
+  "EXTRA_DOCKER_ARGS": "",
+  "SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE": "1",
+  "KT_REJECT_NAN_ROWS": "1",
+  "SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS": "1",
+  "SGLANG_FLASHINFER_MOE_FUSED_FINALIZE": "0",
+  "SGLANG_DSV41_SORT_DECODE_TOPK": "1",
+  "SGLANG_DSV41_FP8_GEMV": "0",
+  "REASONING_EFFORT": "high",
+  "KT_NAN_INJECT": "",
+  "KT_TIMELINE": "0",
+  "KT_TIMELINE_DIR": "",
+  "KT_TIMELINE_SAMPLE": "0",
+  "KT_TIMELINE_MAX_RECORDS": "0",
+  "KT_TIMELINE_DUMP_MAX": "0",
+  "KT_TIMELINE_DUMP_MAX_TOKENS": "0",
+  "KT_TIMELINE_DUMP_LAYERS": "",
+  "KT_FORCE_SYNC_SUBMIT": "0",
+  "SGLANG_BCG_DEBUG_SYNC": "0",
+  "SGLANG_BCG_DEBUG_EAGER": "",
+  "SGLANG_BCG_DEBUG_INPUTS": "0",
+  "SGLANG_BCG_DEBUG_LAYER_BREAKS": "0",
+  "SGLANG_DSV41_STEP_FINGERPRINT_DIR": "",
+  "SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN": "0"
+ },
+ "resolved_line": "resolved: experts gpu=219 cpu=165 deferral D=4 cpuinfer=16 chunk=8192 mem_fraction=0.962 context=524288 slots=1 max_total_tokens=540672 capture_bs=[1 2 3 4] dspark=0 dspark_k=5 ngram=0 ngram_draft=5 ngram_breadth=1 gpu_prefill_min=1024 logprob_chunk=512 reject_nan_rows=1 expandable_after_capture=1 fused_finalize=0 sort_decode_topk=1 fp8_gemv=0 host_thread_cpus=16-31 engram_prefetch=ahead engram_chunk_ahead=1 expert_map=expert-map-el8-mix-219.json image=dsv41-kt:recipe profile=qualified overrides=[HF_MODEL_DIR SNAPSHOT MEM_FRACTION_STATIC CONTEXT_LENGTH MAX_RUNNING_REQUESTS]",
+ "bios": {
+  "slot_declared": "3",
+  "hsmp": {
+   "fclk_mhz": 2100,
+   "mclk_mhz": 3200,
+   "ddr_rate_mts": 6400,
+   "ddr_theoretical_gbps": 410,
+   "ddr_utilised_gbps": 7,
+   "ddr_utilisation_pct": 2,
+   "socket_power_w": 131.728,
+   "cclk_limit_mhz": 5450
+  }
+ },
+ "gpus": [
+  {
+   "index": 0,
+   "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+   "power_limit_w": 300.0,
+   "driver": "615.71.09",
+   "memory_total_mib": 97887
+  },
+  {
+   "index": 1,
+   "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+   "power_limit_w": 300.0,
+   "driver": "615.71.09",
+   "memory_total_mib": 97887
+  }
+ ],
+ "kernel": "7.2.6-070206-generic",
+ "box": {
+  "note": "sampled when docker run returned, before the server loaded weights",
+  "meminfo": {
+   "unit": "kB",
+   "MemTotal": 258789868,
+   "MemFree": 162550916,
+   "MemAvailable": 247581764,
+   "Buffers": 127636,
+   "Cached": 86077524,
+   "Active(file)": 5053012,
+   "Inactive(file)": 80897900,
+   "SwapTotal": 8388604,
+   "SwapFree": 7750608,
+   "Dirty": 2620,
+   "Shmem": 254440,
+   "SwapUsed": 637996
+  },
+  "pressure": {
+   "cpu": {
+    "some": {
+     "avg10": 0.9,
+     "avg60": 0.24,
+     "avg300": 0.05,
+     "total": 254221802
+    },
+    "full": {
+     "avg10": 0.0,
+     "avg60": 0.0,
+     "avg300": 0.0,
+     "total": 0
+    }
+   },
+   "io": {
+    "some": {
+     "avg10": 0.46,
+     "avg60": 0.79,
+     "avg300": 0.59,
+     "total": 443602603
+    },
+    "full": {
+     "avg10": 0.46,
+     "avg60": 0.79,
+     "avg300": 0.59,
+     "total": 400026566
+    }
+   },
+   "memory": {
+    "some": {
+     "avg10": 0.0,
+     "avg60": 0.01,
+     "avg300": 0.14,
+     "total": 29253811
+    },
+    "full": {
+     "avg10": 0.0,
+     "avg60": 0.01,
+     "avg300": 0.14,
+     "total": 29089277
+    }
+   }
+  },
+  "engram_residency": [
+   {
+    "shard": "model-00047-of-00048.safetensors",
+    "resident_bytes": 38367006720,
+    "size_bytes": 101535150936,
+    "resident_pct": 37.79
+   },
+   {
+    "shard": "model-00048-of-00048.safetensors",
+    "resident_bytes": 38403993600,
+    "size_bytes": 101537926640,
+    "resident_pct": 37.82
+   }
+  ]
+ },
+ "errors": [],
+ "content_hash": "1b86eaaca52ae6b1c1bc9bd79ff243fee4c01835d4ab98f867a3540e4c0b58d3"
+}

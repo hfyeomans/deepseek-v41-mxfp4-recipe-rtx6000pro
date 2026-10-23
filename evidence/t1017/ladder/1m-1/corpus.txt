@@ -1,0 +1,27 @@
+01-readme-early.txt: tokens scored 4795  mean NLL 1.46940 nats/tok  ppl 4.347  cached_tokens 0  latency 2.1 s
+vs 01-readme-early.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 4795)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/01-readme-early.json
+02-learning.txt: tokens scored 10004  mean NLL 1.39215 nats/tok  ppl 4.023  cached_tokens 0  latency 4.4 s
+vs 02-learning.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 10004)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/02-learning.json
+03-experiments.txt: tokens scored 11053  mean NLL 1.82255 nats/tok  ppl 6.188  cached_tokens 0  latency 4.4 s
+vs 03-experiments.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 11053)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/03-experiments.json
+04-benchmarks.txt: tokens scored 12028  mean NLL 1.55011 nats/tok  ppl 4.712  cached_tokens 0  latency 4.4 s
+vs 04-benchmarks.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 12028)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/04-benchmarks.json
+05-troubleshooting.txt: tokens scored 9668  mean NLL 1.89657 nats/tok  ppl 6.663  cached_tokens 0  latency 4.5 s
+vs 05-troubleshooting.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 9668)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/05-troubleshooting.json
+06-bios-guide.txt: tokens scored 9546  mean NLL 1.56032 nats/tok  ppl 4.760  cached_tokens 0  latency 4.6 s
+vs 06-bios-guide.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 9546)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/06-bios-guide.json
+07-serve-hybrid-sh.txt: tokens scored 5938  mean NLL 1.22386 nats/tok  ppl 3.400  cached_tokens 0  latency 2.4 s
+vs 07-serve-hybrid-sh.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 5938)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/07-serve-hybrid-sh.json
+08-bench-decode-py.txt: tokens scored 2621  mean NLL 0.66936 nats/tok  ppl 1.953  cached_tokens 0  latency 1.6 s
+vs 08-bench-decode-py.json: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 2621)  max|Δlogp| 0.000  mean|Δlogp| 0.0000 sd 0.000  changed 0  tokens >0.5 nats worse/better: 0/0
+  identity match vs baseline/08-bench-decode-py.json
+POOLED over 8 texts: ΔNLL -0.00000 ± 0.00000 nats/tok (z +0.00, n 65653; cluster-robust se 0.00000, z +0.00)  changed 0  worse/better >0.5: 0/0
+IDENTITY vs ~/dev/src/deepseek-v41-fp4-recipe-rtx6000pro/evidence/t1017/nll/baseline: changed 0 of 65653 tokens, max|logp| 0.000, dNLL -0.00000
+wrote evidence/t1017/ladder/1m-1/corpus/*.json
