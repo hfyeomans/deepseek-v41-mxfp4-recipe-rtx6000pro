@@ -1,0 +1,355 @@
+{
+  "note": "Complete knob surface of the parent recipe's typed registry (scripts/serve_config.py), extracted 2026-10-23. name/type/default only: types, sinks, guards, evidence and removed-knob refusals live in the registry itself - the UI renders this list and never invents a knob.",
+  "knobs": [
+    {
+      "name": "PROFILE",
+      "type": "str",
+      "default": "qualified"
+    },
+    {
+      "name": "PROFILE_OVERRIDES",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "IMAGE",
+      "type": "str",
+      "default": "dsv41-kt:recipe"
+    },
+    {
+      "name": "CONTAINER_NAME",
+      "type": "str",
+      "default": "dsv41-kt"
+    },
+    {
+      "name": "SERVED_MODEL_NAME",
+      "type": "str",
+      "default": "dsv41-flash-hybrid"
+    },
+    {
+      "name": "BIND_ADDRESS",
+      "type": "str",
+      "default": "127.0.0.1"
+    },
+    {
+      "name": "API_KEY_FILE",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "PORT",
+      "type": "int",
+      "default": "8000"
+    },
+    {
+      "name": "HF_MODEL_DIR",
+      "type": "str",
+      "default": "<models dir>"
+    },
+    {
+      "name": "SNAPSHOT",
+      "type": "str",
+      "default": "<checkpoint revision>"
+    },
+    {
+      "name": "OVERLAY_DIR",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "KERNEL_CACHE_DIR",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "MANIFEST_DIR",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "BIOS_SLOT",
+      "type": "str",
+      "default": "3"
+    },
+    {
+      "name": "KT_NUM_GPU_EXPERTS",
+      "type": "int",
+      "default": "219"
+    },
+    {
+      "name": "KT_EXPERT_MAP",
+      "type": "str",
+      "default": "<hot-expert map json>"
+    },
+    {
+      "name": "KT_CPUINFER",
+      "type": "int",
+      "default": "16"
+    },
+    {
+      "name": "HOST_THREAD_CPUS",
+      "type": "str",
+      "default": "auto"
+    },
+    {
+      "name": "KT_MAX_DEFERRED",
+      "type": "int",
+      "default": "4"
+    },
+    {
+      "name": "KT_GPU_PREFILL_MIN_TOKENS",
+      "type": "int",
+      "default": "1024"
+    },
+    {
+      "name": "KT_GPU_PREFILL_LOG",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "KT_NAN_PROBE_MIN_TOKENS",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "DSPARK",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "DSPARK_K",
+      "type": "int",
+      "default": "5"
+    },
+    {
+      "name": "NGRAM",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "NGRAM_DRAFT_TOKENS",
+      "type": "int",
+      "default": "5"
+    },
+    {
+      "name": "NGRAM_BREADTH",
+      "type": "int",
+      "default": "1"
+    },
+    {
+      "name": "MEM_FRACTION_STATIC",
+      "type": "float",
+      "default": "0.96"
+    },
+    {
+      "name": "CONTEXT_LENGTH",
+      "type": "int",
+      "default": "262144"
+    },
+    {
+      "name": "CHUNKED_PREFILL_SIZE",
+      "type": "int",
+      "default": "8192"
+    },
+    {
+      "name": "MAX_RUNNING_REQUESTS",
+      "type": "int",
+      "default": "4"
+    },
+    {
+      "name": "SGLANG_LOGPROB_CHUNK_SIZE",
+      "type": "int",
+      "default": "512"
+    },
+    {
+      "name": "MAX_TOTAL_TOKENS",
+      "type": "int",
+      "default": "<slots*ctx+16384>"
+    },
+    {
+      "name": "CUDA_GRAPH_MAX_BS",
+      "type": "int",
+      "default": "4"
+    },
+    {
+      "name": "CUDA_GRAPH_BS",
+      "type": "list",
+      "default": "1 2 3 4"
+    },
+    {
+      "name": "ENGRAM_FILE_PREFETCH",
+      "type": "str",
+      "default": "ahead"
+    },
+    {
+      "name": "ENGRAM_FILE_THREADS",
+      "type": "int",
+      "default": "16"
+    },
+    {
+      "name": "ENGRAM_CHUNK_AHEAD",
+      "type": "flag",
+      "default": "1"
+    },
+    {
+      "name": "ENGRAM_ADMISSION_PREFETCH",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "EXTRA_SERVER_ARGS",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "EXTRA_DOCKER_ENV",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "EXTRA_DOCKER_ARGS",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "DRY_RUN",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "ALLOW_UNTESTED_FIT",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "KT_ALLOW_UNSAFE_DEFERRAL",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "ALLOW_UNKNOWN_KNOBS",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE",
+      "type": "flag",
+      "default": "1"
+    },
+    {
+      "name": "KT_REJECT_NAN_ROWS",
+      "type": "flag",
+      "default": "1"
+    },
+    {
+      "name": "SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS",
+      "type": "flag",
+      "default": "1"
+    },
+    {
+      "name": "SGLANG_FLASHINFER_MOE_FUSED_FINALIZE",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "SGLANG_DSV41_SORT_DECODE_TOPK",
+      "type": "flag",
+      "default": "1"
+    },
+    {
+      "name": "SGLANG_DSV41_FP8_GEMV",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "REASONING_EFFORT",
+      "type": "str",
+      "default": "high"
+    },
+    {
+      "name": "KT_NAN_INJECT",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "KT_TIMELINE",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "KT_TIMELINE_DIR",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "KT_TIMELINE_SAMPLE",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "KT_TIMELINE_MAX_RECORDS",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "KT_TIMELINE_DUMP_MAX",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "KT_TIMELINE_DUMP_MAX_TOKENS",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "KT_TIMELINE_DUMP_LAYERS",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "KT_FORCE_SYNC_SUBMIT",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "SGLANG_BCG_DEBUG_SYNC",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "SGLANG_BCG_DEBUG_EAGER",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "SGLANG_BCG_DEBUG_INPUTS",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "SGLANG_BCG_DEBUG_LAYER_BREAKS",
+      "type": "flag",
+      "default": "0"
+    },
+    {
+      "name": "SGLANG_DSV41_STEP_FINGERPRINT_DIR",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "KT_B2_UVA_EXPERTS",
+      "type": "str",
+      "default": ""
+    },
+    {
+      "name": "KT_B2_MAX_TOKENS",
+      "type": "str",
+      "default": ""
+    }
+  ]
+}

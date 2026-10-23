@@ -1,0 +1,470 @@
+{
+  "kind": "recipe",
+  "emitter_version": "0.1.0",
+  "engine": "llama-cpp",
+  "model": "Qwen/Qwen3-30B-A3B-GGUF:Q4_K_M",
+  "repo_url": "https://github.com/example/qwen3-30b-a3b-rtx3090-recipe",
+  "plan": {
+    "source": "Qwen/Qwen3-30B-A3B@main",
+    "hardware": "RTX 3090 (24 GiB, Ampere) - published reference numbers, not local measurements",
+    "quantization": "gguf-q4_k_m",
+    "trust": "calibrated",
+    "plan": {
+      "usable_vram_gib": 21.799999999999997,
+      "fixed_resident_gib": 0.754299,
+      "kv_gib": 0.375,
+      "kv_fraction": 0.017201834862385322,
+      "experts_gib": 17.806,
+      "gpu_fraction": 1.0,
+      "gpu_experts": 6144,
+      "gpu_experts_per_layer": 128,
+      "cpu_experts": 0,
+      "cpu_experts_per_layer": 0,
+      "cpu_expert_gib": 0.0,
+      "per_expert_gib": 0.0028981119791666667,
+      "engram_tier": "none",
+      "engram_host_gib": 0.0,
+      "host_need_gib": 8.0,
+      "host_margin_gib": 56.0,
+      "vram_margin_gib": 2.8647009999999966,
+      "cpu_share": 0.0,
+      "map": "checkpoint_order",
+      "chunk": 8192,
+      "deferral": 0,
+      "d_guard": "",
+      "tp_valid": true,
+      "fits": true,
+      "engram_note": "",
+      "calib_note": "Hardware Corner gpu-llm-benchmarks RTX 3090 row, published via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-3090/ (llama.cpp, -fa 1, Q4_K)",
+      "trust": "calibrated",
+      "gpu_ms_per_token": 6.51,
+      "gpu_ms_inverted_from_c1": true,
+      "cpu_bytes_per_token_mib": 0.0,
+      "cpu_bw_ms_per_token": 0.0,
+      "dispatch_ms_per_token": 0.0,
+      "decode_modeled": {
+        "c1": 153.6,
+        "c2": 217.2,
+        "c3": 266.0,
+        "c4": 307.2
+      },
+      "prefill_modeled": {
+        "chunk": 8192,
+        "prefill_tok_s": 13902.0,
+        "cpu_stream_ms": 0.0,
+        "gpu_prefill_ms": 589.0
+      },
+      "engram": {
+        "rows_per_s_needed": 0.0,
+        "row_cache_gib": 0.0
+      },
+      "k": {
+        "decode": 1.0,
+        "c4": null,
+        "prefill": 0.21497185529114948
+      },
+      "projected": {
+        "c1_tok_s": 153.6,
+        "c2_tok_s": 217.2,
+        "c3_tok_s": 266.0,
+        "c4_tok_s": 307.2,
+        "prefill_cold_tok_s": 2989.0,
+        "prefill_warm_tok_s": 3099.0,
+        "ttft_16k_cold_s": 5.6,
+        "ttft_32k_cold_s": 11.1,
+        "cold_engram_tax_s": 0.0,
+        "cold_engram_note": ""
+      }
+    },
+    "tier_plan": [
+      {
+        "component": "attention",
+        "gib": 0.56,
+        "tier": "vram",
+        "reason": "hot: touched every token/layer"
+      },
+      {
+        "component": "embedding_head",
+        "gib": 0.19,
+        "tier": "vram",
+        "reason": "hot: touched every token/layer"
+      },
+      {
+        "component": "router",
+        "gib": 0.01,
+        "tier": "vram",
+        "reason": "hot: touched every token/layer"
+      },
+      {
+        "component": "norms",
+        "gib": 0.0,
+        "tier": "vram",
+        "reason": "hot: touched every token/layer"
+      },
+      {
+        "component": "routed_experts",
+        "gib": 17.81,
+        "tier": "vram",
+        "reason": "128 experts/layer resident"
+      },
+      {
+        "component": "kv_cache",
+        "gib": 0.38,
+        "tier": "vram",
+        "reason": "4,096 tokens x 1 slots @ 98304 B/token"
+      }
+    ]
+  },
+  "registry_surface": [
+    [
+      "PROFILE",
+      "str",
+      "qualified"
+    ],
+    [
+      "PROFILE_OVERRIDES",
+      "str",
+      ""
+    ],
+    [
+      "IMAGE",
+      "str",
+      "dsv41-kt:recipe"
+    ],
+    [
+      "CONTAINER_NAME",
+      "str",
+      "dsv41-kt"
+    ],
+    [
+      "SERVED_MODEL_NAME",
+      "str",
+      "dsv41-flash-hybrid"
+    ],
+    [
+      "BIND_ADDRESS",
+      "str",
+      "127.0.0.1"
+    ],
+    [
+      "API_KEY_FILE",
+      "str",
+      ""
+    ],
+    [
+      "PORT",
+      "int",
+      "8000"
+    ],
+    [
+      "HF_MODEL_DIR",
+      "str",
+      "<models dir>"
+    ],
+    [
+      "SNAPSHOT",
+      "str",
+      "<checkpoint revision>"
+    ],
+    [
+      "OVERLAY_DIR",
+      "str",
+      ""
+    ],
+    [
+      "KERNEL_CACHE_DIR",
+      "str",
+      ""
+    ],
+    [
+      "MANIFEST_DIR",
+      "str",
+      ""
+    ],
+    [
+      "BIOS_SLOT",
+      "str",
+      "3"
+    ],
+    [
+      "KT_NUM_GPU_EXPERTS",
+      "int",
+      "219"
+    ],
+    [
+      "KT_EXPERT_MAP",
+      "str",
+      "<hot-expert map json>"
+    ],
+    [
+      "KT_CPUINFER",
+      "int",
+      "16"
+    ],
+    [
+      "HOST_THREAD_CPUS",
+      "str",
+      "auto"
+    ],
+    [
+      "KT_MAX_DEFERRED",
+      "int",
+      "4"
+    ],
+    [
+      "KT_GPU_PREFILL_MIN_TOKENS",
+      "int",
+      "1024"
+    ],
+    [
+      "KT_GPU_PREFILL_LOG",
+      "flag",
+      "0"
+    ],
+    [
+      "KT_NAN_PROBE_MIN_TOKENS",
+      "int",
+      "0"
+    ],
+    [
+      "DSPARK",
+      "flag",
+      "0"
+    ],
+    [
+      "DSPARK_K",
+      "int",
+      "5"
+    ],
+    [
+      "NGRAM",
+      "flag",
+      "0"
+    ],
+    [
+      "NGRAM_DRAFT_TOKENS",
+      "int",
+      "5"
+    ],
+    [
+      "NGRAM_BREADTH",
+      "int",
+      "1"
+    ],
+    [
+      "MEM_FRACTION_STATIC",
+      "float",
+      "0.96"
+    ],
+    [
+      "CONTEXT_LENGTH",
+      "int",
+      "262144"
+    ],
+    [
+      "CHUNKED_PREFILL_SIZE",
+      "int",
+      "8192"
+    ],
+    [
+      "MAX_RUNNING_REQUESTS",
+      "int",
+      "4"
+    ],
+    [
+      "SGLANG_LOGPROB_CHUNK_SIZE",
+      "int",
+      "512"
+    ],
+    [
+      "MAX_TOTAL_TOKENS",
+      "int",
+      "<slots*ctx+16384>"
+    ],
+    [
+      "CUDA_GRAPH_MAX_BS",
+      "int",
+      "4"
+    ],
+    [
+      "CUDA_GRAPH_BS",
+      "list",
+      "1 2 3 4"
+    ],
+    [
+      "ENGRAM_FILE_PREFETCH",
+      "str",
+      "ahead"
+    ],
+    [
+      "ENGRAM_FILE_THREADS",
+      "int",
+      "16"
+    ],
+    [
+      "ENGRAM_CHUNK_AHEAD",
+      "flag",
+      "1"
+    ],
+    [
+      "ENGRAM_ADMISSION_PREFETCH",
+      "flag",
+      "0"
+    ],
+    [
+      "EXTRA_SERVER_ARGS",
+      "str",
+      ""
+    ],
+    [
+      "EXTRA_DOCKER_ENV",
+      "str",
+      ""
+    ],
+    [
+      "EXTRA_DOCKER_ARGS",
+      "str",
+      ""
+    ],
+    [
+      "DRY_RUN",
+      "flag",
+      "0"
+    ],
+    [
+      "ALLOW_UNTESTED_FIT",
+      "flag",
+      "0"
+    ],
+    [
+      "KT_ALLOW_UNSAFE_DEFERRAL",
+      "flag",
+      "0"
+    ],
+    [
+      "ALLOW_UNKNOWN_KNOBS",
+      "flag",
+      "0"
+    ],
+    [
+      "SGLANG_DSV41_EXPANDABLE_SEGMENTS_AFTER_CAPTURE",
+      "flag",
+      "1"
+    ],
+    [
+      "KT_REJECT_NAN_ROWS",
+      "flag",
+      "1"
+    ],
+    [
+      "SGLANG_DSV41_CLAMP_MAX_NEW_TOKENS",
+      "flag",
+      "1"
+    ],
+    [
+      "SGLANG_FLASHINFER_MOE_FUSED_FINALIZE",
+      "flag",
+      "0"
+    ],
+    [
+      "SGLANG_DSV41_SORT_DECODE_TOPK",
+      "flag",
+      "1"
+    ],
+    [
+      "SGLANG_DSV41_FP8_GEMV",
+      "flag",
+      "0"
+    ],
+    [
+      "REASONING_EFFORT",
+      "str",
+      "high"
+    ],
+    [
+      "KT_NAN_INJECT",
+      "str",
+      ""
+    ],
+    [
+      "KT_TIMELINE",
+      "flag",
+      "0"
+    ],
+    [
+      "KT_TIMELINE_DIR",
+      "str",
+      ""
+    ],
+    [
+      "KT_TIMELINE_SAMPLE",
+      "int",
+      "0"
+    ],
+    [
+      "KT_TIMELINE_MAX_RECORDS",
+      "int",
+      "0"
+    ],
+    [
+      "KT_TIMELINE_DUMP_MAX",
+      "int",
+      "0"
+    ],
+    [
+      "KT_TIMELINE_DUMP_MAX_TOKENS",
+      "int",
+      "0"
+    ],
+    [
+      "KT_TIMELINE_DUMP_LAYERS",
+      "str",
+      ""
+    ],
+    [
+      "KT_FORCE_SYNC_SUBMIT",
+      "flag",
+      "0"
+    ],
+    [
+      "SGLANG_BCG_DEBUG_SYNC",
+      "flag",
+      "0"
+    ],
+    [
+      "SGLANG_BCG_DEBUG_EAGER",
+      "str",
+      ""
+    ],
+    [
+      "SGLANG_BCG_DEBUG_INPUTS",
+      "flag",
+      "0"
+    ],
+    [
+      "SGLANG_BCG_DEBUG_LAYER_BREAKS",
+      "flag",
+      "0"
+    ],
+    [
+      "SGLANG_DSV41_STEP_FINGERPRINT_DIR",
+      "str",
+      ""
+    ],
+    [
+      "SGLANG_DSV41_STEP_FINGERPRINT_TRIGGER_SEQ_LEN",
+      "int",
+      "0"
+    ],
+    [
+      "KT_B2_UVA_EXPERTS",
+      "str",
+      ""
+    ],
+    [
+      "KT_B2_MAX_TOKENS",
+      "str",
+      ""
+    ]
+  ]
+}

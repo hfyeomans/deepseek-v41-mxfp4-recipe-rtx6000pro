@@ -112,3 +112,22 @@ cost, when-it-helps, measured (list of {setting, result, evidence}), generator m
 field), and reopen trigger where one exists. The UI's tuning panel renders these rows; the calculator's CLI
 accepts the generator-mapped flags; the profile files ([PROFILES.md](PROFILES.md)) are deltas over this
 dictionary, so "why this preset" always points at a measured row.
+
+## 8. The complete registry surface (the deep-lever coverage)
+
+The dictionary above is the *modeled* levers; the full surface a generated recipe inherits is the parent
+recipe's 70-knob typed registry — the crown jewel (`scripts/serve_config.py`): every knob declared once with
+type, default, sink, evidence, aliases, guards; unknown/mistyped/removed/unsafe values **refused at launch**.
+The generator ships it machine-readable as [`registry-surface.json`](registry-surface.json) (name/type/default,
+extracted 2026-10-23) and emits it into every generated recipe; the UI's knob panel renders it, so the UI can
+never invent a knob the registry would refuse. Beyond the families above, the surface includes: `MAX_TOTAL_TOKENS`
+and the pool-cap guard, `SGLANG_LOGPROB_CHUNK_SIZE`, `KT_GPU_PREFILL_LOG` / `KT_NAN_PROBE_MIN_TOKENS`
+(diagnostics), `SGLANG_BCG_DEBUG_*` and the step-fingerprint family (opt-in diagnostics from the breakable-graph
+work), `KT_TIMELINE*` (per-layer decode timeline), `API_KEY_FILE` / `BIND_ADDRESS` / `PORT` (deployment),
+`BIOS_SLOT`, `KERNEL_CACHE_DIR`, `MANIFEST_DIR`, `DRY_RUN`, the `EXTRA_*` escape hatches and the guard bypasses
+(`ALLOW_UNTESTED_FIT`, `KT_ALLOW_UNSAFE_DEFERRAL`, `ALLOW_UNKNOWN_KNOBS` — developer profile only), and the
+removed knobs that refuse with the experiment that removed them (`KT_B2_UVA_EXPERTS` — B2 rejected at E30).
+
+The **advanced patch inventory** behind those knobs — the 61-patch SGLang overlay, the 3 kt-kernel patches,
+and the kernel artifacts — is documented with a portability verdict per group in
+[RECIPE-EMISSION.md §2.2](RECIPE-EMISSION.md) and emitted into every generated recipe's `engine-notes.md`.

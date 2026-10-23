@@ -1,16 +1,19 @@
 # Recipe Generator — mise en place for models
 
-**What this is:** the placement engine and tuning model that turns the `recipe-factory/` knowledge base into a
-working tool: given any open-source model (a budget JSON from safetensors headers) and any target hardware (a
-JSON of capacities plus *measured* bandwidths), it decides **where the parts go** — GPU VRAM / host DRAM+CPU /
-NVMe — picks the levers that realize it, and projects the serving numbers (C1/C4 decode, prefill, TTFT) with
-an enforced trust label per projection.
+**What this is:** the placement engine, tuning model, and **recipe emitter** that turn the
+`recipe-factory/` knowledge base into a working product: given any open-source model (a budget JSON from
+safetensors headers) and any target hardware (a JSON of capacities plus *measured* bandwidths), it decides
+**where the parts go** — GPU VRAM / host DRAM+CPU / NVMe — picks the levers that realize it, projects the
+serving numbers (C1/C4 decode, prefill, TTFT) with an enforced trust label per projection, and **emits a
+recipe tree that can actually be run** (launcher, profiles, preflight, verify, provenance, deep-lever and
+patch notes), optionally publishing it to a GitHub repo. The app **forms and witnesses; the host executes** —
+the UI is discerning about that boundary and never pretends ([RECIPE-EMISSION.md §4](RECIPE-EMISSION.md)).
 
 **What this is not:** a replacement for `recipe-factory/`. That folder holds the methodology, the ledger, the
 knob taxonomy and the UI plan — the *theory*. This folder is the *engine* that executes the P0 feasibility
-math (and the tuning-mode front-end for P3). It reads the same evidence tree, cites the same experiment ids,
-and does not duplicate recipe-factory's documents. **It touches nothing the serving recipe reads** — no
-`scripts/`, `config/`, `evidence/`, `docs/`, `plan/` files are modified.
+math, the tuning-mode front-end for P3, and the P3-to-recipe emission. It reads the same evidence tree, cites
+the same experiment ids, and does not duplicate recipe-factory's documents. **It touches nothing the serving
+recipe reads** — no `scripts/`, `config/`, `evidence/`, `docs/`, `plan/` files are modified.
 
 The metaphor (borrowed from [poteto's Michelin kitchen](research/poteto.md)): the ingredients (checkpoint
 components) are placed and prepped — quantized, tiered, cached — so service is fast. The chef builds the
@@ -23,7 +26,11 @@ checkpoint (headers only) ──► budget JSON ──┐
                                             ├──► placement_calc.py ──► tier plan + lever settings + projections
 host measurements (P1) ─────► hardware JSON ┘          │
                                                        ├─ trust: calibrated | calibrated-model | provisional
-                                                       └─ exits 0 (plan) / 3 (does not fit)  ← CI-pinnable
+                                                       ├─ exits 0 (plan) / 3 (does not fit)  ← CI-pinnable
+                                                       └──► emit_recipe.py ──► runnable recipe tree
+                                                                    │      (launcher, profiles, preflight,
+                                                                    │       verify, provenance, patch notes)
+                                                                    └─ --repo-url → optional GitHub publication
 ```
 
 ## File map
@@ -33,14 +40,18 @@ host measurements (P1) ─────► hardware JSON ┘          │
 | [README.md](README.md) | This file: vision, pipeline, decisions, status |
 | [PLACEMENT.md](PLACEMENT.md) | The planner spec: input schemas, tiering rules, every formula, the constant register, **the calibration rule** |
 | [placement_calc.py](placement_calc.py) | The working minimal calculator (stdlib only, GPU-free): budget JSON + hardware JSON → tier plan + projections |
+| [emit_recipe.py](emit_recipe.py) | The emitter: plan → **runnable recipe tree** (README/resolved line/launcher/preflight/verify/provenance/patch notes), optional GitHub repo stamping |
+| [RECIPE-EMISSION.md](RECIPE-EMISSION.md) | Emission spec: what a generated recipe contains, the deep-lever surface, the advanced patch inventory, GitHub publication, **the UI discernment boundary** |
+| [registry-surface.json](registry-surface.json) | The parent recipe's complete 70-knob typed registry, machine-readable for the UI's knob panel |
 | [quantization.json](quantization.json) | Quantization options with size + quality trade-offs (measured + published reference factors, each with a declared baseline dtype) |
 | [LEVERS.md](LEVERS.md) + [levers.json](levers.json) | The lever dictionary: what each lever moves, its cost, when it helps, measured numbers, generator mapping |
 | [PROFILES.md](PROFILES.md) + [profiles/](profiles/) | Per-use-case presets (coding-agent / multi-user / long-context / power-capped / quality-first) as lever deltas |
 | [EXAMPLES.md](EXAMPLES.md) + [examples/](examples/) | Three worked examples: real DSV4.1 (475 GiB), synthetic 211 GiB, Qwen3-30B-A3B small model |
+| [emitted/](emitted/) | Two sample emitted recipes (Qwen3 on RTX 3090 via llama.cpp — runnable anywhere; synthetic 211 GiB via sglang-hybrid — runnable shape) |
 | [UI-THEME.md](UI-THEME.md) | The cyberpunk × AI-tropes × Frankenstein UI theme (green reserved for "qualified") |
 | [research/poteto.md](research/poteto.md) | The poteto method distilled (identity correction included) and mapped onto the generator |
 | [research/landscape.md](research/landscape.md) | The landscape check: what exists, what to borrow vs build |
-| [tests/test-placement-calc.py](tests/test-placement-calc.py) | Self-tests: the calculator must reproduce the repo's measured qualified deployment |
+| [tests/test-placement-calc.py](tests/test-placement-calc.py) | Self-tests: the calculator must reproduce the repo's measured qualified deployment; the emitter must produce a clean runnable tree |
 
 ## Quickstart (GPU-free)
 
@@ -55,7 +66,17 @@ python3 recipe-generator/placement_calc.py \
 
 # Tuning mode: turn the levers and watch the projections move:
 python3 recipe-generator/placement_calc.py ... --chunk-size 4096 --deferral 0 --map checkpoint_order
-python3 recipe-generator/placement_calc.py ... --json   # machine-readable plan for the UI
+python3 recipe-generator/placement_calc.py ... --json   # machine-readable plan
+
+# Form a recipe that can be run (and stamp an optional GitHub repo):
+python3 recipe-generator/emit_recipe.py \
+  --budget recipe-generator/examples/qwen3-30b-a3b/budget.json \
+  --hardware recipe-generator/examples/qwen3-30b-a3b/hardware-rtx3090.json \
+  --quant gguf-q4_k_m --context-tokens 4096 --sequences 1 \
+  --engine llama-cpp --out recipes/qwen3-rtx3090 \
+  --model Qwen/Qwen3-30B-A3B-GGUF:Q4_K_M \
+  --repo-url https://github.com/<owner>/<repo> --init-git
+cd recipes/qwen3-rtx3090 && bash preflight.sh && bash launch.sh && bash verify.sh
 ```
 
 For a new model: produce the budget with the parent repo's `scripts/checkpoint-budget.py` (headers only),
@@ -77,13 +98,14 @@ never ships unvalidated either. Full mechanics: [PLACEMENT.md §5](PLACEMENT.md)
    recommendation until it has earned a split), move it to a new `recipe-factory` repo, or move only
    `research/` + docs. The recipe-factory/README repo-split plan already anticipates this; the generator's
    worked examples reference `evidence/` by relative path, which is the main coupling to preserve or replace.
-2. **UI integration.** Whether the generator ships a UI now (tuning-mode panel over `placement_calc.py
-   --json` + `levers.json`, themed per [UI-THEME.md](UI-THEME.md)) or feeds the existing
-   `recipe-factory/UI/` plan/skeleton, and who owns the JSON contract between them.
-3. **Real-engine invocation.** Whether the planner should later *invoke* engines (run a real serve / microbench
-   to fill the calibration section automatically, i.e. close the loop the way `gpu-container` does — see
-   [research/landscape.md §3](research/landscape.md)) or stay a pure planning tool that humans/serves feed.
-   GPU-free is the constraint for now; the calibration schema is already the interface for a future
+2. **UI integration and the emit flow.** Whether the UI owns the full emit flow (plan → tune → **emit a
+   runnable recipe** → ask for an optional GitHub repo → scaffold/push with consent), or emits through the
+   CLI and only witnesses. Either way the contract is `MANIFEST.json` + `registry-surface.json` + the
+   UI-THEME trust switch; the discernment boundary (RECIPE-EMISSION.md §4: the app never serves, never
+   downloads, never builds images) is fixed.
+3. **Real-engine invocation.** Whether the planner should later *invoke* engines (auto-run the calibration
+   serve/microbench to close the loop like `gpu-container` does) or stay pure planning that humans/serves
+   feed. GPU-free is the constraint for now; the calibration schema is already the interface for a future
    auto-calibrator.
 4. **Runtime placement as a first-class tier.** The static hot-expert map has a measured 10–15 % CPU-share
    floor; runtime placement (SGLang Paged Experts PR #42557, llama.cpp #27861 LRU, vLLM RFC #38256) is the
@@ -97,7 +119,9 @@ never ships unvalidated either. Full mechanics: [PLACEMENT.md §5](PLACEMENT.md)
 
 Built and GPU-free-tested this session: the calculator reproduces the repo's measured qualified deployment
 from JSON inputs alone (the calibration anchor), the synthetic 211 GiB case shows 100 % of experts in VRAM +
-Engram in DRAM with C1 ≈ 73.8 (vs 60.8 today), and the small-model case reproduces published reference
-numbers. Not yet: a real new-model run (needs a first serve for its anchor), the UI panel, engine invocation
-(decision 3). Research is in `research/` — read [poteto.md](research/poteto.md) for what the prep-first method
-adds and [landscape.md](research/landscape.md) for the borrow-vs-build verdict.
+Engram in DRAM with C1 ≈ 73.8 (vs 60.8 today), the small-model case reproduces published reference numbers,
+and the emitter produces complete runnable recipe trees (two samples under `emitted/`) including the full
+70-knob registry surface and the 61-patch overlay inventory with portability verdicts. Not yet: a real
+new-model run (needs a first serve for its anchor), the UI panel, engine invocation (decision 3). Research is
+in `research/` — read [poteto.md](research/poteto.md) for what the prep-first method adds and
+[landscape.md](research/landscape.md) for the borrow-vs-build verdict.

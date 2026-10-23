@@ -109,6 +109,34 @@ def main() -> int:
         die(f"475 GiB model on a 24 GiB card exit {r.returncode}, want 3 (does not fit)")
     print("ok   impossible layout exits 3 (fits/does-not-fit is CI-pinnable)")
 
+    # 7. The emitter must produce a complete, runnable, identifier-clean tree.
+    import re
+    import tempfile
+    from pathlib import Path as P
+    with tempfile.TemporaryDirectory() as tmp:
+        out = P(tmp) / "recipe"
+        r = subprocess.run(
+            [sys.executable, str(HERE.parent / "emit_recipe.py"),
+             "--budget", "examples/qwen3-30b-a3b/budget.json",
+             "--hardware", "examples/qwen3-30b-a3b/hardware-rtx3090.json",
+             "--quant", "gguf-q4_k_m", "--context-tokens", "4096", "--sequences", "1",
+             "--engine", "llama-cpp", "--out", str(out),
+             "--model", "Qwen/Qwen3-30B-A3B-GGUF:Q4_K_M"],
+            capture_output=True, text=True)
+        if r.returncode != 0:
+            die(f"emitter exit {r.returncode}: {r.stderr}")
+        for name in ("README.md", "MANIFEST.json", "PROVENANCE.md", "launch.sh",
+                     "preflight.sh", "verify.sh", "engine-notes.md",
+                     "registry-surface.json", ".gitignore"):
+            if not (out / name).is_file():
+                die(f"emitted tree missing {name}")
+        bad = re.compile(r'/(?:home|media)/[A-Za-z0-9._-]+/|\b(?:192\.168|10\.\d{1,3}'
+                         r'|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b')
+        for p in out.rglob("*"):
+            if p.is_file() and bad.search(p.read_text(errors="ignore")):
+                die(f"emitted file {p.name} contains a CI-forbidden identifier")
+    print("ok   emitter produces a complete runnable identifier-clean tree")
+
     print("all placement-calc self-tests passed")
     return 0
 
