@@ -296,6 +296,11 @@ REGISTRY: tuple[Knob, ...] = (
          "+1.7-3.1 s cold cost per request, E40). Advisory-only: a mismatch or a dropped fetch costs one extra worker "
          "fetch, never correctness. Needs the overlay's t349 admission slot.",
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_ADMISSION_PREFETCH", evidence="evidence/t349/"),
+    Knob("ENGRAM_ROW_CACHE_MB", "int", "0",
+         "T3.48: MiB of user-space Engram row cache (264 B rows, ~22x denser than the page cache), split evenly "
+         "across the two tables. Hits are served from RAM on the shared prefetch worker with no NVMe read and no "
+         "WILLNEED; misses go through the mmap path and are inserted. 0 = off (measured as an experiment, not a flip).",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_ROW_CACHE_MB", evidence="evidence/t348/"),
     # ---- escape hatches -----------------------------------------------------------------
     Knob("EXTRA_SERVER_ARGS", "str", "", "Appended verbatim (word-split) to the sglang.launch_server command."),
     Knob("EXTRA_DOCKER_ENV", "str", "", "Space-separated KEY=VALUE pairs passed as -e (e.g. CUDA_LAUNCH_BLOCKING=1)."),
@@ -418,6 +423,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_ENGRAM_FILE_THREADS={r['ENGRAM_FILE_THREADS']}",
         f"SGLANG_DSV41_ENGRAM_CHUNK_AHEAD={r['ENGRAM_CHUNK_AHEAD']}",
         f"SGLANG_DSV41_ENGRAM_ADMISSION_PREFETCH={r['ENGRAM_ADMISSION_PREFETCH']}",
+        f"SGLANG_DSV41_ENGRAM_ROW_CACHE_MB={r['ENGRAM_ROW_CACHE_MB']}",
         "SGLANG_OPT_USE_TILELANG_INDEXER=0",
         "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0",
         f"SGLANG_LOGPROB_CHUNK_SIZE={r['SGLANG_LOGPROB_CHUNK_SIZE']}",
