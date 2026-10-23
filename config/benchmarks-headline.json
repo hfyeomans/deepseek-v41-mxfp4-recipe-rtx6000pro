@@ -1,20 +1,20 @@
 {
- "_comment": "Rungs shown in the generated headline table of docs/BENCHMARKS.md (scripts/benchmarks_headline.py). Each dir must hold a manifest.json and the stamped JSON files the script reads (c1/c4/prefill-16k/prefill-32k/verify/stress-kv/corpus/pooled). Replace a dir only with a newer serve that passed every gate; the table reports whatever the manifest says the serve was.",
- "rows": [
-  {
-   "rung": "262K × 4 (launcher default)",
-   "dir": "evidence/t352/default-flip",
-   "note": "T3.52 default-flip qualification (HOST_THREAD_CPUS=auto: the server's host threads on CPUs 16-31, kt's workers on 0-15); replaces evidence/t315d/serve-a (floating threads: C1 60.1, C4 124.8, prefill 4,361 / 4,513), whose C4 could read 106 on a bad run (E44)"
-  },
-  {
-   "rung": "64K × 4 (per-rung override)",
-   "dir": "evidence/t339/window2/qual",
-   "note": "T3.39 window 2 qualification; the launcher default until 2026-10-11 (CONTEXT_LENGTH=65536)"
-  },
-  {
-   "rung": "1M × 1 (per-rung override)",
-   "dir": "evidence/e34-indexer-memory/d-v-ii/1m",
-   "note": "E34d-v (ii), pre-T3.8b map and pre-T3.39 arenas; the only stamped 1M serve"
-  }
- ]
+  "_comment": "Rungs shown in the generated headline table of docs/BENCHMARKS.md (scripts/benchmarks_headline.py). Each dir must hold a manifest.json and the stamped JSON files the script reads (c1/c4/prefill-16k/prefill-32k/verify/stress-kv/corpus/pooled). Replace a dir only with a newer serve that passed every gate; the table reports whatever the manifest says the serve was.",
+  "rows": [
+    {
+      "rung": "262K \u00d7 4 (launcher default)",
+      "dir": "evidence/t1017/headline",
+      "note": "E47 clean-launcher headline on DeepSeek-V4.1-Flash-1017 (default since 2026-10-23): C1 59.6/57.7, C4 123.8/118.7, prefill 4,370/4,513, needles 6/6 in 59.9 s, NLL 0 moved; replaces evidence/t352/default-flip (the pre-1017 pin, C1 60.8/59.9, C4 124.0/124.0, prefill 4,344/4,495)"
+    },
+    {
+      "rung": "64K \u00d7 4 (per-rung override)",
+      "dir": "evidence/t339/window2/qual",
+      "note": "T3.39 window 2 qualification on the pre-1017 checkpoint (the 1017 ladder re-qualified 262K x 4 / 512K x 1 / 1M x 1; a 64K x 4 rung on 1017 is not yet re-measured)"
+    },
+    {
+      "rung": "1M \u00d7 1 (per-rung override)",
+      "dir": "evidence/t1017/ladder/1m-1",
+      "note": "T3.56 ladder on the 1017 checkpoint (el8 map, chunk 8192, MEM_FRACTION_STATIC=0.962): stress wall 496.6 s, needles 6/6 at 1,022,456 tokens in 447.8 s; replaces the pre-map pre-arena 1M serve"
+    }
+  ]
 }
