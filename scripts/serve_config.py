@@ -315,6 +315,14 @@ REGISTRY: tuple[Knob, ...] = (
          "128 x (19 + 1), the full receptive field, so the replay is exact; 128 = E35's lossy variant "
          "(the A/B comparator).",
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_BOUNDED_REPLAY_TAIL", evidence="evidence/e35ii/"),
+    Knob("RUNTIME_EXPERT_MASK", "flag", "0",
+         "T3.8d stage 2: with the expert-distribution recorder on (EXTRA_SERVER_ARGS --expert-distribution-recorder-mode stat, "
+         "developer profile), every recorder dump feeds the PR #2093 EMA hotness tracker and logs its mask's GPU share "
+         "vs the static el8 mask. Log-only - the mask never remaps anything (the weight swap is stage 3). 0 = off.",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_RUNTIME_EXPERT_MASK", evidence="evidence/t38d/"),
+    Knob("RUNTIME_EXPERT_MASK_DIR", "str", "",
+         "Container path the live mask is appended to as JSONL per dump (T3.8d stage 2; empty = log only).",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_RUNTIME_EXPERT_MASK_DIR", evidence="evidence/t38d/"),
     # ---- escape hatches -----------------------------------------------------------------
     Knob("EXTRA_SERVER_ARGS", "str", "", "Appended verbatim (word-split) to the sglang.launch_server command."),
     Knob("EXTRA_DOCKER_ENV", "str", "", "Space-separated KEY=VALUE pairs passed as -e (e.g. CUDA_LAUNCH_BLOCKING=1)."),
@@ -439,6 +447,8 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_ENGRAM_ADMISSION_PREFETCH={r['ENGRAM_ADMISSION_PREFETCH']}",
         f"SGLANG_DSV41_ENGRAM_ROW_CACHE_MB={r['ENGRAM_ROW_CACHE_MB']}",
         f"SGLANG_DSV41_BOUNDED_REPLAY_TAIL={r['BOUNDED_REPLAY_TAIL']}",
+        f"SGLANG_DSV41_RUNTIME_EXPERT_MASK={r['RUNTIME_EXPERT_MASK']}",
+        f"SGLANG_DSV41_RUNTIME_EXPERT_MASK_DIR={r['RUNTIME_EXPERT_MASK_DIR']}",
         "SGLANG_OPT_USE_TILELANG_INDEXER=0",
         "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0",
         f"SGLANG_LOGPROB_CHUNK_SIZE={r['SGLANG_LOGPROB_CHUNK_SIZE']}",
