@@ -1,0 +1,32 @@
+{
+  "generated_by": "benchmarks_headline.py",
+  "note": "Sample evidence matching UI/JSON-SCHEMA.md section 3. In the real app this file is rsync-pulled from the GPU box; a stale or unverified sibling manifest is shown greyed, never trusted.",
+  "rungs": [
+    {
+      "rung": "262K x 4",
+      "launcher_default": true,
+      "c1": { "median_tok_s": 60.8, "wall_tok_s": 58.8 },
+      "c4": { "wall_tok_s": 118.9 },
+      "prefill_16k": { "cold_tok_s": 4344.0, "cold_ttft_s": 3.7 },
+      "prefill_32k": { "cold_tok_s": 4495.0, "cold_ttft_s": 7.1 },
+      "needles": { "found": 6, "of": 6, "prompt_tokens": 255388, "ttft_s": 59.0 },
+      "stress": { "wall_s": 278.0, "shape": "C4 x 253428 tokens" },
+      "nll": { "delta": -0.00033, "sd": 0.0013, "z": 0.26, "moved": 65226, "total": 65653,
+               "baseline": "evidence/t328/default-219-8192/corpus" },
+      "evidence": "evidence/t352/default-flip"
+    },
+    {
+      "rung": "1M x 1",
+      "launcher_default": false,
+      "c1": { "median_tok_s": 59.05, "wall_tok_s": 57.24 },
+      "c4": { "wall_tok_s": 0 },
+      "prefill_16k": { "cold_tok_s": 2666.7, "cold_ttft_s": 6.03 },
+      "prefill_32k": { "cold_tok_s": 3009.1, "cold_ttft_s": 10.61 },
+      "needles": { "found": 6, "of": 6, "prompt_tokens": 1022456, "ttft_s": 447.8 },
+      "stress": { "wall_s": 496.6, "shape": "C1 x 1022456 tokens" },
+      "nll": { "delta": 0.0, "sd": 0.0, "z": 0.0, "moved": 0, "total": 65653,
+               "baseline": "evidence/t1017/nll/baseline" },
+      "evidence": "evidence/t1017/"
+    }
+  ]
+}
