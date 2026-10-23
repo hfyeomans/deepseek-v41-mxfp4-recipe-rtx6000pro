@@ -1,0 +1,16 @@
+{
+  "profile": "coding-agent",
+  "vs": "qualified",
+  "use_case": "one user, one coding agent, long sessions; first-turn TTFT matters, batch throughput does not",
+  "deltas": [
+    {"lever": "kv-context-slots", "knob": "MAX_RUNNING_REQUESTS", "from": "4", "to": "1-2",
+     "why": "single stream; fewer slots = less scheduler interference"},
+    {"lever": "prefill-chunk", "knob": "CHUNKED_PREFILL_SIZE", "from": "8192", "to": "8192",
+     "why": "keep: chunk buys long-session TTFT; 16384 costs -4.4% C1 (E34d-iv)"},
+    {"lever": "engram-tier", "knob": "ENGRAM_ADMISSION_PREFETCH", "from": "0", "to": "1",
+     "why": "-0.2..-0.4 s off every cold first-request TTFT (T3.49)"},
+    {"lever": "quantization", "knob": "KERNEL_CACHE_DIR", "from": "unset", "to": "persistent host dir",
+     "why": "kills the +14-19 s first-request Triton compile (T3.47)"}
+  ],
+  "evidence_base": "recipe-factory/KNOBS-AND-PROFILES.md 3.2"
+}

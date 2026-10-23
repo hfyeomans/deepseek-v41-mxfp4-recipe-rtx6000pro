@@ -1,0 +1,13 @@
+{
+  "extends": "../../../evidence/budget-upstream-bf16fp8.json",
+  "arch": {
+    "moe_layers": 40,
+    "routed_experts_per_layer": 384,
+    "experts_per_token": 6,
+    "attention_heads": 64,
+    "kv_bytes_per_token": 890,
+    "engram_rows_per_token": 48,
+    "engram_row_bytes": 264,
+    "notes": "Architecture constants from deepseek-ai/DeepSeek-V4.1-Flash config.json (text_config) and the CSA2 KV measurement (890 B/token, vLLM recipe + LibertAI card). Engram gather: 48 rows of 264 B per token (METHODOLOGY.md section 4, E3)."
+  }
+}

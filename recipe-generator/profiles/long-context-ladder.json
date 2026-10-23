@@ -1,0 +1,23 @@
+{
+  "profile": "long-context-ladder",
+  "vs": "qualified",
+  "use_case": "single giant context",
+  "rungs": [
+    {"rung": "262K x 1", "deltas": [
+      {"lever": "kv-context-slots", "knob": "CONTEXT_LENGTH", "to": "262144"},
+      {"lever": "kv-context-slots", "knob": "MAX_RUNNING_REQUESTS", "to": "1"}],
+     "measured": "needles 6/6 at 255,388 tok, TTFT 59 s"},
+    {"rung": "512K x 1", "deltas": [
+      {"lever": "kv-context-slots", "knob": "CONTEXT_LENGTH", "to": "524288"},
+      {"lever": "kv-context-slots", "knob": "MAX_RUNNING_REQUESTS", "to": "1"},
+      {"lever": "kv-context-slots", "knob": "MEM_FRACTION_STATIC", "to": "0.962"}],
+     "measured": "needles 6/6 at 511,145 tok, TTFT 142 s"},
+    {"rung": "1M x 1", "deltas": [
+      {"lever": "kv-context-slots", "knob": "CONTEXT_LENGTH", "to": "1048576"},
+      {"lever": "kv-context-slots", "knob": "MAX_RUNNING_REQUESTS", "to": "1"},
+      {"lever": "kv-context-slots", "knob": "MEM_FRACTION_STATIC", "to": "0.962"}],
+     "measured": "needles 6/6 at 1,022,456 tok, TTFT 448 s"}
+  ],
+  "guards": ">262K with any other fraction refused; >1,048,576 refused outright (never run)",
+  "evidence_base": "recipe-factory/KNOBS-AND-PROFILES.md 3.4"
+}

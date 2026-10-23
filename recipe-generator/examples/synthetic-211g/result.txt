@@ -1,0 +1,30 @@
+model: synthetic/211GB-V4-class-MoE@synthetic  (211.0 GiB checkpoint)
+hardware: SYNTHETIC run: the same quorra box (2x RTX PRO 6000, 192 GiB VRAM, measured bandwidths) serving the synthetic 211 GiB model  quantization: mxfp4  trust: calibrated-model (k carried from another example)  [anchor: host/engine factors carried over from the DSV4.1 example (same box, same SGLang-kt engine family); the synthetic gpu_ms is NOT validated]
+
+TIER PLAN
+  component                     GiB  tier             reason
+  attention                    4.80  vram             hot: touched every token/layer
+  shared_expert                1.30  vram             hot: touched every token/layer
+  embedding_head               2.50  vram             hot: touched every token/layer
+  router                       0.15  vram             hot: touched every token/layer
+  norms                        0.00  vram             hot: touched every token/layer
+  hyper_connections            0.15  vram             hot: touched every token/layer
+  engram_proj                  0.29  vram             hot: touched every token/layer
+  dspark                       7.40  vram             optional resident (disable to reclaim)
+  vision                       0.90  vram             optional resident (disable to reclaim)
+  routed_experts             133.50  vram             384 experts/layer resident
+  engram_table                60.00  dram             lookup: touched via row gathers, page-cache friendly
+  kv_cache                     0.87  vram             262,144 tokens x 4 slots @ 890 B/token
+
+LEVER SETTINGS (the resolved line)
+  experts gpu=15360 cpu=0 map=checkpoint_order cpu_share=0% deferral D=0 chunk=8192 kv=0.87 GiB (0.5% VRAM) engram=dram
+
+MARGINS
+  usable VRAM 176.5 GiB | fixed resident 17.5 GiB | KV 0.87 GiB | VRAM margin 24.6 GiB | host need 84.0 GiB | host margin 162.8 GiB | fits: YES
+
+PROJECTIONS
+  decode C1 73.8 tok/s  C2 104.4  C3 127.8  C4 150.6 tok/s
+  prefill cold 5270 tok/s / warm 5465  TTFT 16K cold 3.2 s  32K cold 6.3 s
+  model internals: gpu_ms=13.55 ms, cpu 0.0 MiB/token, cpu_bw 0.0 ms, dispatch 0.0 ms, prefill cpu-stream 0 ms/chunk
+  calibration k: decode 1.000  c4 1.020  prefill 0.789
+  engram rows/s needed 0

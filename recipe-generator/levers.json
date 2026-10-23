@@ -1,0 +1,185 @@
+{
+  "note": "Machine-readable lever dictionary for the tuning mode. Measured values are the reference host (2x RTX PRO 6000, DeepSeek-V4.1-Flash); calibration values, never universal claims. generator_map names the placement_calc.py CLI flag or JSON plan field the lever feeds.",
+  "levers": [
+    {
+      "id": "gpu-expert-count",
+      "family": "placement",
+      "knobs": ["KT_NUM_GPU_EXPERTS"],
+      "what_it_moves": "share of routed-expert traffic resident in VRAM vs streamed from DRAM on the CPU tier",
+      "direction": "more GPU experts -> higher C1/C4, less VRAM for KV/chunk",
+      "cost": "VRAM bytes only",
+      "when_it_helps": "always, on a CPU-hybrid MoE; it is the biggest decode lever",
+      "measured": [
+        {"setting": "208/176", "result": "first-serve placement", "evidence": "E19"},
+        {"setting": "226/158", "result": "C1 +6.3% wall, C4 +9.2%; 779 MiB free worst case", "evidence": "E28/T3.6g"},
+        {"setting": "230/154", "result": "+2.5% C1 wall for -40% prefill; NLL +0.0088 fails the gate", "evidence": "E29 - REJECTED"},
+        {"setting": "219/165 + chunk 8192", "result": "prefill +38/+47%; C1 wall -1.9%; NLL in band", "evidence": "T3.28/E34d-ii - default"}
+      ],
+      "generator_map": "plan.gpu_experts / plan.cpu_experts (--json)",
+      "reopen": null
+    },
+    {
+      "id": "hot-expert-map",
+      "family": "placement",
+      "knobs": ["KT_EXPERT_MAP"],
+      "what_it_moves": "which CPU-resident experts the router actually hits (CPU route share)",
+      "direction": "checkpoint order = random split; fitted static map = ~15%; runtime = 1-3%",
+      "cost": "zero VRAM; a permutation is routing-exact, not bit-exact",
+      "when_it_helps": "whenever experts must live on the CPU tier",
+      "measured": [
+        {"setting": "checkpoint order", "result": "42-46% CPU share", "evidence": "T3.8"},
+        {"setting": "el8 fitted map", "result": "15% CPU share; C1 42.4->58.0 (+37%), C4 +120%", "evidence": "T3.8b - default"},
+        {"setting": "own-counts refit", "result": "overfits; held-out 13.3 vs 16.4% -> static floor 10-15%", "evidence": "T3.8c - no refit"},
+        {"setting": "runtime placement", "result": "per-set oracle 1-3% CPU share", "evidence": "T3.8c/GitHub #6 - PARKED"}
+      ],
+      "generator_map": "--map checkpoint_order|fitted_static|runtime_oracle -> plan.cpu_share",
+      "reopen": "runtime placement: copy_experts_weights_mxfp4 + vendor ktransformers PR #2093; watch SGLang Paged Experts (PR #42557) and llama.cpp --moe-expert-cache (PR #27861, LRU beats static hot lists)"
+    },
+    {
+      "id": "deferral",
+      "family": "cpu-tier",
+      "knobs": ["KT_MAX_DEFERRED"],
+      "what_it_moves": "how many tokens the CPU expert pass may lag the GPU pass",
+      "direction": "higher D hides the CPU tier; quality breaks at the edge",
+      "cost": "no memory; D=5 fails NLL (+0.00287) and greedy diverges at 9-39 chars; D=6 loses 0.23 nats",
+      "when_it_helps": "always on a CPU-hybrid MoE; +22% C1 at D=4",
+      "measured": [
+        {"setting": "D=0", "result": "C1 49.8", "evidence": "T3.15"},
+        {"setting": "D=4", "result": "C1 60.8 (+22%); NLL +0.00066 +/- 0.00103", "evidence": "T3.15 - default"},
+        {"setting": "D=5", "result": "NLL +0.00287 fails the gate", "evidence": "T3.15 - guarded"}
+      ],
+      "generator_map": "--deferral (guard refuses D>4)",
+      "reopen": null
+    },
+    {
+      "id": "cpu-worker-threads",
+      "family": "cpu-tier",
+      "knobs": ["KT_CPUINFER"],
+      "what_it_moves": "CPU-tier GEMV throughput on a bandwidth-bound tier",
+      "direction": "16 is the plateau; above physical cores it collapses",
+      "cost": "none",
+      "when_it_helps": "only re-tune if cores/CCDs change",
+      "measured": [
+        {"setting": "14/16", "result": "plateau", "evidence": "E6/T3.x"},
+        {"setting": "24", "result": "-12%", "evidence": "ledger 4"},
+        {"setting": "30", "result": "collapses to 5 tok/s (SMT starvation)", "evidence": "ledger 4 - REJECTED"}
+      ],
+      "generator_map": "not modeled; fixed 16 on the reference host",
+      "reopen": null
+    },
+    {
+      "id": "host-thread-pinning",
+      "family": "cpu-tier",
+      "knobs": ["HOST_THREAD_CPUS"],
+      "what_it_moves": "whether scheduler/tokenizer threads float onto CPU-tier worker cores",
+      "direction": "auto pins to SMT siblings of workers",
+      "cost": "prefill -0.7..-1.9%",
+      "when_it_helps": "multi-user: kills the C4 106/123 bimodality",
+      "measured": [
+        {"setting": "unset", "result": "C4 106 or 123 on the same serve (bimodal)", "evidence": "T3.52/E46"},
+        {"setting": "auto", "result": "C4 126.7/123.0, no 106 mode", "evidence": "T3.52/E46 - default"},
+        {"setting": "list overlapping workers", "result": "forced collision C4 33.8", "evidence": "T3.52 - refused"}
+      ],
+      "generator_map": "not modeled; standing guard",
+      "reopen": null
+    },
+    {
+      "id": "kv-context-slots",
+      "family": "memory",
+      "knobs": ["CONTEXT_LENGTH", "MAX_RUNNING_REQUESTS", "MAX_TOTAL_TOKENS"],
+      "what_it_moves": "VRAM share of KV and the served concurrency shape",
+      "direction": "bigger context/slots -> more KV VRAM, more concurrency",
+      "cost": "kv_bytes_per_token x context x slots; ladder 512K/1M needs fraction 0.962",
+      "when_it_helps": "multi-user -> 4 slots; long-context -> 1 slot",
+      "measured": [
+        {"setting": "262K x 4", "result": "default; ~no prefill/decode cost vs 64Kx4", "evidence": "T3.39"},
+        {"setting": "512K x 1 / 1M x 1", "result": "needs fraction 0.962; needles 6/6 at 511K/1,022K", "evidence": "ladder"},
+        {"setting": "engine default pool", "result": "sized 15x too large (E26)", "evidence": "E26"}
+      ],
+      "generator_map": "--context-tokens --sequences -> plan.kv_gib / plan.kv_fraction",
+      "reopen": null
+    },
+    {
+      "id": "prefill-chunk",
+      "family": "memory",
+      "knobs": ["CHUNKED_PREFILL_SIZE"],
+      "what_it_moves": "TTFT vs decode rate vs expert capacity (fused-MoE workspace scales with chunk)",
+      "direction": "bigger chunk -> faster prefill, fewer experts, slightly slower decode",
+      "cost": "workspace VRAM (7 experts per 4096->8192 step on the reference host)",
+      "when_it_helps": "coding-agent (first-turn TTFT); hurts multi-user decode slightly",
+      "measured": [
+        {"setting": "8192", "result": "prefill +38/+47% at 16K/32K; fits <=219 experts", "evidence": "T3.28 - default"},
+        {"setting": "16384", "result": "+22% prefill for -4.4% C1 and 14 experts", "evidence": "E34d-iv - REJECTED"},
+        {"setting": "2048", "result": "frees ~1.5 GB/rank but -40% prefill", "evidence": "E29"}
+      ],
+      "generator_map": "--chunk-size (fitted line in PLACEMENT.md 4.4)",
+      "reopen": null
+    },
+    {
+      "id": "cuda-graph-capture",
+      "family": "memory",
+      "knobs": ["CUDA_GRAPH_BS"],
+      "what_it_moves": "whether decode batches run captured vs eager",
+      "direction": "capture everything served",
+      "cost": "graph pool VRAM (small)",
+      "when_it_helps": "always; eager is 4.4-5.6x slower",
+      "measured": [
+        {"setting": "eager", "result": "4.4-5.6x slower (15.9 tok/s)", "evidence": "E15"},
+        {"setting": "1 2 3 4", "result": "bs=3 capture fixes C3 -22%", "evidence": "E26 - default"}
+      ],
+      "generator_map": "not modeled; standing default",
+      "reopen": null
+    },
+    {
+      "id": "engram-tier",
+      "family": "engram",
+      "knobs": ["ENGRAM_FILE_PREFETCH", "ENGRAM_CHUNK_AHEAD", "ENGRAM_ADMISSION_PREFETCH"],
+      "what_it_moves": "where lookup tables live and how rows are fetched",
+      "direction": "ahead/chunk-ahead prefetch overlaps Engram I/O with compute",
+      "cost": "host DRAM or NVMe I/O budget",
+      "when_it_helps": "every serve with Engram tables",
+      "measured": [
+        {"setting": "DRAM as shipped", "result": "does not fit this host (-78 GiB)", "evidence": "E11"},
+        {"setting": "NVMe + page cache", "result": "403K rows/s sustains decode-rate gathers", "evidence": "E3/T3.12"},
+        {"setting": "re-quantized tables", "result": "cannot shrink page-cache footprint (~190 KiB/first-touched token)", "evidence": "E40 - REJECTED"},
+        {"setting": "page-cache hygiene", "result": "prefill 16K 3,311->4,248; stress 320->257 s", "evidence": "E40/T3.10 - default"},
+        {"setting": "ahead + chunk-ahead", "result": "prefill +16/+26% cold; chunk-ahead +7.6/+11%", "evidence": "T3.20"},
+        {"setting": "admission prefetch", "result": "-0.2..-0.4 s per cold TTFT; default off", "evidence": "T3.49"}
+      ],
+      "generator_map": "plan.engram_tier; --admission-prefetch",
+      "reopen": "row cache (T3.48) pairs with admission prefetch for C4-heavy admission"
+    },
+    {
+      "id": "speculation",
+      "family": "speculation",
+      "knobs": ["DSPARK", "DSPARK_K", "NGRAM"],
+      "what_it_moves": "draft-token multiplication of the CPU-expert traffic",
+      "direction": "more drafts -> more verify traffic on a bandwidth-bound tier",
+      "cost": "decode quality risk (rejected-draft state corruption measured)",
+      "when_it_helps": "copy-heavy single-user only, and only after a CPU-tier change",
+      "measured": [
+        {"setting": "DSpark K=5", "result": "-16% C1, -69..-77% C3/C4", "evidence": "E23 - off"},
+        {"setting": "n-gram done properly", "result": "+60/+76% C1 copy prompts, -26% review, -63% C4, decode-state defect (-20.5 nats token)", "evidence": "T3.9h-b/E43 - off, not recommended"}
+      ],
+      "generator_map": "not modeled; default off; must pass spec-consistency.py to reopen",
+      "reopen": "CPU-tier change (third GPU / more CCDs)"
+    },
+    {
+      "id": "quantization",
+      "family": "quantization",
+      "knobs": ["--quant"],
+      "what_it_moves": "component bytes (and kernel path)",
+      "direction": "lower bpw -> smaller, usually slower/riskier kernels",
+      "cost": "quality gate re-run for any format change that alters the math",
+      "when_it_helps": "when the checkpoint as shipped does not fit",
+      "measured": [
+        {"setting": "mxfp4", "result": "1.0x, native SM120 roofline", "evidence": "E13 - ADOPT"},
+        {"setting": "nvfp4", "result": "+5.9% experts, kernel compatibility only", "evidence": "ledger 7 - REJ for size"},
+        {"setting": "exl3 2.9-3.0 bpw", "result": "0.65x, bespoke forks only", "evidence": "ledger 7 - REJ here"},
+        {"setting": "gguf-q4_k_m", "result": "0.307x of bf16; llama.cpp offload route", "evidence": "T3.7 - PARKED"}
+      ],
+      "generator_map": "--quant (quantization.json)",
+      "reopen": "sub-4-bit: a published SM120 EXL3 MoE kernel with a KL number"
+    }
+  ]
+}

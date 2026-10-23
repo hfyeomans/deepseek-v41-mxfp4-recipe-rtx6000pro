@@ -1,0 +1,27 @@
+{
+  "name": "quorra: 2x RTX PRO 6000 (96 GiB) + Ryzen TR PRO 9955WX 16C + 246.8 GiB DDR5-6400 + 2x NVMe",
+  "gpus": 2,
+  "vram_gib_per_gpu": 95.59,
+  "util": 0.965,
+  "gpu_reserve_gib": 4.0,
+  "host_ram_gib": 246.8,
+  "host_reserve_gib": 24.0,
+  "dram_read_gbps": 131,
+  "pcie_gbps_per_gpu": 57,
+  "nvme_sequential_gbps": 12,
+  "nvme_random_rows_per_s": 403000,
+  "cpu_cores": 16,
+  "ccds": 2,
+  "gpu_ms_per_token": null,
+  "engram_row_cache_gib": 4.0,
+  "notes": "Every bandwidth measured on this host, never a vendor spec: DRAM read 131 GB/s (E1b/E25/E27, FCLK 2100 slot 3), PCIe 57 GB/s per card (E4), NVMe row gather 403K rows/s (E3, Samsung 9100 PRO), 2 CCDs x 16 cores (evidence/hardware-inventory.json). gpu_ms_per_token is null on purpose: the calculator inverts it from the calibration C1.",
+  "calibration": {
+    "evidence": "evidence/t352/default-flip (qualified 1017 deployment: 219/165 experts via el8 map, D=4, chunk 8192, 262Kx4, Engram nvme)",
+    "c1_tok_s": 60.8,
+    "c4_tok_s": 124.0,
+    "prefill_16k_cold_tok_s": 4344,
+    "prefill_16k_warm_tok_s": 4504,
+    "prefill_32k_cold_tok_s": 4495,
+    "note": "C1 60.8/58.8 wall, C4 124.0/118.9 wall, prefill 4,344/4,495 tok/s cold at 16K/32K - the repo's measured qualified numbers (docs/BENCHMARKS.md headline)."
+  }
+}

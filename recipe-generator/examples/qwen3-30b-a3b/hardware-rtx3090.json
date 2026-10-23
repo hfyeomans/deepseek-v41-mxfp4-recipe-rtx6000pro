@@ -1,0 +1,23 @@
+{
+  "name": "RTX 3090 (24 GiB, Ampere) - published reference numbers, not local measurements",
+  "gpus": 1,
+  "vram_gib_per_gpu": 24.0,
+  "util": 0.95,
+  "gpu_reserve_gib": 1.0,
+  "host_ram_gib": 64.0,
+  "host_reserve_gib": 8.0,
+  "dram_read_gbps": 40,
+  "nvme_sequential_gbps": 7,
+  "nvme_random_rows_per_s": 100000,
+  "gpu_ms_per_token": null,
+  "chunk_workspace_model": "none",
+  "engram_row_cache_gib": 0.0,
+  "notes": "Reference-datapoint calibration: Hardware Corner's llama.cpp measurement (published via smeltcore.com 2026-06-27): 153.6 tok/s generation at 4K context, 2,988.6 tok/s prefill at 4K, peak VRAM 24.0 GB. Published, not local - re-measure on your host before promising.",
+  "calibration": {
+    "evidence": "Hardware Corner gpu-llm-benchmarks RTX 3090 row, published via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-3090/ (llama.cpp, -fa 1, Q4_K)",
+    "gpus": 1,
+    "c1_tok_s": 153.6,
+    "prefill_tok_s": 2988.6,
+    "note": "reference datapoint (published), 4K context"
+  }
+}

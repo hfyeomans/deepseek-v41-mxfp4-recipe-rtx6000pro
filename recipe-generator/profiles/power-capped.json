@@ -1,0 +1,10 @@
+{
+  "profile": "power-capped",
+  "vs": "qualified",
+  "use_case": "power/thermal budget constrained",
+  "deltas": [
+    {"lever": "quantization", "knob": "GPU power cap", "from": "300 W", "to": "300-325 W (decode-heavy) / higher only for prefill-heavy",
+     "why": "decode is cap-insensitive on this model (memory-bound); prefill pins to the cap; GLM-5.3 was the opposite (+9% C16 at 325 W) - the sweep protocol transfers, the number does not"}
+  ],
+  "evidence_base": "recipe-factory/KNOBS-AND-PROFILES.md 3.5; power-sweep bench pattern in docs/BENCHMARKS.md"
+}

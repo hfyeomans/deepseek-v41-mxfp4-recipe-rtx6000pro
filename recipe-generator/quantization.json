@@ -1,0 +1,106 @@
+{
+  "note": "Quantization options with size + quality trade-offs, distilled from recipe-factory/TRIED-OPTIONS-LEDGER.md section 7. Each option declares its baseline: 'fp4-packed' factors are relative to an FP4-shipped checkpoint budget (e.g. DeepSeek-V4.1 MXFP4); 'bf16' factors are relative to a bf16 checkpoint budget (most HuggingFace models). The calculator warns on a budget/quant baseline mismatch. Measured values are marked; published references are marked.",
+  "options": {
+    "mxfp4": {
+      "label": "MXFP4 (checkpoint as shipped)",
+      "baseline": "fp4-packed",
+      "expert_factor": 1.0,
+      "dense_factor": 1.0,
+      "engram_factor": 1.0,
+      "quality_delta": "baseline (the model was trained on it)",
+      "kernel_reality": "native CUTLASS SM120 grouped GEMM, decode at 93% of copy ceiling (measured E13); no re-quantization step exists that beats the checkpoint as shipped",
+      "source": "recipe-factory/TRIED-OPTIONS-LEDGER.md section 7; evidence/e13-stage1-decode-*"
+    },
+    "nvfp4": {
+      "label": "NVFP4 re-quantization",
+      "baseline": "fp4-packed",
+      "expert_factor": 1.059,
+      "dense_factor": 1.0,
+      "engram_factor": 1.0,
+      "quality_delta": "re-quantized from the shipped weights; not measured as a quality delta on this model",
+      "kernel_reality": "cuBLAS/CUTLASS W4A4 paths, better engine support than MXFP4; measured 15.8 GiB LARGER than MXFP4 for V4.1-Flash (block-16 UE4M3 scales)",
+      "source": "recipe-factory/TRIED-OPTIONS-LEDGER.md section 7 (NVFP4 re-quantization row); evidence/budget-nvidia-nvfp4.json"
+    },
+    "fp8-dense": {
+      "label": "FP8 dense parts (W8A8), experts untouched",
+      "baseline": "fp4-packed",
+      "expert_factor": 1.0,
+      "dense_factor": 2.0,
+      "engram_factor": 1.0,
+      "quality_delta": "FP8 dense GEMMs measured quality-neutral on this project (E20 shipped)",
+      "kernel_reality": "dense FP8 GEMMs are the measured hot spot (57% of the step, E20 2.26x C1); doubling dense bytes is usually a VRAM purchase with a speed gain",
+      "source": "recipe-factory/TRIED-OPTIONS-LEDGER.md sections 5,7 (E20); evidence/e20-dense-fp8-gemm"
+    },
+    "exl3": {
+      "label": "EXL3 2.9-3.0 bpw (trellis)",
+      "baseline": "fp4-packed",
+      "expert_factor": 0.65,
+      "dense_factor": 0.65,
+      "engram_factor": 1.0,
+      "quality_delta": "unknown on FP4-trained experts (never gated here)",
+      "kernel_reality": "no SM120 MoE kernel in vLLM/SGLang; bespoke forks only (GLM-5.3 needed a custom fork); TensorFold rejected as engine on this hardware",
+      "source": "recipe-factory/TRIED-OPTIONS-LEDGER.md section 7 (sub-4-bit experts row); recipe-factory/METHODOLOGY.md section 5.3"
+    },
+    "gguf-q4_k_m": {
+      "label": "GGUF Q4_K_M (llama.cpp)",
+      "baseline": "bf16",
+      "expert_factor": 0.307,
+      "dense_factor": 0.307,
+      "engram_factor": 0.307,
+      "quality_delta": "published llama.cpp ladder numbers; per-model quality not gated",
+      "kernel_reality": "llama.cpp CPU+GPU offload with -ot expert offload; published size 18.56 GB for Qwen3-30B-A3B (61 GB bf16 -> factor 0.307)",
+      "source": "Qwen/Qwen3-30B-A3B-GGUF card via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-3090/"
+    },
+    "gguf-q3_k_m": {
+      "label": "GGUF Q3_K_M (llama.cpp)",
+      "baseline": "bf16",
+      "expert_factor": 0.24,
+      "dense_factor": 0.24,
+      "engram_factor": 0.24,
+      "quality_delta": "aggressive; approximate factor (3 bpw / 16 bpw + block scales)",
+      "kernel_reality": "same llama.cpp route as Q4_K_M",
+      "source": "approx. from bpw/16; published Qwen3-30B-A3B sizes anchor Q4/Q5/Q6/Q8"
+    },
+    "gguf-q2_k": {
+      "label": "GGUF Q2_K (llama.cpp)",
+      "baseline": "bf16",
+      "expert_factor": 0.19,
+      "dense_factor": 0.19,
+      "engram_factor": 0.19,
+      "quality_delta": "very aggressive; use only for exploratory offload fits",
+      "kernel_reality": "same llama.cpp route as Q4_K_M",
+      "source": "approx. from bpw/16"
+    },
+    "gguf-q5_k_m": {
+      "label": "GGUF Q5_K_M (llama.cpp)",
+      "baseline": "bf16",
+      "expert_factor": 0.359,
+      "dense_factor": 0.359,
+      "engram_factor": 0.359,
+      "quality_delta": "published llama.cpp ladder numbers",
+      "kernel_reality": "published size 21.73 GB for Qwen3-30B-A3B",
+      "source": "Qwen/Qwen3-30B-A3B-GGUF card via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-3090/"
+    },
+    "gguf-q6_k": {
+      "label": "GGUF Q6_K (llama.cpp)",
+      "baseline": "bf16",
+      "expert_factor": 0.415,
+      "dense_factor": 0.415,
+      "engram_factor": 0.415,
+      "quality_delta": "published llama.cpp ladder numbers",
+      "kernel_reality": "published size 25.09 GB for Qwen3-30B-A3B",
+      "source": "Qwen/Qwen3-30B-A3B-GGUF card via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-3090/"
+    },
+    "gguf-q8_0": {
+      "label": "GGUF Q8_0 (llama.cpp)",
+      "baseline": "bf16",
+      "expert_factor": 0.537,
+      "dense_factor": 0.537,
+      "engram_factor": 0.537,
+      "quality_delta": "near-lossless 8-bit",
+      "kernel_reality": "published size 32.48 GB for Qwen3-30B-A3B",
+      "source": "Qwen/Qwen3-30B-A3B-GGUF card via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-3090/"
+    }
+  },
+  "default": "mxfp4"
+}

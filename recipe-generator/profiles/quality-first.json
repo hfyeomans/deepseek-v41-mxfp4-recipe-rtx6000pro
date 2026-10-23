@@ -1,0 +1,18 @@
+{
+  "profile": "quality-first",
+  "vs": "qualified",
+  "use_case": "benchmark-grade output quality",
+  "deltas": [
+    {"lever": "quantization", "knob": "REASONING_EFFORT", "from": "high", "to": "max (100)",
+     "why": "benchmark-grade reasoning budget (T3.54)"},
+    {"lever": "deferral", "knob": "KT_MAX_DEFERRED", "from": "4", "to": "4 (never 5)",
+     "why": "D=5 fails NLL - the gate is the quality floor"},
+    {"lever": "gpu-expert-count", "knob": "KT_NUM_GPU_EXPERTS", "from": "219", "to": "219 (never 230)",
+     "why": "230 fails the NLL gate (E29)"},
+    {"lever": "speculation", "knob": "determinism levers", "from": "on", "to": "on",
+     "why": "bit-reproducible greedy is itself a quality property (T3.15c)"},
+    {"lever": "quantization", "knob": "HumanEval spot-check", "from": "per checkpoint", "to": "per checkpoint",
+     "why": "161/164 baseline, 158/164 on 1017 - the public quality number"}
+  ],
+  "evidence_base": "recipe-factory/KNOBS-AND-PROFILES.md 3.6"
+}

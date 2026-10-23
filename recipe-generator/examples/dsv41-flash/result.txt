@@ -1,0 +1,32 @@
+model: deepseek-ai/DeepSeek-V4.1-Flash@dba1be0a40aa45a94ad051997016db3960a90277  (0.0 GiB checkpoint)
+hardware: quorra: 2x RTX PRO 6000 (96 GiB) + Ryzen TR PRO 9955WX 16C + 246.8 GiB DDR5-6400 + 2x NVMe  quantization: mxfp4  trust: calibrated  [anchor: evidence/t352/default-flip (qualified 1017 deployment: 219/165 experts via el8 map, D=4, chunk 8192, 262Kx4, Engram nvme)]
+
+TIER PLAN
+  component                     GiB  tier             reason
+  attention                    4.80  vram             hot: touched every token/layer
+  shared_expert                1.32  vram             hot: touched every token/layer
+  embedding_head               2.47  vram             hot: touched every token/layer
+  router                       0.15  vram             hot: touched every token/layer
+  norms                        0.00  vram             hot: touched every token/layer
+  hyper_connections            0.15  vram             hot: touched every token/layer
+  engram_proj                  0.29  vram             hot: touched every token/layer
+  dspark                       7.39  vram             optional resident (disable to reclaim)
+  vision                       0.90  vram             optional resident (disable to reclaim)
+  routed_experts             153.38  vram             219 experts/layer resident
+  routed_experts(cpu)        115.56  dram             165 experts/layer computed on CPU
+  engram_table               188.83  nvme             lookup: touched via row gathers, page-cache friendly
+  kv_cache                     0.87  vram             262,144 tokens x 4 slots @ 890 B/token
+
+LEVER SETTINGS (the resolved line)
+  experts gpu=8760 cpu=6600 map=fitted_static cpu_share=15% deferral D=4 chunk=8192 kv=0.87 GiB (0.5% VRAM) engram=nvme
+
+MARGINS
+  usable VRAM 176.5 GiB | fixed resident 17.5 GiB | KV 0.87 GiB | VRAM margin 4.8 GiB | host need 143.6 GiB | host margin 103.2 GiB | fits: YES
+
+PROJECTIONS
+  decode C1 60.8 tok/s  C2 86.0  C3 105.3  C4 124.0 tok/s
+  prefill cold 4344 tok/s / warm 4505  TTFT 16K cold 3.9 s  32K cold 7.6 s
+  note: chunk-0 Engram fetch adds 1.7-3.1 s on the first cold request (T3.49); admission prefetch removes 0.2-0.4 s of it
+  model internals: gpu_ms=16.45 ms (inverted from calibration C1), cpu 647.1 MiB/token, cpu_bw 5.18 ms, dispatch 3.6 ms, prefill cpu-stream 947 ms/chunk
+  calibration k: decode 1.000  c4 1.020  prefill 0.789
+  engram rows/s needed 264143

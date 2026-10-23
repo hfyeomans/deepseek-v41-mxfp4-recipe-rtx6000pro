@@ -1,0 +1,24 @@
+model: Qwen/Qwen3-30B-A3B@main  (60.5 GiB checkpoint)
+hardware: RTX 5090 (32 GiB, SM120) - published reference numbers, not local measurements  quantization: gguf-q4_k_m  trust: calibrated  [anchor: Hardware Corner gpu-llm-benchmarks RTX 5090 row, published via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-5090/ (llama.cpp build 8189, -fa 1, Q4_K)]
+
+TIER PLAN
+  component                     GiB  tier             reason
+  attention                    0.56  vram             hot: touched every token/layer
+  embedding_head               0.19  vram             hot: touched every token/layer
+  router                       0.01  vram             hot: touched every token/layer
+  norms                        0.00  vram             hot: touched every token/layer
+  routed_experts              17.81  vram             128 experts/layer resident
+  kv_cache                     3.00  vram             32,768 tokens x 1 slots @ 98304 B/token
+
+LEVER SETTINGS (the resolved line)
+  experts gpu=6144 cpu=0 map=checkpoint_order cpu_share=0% deferral D=0 chunk=8192 kv=3.00 GiB (10.2% VRAM) engram=none
+
+MARGINS
+  usable VRAM 29.4 GiB | fixed resident 0.8 GiB | KV 3.00 GiB | VRAM margin 7.8 GiB | host need 8.0 GiB | host margin 24.0 GiB | fits: YES
+
+PROJECTIONS
+  decode C1 226.1 tok/s  C2 319.8  C3 391.6  C4 452.2 tok/s
+  prefill cold 7093 tok/s / warm 7355  TTFT 16K cold 2.4 s  32K cold 4.7 s
+  model internals: gpu_ms=4.42 ms (inverted from calibration C1), cpu 0.0 MiB/token, cpu_bw 0.0 ms, dispatch 0.0 ms, prefill cpu-stream 0 ms/chunk
+  calibration k: decode 1.000  prefill 0.347
+  engram rows/s needed 0

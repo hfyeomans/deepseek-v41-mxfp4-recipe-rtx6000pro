@@ -1,0 +1,24 @@
+{
+  "name": "SYNTHETIC run: the same quorra box (2x RTX PRO 6000, 192 GiB VRAM, measured bandwidths) serving the synthetic 211 GiB model",
+  "gpus": 2,
+  "vram_gib_per_gpu": 95.59,
+  "util": 0.965,
+  "gpu_reserve_gib": 4.0,
+  "host_ram_gib": 246.8,
+  "host_reserve_gib": 24.0,
+  "dram_read_gbps": 131,
+  "pcie_gbps_per_gpu": 57,
+  "nvme_sequential_gbps": 12,
+  "nvme_random_rows_per_s": 403000,
+  "cpu_cores": 16,
+  "ccds": 2,
+  "gpu_ms_per_token": 13.55,
+  "engram_row_cache_gib": 4.0,
+  "notes": "Hardware numbers are REAL measurements (evidence/ tree). gpu_ms_per_token is SYNTHETIC: scaled from the DSV4.1 measured 16.45 ms by the resident-work mix (dense parts unchanged, expert GEMMs scale with expert bytes 133.5/268.9): 16.45 x (0.65 + 0.35 x 0.496) = 13.55 ms. No calibration section on purpose: the plan below is PROVISIONAL until the first real serve of this synthetic model - exactly what the calibration rule demands.",
+  "k_overrides": {
+    "decode": 1.0,
+    "c4": 1.02,
+    "prefill": 0.789,
+    "source": "host/engine factors carried over from the DSV4.1 example (same box, same SGLang-kt engine family); the synthetic gpu_ms is NOT validated"
+  }
+}

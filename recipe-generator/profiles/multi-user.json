@@ -1,0 +1,18 @@
+{
+  "profile": "multi-user",
+  "vs": "qualified",
+  "use_case": "several concurrent sessions; aggregate tok/s is the metric",
+  "deltas": [
+    {"lever": "kv-context-slots", "knob": "MAX_RUNNING_REQUESTS", "from": "4", "to": "4",
+     "why": "C4 is the metric; 4 is the qualified ceiling at 262K"},
+    {"lever": "host-thread-pinning", "knob": "HOST_THREAD_CPUS", "from": "auto", "to": "auto",
+     "why": "non-negotiable: the C4 106/123 bimodality is a shape defect (T3.52)"},
+    {"lever": "kv-context-slots", "knob": "CONTEXT_LENGTH", "from": "262144", "to": "65536 (if sessions are short)",
+     "why": "trades context for headroom (C4 121.0/116.2)"},
+    {"lever": "cuda-graph-capture", "knob": "CUDA_GRAPH_BS", "from": "1 2 3 4", "to": "1 2 3 4",
+     "why": "bs=3 capture is +28% at C3 (E26)"},
+    {"lever": "speculation", "knob": "DSPARK/NGRAM", "from": "0", "to": "0",
+     "why": "every spec path measured loses at C4 (-63..-77%)"}
+  ],
+  "evidence_base": "recipe-factory/KNOBS-AND-PROFILES.md 3.3"
+}

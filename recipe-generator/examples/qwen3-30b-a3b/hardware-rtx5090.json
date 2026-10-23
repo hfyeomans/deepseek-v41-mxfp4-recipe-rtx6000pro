@@ -1,0 +1,23 @@
+{
+  "name": "RTX 5090 (32 GiB, SM120) - published reference numbers, not local measurements",
+  "gpus": 1,
+  "vram_gib_per_gpu": 32.0,
+  "util": 0.95,
+  "gpu_reserve_gib": 1.0,
+  "host_ram_gib": 32.0,
+  "host_reserve_gib": 8.0,
+  "dram_read_gbps": 60,
+  "nvme_sequential_gbps": 8,
+  "nvme_random_rows_per_s": 200000,
+  "gpu_ms_per_token": null,
+  "chunk_workspace_model": "none",
+  "engram_row_cache_gib": 0.0,
+  "notes": "Reference-datapoint calibration: Hardware Corner's llama.cpp measurement (published via smeltcore.com 2026-06-27): 226.1 tok/s generation at 4K context, 7,093 tok/s prefill at 4K, Q4_K_M weights 18.56 GB. This is a PUBLISHED number, not a local measurement - the trust label must say so; the methodology's rule is to re-measure on your own host (P1/P2).",
+  "calibration": {
+    "evidence": "Hardware Corner gpu-llm-benchmarks RTX 5090 row, published via https://smeltcore.com/recipes/qwen3-30b-a3b-rtx-5090/ (llama.cpp build 8189, -fa 1, Q4_K)",
+    "gpus": 1,
+    "c1_tok_s": 226.1,
+    "prefill_tok_s": 7093,
+    "note": "reference datapoint (published), 4K context"
+  }
+}
