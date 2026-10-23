@@ -1084,6 +1084,11 @@ Evidence `evidence/t320-engram-prefetch/io/`. Ordering: inside T3.20 as register
 - Method: overlay `e35ii` branch (`SGLANG_DSV41_BOUNDED_REPLAY_TAIL=2560`), knobs `DECODER_SWA_BOUNDED_REPLAY` / `BOUNDED_REPLAY_TAIL`, quality gate `scripts/tf-score.py` (promoted from the E35 scratch; the flag refuses prompt logprobs so the corpus NLL gate crashes it - recorded, fix unwritten).
 - Decision fed: bounded replay closed on this architecture (no tail size gives both exactness and a prefill win); knobs + branch retained for a future engine whose per-layer DMA shrinks with rows.
 
+## E48 — Where does a decode step lose time to the rank-0/rank-1 dependency, and is there headroom to split it? (registered 2026-10-23; not run)
+
+- Protocol: on the launcher default (1017, el8 map, D=4, 262K x 4), profile one C1 decode step with the T3.19a timeline: (a) the kt submit-to-result window on rank 0, (b) the all-reduce wait on rank 1, (c) per-rank GPU busy vs idle, (d) the HSMP DDR counter during the step. Reopen triggers from the T3.22 decision: submit + wait share > 1.5 ms/step, or a third GPU (T4.1b). Pass/fail: a split is worth designing only if the measured dependency share clears the trigger; otherwise the finding documents the ceiling.
+- Feeds: T3.57.
+
 ## E47 — Does DeepSeek-V4.1-Flash-1017 (snapshot `1bae0e10…`) serve on the unchanged recipe, and do the qualified numbers and the el8 map hold on the new gates? (one serve; T3.56)
 
 - Status: **DONE 2026-10-23 — yes on both.** `evidence/t1017/README.md` has the tables. One serve with only `HF_MODEL_DIR` + `SNAPSHOT` overridden (`PROFILE=developer` for the recorder arg): C1 61.91 / 55.88 wall, C4 123.58 / 113.99, prefill 16K / 32K 4,504 / 4,613 tok/s Engram-warm (3,095 / 3,372 cold-box), NLL corpus 1.55385 (old 1.57616; −0.022), HumanEval 158/164 (old 161/164 — within the ±2 tie-noise band; confirmation queued), verify ALL PASS + 6/6 needles, 0 NaN / Xid. **el8 map CPU share on the new gates: 14.4–15.0 % text / 22.9 % random words = the old 12–15 % / 23 % — map kept.** Checkpoint verified structurally identical to `dba1be0a…` (config / index / tokenizers / LICENSE byte-identical; weights differ).
