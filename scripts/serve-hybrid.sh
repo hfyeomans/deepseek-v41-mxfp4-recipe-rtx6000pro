@@ -38,7 +38,7 @@ cfg="$(python3 "$(dirname -- "${BASH_SOURCE[0]}")/serve_config.py" shell)" || ex
 # Assigned by the eval (listed for shellcheck): the knobs this script reads directly plus
 # RESOLVED_LINE, CONTAINER_ENV (fixed + forwarded -e pairs) and DIAG_ENV (set-only diagnostics).
 declare SNAPSHOT SERVED_MODEL_NAME KT_NUM_GPU_EXPERTS KT_EXPERT_MAP KT_CPUINFER KT_MAX_DEFERRED DSPARK DSPARK_K NGRAM NGRAM_DRAFT_TOKENS NGRAM_BREADTH \
-  MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS \
+  MEM_FRACTION_STATIC CHUNKED_PREFILL_SIZE CONTEXT_LENGTH MAX_RUNNING_REQUESTS CUDA_GRAPH_MAX_BS DECODER_SWA_BOUNDED_REPLAY \
   CUDA_GRAPH_BS MAX_TOTAL_TOKENS EXTRA_SERVER_ARGS EXTRA_DOCKER_ENV EXTRA_DOCKER_ARGS DRY_RUN \
   CONTAINER_NAME BIND_ADDRESS API_KEY_FILE PORT HF_MODEL_DIR OVERLAY_DIR KERNEL_CACHE_DIR IMAGE MANIFEST_DIR HOST_THREAD_CPUS \
   RESOLVED_LINE CONTAINER_ENV DIAG_ENV
@@ -105,6 +105,9 @@ if [[ -n "$KERNEL_CACHE_DIR" ]]; then
 fi
 if [[ "$DSPARK" == "1" ]]; then
   server_args+=(--speculative-algorithm DSPARK --speculative-dspark-block-size "$DSPARK_K")
+fi
+if [[ "$DECODER_SWA_BOUNDED_REPLAY" == "1" ]]; then
+  server_args+=(--enable-decoder-swa-bounded-replay)
 fi
 if [[ "$NGRAM" == "1" ]]; then
   server_args+=(--speculative-algorithm NGRAM --speculative-num-draft-tokens "$NGRAM_DRAFT_TOKENS"

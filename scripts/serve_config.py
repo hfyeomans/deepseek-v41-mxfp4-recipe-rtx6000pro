@@ -301,6 +301,20 @@ REGISTRY: tuple[Knob, ...] = (
          "across the two tables. Hits are served from RAM on the shared prefetch worker with no NVMe read and no "
          "WILLNEED; misses go through the mmap path and are inserted. 0 = off (measured as an experiment, not a flip).",
          sink=CONTAINER_ENV, container_name="SGLANG_DSV41_ENGRAM_ROW_CACHE_MB", evidence="evidence/t348/"),
+    Knob("DECODER_SWA_BOUNDED_REPLAY", "flag", "0",
+         "E35-ii: run the layers after the last kv_source layer over each extend's tail (SGLang's "
+         "--enable-decoder-swa-bounded-replay). Exact at BOUNDED_REPLAY_TAIL=2560 rows (the 128-row SWA "
+         "window x the 20-row late-stack receptive field: every row decode can reach keeps its full window). "
+         "E35's 128-row variant read +39 % prefill at +1.13 nats/token (rejected); the exact tail is the "
+         "E35-ii experiment (projected +~20 % prefill at 0 nats). Needs the e35ii overlay branch (the "
+         "shrunk-forward abandon path). The flag refuses prompt-logprob requests, so the corpus NLL gate "
+         "crashes it - scripts/tf-score.py is the quality gate. 0 = off.",
+         sink=SERVER_ARG, evidence="evidence/e35-bounded-replay/, evidence/e35ii/"),
+    Knob("BOUNDED_REPLAY_TAIL", "int", "2560",
+         "Rows of each extend the late layers run over under DECODER_SWA_BOUNDED_REPLAY (E35-ii). 2560 = "
+         "128 x (19 + 1), the full receptive field, so the replay is exact; 128 = E35's lossy variant "
+         "(the A/B comparator).",
+         sink=CONTAINER_ENV, container_name="SGLANG_DSV41_BOUNDED_REPLAY_TAIL", evidence="evidence/e35ii/"),
     # ---- escape hatches -----------------------------------------------------------------
     Knob("EXTRA_SERVER_ARGS", "str", "", "Appended verbatim (word-split) to the sglang.launch_server command."),
     Knob("EXTRA_DOCKER_ENV", "str", "", "Space-separated KEY=VALUE pairs passed as -e (e.g. CUDA_LAUNCH_BLOCKING=1)."),
@@ -424,6 +438,7 @@ def container_env(r: dict[str, str]) -> list[str]:
         f"SGLANG_DSV41_ENGRAM_CHUNK_AHEAD={r['ENGRAM_CHUNK_AHEAD']}",
         f"SGLANG_DSV41_ENGRAM_ADMISSION_PREFETCH={r['ENGRAM_ADMISSION_PREFETCH']}",
         f"SGLANG_DSV41_ENGRAM_ROW_CACHE_MB={r['ENGRAM_ROW_CACHE_MB']}",
+        f"SGLANG_DSV41_BOUNDED_REPLAY_TAIL={r['BOUNDED_REPLAY_TAIL']}",
         "SGLANG_OPT_USE_TILELANG_INDEXER=0",
         "SGLANG_FP8_PAGED_MQA_LOGITS_TORCH=0",
         f"SGLANG_LOGPROB_CHUNK_SIZE={r['SGLANG_LOGPROB_CHUNK_SIZE']}",
