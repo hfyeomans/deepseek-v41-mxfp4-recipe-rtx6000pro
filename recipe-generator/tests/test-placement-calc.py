@@ -165,6 +165,52 @@ def main() -> int:
         die("sglang-hybrid engine profile broke the calibrated plan (219/165, D=4)")
     print("ok   engine profiles feed the plan (deferral guard, REJ warning, anchor intact)")
 
+    # 9. Phase 0: the second real checkpoint (1017) must reproduce its measured
+    #    deployment (evidence/t1017) and the emitted profile must match the
+    #    serving recipe's qualified profile knob-for-knob.
+    r = run("examples/dsv41-1017/budget.json",
+            "--hardware", "examples/dsv41-1017/hardware.json", "--json")
+    if r.returncode != 0:
+        die(f"1017 case exit {r.returncode}: {r.stderr}")
+    out = json.loads(r.stdout)
+    plan = out["plan"]
+    if plan["gpu_experts"] != 8760 or plan["cpu_experts"] != 6600 or plan["deferral"] != 4:
+        die(f"1017 plan {plan['gpu_experts']}/{plan['cpu_experts']} D={plan['deferral']}, want 8760/6600 D=4")
+    if abs(plan["projected"]["c1_tok_s"] - 61.9) > 0.3 or abs(plan["projected"]["c4_tok_s"] - 123.6) > 2.0:
+        die(f"1017 C1/C4 {plan['projected']['c1_tok_s']}/{plan['projected']['c4_tok_s']}, want 61.9/123.6 (measured)")
+    if abs(plan["projected"]["prefill_cold_tok_s"] - 3095) > 60:
+        die(f"1017 prefill {plan['projected']['prefill_cold_tok_s']}, want 3095 (measured)")
+    # Emitted profile vs serving recipe (only when the parent checkout is present).
+    serving = HERE.parent.parent.parent / "config" / "profiles" / "qualified.env"
+    if serving.is_file():
+        with tempfile.TemporaryDirectory() as tmp:
+            outdir = P(tmp) / "recipe"
+            r = subprocess.run(
+                [sys.executable, str(HERE.parent / "emit_recipe.py"),
+                 "--budget", "examples/dsv41-1017/budget.json",
+                 "--hardware", "examples/dsv41-1017/hardware.json",
+                 "--engine", "sglang-hybrid", "--out", str(outdir),
+                 "--model", "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+                 "--expert-map", str(serving.parent.parent / "expert-map-el8-mix-219.json")],
+                capture_output=True, text=True)
+            if r.returncode != 0:
+                die(f"1017 emit exit {r.returncode}: {r.stderr}")
+            def knobs(p):
+                out = {}
+                for line in open(p):
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        k, v = line.split("=", 1)
+                        out[k] = v
+                return out
+            emitted = knobs(outdir / "config" / "profiles" / "qualified.env")
+            serving_knobs = knobs(serving)
+            conflicts = {k: (emitted[k], serving_knobs[k]) for k in emitted
+                         if k in serving_knobs and emitted[k] != serving_knobs[k]}
+            if conflicts:
+                die(f"1017 emitted profile conflicts with the serving recipe: {conflicts}")
+    print("ok   Phase 0: 1017 checkpoint re-derivation reproduces evidence/t1017; emitted profile matches the serving recipe")
+
     print("all placement-calc self-tests passed")
     return 0
 

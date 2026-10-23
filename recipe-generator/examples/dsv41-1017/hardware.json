@@ -1,0 +1,28 @@
+{
+  "name": "quorra: 2x RTX PRO 6000 (96 GiB) + Ryzen TR PRO 9955WX 16C + 246.8 GiB DDR5-6400 + 2x NVMe - serving the 1017 checkpoint",
+  "gpus": 2,
+  "vram_gib_per_gpu": 95.59,
+  "util": 0.965,
+  "gpu_reserve_gib": 4.0,
+  "host_ram_gib": 246.8,
+  "host_reserve_gib": 24.0,
+  "dram_read_gbps": 131,
+  "pcie_gbps_per_gpu": 57,
+  "nvme_sequential_gbps": 12,
+  "nvme_random_rows_per_s": 403000,
+  "cpu_cores": 16,
+  "ccds": 2,
+  "gpu_ms_per_token": null,
+  "engram_row_cache_gib": 4.0,
+  "notes": "Same measured hardware as the dsv41-flash example. Calibration = evidence/t1017 (the 1017 first serve + qualification battery, 2026-10-23): the serve ran the qualified shape unchanged (219/165 el8 map, D=4, chunk 8192, 262Kx4) with zero serve-path code changes.",
+  "calibration": {
+    "evidence": "evidence/t1017 (1017 first serve, PROFILE=developer for the recorder arg only; qualified shape otherwise)",
+    "gpus": 2,
+    "c1_tok_s": 61.91,
+    "c4_tok_s": 123.58,
+    "prefill_16k_cold_tok_s": 3095,
+    "prefill_16k_warm_tok_s": 4504,
+    "prefill_32k_cold_tok_s": 3372,
+    "note": "C1 61.91/55.88 median/wall, C4 123.58/113.99, prefill 16K/32K 3,095/3,372 cold (fresh-checkpoint Engram) and 4,504/4,613 warm; el8-map CPU share 14.4% decode; NLL 1.55385 (better than the old model's 1.57616); HumanEval 158/164."
+  }
+}

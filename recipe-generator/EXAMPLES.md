@@ -9,6 +9,7 @@ The three cases deliberately exercise the calibration rule at its three trust le
 | Example | Model | Hardware | Trust label | Why |
 |---|---|---|---|---|
 | 1 | DeepSeek-V4.1-Flash (475 GiB, **real**) | 2× RTX PRO 6000 + 246.8 GiB host (**real, measured**) | `calibrated` | must reproduce the repo's measured qualified deployment |
+| 1b | DeepSeek-V4.1-Flash-**1017** (475 GiB, **real, second checkpoint**) | same real box | `calibrated` | Phase-0 validation: reproduce the measured 1017 deployment and emit a recipe that matches the serving recipe knob-for-knob |
 | 2 | synthetic 211 GiB V4-class MoE (**synthetic**) | same real box | `calibrated-model (k carried)` | the owner's case; gpu_ms itself unvalidated |
 | 3 | Qwen3-30B-A3B (60.5 GiB bf16, **real model**) | RTX 5090 / RTX 3090 (**published reference numbers**) | `calibrated` | published datapoint as anchor; weaker than local measurement |
 
@@ -31,6 +32,22 @@ per layer resident and computes the other 165 on the CPU tier from DRAM; the fit
 CPU route share to 15 % (checkpoint order would be 43 %); D=4 hides the CPU tier behind the GPU step; the
 188.8 GiB Engram tables go to NVMe behind the page cache because DRAM cannot hold them beside the CPU
 experts (−78 GiB); the cold-Engram chunk-0 tax (1.7–3.1 s) is reported separately.
+
+## Example 1b — the 1017 checkpoint (Phase-0 validation of the whole generator)
+
+Inputs: [`dsv41-1017/budget.json`](dsv41-1017/budget.json) (extends the upstream budget; the 1017
+component bytes are identical to the pinned checkpoint — re-verified by `scripts/checkpoint-budget.py`
+on the local snapshot) and [`dsv41-1017/hardware.json`](dsv41-1017/hardware.json) (calibration =
+`evidence/t1017`: C1 61.91/55.88, C4 123.58/113.99, prefill 3,095/3,372 cold and 4,504/4,613 warm,
+14.4 % CPU share). Output: [`dsv41-1017/result.txt`](dsv41-1017/result.txt).
+
+This is the generator's second real checkpoint — the proof that the pipeline generalizes past the single
+checkpoint it was built on. Three results: (1) the plan reproduces the measured 1017 deployment
+(219/165, D=4, chunk 8192, C1 61.9, C4 123.6, prefill 3,095 cold, TTFT 16K 5.4 s vs measured 5.18 s);
+(2) the emitted recipe's profile matches the serving recipe's `qualified.env` **knob-for-knob with zero
+conflicts** — including `KT_EXPERT_MAP`, now emitted with the map file copied in (`--expert-map`);
+(3) the only knob left host-side is `CUDA_GRAPH_MAX_BS`, a registry default. This is the Phase-0 exit
+criterion of PROJECT-PLAN.md, pinned as self-test #9.
 
 ## Example 2 — the owner's case: a ~211 GiB model on 192 GiB of VRAM (SYNTHETIC)
 

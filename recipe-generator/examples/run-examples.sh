@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate the three worked-example outputs and re-run the calculator self-tests.
+# Regenerate the worked-example outputs and re-run the calculator self-tests.
 # GPU-free: reads headers/budgets only, never launches a serve. Usage: bash examples/run-examples.sh
 set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -7,6 +7,8 @@ CALC="$ROOT/placement_calc.py"
 
 python3 "$CALC" "$ROOT/examples/dsv41-flash/budget.json" \
   --hardware "$ROOT/examples/dsv41-flash/hardware.json" > "$ROOT/examples/dsv41-flash/result.txt"
+python3 "$CALC" "$ROOT/examples/dsv41-1017/budget.json" \
+  --hardware "$ROOT/examples/dsv41-1017/hardware.json" --engine sglang-hybrid > "$ROOT/examples/dsv41-1017/result.txt"
 python3 "$CALC" "$ROOT/examples/synthetic-211g/budget.json" \
   --hardware "$ROOT/examples/synthetic-211g/hardware.json" > "$ROOT/examples/synthetic-211g/result.txt"
 python3 "$CALC" "$ROOT/examples/qwen3-30b-a3b/budget.json" \

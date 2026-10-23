@@ -15,6 +15,13 @@ quorra CI green at every commit; serving files untouched.
 
 ## Phase 0 — Validate the generator against a second real checkpoint (GPU-free, can start now)
 
+**Status: DONE (2026-10-23).** All three tasks complete and pinned as self-test #9: the 1017 budget
+re-derived (byte-identical components — weights changed, shapes did not); the plan reproduces
+`evidence/t1017` (219/165, D=4, chunk 8192, C1 61.9, C4 123.6, prefill 3,095 cold, TTFT 16K 5.4 s vs
+measured 5.18 s); and the emitted recipe matches the serving recipe's `qualified.env` knob-for-knob with
+zero conflicts (including `KT_EXPERT_MAP`, via the new `--expert-map` flag). The generator is now
+validated against **two** real checkpoints.
+
 The calibration rule says every projection needs a measured anchor. We have exactly one anchor today
 (evidence/t352). Before feeding new models, prove the generator on a *different* checkpoint whose numbers the
 repo already measured: **DeepSeek-V4.1-Flash-1017** (the currently-served weights).
@@ -100,7 +107,7 @@ decision recorded for every open question.
 
 | Milestone | What | Evidence |
 |---|---|---|
-| **M1 — the kitchen** (done) | factory knowledge + placement engine + emitter + engine classifier | 8/8 self-tests; 3 worked examples; CI green |
+| **M1 — the kitchen** (done) | factory knowledge + placement engine + emitter + engine classifier + Phase 0 | 9/9 self-tests; 4 worked examples (2 real checkpoints); emitted 1017 recipe matches the serving recipe; CI green |
 | **M2 — first generated serve** | Phase 0 + T1 | a non-reference model served from an emitted recipe; second calibration anchor committed |
 | **M3 — UI v1** | Phase 2 | app builds/runs; full emit+publish flow from the UI; screenshots reviewed |
 | **M4 — three-model proof** | Phase 3 | 3 models × 2 hardware shapes, all qualified + anchored |
@@ -122,7 +129,7 @@ decision recorded for every open question.
 
 ## What can be done right now (GPU-free)
 
-1. Phase 0 in full: the 1017 budget + plan re-derivation and the emit-diff against the serving recipe.
+1. ~~Phase 0 in full~~ **done** (see above).
 2. Budget JSONs for T1/T2/T4 via `scripts/checkpoint-budget.py` (headers only) — so every trial starts
    from an exact component budget, not an estimate.
 3. ROADMAP phase B (llama.cpp adapter) — the small model's adapter, needed by T1.

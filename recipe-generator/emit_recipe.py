@@ -201,7 +201,7 @@ recipe-factory methodology: nothing is 'measured' without a manifest.
 """
 
 
-def sglang_profiles(plan, out: Path):
+def sglang_profiles(plan, out: Path, expert_map_line: str = ""):
     """Profile .env files from the plan's lever settings + the preset deltas."""
     d = out / "config" / "profiles"
     d.mkdir(parents=True, exist_ok=True)
@@ -231,7 +231,7 @@ SGLANG_FLASHINFER_MOE_FUSED_FINALIZE=0
 SGLANG_DSV41_SORT_DECODE_TOPK=1
 SGLANG_DSV41_FP8_GEMV=0
 REASONING_EFFORT=high
-# KT_EXPERT_MAP must be set to a hot-expert map file (fitted_static quality) when
+{expert_map_line}# KT_EXPERT_MAP must be set to a hot-expert map file (fitted_static quality) when
 # experts live on the CPU tier; without it the split is checkpoint order (random).
 """
     (d / "qualified.env").write_text(qualified)
@@ -374,6 +374,7 @@ def main() -> int:
     ap.add_argument("--engine", required=True, choices=["sglang-hybrid", "llama-cpp"])
     ap.add_argument("--out", required=True, help="directory to write the recipe tree into")
     ap.add_argument("--model", help="model pin for PROVENANCE (e.g. org/model:quant)")
+    ap.add_argument("--expert-map", help="hot-expert map JSON to copy into the recipe and set KT_EXPERT_MAP to (sglang-hybrid)")
     ap.add_argument("--repo-url", help="optional GitHub repo to publish the recipe to (stamped + README section)")
     ap.add_argument("--init-git", action="store_true", help="git init + initial commit in --out (local only)")
     args = ap.parse_args()
@@ -407,7 +408,17 @@ def main() -> int:
     (out / "PROVENANCE.md").write_text(provenance(plan, args, calc_cmd))
     engine_notes(out, args.engine)
     if args.engine == "sglang-hybrid":
-        sglang_profiles(plan, out)
+        expert_map_line = ""
+        if args.expert_map:
+            src = Path(args.expert_map)
+            if not src.is_file():
+                print(f"error: --expert-map {src} is not a file", file=sys.stderr)
+                return 2
+            dest = out / "config" / src.name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(src.read_bytes())
+            expert_map_line = f"KT_EXPERT_MAP={{repo}}/config/{src.name}\n"
+        sglang_profiles(plan, out, expert_map_line)
         sglang_launcher(out)
     else:
         llama_files(plan, out, args.model or plan["source"])

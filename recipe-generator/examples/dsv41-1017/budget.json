@@ -1,0 +1,16 @@
+{
+  "extends": "../../../evidence/budget-upstream-bf16fp8.json",
+  "source": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  "revision": "1bae0e1088993b9b82de08f59de5be5a34e42170",
+  "note": "1017 checkpoint: component bytes are IDENTICAL to the pinned dba1be0a checkpoint (re-verified by scripts/checkpoint-budget.py on the local snapshot, 2026-10-23: 475.241 GiB total, same per-component split) - the weights changed, the shapes did not. Budget inherits from the upstream evidence file; only the identity differs.",
+  "arch": {
+    "moe_layers": 40,
+    "routed_experts_per_layer": 384,
+    "experts_per_token": 6,
+    "attention_heads": 64,
+    "kv_bytes_per_token": 890,
+    "engram_rows_per_token": 48,
+    "engram_row_bytes": 264,
+    "notes": "Same architecture constants as the pinned checkpoint (config.json byte-identical, evidence/t1017)."
+  }
+}
