@@ -1,0 +1,188 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "max_tokens": 256,
+  "runs": 3,
+  "warmup": 0,
+  "distinct_prompts": true,
+  "fixture_offset": 0,
+  "fixture_set": "distinct",
+  "method": "per-sequence first-to-last-token rate summed (median_tps); total tokens / batch wall time incl. TTFT (median_wall_tps)",
+  "levels": [
+    {
+      "concurrency": 1,
+      "median_tps": 61.971228126289574,
+      "min_tps": 61.17204002277228,
+      "max_tps": 62.06005831549225,
+      "median_wall_tps": 55.779617169255125,
+      "median_ttft_s": 0.4556767049944028,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 61.971228126289574,
+          "wall_tps": 55.779617169255125,
+          "wall_s": 4.589490086014848,
+          "per_seq_tps": [
+            61.971228126289574
+          ],
+          "ttft_s": [
+            0.4736717300256714
+          ],
+          "completion_tokens": [
+            256
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 62.06005831549225,
+          "wall_tps": 56.08268567633676,
+          "wall_s": 4.564688671962358,
+          "per_seq_tps": [
+            62.06005831549225
+          ],
+          "ttft_s": [
+            0.45523471100023016
+          ],
+          "completion_tokens": [
+            256
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 61.17204002277228,
+          "wall_tps": 55.355162467747654,
+          "wall_s": 4.624681575980503,
+          "per_seq_tps": [
+            61.17204002277228
+          ],
+          "ttft_s": [
+            0.4556767049944028
+          ],
+          "completion_tokens": [
+            256
+          ],
+          "finish_reasons": [
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    },
+    {
+      "concurrency": 4,
+      "median_tps": 123.58220109857169,
+      "min_tps": 123.55858296679727,
+      "max_tps": 126.74438845343722,
+      "median_wall_tps": 113.99204407573563,
+      "median_ttft_s": 0.7290190799976699,
+      "median_spec_acceptance": null,
+      "runs": [
+        {
+          "aggregate_decode_tps": 123.55858296679727,
+          "wall_tps": 109.8593728917203,
+          "wall_s": 9.32100714801345,
+          "per_seq_tps": [
+            30.87024059897255,
+            30.872305845844792,
+            30.8706119972576,
+            30.945424524722338
+          ],
+          "ttft_s": [
+            1.0598271960043348,
+            1.0599084480199963,
+            1.059144901984837,
+            1.0791211510077119
+          ],
+          "completion_tokens": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 126.74438845343722,
+          "wall_tps": 116.66164430523754,
+          "wall_s": 8.777520718984306,
+          "per_seq_tps": [
+            31.686355374459094,
+            31.686896793405552,
+            31.685752541592777,
+            31.6853837439798
+          ],
+          "ttft_s": [
+            0.7290485040284693,
+            0.7289896559668705,
+            0.7285325400298461,
+            0.7278789089759812
+          ],
+          "completion_tokens": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        },
+        {
+          "aggregate_decode_tps": 123.58220109857169,
+          "wall_tps": 113.99204407573563,
+          "wall_s": 8.983083059021737,
+          "per_seq_tps": [
+            30.898023933519944,
+            30.895212663424516,
+            30.89501566425953,
+            30.8939488373677
+          ],
+          "ttft_s": [
+            0.7291168470401317,
+            0.7284810629789717,
+            0.7280618840013631,
+            0.7275634150137194
+          ],
+          "completion_tokens": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "finish_reasons": [
+            "length",
+            "length",
+            "length",
+            "length"
+          ],
+          "spec_acceptance": null
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-10-23T11:05:41-0400",
+  "evidence": {
+    "tool": "bench-decode.py",
+    "recorded_utc": "2026-10-23T15:05:41Z",
+    "manifest_hash": "7fdd05fb31e54db20b7b445d8cbeedfbd9db117a01fb31333649e726c5897396",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "8cefd2d13f8c2414e75cf0be4d46463b713a44fadad3d46dff6288ca87805988"
+  }
+}

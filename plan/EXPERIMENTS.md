@@ -1076,3 +1076,11 @@ Evidence `evidence/t320-engram-prefetch/io/`. Ordering: inside T3.20 as register
 - Decision fed: recommend flipping `HOST_THREAD_CPUS` to `auto` as the launcher default (a −14 % C4 slow mode that struck roughly a third of the earlier C4 measurements, for 1–2 % of prefill); approved and flipped 2026-10-12; the default serve (`evidence/t352/default-flip/`) passed 12/12 gates — C1 60.75 / 59.89, C4 123.99 / 123.96, prefill 4,344 / 4,495, 0 tokens moved — and is the BENCHMARKS headline row. If the prefill cost ever matters more than C4 stability, the alternative is pinning only the TP main / scheduler threads, which needs code in the server (not registered). Lesson filed: seeds inside one serve must differ by more than `--runs`. Queue: T3.9h-c (low).
 
 ---
+
+
+## E47 — Does DeepSeek-V4.1-Flash-1017 (snapshot `1bae0e10…`) serve on the unchanged recipe, and do the qualified numbers and the el8 map hold on the new gates? (one serve; T3.56)
+
+- Status: **DONE 2026-10-23 — yes on both.** `evidence/t1017/README.md` has the tables. One serve with only `HF_MODEL_DIR` + `SNAPSHOT` overridden (`PROFILE=developer` for the recorder arg): C1 61.91 / 55.88 wall, C4 123.58 / 113.99, prefill 16K / 32K 4,504 / 4,613 tok/s Engram-warm (3,095 / 3,372 cold-box), NLL corpus 1.55385 (old 1.57616; −0.022), HumanEval 158/164 (old 161/164 — within the ±2 tie-noise band; confirmation queued), verify ALL PASS + 6/6 needles, 0 NaN / Xid. **el8 map CPU share on the new gates: 14.4–15.0 % text / 22.9 % random words = the old 12–15 % / 23 % — map kept.** Checkpoint verified structurally identical to `dba1be0a…` (config / index / tokenizers / LICENSE byte-identical; weights differ).
+- Method: T3.56 (TASKS.md). Recorder sets via the T3.8 round-2 histogram pattern (`--expert-distribution-recorder-mode stat`, post-remap logical ids), analysis `evidence/t38/round2/analysis/routes.py` run in-image.
+- Pass: serve readiness + all-release-gate-style smoke checks — **met**; NLL bit-stable across 3 runs — **met**; map transfer — **met** (inside the old band on every set).
+- Decision fed: keep the el8 map; the 1017 default flip is an owner decision pending the HumanEval confirmation run and the ladder re-qualification.

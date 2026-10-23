@@ -1,0 +1,93 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "dataset": "~/.cache/dsv41-recipe/humaneval/HumanEval.jsonl.gz",
+  "dataset_sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+  "n_problems": 164,
+  "method": "chat completion, greedy (temperature 0), one sample, thinking off, last fenced block (+ dataset prompt when the block lacks the entry point) run against check() in a no-network container",
+  "generate": {
+    "wall_s": 299.3330158609897,
+    "n": 164,
+    "concurrency": 4,
+    "max_tokens": 2048,
+    "seed": 0,
+    "temperature": 0.0,
+    "thinking": false,
+    "median_reasoning_chars": 0.0,
+    "median_decode_tps": 26.98911910936827,
+    "min_decode_tps": 15.52243920701316,
+    "max_decode_tps": 45.17060153060518,
+    "median_ttft_s": 0.5183138139545918,
+    "max_ttft_s": 1.296609985991381,
+    "median_completion_tokens": 162.0,
+    "total_completion_tokens": 30107,
+    "finish_reasons": {
+      "stop": 164
+    },
+    "modes": {
+      "full-function": 164,
+      "completion": 0
+    }
+  },
+  "timestamp": "2026-10-23T11:11:44-0400",
+  "evidence": {
+    "tool": "bench-humaneval.py",
+    "recorded_utc": "2026-10-23T15:11:44Z",
+    "manifest_hash": "7fdd05fb31e54db20b7b445d8cbeedfbd9db117a01fb31333649e726c5897396",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "8cefd2d13f8c2414e75cf0be4d46463b713a44fadad3d46dff6288ca87805988"
+  },
+  "score": {
+    "image": "dsv41-kt:recipe",
+    "timeout_s": 20.0,
+    "n": 164,
+    "passed": 158,
+    "failed": [
+      32,
+      83,
+      103,
+      132,
+      140,
+      145
+    ],
+    "pass_at_1": 0.9634146341463414,
+    "mlx_stream_fails": {
+      "ids": [
+        32,
+        83,
+        132,
+        140,
+        145,
+        163
+      ],
+      "ours_passed": [
+        163
+      ]
+    },
+    "excluding_mlx_stream_fails": {
+      "n": 158,
+      "passed": 157
+    },
+    "failed_detail": {
+      "32": [
+        "AssertionError"
+      ],
+      "83": [
+        "AssertionError"
+      ],
+      "103": [
+        "AssertionError"
+      ],
+      "132": [
+        "AssertionError"
+      ],
+      "140": [
+        "AssertionError: This prints if this assert fails 4 (good for debugging!)"
+      ],
+      "145": [
+        "AssertionError"
+      ]
+    }
+  }
+}
