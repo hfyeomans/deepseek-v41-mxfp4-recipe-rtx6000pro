@@ -137,6 +137,34 @@ def main() -> int:
                 die(f"emitted file {p.name} contains a CI-forbidden identifier")
     print("ok   emitter produces a complete runnable identifier-clean tree")
 
+    # 8. Engine selection (ROADMAP phase A): the engine profile must feed the plan.
+    r = run("examples/dsv41-flash/budget.json",
+            "--hardware", "examples/dsv41-flash/hardware.json",
+            "--engine", "llama-cpp", "--json")
+    if r.returncode != 0:
+        die(f"llama-cpp engine case exit {r.returncode}: {r.stderr}")
+    out = json.loads(r.stdout)
+    if out.get("engine", {}).get("name") != "llama-cpp":
+        die("plan missing engine block")
+    if out["plan"]["deferral"] != 0:
+        die(f"deferral {out['plan']['deferral']}, want 0 (llama-cpp has no deferral lever)")
+    if "forced to 0" not in (out["plan"].get("d_guard") or ""):
+        die("missing engine deferral guard note")
+    if "deferral unavailable" not in (out["engine"].get("notes") or ""):
+        die("engine notes should say deferral is unavailable")
+    r = run("examples/dsv41-flash/budget.json",
+            "--hardware", "examples/dsv41-flash/hardware.json",
+            "--engine", "tensorfold")
+    if "REJ" not in r.stdout:
+        die("tensorfold plan should carry the ledger REJ verdict + reopen trigger")
+    r = run("examples/dsv41-flash/budget.json",
+            "--hardware", "examples/dsv41-flash/hardware.json",
+            "--engine", "sglang-hybrid", "--json")
+    out = json.loads(r.stdout)
+    if out["plan"]["gpu_experts"] != 8760 or out["plan"]["deferral"] != 4:
+        die("sglang-hybrid engine profile broke the calibrated plan (219/165, D=4)")
+    print("ok   engine profiles feed the plan (deferral guard, REJ warning, anchor intact)")
+
     print("all placement-calc self-tests passed")
     return 0
 

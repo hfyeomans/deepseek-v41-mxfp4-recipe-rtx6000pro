@@ -256,3 +256,40 @@ Deliberately out of scope (owned by `recipe-factory/METHODOLOGY.md` phases): eng
 census (P2/P3), the gate suite (NLL identity, needles, stress, batch consistency, health, power), the evidence
 manifest discipline, and the benchmark harness contract. The generator *references* those; it does not replace
 them. A plan from this engine is input to P2, never a qualification.
+
+## 8. Engine selection (the fold-in, phase A of ROADMAP.md)
+
+The placement math is engine-agnostic (bytes, bandwidths, rooflines); engines differ in **which levers
+exist** and **how a recipe expresses them**. The classifier maps plan-shape → engine; the adapters map
+lever-settings → engine flags. Profiles live in [`engines.json`](engines.json) (verified against
+[research/engines.md](research/engines.md), fresh 2026-10-23); `placement_calc.py --engine <name>` feeds the
+profile into the plan (chunk-workspace model, deferral/Engram availability, verdict warning), and
+`emit_recipe.py --engine <name>` selects the adapter.
+
+### 8.1 The fold-in map (plan shape → engine)
+
+| Placement shape | Primary engine | Secondary | Notes |
+|---|---|---|---|
+| CPU-hybrid MoE (VRAM + DRAM + NVMe) | sglang-hybrid | vLLM (weight-offload style) | the reference recipe's shape; SGLang Paged Experts auto-K is our calibration point |
+| GPU-resident (single/paired cards) | vLLM | llama.cpp | vLLM's recipes schema is the publication format |
+| Quant-shrunk to fit | llama.cpp | TensorFold (gated) | GGUF today; EXL3 only after the reopen trigger |
+| Multi-GPU EP (datacenter V4.x scale) | DeepInfer (watch) | SGLang/vLLM EPLB | DeepInfer is offline-only + SM100/Ascend today; borrow its gates now |
+| Fleet recipe governance | none of the above | plain orchestration | FLARE is REJ/CLOSED: federated-learning machinery is dead weight for serving |
+
+### 8.2 The rules
+
+1. **The ledger wins.** An engine the tried-options ledger REJ-ed (TensorFold as engine, T3.32) may only be
+   recommended when its reopen trigger is cited in the same breath — the calc prints the verdict + note
+   whenever such a profile is selected. Research disagreements are recorded, not silently resolved
+   (TensorFold: research says ADOPT for the quant-shrunk tier; the ledger says REJ on this hardware until
+   gate #827 or a published SM120 EXL3 MoE kernel with a KL number — the profile carries both).
+2. **Lever availability is a plan input, not an afterthought.** Engines without deferral force D=0 (with a
+   guard note); engines without Engram support get the note; the chunk-workspace model is per-engine.
+   A plan that leans on a lever its engine does not have is a refused plan, not a hopeful one.
+3. **Hardware gates are first-class.** DeepInfer is not runnable on this SM120 box (SM100/Ascend 950 only,
+   offline-only, no server layer yet) — ADOPT-as-reference, not ADOPT-as-recipe-target, until its reopen
+   trigger.
+4. **One adapter per phase, one calibration anchor per adapter.** Never an abstraction layer over five
+   engines nobody has served; the phased rollout with entry/exit criteria is [ROADMAP.md](ROADMAP.md).
+   Each engine's calibration anchor is named in its profile (`engines.json`); an engine with no anchor
+   emits `trust: provisional` until its first measured serve.

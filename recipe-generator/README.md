@@ -23,11 +23,11 @@ kitchen once (budget JSON + hardware JSON + gate suite); every dish after that i
 
 ```
 checkpoint (headers only) ──► budget JSON ──┐
-                                            ├──► placement_calc.py ──► tier plan + lever settings + projections
-host measurements (P1) ─────► hardware JSON ┘          │
+                                            ├──► placement_calc.py --engine <name> ──► tier plan + levers + projections
+host measurements (P1) ─────► hardware JSON ┘          │        (engines.json feeds the plan)
                                                        ├─ trust: calibrated | calibrated-model | provisional
                                                        ├─ exits 0 (plan) / 3 (does not fit)  ← CI-pinnable
-                                                       └──► emit_recipe.py ──► runnable recipe tree
+                                                       └──► emit_recipe.py --engine <name> ──► runnable recipe tree
                                                                     │      (launcher, profiles, preflight,
                                                                     │       verify, provenance, patch notes)
                                                                     └─ --repo-url → optional GitHub publication
@@ -42,6 +42,8 @@ host measurements (P1) ─────► hardware JSON ┘          │
 | [placement_calc.py](placement_calc.py) | The working minimal calculator (stdlib only, GPU-free): budget JSON + hardware JSON → tier plan + projections |
 | [emit_recipe.py](emit_recipe.py) | The emitter: plan → **runnable recipe tree** (README/resolved line/launcher/preflight/verify/provenance/patch notes), optional GitHub repo stamping |
 | [RECIPE-EMISSION.md](RECIPE-EMISSION.md) | Emission spec: what a generated recipe contains, the deep-lever surface, the advanced patch inventory, GitHub publication, **the UI discernment boundary** |
+| [ROADMAP.md](ROADMAP.md) | The phased rollout: engine support lands one adapter per phase, each with entry/exit criteria — no doing everything at once |
+| [engines.json](engines.json) | Engine profiles (sglang-hybrid / llama-cpp / vLLM / TensorFold / DeepInfer / FLARE): placement model, lever availability, verdict + reopen trigger |
 | [registry-surface.json](registry-surface.json) | The parent recipe's complete 70-knob typed registry, machine-readable for the UI's knob panel |
 | [quantization.json](quantization.json) | Quantization options with size + quality trade-offs (measured + published reference factors, each with a declared baseline dtype) |
 | [LEVERS.md](LEVERS.md) + [levers.json](levers.json) | The lever dictionary: what each lever moves, its cost, when it helps, measured numbers, generator mapping |
@@ -51,6 +53,7 @@ host measurements (P1) ─────► hardware JSON ┘          │
 | [UI-THEME.md](UI-THEME.md) | The cyberpunk × AI-tropes × Frankenstein UI theme (green reserved for "qualified") |
 | [research/poteto.md](research/poteto.md) | The poteto method distilled (identity correction included) and mapped onto the generator |
 | [research/landscape.md](research/landscape.md) | The landscape check: what exists, what to borrow vs build |
+| [research/engines.md](research/engines.md) | The five-engine research (FLARE / DeepInfer / SGLang / TensorFold / vLLM): what each is, its placement model, verdict, fold-in map |
 | [tests/test-placement-calc.py](tests/test-placement-calc.py) | Self-tests: the calculator must reproduce the repo's measured qualified deployment; the emitter must produce a clean runnable tree |
 
 ## Quickstart (GPU-free)

@@ -128,6 +128,27 @@ def load_hardware(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def load_engines() -> dict:
+    return json.loads((Path(__file__).resolve().parent / "engines.json").read_text())["engines"]
+
+
+def apply_engine(hw: dict, engine: dict, engine_name: str) -> tuple:
+    """Engine profile feeds the plan: workspace model + lever availability.
+    Returns (hw, engine_notes). Never overrides an explicit hardware field."""
+    notes = []
+    hw = dict(hw)
+    if hw.get("chunk_workspace_model") is None:
+        hw["chunk_workspace_model"] = engine.get("chunk_workspace_model", "none")
+        notes.append(f"chunk_workspace_model={hw['chunk_workspace_model']} (engine profile)")
+    if not engine.get("deferral_available"):
+        notes.append("deferral unavailable on this engine (D will stay 0)")
+    if not engine.get("engram_support"):
+        notes.append("Engram/file-tier support unavailable on this engine")
+    if engine.get("verdict", "").startswith(("REJ", "PARKED", "CLOSED")):
+        notes.append(f"engine verdict: {engine['verdict']} - cite the reopen trigger before trusting this plan")
+    return hw, "; ".join(notes)
+
+
 def load_quant(path: Path) -> tuple:
     data = json.loads(path.read_text())
     return data.get("options", {}), data.get("default", "mxfp4")
@@ -232,6 +253,10 @@ def tier_plan(budget, hw, quant, opts):
     if d is None:
         d = D_MAX_QUALIFIED if (moe and cpu_experts > 0) else 0
     d_guard = ""
+    if not opts.get("engine_deferral_available", True):
+        if d > 0:
+            d_guard = f"engine has no deferral lever; D={d} forced to 0"
+        d = 0
     if d > D_MAX_QUALIFIED:
         d_guard = f"D={d} exceeds the qualified max {D_MAX_QUALIFIED} (D=5 failed NLL, T3.15); treat as experiment"
 
@@ -464,6 +489,10 @@ def render(plan, budget, hw, quant_name):
         out.append(f"  {r['component']:24s} {r['gib']:8.2f}  {r['tier']:16s} {r['reason']}")
     out.append("")
     out.append("LEVER SETTINGS (the resolved line)")
+    if plan.get("engine"):
+        e = plan["engine"]
+        out.append(f"  engine={e['name']} ({e['verdict']}) - serves {e['serves_shape']}"
+                   + (f"; {e['notes']}" if e.get("notes") else ""))
     out.append(f"  experts gpu={plan['gpu_experts']} cpu={plan['cpu_experts']} map={plan['map']} "
                f"cpu_share={plan['cpu_share']*100:.0f}% deferral D={plan['deferral']} "
                f"chunk={plan['chunk']} kv={plan['kv_gib']:.2f} GiB ({plan['kv_fraction']*100:.1f}% VRAM) "
@@ -517,6 +546,8 @@ def main() -> int:
     ap.add_argument("--chunk-size", type=int, default=None, help="override prefill chunk (2048/4096/8192/16384)")
     ap.add_argument("--deferral", type=int, default=None, help="override deferral D")
     ap.add_argument("--map", choices=sorted(MAP_QUALITY), default=None)
+    ap.add_argument("--engine", default=None,
+                    help="engine profile from engines.json (feeds chunk-workspace model + lever availability)")
     ap.add_argument("--no-dspark", action="store_true")
     ap.add_argument("--no-vision", action="store_true")
     ap.add_argument("--admission-prefetch", action="store_true",
@@ -554,6 +585,20 @@ def main() -> int:
               f"quantization {quant_name!r} declares baseline {quant['baseline']!r}; "
               "size factors are relative to different dtypes", file=sys.stderr)
 
+    engine = None
+    engine_notes = ""
+    if args.engine:
+        try:
+            engines = load_engines()
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"error: cannot read engines.json: {exc}", file=sys.stderr)
+            return 2
+        if args.engine not in engines:
+            print(f"error: unknown --engine {args.engine!r} (have: {', '.join(sorted(engines))})", file=sys.stderr)
+            return 2
+        engine = engines[args.engine]
+        hw, engine_notes = apply_engine(hw, engine, args.engine)
+
     opts = {
         "context_tokens": args.context_tokens,
         "sequences": args.sequences,
@@ -563,15 +608,25 @@ def main() -> int:
         "include_dspark": not args.no_dspark,
         "include_vision": not args.no_vision,
         "admission_prefetch": args.admission_prefetch,
+        "engine_deferral_available": engine.get("deferral_available", True) if engine else True,
     }
     calib = None if args.no_calibration else hw.get("calibration")
     plan = project(budget, hw, quant, opts, calib)
+    if engine:
+        plan["engine"] = {
+            "name": args.engine,
+            "label": engine.get("label"),
+            "verdict": engine.get("verdict"),
+            "serves_shape": engine.get("serves_shape"),
+            "notes": engine_notes,
+        }
 
     out = {
         "source": f"{budget['source']}@{budget.get('revision')}",
         "hardware": hw.get("name"),
         "quantization": quant_name,
         "trust": plan["trust"],
+        "engine": plan.get("engine"),
         "plan": {k: v for k, v in plan.items() if k != "rows"},
         "tier_plan": plan["rows"],
     }
