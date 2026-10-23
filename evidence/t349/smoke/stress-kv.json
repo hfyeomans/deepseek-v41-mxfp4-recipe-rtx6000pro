@@ -1,0 +1,1864 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "model": "dsv41-flash-hybrid",
+  "concurrency": 4,
+  "prompt_tokens_target": 260096,
+  "prompt_tokens_min": 247091,
+  "max_tokens": 256,
+  "seed": 31,
+  "wall_s": 261.1590542793274,
+  "all_finished": true,
+  "peak_vram_used_mib": {
+    "gpu0_used_mib": 97321,
+    "gpu1_used_mib": 97216
+  },
+  "vram_total_mib": {
+    "gpu0_total_mib": 97887,
+    "gpu1_total_mib": 97887
+  },
+  "results": [
+    {
+      "stream": 0,
+      "prompt_tokens": 253242,
+      "completion_tokens": 256,
+      "ttft_s": 138.46416831598617,
+      "total_s": 261.05838463502005,
+      "finish_reason": "length",
+      "wall_s": 261.15828680992126,
+      "ok": true
+    },
+    {
+      "stream": 1,
+      "prompt_tokens": 253402,
+      "completion_tokens": 256,
+      "ttft_s": 196.72284286102513,
+      "total_s": 261.0558989139972,
+      "finish_reason": "length",
+      "wall_s": 261.1484775543213,
+      "ok": true
+    },
+    {
+      "stream": 2,
+      "prompt_tokens": 253924,
+      "completion_tokens": 256,
+      "ttft_s": 72.93678413104499,
+      "total_s": 261.04898199101444,
+      "finish_reason": "length",
+      "wall_s": 261.1175844669342,
+      "ok": true
+    },
+    {
+      "stream": 3,
+      "prompt_tokens": 253455,
+      "completion_tokens": 256,
+      "ttft_s": 254.64214776596054,
+      "total_s": 261.0554904199671,
+      "finish_reason": "length",
+      "wall_s": 261.1072428226471,
+      "ok": true
+    }
+  ],
+  "vram_samples": [
+    {
+      "t": 1792774458.2818296,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774459.3019896,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774460.3235993,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774461.3426557,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774462.3616302,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774463.384618,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774464.403296,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774465.427148,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774466.4496453,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97026,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774467.4713738,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97028,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774468.493472,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97028,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774469.5155585,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97048,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774470.5375595,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97048,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774471.5607476,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774472.579544,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774473.6012444,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774474.6205888,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774475.6422353,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774476.6633446,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774477.682437,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774478.7093186,
+      "gpu0_used_mib": 97299,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774479.7314768,
+      "gpu0_used_mib": 97299,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97088,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774480.7534838,
+      "gpu0_used_mib": 96835,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97108,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774481.7756968,
+      "gpu0_used_mib": 97255,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97108,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774482.7986743,
+      "gpu0_used_mib": 97257,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97108,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774483.8202631,
+      "gpu0_used_mib": 97257,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97108,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774484.842354,
+      "gpu0_used_mib": 97257,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774485.8609412,
+      "gpu0_used_mib": 97257,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774486.8838525,
+      "gpu0_used_mib": 97257,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774487.9030414,
+      "gpu0_used_mib": 97259,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774488.92396,
+      "gpu0_used_mib": 97259,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774489.9455695,
+      "gpu0_used_mib": 97259,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774490.9644313,
+      "gpu0_used_mib": 97259,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774491.9862187,
+      "gpu0_used_mib": 97259,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774493.0082092,
+      "gpu0_used_mib": 97259,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774494.0296886,
+      "gpu0_used_mib": 97259,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774495.051107,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774496.073426,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774497.095137,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774498.1158674,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774499.1357417,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774500.1570094,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774501.1802447,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774502.199885,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774503.2221072,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774504.2452843,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774505.2677839,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774506.289207,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774507.3106334,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774508.3342803,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774509.35682,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774510.3794348,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774511.4017434,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774512.4243917,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774513.4445026,
+      "gpu0_used_mib": 97261,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774514.4652498,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774515.4878485,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774516.510211,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774517.5321636,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774518.5536287,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774519.5762851,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774520.5985568,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774521.622859,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774522.6445384,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774523.666562,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774524.6891062,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774525.7156816,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774526.7364888,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774527.7580836,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774528.7796378,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774529.8009503,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774530.8254158,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774531.847288,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774532.8701565,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774533.8920372,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774534.9141645,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774535.935945,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774536.9562428,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774537.97756,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774538.9987211,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774540.0205996,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774541.0420165,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774542.0637517,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774543.0855942,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774544.1080968,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774545.1293862,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774546.1512327,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774547.1721478,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774548.1934216,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774549.2142563,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774550.2355564,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774551.2569687,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774552.278635,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774553.299466,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774554.321428,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774555.3431845,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774556.364964,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774557.3890166,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97110,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774558.4095526,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774559.4305654,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774560.4524786,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774561.474341,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774562.495407,
+      "gpu0_used_mib": 96899,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774563.5168378,
+      "gpu0_used_mib": 97219,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774564.5371497,
+      "gpu0_used_mib": 97219,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774565.5592916,
+      "gpu0_used_mib": 97219,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774566.5825784,
+      "gpu0_used_mib": 97321,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774567.6046968,
+      "gpu0_used_mib": 96571,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774568.6233053,
+      "gpu0_used_mib": 96937,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774569.6452694,
+      "gpu0_used_mib": 96999,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774570.6664326,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774571.6880925,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774572.7135293,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774573.7341733,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774574.7560413,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774575.7777183,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774576.7994251,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774577.819153,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774578.841213,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774579.8627217,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774580.88547,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774581.906682,
+      "gpu0_used_mib": 97099,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774582.9290073,
+      "gpu0_used_mib": 97139,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774583.9506648,
+      "gpu0_used_mib": 97139,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774584.972291,
+      "gpu0_used_mib": 97139,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774585.9940953,
+      "gpu0_used_mib": 97139,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774587.0154827,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774588.0371556,
+      "gpu0_used_mib": 97199,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774589.059077,
+      "gpu0_used_mib": 97201,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774590.081635,
+      "gpu0_used_mib": 97201,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774591.1021256,
+      "gpu0_used_mib": 97201,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774592.1227293,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774593.1438558,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774594.1651378,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774595.187334,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774596.209339,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774597.231725,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774598.2524195,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774599.273894,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774600.2957017,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774601.3163977,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774602.337949,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774603.360948,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774604.3822072,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774605.4023135,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774606.4232697,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774607.444589,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774608.4657586,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774609.4857967,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774610.507809,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774611.5305605,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774612.5518317,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774613.575092,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774614.596986,
+      "gpu0_used_mib": 97281,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774615.6178727,
+      "gpu0_used_mib": 96921,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774616.6387677,
+      "gpu0_used_mib": 97003,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774617.6626718,
+      "gpu0_used_mib": 97003,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774618.6849928,
+      "gpu0_used_mib": 97003,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774619.7065969,
+      "gpu0_used_mib": 97203,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774620.7422137,
+      "gpu0_used_mib": 97203,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774621.7634027,
+      "gpu0_used_mib": 97263,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774622.7853346,
+      "gpu0_used_mib": 97237,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774623.806387,
+      "gpu0_used_mib": 97317,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774624.828587,
+      "gpu0_used_mib": 97317,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774625.8577344,
+      "gpu0_used_mib": 97317,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774626.8800063,
+      "gpu0_used_mib": 97317,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774627.9016511,
+      "gpu0_used_mib": 97319,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774628.9248374,
+      "gpu0_used_mib": 97319,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774629.9469512,
+      "gpu0_used_mib": 97319,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774630.9688385,
+      "gpu0_used_mib": 97321,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774631.990709,
+      "gpu0_used_mib": 97321,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774633.0121531,
+      "gpu0_used_mib": 97077,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774634.033108,
+      "gpu0_used_mib": 97077,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774635.0551827,
+      "gpu0_used_mib": 97221,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774636.077642,
+      "gpu0_used_mib": 97221,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774637.0989928,
+      "gpu0_used_mib": 97221,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774638.1216204,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774639.144019,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774640.1669977,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774641.1878593,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774642.2082906,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774643.230662,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774644.2527118,
+      "gpu0_used_mib": 97301,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774645.2751358,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774646.2990506,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774647.3207943,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97112,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774648.3418212,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774649.3621147,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774650.3830678,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774651.4051762,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774652.4265292,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774653.4479253,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774654.4690785,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774655.4908872,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774656.512845,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774657.5333998,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774658.5540023,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774659.5748298,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774660.593357,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774661.614348,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774662.635785,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774663.656925,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774664.677756,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774665.7006,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774666.7269986,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774667.7479417,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774668.769298,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774669.7902787,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774670.814433,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774671.8362613,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774672.8583903,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774673.8803864,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774674.9016724,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774675.9219651,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774676.944016,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97212,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774677.9647558,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97214,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774678.9860191,
+      "gpu0_used_mib": 97303,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97214,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774680.0087755,
+      "gpu0_used_mib": 97305,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774681.0283434,
+      "gpu0_used_mib": 97305,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774682.0490534,
+      "gpu0_used_mib": 97305,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774683.0722818,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774684.0939248,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774685.1168828,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774686.1395988,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774687.1616452,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774688.1841054,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774689.2058089,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774690.2264502,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774691.2455282,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774692.2671237,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774693.2887611,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774694.3102233,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774695.3332381,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774696.3555546,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774697.375741,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774698.3983266,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774699.419528,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774700.4417741,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774701.462666,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774702.4844372,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774703.5061398,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774704.5270982,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774705.5489364,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774706.5726345,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774707.5949078,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774708.6172638,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774709.6384954,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774710.660263,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774711.6827376,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774712.7148097,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774713.7401397,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774714.7670727,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774715.7931752,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774716.8196173,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774717.8467782,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    },
+    {
+      "t": 1792774718.872349,
+      "gpu0_used_mib": 97307,
+      "gpu0_total_mib": 97887,
+      "gpu1_used_mib": 97216,
+      "gpu1_total_mib": 97887
+    }
+  ],
+  "timestamp": "2026-10-23T12:58:39-0400",
+  "evidence": {
+    "tool": "stress-kv-full.py",
+    "recorded_utc": "2026-10-23T16:58:39Z",
+    "manifest_hash": "4a0bfd8cabdcd10980d6449edded1a54ffbc9d3c775df4ebe60da6e320cba216",
+    "manifest_file": "manifest.json",
+    "container_check": "match",
+    "container_id": "93ec653c74d560057efe0406e56998e0421b610e5c430c6b85693af60385b23e"
+  }
+}
